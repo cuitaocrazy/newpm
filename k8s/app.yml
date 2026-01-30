@@ -32,7 +32,7 @@ spec:
                   name: ruoyi-secret
                   key: db-password
             - name: SPRING_PROFILES_ACTIVE
-              value: k8s
+              value: druid,k8s
             - name: SPRING_CONFIG_ADDITIONAL_LOCATION
               value: /app/config/
           resources:
