@@ -15,6 +15,28 @@ argument-hint: "[DDL / 业务描述 / 表名]"
 - **项目 generator.yml**: `ruoyi-generator/src/main/resources/generator.yml`（读取默认 author/packageName/tablePrefix）
 - **业务代码目标模块**: `ruoyi-project/`（生成的 Java 代码统一部署到此模块，不放 ruoyi-admin）
 - **前端代码目标**: `ruoyi-ui/`（Vue/API 文件部署到前端目录）
+- **SQL文件管理**: `pm-sql/`（新增：版本化SQL文件管理）
+- **项目文档**: `docs/pm/`（新增：项目管理文档）
+
+## SQL文件版本管理结构
+
+```
+pm-sql/
+├── init/                           # 初始版本（基准版本）
+│   ├── 00_tables_ddl.sql          # 表结构定义（优先级00）
+│   ├── 01_tables_data.sql         # 表初始数据（优先级01）
+│   └── 02_menu_data.sql           # 菜单权限数据（优先级02）
+├── newVersion/                     # 当前最新版本
+│   ├── 00_tables_ddl.sql          # 表结构定义
+│   ├── 01_tables_data.sql         # 表初始数据
+└── └──02_menu_data.sql            # 菜单权限数据
+
+docs/pm/                           # 项目管理文档
+├── requirements/                   # 需求文档
+├── design/                        # 设计方案
+├── database/                      # 库表设计文档
+└── changelog.md                   # 项目变更记录
+```
 
 ---
 
@@ -119,7 +141,7 @@ ddl: |
 - `float`, `double` → `Double`
 
 **显示类型推断**：
-- 列名以 `status` 结尾 → `radio`（单选框）
+- 列名以 `status` 结尾 → `select`（下拉框）
 - 列名以 `type` 或 `sex` 结尾 → `select`（下拉框）
 - 列名以 `image` 结尾 → `imageUpload`（图片上传）
 - 列名以 `file` 结尾 → `fileUpload`（文件上传）
@@ -195,7 +217,7 @@ mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true
 
 ### 4.3 准备临时文件
 
-从规格文件中提取 DDL 写入临时 `.sql` 文件，提取 config 部分转换为 CLI 可用的 `gen-config.yml` 格式：
+从规格文件中提取 DDL 写入到 `pm-sql/newVersion/00_tables_ddl.sql` 文件，提取 config 部分转换为 CLI 可用的 `gen-config.yml` 格式：
 
 ```yaml
 global:
