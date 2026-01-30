@@ -1,8 +1,0 @@
-com/ruoyi/gen/cli/GenCliApplication.class
-com/ruoyi/gen/cli/GenTableConfig$ColumnConfig.class
-com/ruoyi/gen/cli/CodeGenerator.class
-com/ruoyi/gen/cli/GenTableConfig.class
-com/ruoyi/gen/cli/ConfigLoader.class
-com/ruoyi/gen/cli/DdlParser.class
-com/ruoyi/gen/cli/GenTableConfig$TableConfig.class
-com/ruoyi/gen/cli/GenTableConfig$GlobalConfig.class

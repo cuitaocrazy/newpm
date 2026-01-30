@@ -1,0 +1,28 @@
+# Build output
+**/target/
+ruoyi-ui/dist/
+
+# Frontend dependencies
+ruoyi-ui/node_modules/
+
+# Frontend build output copied to backend
+ruoyi-admin/src/main/resources/static/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+*.env.local
+*.env.*.local
