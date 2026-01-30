@@ -86,6 +86,27 @@ public class SpaController
 }
 JAVAEOF
 
+# 5. Logback: console-only output for K8s (no file appenders)
+RUN cat > ruoyi-admin/src/main/resources/logback.xml << 'LOGEOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <property name="log.pattern" value="%d{HH:mm:ss.SSS} [%thread] %-5level %logger{20} - [%method,%line] - %msg%n" />
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${log.pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.ruoyi" level="info" />
+    <logger name="org.springframework" level="warn" />
+
+    <root level="info">
+        <appender-ref ref="console" />
+    </root>
+</configuration>
+LOGEOF
+
 # Copy frontend build output into Spring Boot static resources
 COPY --from=frontend-build /app/dist/ ruoyi-admin/src/main/resources/static/
 
