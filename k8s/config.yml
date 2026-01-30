@@ -51,5 +51,5 @@ data:
     CREATE DATABASE IF NOT EXISTS `ry-vue` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
   01-import-sql.sh: |
     #!/bin/bash
-    mysql -uroot -p"$MYSQL_ROOT_PASSWORD" ry-vue < /sql-files/ry_20250522.sql
-    mysql -uroot -p"$MYSQL_ROOT_PASSWORD" ry-vue < /sql-files/quartz.sql
+    mysql --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" ry-vue < /sql-files/ry_20250522.sql
+    mysql --default-character-set=utf8mb4 -uroot -p"$MYSQL_ROOT_PASSWORD" ry-vue < /sql-files/quartz.sql
