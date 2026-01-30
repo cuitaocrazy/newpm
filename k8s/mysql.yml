@@ -1,0 +1,94 @@
+# MySQL 8.0 StatefulSet + Headless Service
+# 密码引用 config.yml 中的 ruoyi-secret
+# Init SQL 通过 mysql-initdb-wrapper + mysql-sql-files ConfigMap 挂载
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: ruoyi
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_general_ci
+            - --default-authentication-plugin=caching_sha2_password
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ruoyi-secret
+                  key: db-password
+            - name: MYSQL_DATABASE
+              value: "ry-vue"
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+            - name: initdb-wrapper
+              mountPath: /docker-entrypoint-initdb.d/00-create-db.sql
+              subPath: 00-create-db.sql
+            - name: initdb-wrapper
+              mountPath: /docker-entrypoint-initdb.d/01-import-sql.sh
+              subPath: 01-import-sql.sh
+            - name: sql-files
+              mountPath: /sql-files
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: initdb-wrapper
+          configMap:
+            name: mysql-initdb-wrapper
+            defaultMode: 0755
+        - name: sql-files
+          configMap:
+            name: mysql-sql-files
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: ruoyi
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None

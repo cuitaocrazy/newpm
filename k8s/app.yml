@@ -1,0 +1,80 @@
+# RuoYi App Deployment + NodePort Service
+# 配置来源：
+#   - application-k8s.yml 挂载自 config.yml 中的 ruoyi-app-config ConfigMap
+#   - DB_PASSWORD 环境变量引用 config.yml 中的 ruoyi-secret
+#   - Spring Boot 通过 ${DB_PASSWORD} 占位符解析密码
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruoyi-app
+  namespace: ruoyi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruoyi-app
+  template:
+    metadata:
+      labels:
+        app: ruoyi-app
+    spec:
+      containers:
+        - name: ruoyi-app
+          image: cuitaocrazy/newpm:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ruoyi-secret
+                  key: db-password
+            - name: SPRING_PROFILES_ACTIVE
+              value: k8s
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: /app/config/
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/config/application-k8s.yml
+              subPath: application-k8s.yml
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 5
+      volumes:
+        - name: app-config
+          configMap:
+            name: ruoyi-app-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruoyi-app
+  namespace: ruoyi
+spec:
+  type: NodePort
+  selector:
+    app: ruoyi-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

@@ -1,0 +1,55 @@
+# ============================================================
+# 统一配置：Secret + Spring Boot ConfigMap + MySQL Init Scripts
+# MySQL 和 App 共用同一个 Secret，保证密码一致性
+# ============================================================
+
+# --- 共享 Secret：数据库密码 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ruoyi-secret
+  namespace: ruoyi
+type: Opaque
+data:
+  db-password: cGFzc3dvcmQ=  # password
+
+---
+# --- Spring Boot 配置（覆盖默认 application.yml）---
+# 密码通过 ${DB_PASSWORD} 占位符注入，由 Deployment env 引用 Secret 提供
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ruoyi-app-config
+  namespace: ruoyi
+data:
+  application-k8s.yml: |
+    spring:
+      datasource:
+        type: com.alibaba.druid.pool.DruidDataSource
+        druid:
+          master:
+            url: jdbc:mysql://mysql.ruoyi:3306/ry-vue?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+            username: root
+            password: ${DB_PASSWORD}
+      data:
+        redis:
+          host: redis.ruoyi
+          port: 6379
+    ruoyi:
+      profile: /app/uploadPath
+
+---
+# --- MySQL 初始化脚本（wrapper）---
+# 先建库，再通过 shell 脚本导入挂载的 SQL 文件
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-initdb-wrapper
+  namespace: ruoyi
+data:
+  00-create-db.sql: |
+    CREATE DATABASE IF NOT EXISTS `ry-vue` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+  01-import-sql.sh: |
+    #!/bin/bash
+    mysql -uroot -p"$MYSQL_ROOT_PASSWORD" ry-vue < /sql-files/ry_20250522.sql
+    mysql -uroot -p"$MYSQL_ROOT_PASSWORD" ry-vue < /sql-files/quartz.sql
