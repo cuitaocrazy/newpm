@@ -1,0 +1,20 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ruoyi-app-websecure
+  namespace: ruoyi
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`newpm.yadashuke.com`)
+      services:
+        - name: ruoyi-app
+          port: 8080
+  tls:
+    certResolver: le
+    domains:
+      - main: yadashuke.com
+        sans:
+          - "*.yadashuke.com"

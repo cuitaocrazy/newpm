@@ -1,4 +1,5 @@
-# RuoYi App Deployment + NodePort Service
+# RuoYi App Deployment + ClusterIP Service
+# 外部访问通过 ingress.yml 的 Traefik IngressRoute (newpm.yadashuke.com)
 # 配置来源：
 #   - application-k8s.yml 挂载自 config.yml 中的 ruoyi-app-config ConfigMap
 #   - DB_PASSWORD 环境变量引用 config.yml 中的 ruoyi-secret
@@ -71,10 +72,8 @@ metadata:
   name: ruoyi-app
   namespace: ruoyi
 spec:
-  type: NodePort
   selector:
     app: ruoyi-app
   ports:
     - port: 8080
       targetPort: 8080
-      nodePort: 30080
