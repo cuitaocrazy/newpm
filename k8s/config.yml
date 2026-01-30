@@ -8,7 +8,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: ruoyi-secret
-  namespace: ruoyi
+  namespace: newpm
 type: Opaque
 data:
   db-password: cGFzc3dvcmQ=  # password
@@ -20,7 +20,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ruoyi-app-config
-  namespace: ruoyi
+  namespace: newpm
 data:
   application-k8s.yml: |
     spring:
@@ -28,12 +28,12 @@ data:
         type: com.alibaba.druid.pool.DruidDataSource
         druid:
           master:
-            url: jdbc:mysql://mysql.ruoyi:3306/ry-vue?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+            url: jdbc:mysql://mysql.newpm:3306/ry-vue?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
             username: root
             password: ${DB_PASSWORD}
       data:
         redis:
-          host: redis.ruoyi
+          host: redis.newpm
           port: 6379
     ruoyi:
       profile: /app/uploadPath
@@ -45,7 +45,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql-initdb-wrapper
-  namespace: ruoyi
+  namespace: newpm
 data:
   00-create-db.sql: |
     CREATE DATABASE IF NOT EXISTS `ry-vue` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
