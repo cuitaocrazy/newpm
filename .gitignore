@@ -19,6 +19,9 @@ ruoyi-admin/src/main/resources/static/
 logs/
 *.log
 
+# Playwright
+.playwright-mcp/
+
 # OS
 .DS_Store
 Thumbs.db
