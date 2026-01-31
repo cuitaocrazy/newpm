@@ -141,8 +141,13 @@ ddl: |
 - `float`, `double` → `Double`
 
 **显示类型推断**：
-- 列名以 `status` 结尾 → `select`（下拉框）
-- 列名以 `type` 或 `sex` 结尾 → `select`（下拉框）
+- 列名以 `industry` 结尾 → `select`（下拉框）
+- 列名以 `region` 结尾 → `select`（下拉框）
+- 列名以 `_category` 结尾 → `select`（下拉框）
+- 列名以 `region_code` 结尾 → `select`（下拉框）
+- 列名以 `_status` 结尾 → `select`（下拉框）
+- 列名以 `_year`  结尾 → `select`（下拉框）
+- 列名以 `_type` 或 `sex` 结尾 → `select`（下拉框）
 - 列名以 `image` 结尾 → `imageUpload`（图片上传）
 - 列名以 `file` 结尾 → `fileUpload`（文件上传）
 - 列名以 `content` 结尾 → `editor`（富文本）
@@ -262,13 +267,37 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 | `main/resources/mapper/<module>/` | `ruoyi-project/src/main/resources/mapper/<module>/` |
 | `vue/api/<module>/` | `ruoyi-ui/src/api/<module>/` |
 | `vue/views/<module>/<business>/` | `ruoyi-ui/src/views/<module>/<business>/` |
-| `*Menu.sql` | `sql/` |
 
 **注意**：Java 代码全部放入 `ruoyi-project` 模块，该模块已被 `ruoyi-admin` 依赖，Spring Boot 启动时会自动扫描。
 
 **注意**：如果目标文件已存在，询问用户是否覆盖。
 
 展示已部署的文件列表。
+
+### 4.6 菜单SQL管理
+
+**提取菜单SQL**：
+- 从生成的 ZIP 中找到 `*Menu.sql` 文件
+- 将菜单SQL追加到 `pm-sql/newVersion/02_menu_data.sql` 文件
+
+**执行菜单SQL**：
+- 询问用户："如何连接数据库？A) Docker容器 B) 直接连接 C) SSH隧道"
+- 根据用户选择，收集连接信息并执行：
+  ```bash
+  # Docker方式
+  docker exec -i <container_id> mysql -u<user> -p'<pass>' <db> < pm-sql/newVersion/02_menu_data.sql
+
+  # 直接连接方式
+  mysql -h<host> -P<port> -u<user> -p'<pass>' <db> < pm-sql/newVersion/02_menu_data.sql
+
+  # SSH方式
+  scp pm-sql/newVersion/02_menu_data.sql <ssh_user>@<ssh_host>:/tmp/
+  ssh <ssh_user>@<ssh_host> "mysql -u<user> -p'<pass>' <db> < /tmp/02_menu_data.sql"
+  ```
+
+**执行结果**：
+- 成功：显示"✓ 菜单已导入数据库"
+- 失败：显示错误信息和手动执行命令
 
 ---
 

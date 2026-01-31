@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.CustomerMapper">
+    
+    <resultMap type="Customer" id="CustomerResult">
+        <result property="customerId"    column="customer_id"    />
+        <result property="customerSimpleName"    column="customer_simple_name"    />
+        <result property="customerAllName"    column="customer_all_name"    />
+        <result property="industry"    column="industry"    />
+        <result property="region"    column="region"    />
+        <result property="salesManagerId"    column="sales_manager_id"    />
+        <result property="salesManagerName"    column="sales_manager_name"    />
+        <result property="officeAddress"    column="office_address"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <sql id="selectCustomerVo">
+        select customer_id, customer_simple_name, customer_all_name, industry, region, sales_manager_id, sales_manager_name, office_address, del_flag, create_by, create_time, update_by, update_time, remark from pm_customer
+    </sql>
+
+    <select id="selectCustomerList" parameterType="Customer" resultMap="CustomerResult">
+        <include refid="selectCustomerVo"/>
+        <where>  
+            <if test="customerSimpleName != null  and customerSimpleName != ''"> and customer_simple_name like concat('%', #{customerSimpleName}, '%')</if>
+            <if test="customerAllName != null  and customerAllName != ''"> and customer_all_name like concat('%', #{customerAllName}, '%')</if>
+            <if test="industry != null  and industry != ''"> and industry = #{industry}</if>
+            <if test="region != null  and region != ''"> and region = #{region}</if>
+            <if test="salesManagerId != null "> and sales_manager_id = #{salesManagerId}</if>
+            <if test="salesManagerName != null  and salesManagerName != ''"> and sales_manager_name like concat('%', #{salesManagerName}, '%')</if>
+            <if test="createTime != null "> and create_time = #{createTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectCustomerByCustomerId" parameterType="Long" resultMap="CustomerResult">
+        <include refid="selectCustomerVo"/>
+        where customer_id = #{customerId}
+    </select>
+
+    <insert id="insertCustomer" parameterType="Customer" useGeneratedKeys="true" keyProperty="customerId">
+        insert into pm_customer
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="customerSimpleName != null and customerSimpleName != ''">customer_simple_name,</if>
+            <if test="customerAllName != null and customerAllName != ''">customer_all_name,</if>
+            <if test="industry != null">industry,</if>
+            <if test="region != null">region,</if>
+            <if test="salesManagerId != null">sales_manager_id,</if>
+            <if test="salesManagerName != null">sales_manager_name,</if>
+            <if test="officeAddress != null">office_address,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="customerSimpleName != null and customerSimpleName != ''">#{customerSimpleName},</if>
+            <if test="customerAllName != null and customerAllName != ''">#{customerAllName},</if>
+            <if test="industry != null">#{industry},</if>
+            <if test="region != null">#{region},</if>
+            <if test="salesManagerId != null">#{salesManagerId},</if>
+            <if test="salesManagerName != null">#{salesManagerName},</if>
+            <if test="officeAddress != null">#{officeAddress},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCustomer" parameterType="Customer">
+        update pm_customer
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="customerSimpleName != null and customerSimpleName != ''">customer_simple_name = #{customerSimpleName},</if>
+            <if test="customerAllName != null and customerAllName != ''">customer_all_name = #{customerAllName},</if>
+            <if test="industry != null">industry = #{industry},</if>
+            <if test="region != null">region = #{region},</if>
+            <if test="salesManagerId != null">sales_manager_id = #{salesManagerId},</if>
+            <if test="salesManagerName != null">sales_manager_name = #{salesManagerName},</if>
+            <if test="officeAddress != null">office_address = #{officeAddress},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where customer_id = #{customerId}
+    </update>
+
+    <delete id="deleteCustomerByCustomerId" parameterType="Long">
+        delete from pm_customer where customer_id = #{customerId}
+    </delete>
+
+    <delete id="deleteCustomerByCustomerIds" parameterType="String">
+        delete from pm_customer where customer_id in 
+        <foreach item="customerId" collection="array" open="(" separator="," close=")">
+            #{customerId}
+        </foreach>
+    </delete>
+</mapper>
