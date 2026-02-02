@@ -45,8 +45,24 @@ docs/pm/                           # 项目管理文档
 根据 `$ARGUMENTS` 判断输入模式：
 
 ### 模式 A：DDL 模式
-- 用户给了 `CREATE TABLE` 语句，或给了 `.sql` 文件路径
-- 直接使用该 DDL
+
+#### 单表DDL
+- 用户给了一个 `CREATE TABLE` 语句，或给了单表的 `.sql` 文件
+- 直接使用该 DDL，按原有流程处理
+
+#### 多表DDL
+- 用户给了多个 `CREATE TABLE` 语句（用分号或空行分隔）
+- 或给了包含多个表的 `.sql` 文件
+- 触发多表处理流程：
+  1. 解析所有表的DDL
+  2. 分析外键约束（`FOREIGN KEY ... REFERENCES ...`），构建表关系图
+  3. 拓扑排序，确定生成顺序（先主表后子表）
+  4. 判断生成策略：
+     - 主子表关系（2层）→ 主表用 `crud`，子表用 `sub`
+     - 多层关系（3层+）→ 前2层用主子表，第3层用独立 `crud`
+     - 独立表 → 使用 `crud`
+  5. 展示关系分析结果和生成策略，询问用户确认
+  6. 按顺序逐表生成代码
 
 ### 模式 B：业务描述模式
 - 用户用自然语言描述实体，如"产品表，有名称、类型、价格、状态"
@@ -276,6 +292,12 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 
 ### 4.6 菜单SQL管理
 
+**检查菜单是否存在**：
+- 连接数据库，查询 `sys_menu` 表
+- 通过权限标识前缀匹配：`SELECT COUNT(*) FROM sys_menu WHERE perms LIKE '<module>:<business>:%'`
+- 如果已存在，显示"✓ 检测到菜单已存在，跳过菜单导入"
+- 如果不存在，继续菜单导入流程
+
 **提取菜单SQL**：
 - 从生成的 ZIP 中找到 `*Menu.sql` 文件
 - 将菜单SQL追加到 `pm-sql/newVersion/02_menu_data.sql` 文件
@@ -298,6 +320,16 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 **执行结果**：
 - 成功：显示"✓ 菜单已导入数据库"
 - 失败：显示错误信息和手动执行命令
+
+### 4.7 临时文件清理
+
+所有表的代码生成并部署完成后，自动清理临时文件：
+
+```bash
+rm -rf temp-*.yml temp-*.zip temp-extracted/
+```
+
+显示："✓ 临时文件已清理"
 
 ---
 

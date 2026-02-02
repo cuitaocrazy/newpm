@@ -1,42 +1,103 @@
--- 客户管理模块菜单和权限资源
--- 放在市场管理(menu_id=2037)下
+-- ============================================
+-- 客户信息管理菜单 SQL
+-- ============================================
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('客户信息管理', '3', '1', 'customer', 'project/customer/index', 1, 0, 'C', '0', '0', 'project:customer:list', 'peoples', 'admin', sysdate(), '', null, '客户信息管理菜单');
 
--- 1. 客户信息管理菜单
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2057, '客户信息管理', 2037, 1, 'customer', 'project/customer/index', '', 1, 0, 'C', '0', '0', 'project:customer:list', 'peoples', 'admin', NOW(), '', NULL, '客户信息管理菜单');
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
 
--- 2. 客户信息管理按钮权限
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2058, '客户查询', 2057, 1, '#', '', '', 1, 0, 'F', '0', '0', 'project:customer:query', '#', 'admin', NOW(), '', NULL, '');
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('客户查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:customer:query',        '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2059, '客户新增', 2057, 2, '#', '', '', 1, 0, 'F', '0', '0', 'project:customer:add', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('客户新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:customer:add',          '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2060, '客户修改', 2057, 3, '#', '', '', 1, 0, 'F', '0', '0', 'project:customer:edit', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('客户修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:customer:edit',         '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2061, '客户删除', 2057, 4, '#', '', '', 1, 0, 'F', '0', '0', 'project:customer:remove', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('客户删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:customer:remove',       '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2062, '客户导出', 2057, 5, '#', '', '', 1, 0, 'F', '0', '0', 'project:customer:export', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('客户导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:customer:export',       '#', 'admin', sysdate(), '', null, '');
 
--- 3. 联系人信息管理菜单
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2063, '联系人信息管理', 2037, 2, 'contact', 'project/contact/index', '', 1, 0, 'C', '0', '0', 'project:contact:list', 'user', 'admin', NOW(), '', NULL, '联系人信息管理菜单');
+-- ============================================
+-- 联系人信息管理菜单 SQL
+-- ============================================
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('联系人信息管理', '3', '2', 'contact', 'project/contact/index', 1, 0, 'C', '0', '0', 'project:contact:list', 'user', 'admin', sysdate(), '', null, '联系人信息管理菜单');
 
--- 4. 联系人信息管理按钮权限
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2064, '联系人查询', 2063, 1, '#', '', '', 1, 0, 'F', '0', '0', 'project:contact:query', '#', 'admin', NOW(), '', NULL, '');
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2065, '联系人新增', 2063, 2, '#', '', '', 1, 0, 'F', '0', '0', 'project:contact:add', '#', 'admin', NOW(), '', NULL, '');
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('联系人查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:contact:query',        '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2066, '联系人修改', 2063, 3, '#', '', '', 1, 0, 'F', '0', '0', 'project:contact:edit', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('联系人新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:contact:add',          '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2067, '联系人删除', 2063, 4, '#', '', '', 1, 0, 'F', '0', '0', 'project:contact:remove', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('联系人修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:contact:edit',         '#', 'admin', sysdate(), '', null, '');
 
-INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, query, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES (2068, '联系人导出', 2063, 5, '#', '', '', 1, 0, 'F', '0', '0', 'project:contact:export', '#', 'admin', NOW(), '', NULL, '');
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('联系人删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:contact:remove',       '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('联系人导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:contact:export',       '#', 'admin', sysdate(), '', null, '');
+
+-- ============================================
+-- 项目管理菜单 SQL
+-- ============================================
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目管理', '3', '3', 'project', 'project/project/index', 1, 0, 'C', '0', '0', 'project:project:list', '#', 'admin', sysdate(), '', null, '项目管理菜单');
+
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目管理查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:project:query',        '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目管理新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:project:add',          '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目管理修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:project:edit',         '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目管理删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:project:remove',       '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目管理导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:project:export',       '#', 'admin', sysdate(), '', null, '');
+
+-- ============================================
+-- 项目审核菜单 SQL
+-- ============================================
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目审核', '3', '4', 'approval', 'project/approval/index', 1, 0, 'C', '0', '0', 'project:approval:list', '#', 'admin', sysdate(), '', null, '项目审核菜单');
+
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目审核查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:approval:query',        '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目审核新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:approval:add',          '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目审核修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:approval:edit',         '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目审核删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:approval:remove',       '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目审核导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:approval:export',       '#', 'admin', sysdate(), '', null, '');

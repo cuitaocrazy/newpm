@@ -288,14 +288,14 @@ CREATE TABLE `pm_project` (
   `project_code` varchar(50) NOT NULL COMMENT '项目编号(格式:行业-区域-简称-年份)',
   `project_name` varchar(200) NOT NULL COMMENT '项目名称',
   `project_full_name` varchar(500) DEFAULT NULL COMMENT '项目全称',
-  `industry` varchar(50) DEFAULT NULL COMMENT '行业',
-  `region` varchar(50) DEFAULT NULL COMMENT '区域',
+  `industry` varchar(50) DEFAULT NULL COMMENT '行业 字典表 字典类型industry',
+  `region` varchar(50) DEFAULT NULL COMMENT '区域 字典表 字典类型sys_yjqy',
   `short_name` varchar(50) DEFAULT NULL COMMENT '简称',
   `year` int DEFAULT NULL COMMENT '年份',
-  `project_category` varchar(50) DEFAULT NULL COMMENT '项目分类',
+  `project_category` varchar(50) DEFAULT NULL COMMENT '项目分类(字典表 字典类型sys_xmfl)',
   `project_dept` varchar(100) DEFAULT NULL COMMENT '项目部门',
-  `project_status` varchar(50) DEFAULT NULL COMMENT '项目状态',
-  `acceptance_status` varchar(50) DEFAULT NULL COMMENT '验收状态',
+  `project_status` varchar(50) DEFAULT NULL COMMENT '项目阶段(字典表 字典类型sys_xmjd)',
+  `acceptance_status` varchar(50) DEFAULT NULL COMMENT '验收状态(字典表 字典类型sys_yszt)',
   `estimated_workload` decimal(10,2) DEFAULT NULL COMMENT '预估工作量(人天)',
   `actual_workload` decimal(10,2) DEFAULT '0.00' COMMENT '实际工作量(人天)',
   `project_address` varchar(500) DEFAULT NULL COMMENT '项目地址',
@@ -342,8 +342,8 @@ CREATE TABLE `pm_project` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `confirm_status` char(1) DEFAULT '0' COMMENT '确认状态（0=未确认 1=已确认）',
-  `confirm_quarter` varchar(20) DEFAULT NULL COMMENT '确认季度',
+  `confirm_status` char(1) DEFAULT '0' COMMENT '确认状态（字典表 字典类型 sys_qrzt）',
+  `confirm_quarter` varchar(20) DEFAULT NULL COMMENT '确认季度(字典表 字典类型 sys_jdgl)',
   `confirm_amount` decimal(15,2) DEFAULT NULL COMMENT '确认金额（含税）',
   `after_tax_amount` decimal(15,2) DEFAULT NULL COMMENT '税后金额',
   `confirm_user_name` varchar(64) DEFAULT NULL COMMENT '确认人姓名',
@@ -352,7 +352,7 @@ CREATE TABLE `pm_project` (
   KEY `idx_approval_status` (`approval_status`),
   KEY `idx_customer_id` (`customer_id`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目立项申请表';
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目管理表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

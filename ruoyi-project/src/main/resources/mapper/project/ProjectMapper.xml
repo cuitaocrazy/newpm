@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.ProjectMapper">
+    
+    <resultMap type="Project" id="ProjectResult">
+        <result property="projectId"    column="project_id"    />
+        <result property="projectCode"    column="project_code"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="projectFullName"    column="project_full_name"    />
+        <result property="industry"    column="industry"    />
+        <result property="region"    column="region"    />
+        <result property="shortName"    column="short_name"    />
+        <result property="year"    column="year"    />
+        <result property="projectCategory"    column="project_category"    />
+        <result property="projectDept"    column="project_dept"    />
+        <result property="projectStatus"    column="project_status"    />
+        <result property="acceptanceStatus"    column="acceptance_status"    />
+        <result property="estimatedWorkload"    column="estimated_workload"    />
+        <result property="actualWorkload"    column="actual_workload"    />
+        <result property="projectAddress"    column="project_address"    />
+        <result property="projectPlan"    column="project_plan"    />
+        <result property="projectDescription"    column="project_description"    />
+        <result property="projectManagerId"    column="project_manager_id"    />
+        <result property="marketManagerId"    column="market_manager_id"    />
+        <result property="participants"    column="participants"    />
+        <result property="salesManagerId"    column="sales_manager_id"    />
+        <result property="salesContact"    column="sales_contact"    />
+        <result property="teamLeaderId"    column="team_leader_id"    />
+        <result property="customerId"    column="customer_id"    />
+        <result property="customerContactId"    column="customer_contact_id"    />
+        <result property="merchantContact"    column="merchant_contact"    />
+        <result property="merchantPhone"    column="merchant_phone"    />
+        <result property="startDate"    column="start_date"    />
+        <result property="endDate"    column="end_date"    />
+        <result property="productionDate"    column="production_date"    />
+        <result property="acceptanceDate"    column="acceptance_date"    />
+        <result property="implementationYear"    column="implementation_year"    />
+        <result property="projectBudget"    column="project_budget"    />
+        <result property="projectCost"    column="project_cost"    />
+        <result property="costBudget"    column="cost_budget"    />
+        <result property="budgetCost"    column="budget_cost"    />
+        <result property="laborCost"    column="labor_cost"    />
+        <result property="purchaseCost"    column="purchase_cost"    />
+        <result property="approvalStatus"    column="approval_status"    />
+        <result property="approvalReason"    column="approval_reason"    />
+        <result property="industryCode"    column="industry_code"    />
+        <result property="regionCode"    column="region_code"    />
+        <result property="approvalTime"    column="approval_time"    />
+        <result property="approverId"    column="approver_id"    />
+        <result property="remark"    column="remark"    />
+        <result property="taxRate"    column="tax_rate"    />
+        <result property="confirmUserId"    column="confirm_user_id"    />
+        <result property="confirmTime"    column="confirm_time"    />
+        <result property="reservedField1"    column="reserved_field1"    />
+        <result property="reservedField2"    column="reserved_field2"    />
+        <result property="reservedField3"    column="reserved_field3"    />
+        <result property="reservedField4"    column="reserved_field4"    />
+        <result property="reservedField5"    column="reserved_field5"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="confirmStatus"    column="confirm_status"    />
+        <result property="confirmQuarter"    column="confirm_quarter"    />
+        <result property="confirmAmount"    column="confirm_amount"    />
+        <result property="afterTaxAmount"    column="after_tax_amount"    />
+        <result property="confirmUserName"    column="confirm_user_name"    />
+        <!-- 关联查询字段 -->
+        <result property="customerName"    column="customer_name"    />
+        <result property="projectManagerName"    column="project_manager_name"    />
+        <result property="marketManagerName"    column="market_manager_name"    />
+        <result property="deptName"    column="dept_name"    />
+    </resultMap>
+
+    <sql id="selectProjectVo">
+        select p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region, p.short_name, p.year, p.project_category, p.project_dept, p.project_status, p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.implementation_year, p.project_budget, p.project_cost, p.cost_budget, p.budget_cost, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time, p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.confirm_status, p.confirm_quarter, p.confirm_amount, p.after_tax_amount, p.confirm_user_name,
+               c.customer_simple_name as customer_name,
+               pm.nick_name as project_manager_name,
+               mm.nick_name as market_manager_name,
+               d.dept_name
+        from pm_project p
+        left join pm_customer c on p.customer_id = c.customer_id
+        left join sys_user pm on p.project_manager_id = pm.user_id
+        left join sys_user mm on p.market_manager_id = mm.user_id
+        left join sys_dept d on p.project_dept = d.dept_id
+    </sql>
+
+    <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
+        <include refid="selectProjectVo"/>
+        <where>
+            <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
+            <if test="region != null  and region != ''"> and p.region = #{region}</if>
+            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
+            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="confirmQuarter != null  and confirmQuarter != ''"> and p.confirm_quarter = #{confirmQuarter}</if>
+            <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
+            <if test="params.beginStartDate != null and params.beginStartDate != ''"><!-- 立项开始时间 -->
+                and date_format(p.start_date,'%y%m%d') &gt;= date_format(#{params.beginStartDate},'%y%m%d')
+            </if>
+            <if test="params.endStartDate != null and params.endStartDate != ''"><!-- 立项结束时间 -->
+                and date_format(p.start_date,'%y%m%d') &lt;= date_format(#{params.endStartDate},'%y%m%d')
+            </if>
+        </where>
+    </select>
+    
+    <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectResult">
+        <include refid="selectProjectVo"/>
+        where project_id = #{projectId}
+    </select>
+
+    <insert id="insertProject" parameterType="Project" useGeneratedKeys="true" keyProperty="projectId">
+        insert into pm_project
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="projectCode != null and projectCode != ''">project_code,</if>
+            <if test="projectName != null and projectName != ''">project_name,</if>
+            <if test="projectFullName != null">project_full_name,</if>
+            <if test="industry != null">industry,</if>
+            <if test="region != null">region,</if>
+            <if test="shortName != null">short_name,</if>
+            <if test="year != null">year,</if>
+            <if test="projectCategory != null">project_category,</if>
+            <if test="projectDept != null">project_dept,</if>
+            <if test="projectStatus != null">project_status,</if>
+            <if test="acceptanceStatus != null">acceptance_status,</if>
+            <if test="estimatedWorkload != null">estimated_workload,</if>
+            <if test="actualWorkload != null">actual_workload,</if>
+            <if test="projectAddress != null">project_address,</if>
+            <if test="projectPlan != null">project_plan,</if>
+            <if test="projectDescription != null">project_description,</if>
+            <if test="projectManagerId != null">project_manager_id,</if>
+            <if test="marketManagerId != null">market_manager_id,</if>
+            <if test="participants != null">participants,</if>
+            <if test="salesManagerId != null">sales_manager_id,</if>
+            <if test="salesContact != null">sales_contact,</if>
+            <if test="teamLeaderId != null">team_leader_id,</if>
+            <if test="customerId != null">customer_id,</if>
+            <if test="customerContactId != null">customer_contact_id,</if>
+            <if test="merchantContact != null">merchant_contact,</if>
+            <if test="merchantPhone != null">merchant_phone,</if>
+            <if test="startDate != null">start_date,</if>
+            <if test="endDate != null">end_date,</if>
+            <if test="productionDate != null">production_date,</if>
+            <if test="acceptanceDate != null">acceptance_date,</if>
+            <if test="implementationYear != null">implementation_year,</if>
+            <if test="projectBudget != null">project_budget,</if>
+            <if test="projectCost != null">project_cost,</if>
+            <if test="costBudget != null">cost_budget,</if>
+            <if test="budgetCost != null">budget_cost,</if>
+            <if test="laborCost != null">labor_cost,</if>
+            <if test="purchaseCost != null">purchase_cost,</if>
+            <if test="approvalStatus != null">approval_status,</if>
+            <if test="approvalReason != null">approval_reason,</if>
+            <if test="industryCode != null">industry_code,</if>
+            <if test="regionCode != null">region_code,</if>
+            <if test="approvalTime != null">approval_time,</if>
+            <if test="approverId != null">approver_id,</if>
+            <if test="remark != null">remark,</if>
+            <if test="taxRate != null">tax_rate,</if>
+            <if test="confirmUserId != null">confirm_user_id,</if>
+            <if test="confirmTime != null">confirm_time,</if>
+            <if test="reservedField1 != null">reserved_field1,</if>
+            <if test="reservedField2 != null">reserved_field2,</if>
+            <if test="reservedField3 != null">reserved_field3,</if>
+            <if test="reservedField4 != null">reserved_field4,</if>
+            <if test="reservedField5 != null">reserved_field5,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="confirmStatus != null">confirm_status,</if>
+            <if test="confirmQuarter != null">confirm_quarter,</if>
+            <if test="confirmAmount != null">confirm_amount,</if>
+            <if test="afterTaxAmount != null">after_tax_amount,</if>
+            <if test="confirmUserName != null">confirm_user_name,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="projectCode != null and projectCode != ''">#{projectCode},</if>
+            <if test="projectName != null and projectName != ''">#{projectName},</if>
+            <if test="projectFullName != null">#{projectFullName},</if>
+            <if test="industry != null">#{industry},</if>
+            <if test="region != null">#{region},</if>
+            <if test="shortName != null">#{shortName},</if>
+            <if test="year != null">#{year},</if>
+            <if test="projectCategory != null">#{projectCategory},</if>
+            <if test="projectDept != null">#{projectDept},</if>
+            <if test="projectStatus != null">#{projectStatus},</if>
+            <if test="acceptanceStatus != null">#{acceptanceStatus},</if>
+            <if test="estimatedWorkload != null">#{estimatedWorkload},</if>
+            <if test="actualWorkload != null">#{actualWorkload},</if>
+            <if test="projectAddress != null">#{projectAddress},</if>
+            <if test="projectPlan != null">#{projectPlan},</if>
+            <if test="projectDescription != null">#{projectDescription},</if>
+            <if test="projectManagerId != null">#{projectManagerId},</if>
+            <if test="marketManagerId != null">#{marketManagerId},</if>
+            <if test="participants != null">#{participants},</if>
+            <if test="salesManagerId != null">#{salesManagerId},</if>
+            <if test="salesContact != null">#{salesContact},</if>
+            <if test="teamLeaderId != null">#{teamLeaderId},</if>
+            <if test="customerId != null">#{customerId},</if>
+            <if test="customerContactId != null">#{customerContactId},</if>
+            <if test="merchantContact != null">#{merchantContact},</if>
+            <if test="merchantPhone != null">#{merchantPhone},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="productionDate != null">#{productionDate},</if>
+            <if test="acceptanceDate != null">#{acceptanceDate},</if>
+            <if test="implementationYear != null">#{implementationYear},</if>
+            <if test="projectBudget != null">#{projectBudget},</if>
+            <if test="projectCost != null">#{projectCost},</if>
+            <if test="costBudget != null">#{costBudget},</if>
+            <if test="budgetCost != null">#{budgetCost},</if>
+            <if test="laborCost != null">#{laborCost},</if>
+            <if test="purchaseCost != null">#{purchaseCost},</if>
+            <if test="approvalStatus != null">#{approvalStatus},</if>
+            <if test="approvalReason != null">#{approvalReason},</if>
+            <if test="industryCode != null">#{industryCode},</if>
+            <if test="regionCode != null">#{regionCode},</if>
+            <if test="approvalTime != null">#{approvalTime},</if>
+            <if test="approverId != null">#{approverId},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="taxRate != null">#{taxRate},</if>
+            <if test="confirmUserId != null">#{confirmUserId},</if>
+            <if test="confirmTime != null">#{confirmTime},</if>
+            <if test="reservedField1 != null">#{reservedField1},</if>
+            <if test="reservedField2 != null">#{reservedField2},</if>
+            <if test="reservedField3 != null">#{reservedField3},</if>
+            <if test="reservedField4 != null">#{reservedField4},</if>
+            <if test="reservedField5 != null">#{reservedField5},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="confirmStatus != null">#{confirmStatus},</if>
+            <if test="confirmQuarter != null">#{confirmQuarter},</if>
+            <if test="confirmAmount != null">#{confirmAmount},</if>
+            <if test="afterTaxAmount != null">#{afterTaxAmount},</if>
+            <if test="confirmUserName != null">#{confirmUserName},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProject" parameterType="Project">
+        update pm_project
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectCode != null and projectCode != ''">project_code = #{projectCode},</if>
+            <if test="projectName != null and projectName != ''">project_name = #{projectName},</if>
+            <if test="projectFullName != null">project_full_name = #{projectFullName},</if>
+            <if test="industry != null">industry = #{industry},</if>
+            <if test="region != null">region = #{region},</if>
+            <if test="shortName != null">short_name = #{shortName},</if>
+            <if test="year != null">year = #{year},</if>
+            <if test="projectCategory != null">project_category = #{projectCategory},</if>
+            <if test="projectDept != null">project_dept = #{projectDept},</if>
+            <if test="projectStatus != null">project_status = #{projectStatus},</if>
+            <if test="acceptanceStatus != null">acceptance_status = #{acceptanceStatus},</if>
+            <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
+            <if test="actualWorkload != null">actual_workload = #{actualWorkload},</if>
+            <if test="projectAddress != null">project_address = #{projectAddress},</if>
+            <if test="projectPlan != null">project_plan = #{projectPlan},</if>
+            <if test="projectDescription != null">project_description = #{projectDescription},</if>
+            <if test="projectManagerId != null">project_manager_id = #{projectManagerId},</if>
+            <if test="marketManagerId != null">market_manager_id = #{marketManagerId},</if>
+            <if test="participants != null">participants = #{participants},</if>
+            <if test="salesManagerId != null">sales_manager_id = #{salesManagerId},</if>
+            <if test="salesContact != null">sales_contact = #{salesContact},</if>
+            <if test="teamLeaderId != null">team_leader_id = #{teamLeaderId},</if>
+            <if test="customerId != null">customer_id = #{customerId},</if>
+            <if test="customerContactId != null">customer_contact_id = #{customerContactId},</if>
+            <if test="merchantContact != null">merchant_contact = #{merchantContact},</if>
+            <if test="merchantPhone != null">merchant_phone = #{merchantPhone},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="productionDate != null">production_date = #{productionDate},</if>
+            <if test="acceptanceDate != null">acceptance_date = #{acceptanceDate},</if>
+            <if test="implementationYear != null">implementation_year = #{implementationYear},</if>
+            <if test="projectBudget != null">project_budget = #{projectBudget},</if>
+            <if test="projectCost != null">project_cost = #{projectCost},</if>
+            <if test="costBudget != null">cost_budget = #{costBudget},</if>
+            <if test="budgetCost != null">budget_cost = #{budgetCost},</if>
+            <if test="laborCost != null">labor_cost = #{laborCost},</if>
+            <if test="purchaseCost != null">purchase_cost = #{purchaseCost},</if>
+            <if test="approvalStatus != null">approval_status = #{approvalStatus},</if>
+            <if test="approvalReason != null">approval_reason = #{approvalReason},</if>
+            <if test="industryCode != null">industry_code = #{industryCode},</if>
+            <if test="regionCode != null">region_code = #{regionCode},</if>
+            <if test="approvalTime != null">approval_time = #{approvalTime},</if>
+            <if test="approverId != null">approver_id = #{approverId},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="taxRate != null">tax_rate = #{taxRate},</if>
+            <if test="confirmUserId != null">confirm_user_id = #{confirmUserId},</if>
+            <if test="confirmTime != null">confirm_time = #{confirmTime},</if>
+            <if test="reservedField1 != null">reserved_field1 = #{reservedField1},</if>
+            <if test="reservedField2 != null">reserved_field2 = #{reservedField2},</if>
+            <if test="reservedField3 != null">reserved_field3 = #{reservedField3},</if>
+            <if test="reservedField4 != null">reserved_field4 = #{reservedField4},</if>
+            <if test="reservedField5 != null">reserved_field5 = #{reservedField5},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="confirmStatus != null">confirm_status = #{confirmStatus},</if>
+            <if test="confirmQuarter != null">confirm_quarter = #{confirmQuarter},</if>
+            <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
+            <if test="afterTaxAmount != null">after_tax_amount = #{afterTaxAmount},</if>
+            <if test="confirmUserName != null">confirm_user_name = #{confirmUserName},</if>
+        </trim>
+        where project_id = #{projectId}
+    </update>
+
+    <delete id="deleteProjectByProjectId" parameterType="Long">
+        delete from pm_project where project_id = #{projectId}
+    </delete>
+
+    <delete id="deleteProjectByProjectIds" parameterType="String">
+        delete from pm_project where project_id in
+        <foreach item="projectId" collection="array" open="(" separator="," close=")">
+            #{projectId}
+        </foreach>
+    </delete>
+
+    <!-- 查询项目金额汇总 -->
+    <select id="selectProjectSummary" parameterType="Project" resultType="java.util.Map">
+        select
+            COALESCE(SUM(p.project_budget), 0) as projectBudgetSum,
+            COALESCE(SUM(p.confirm_amount), 0) as confirmAmountSum
+        from pm_project p
+        <where>
+            <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
+            <if test="region != null  and region != ''"> and p.region = #{region}</if>
+            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
+            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="confirmQuarter != null  and confirmQuarter != ''"> and p.confirm_quarter = #{confirmQuarter}</if>
+            <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
+            <if test="params.beginStartDate != null and params.beginStartDate != ''">
+                and date_format(p.start_date,'%y%m%d') &gt;= date_format(#{params.beginStartDate},'%y%m%d')
+            </if>
+            <if test="params.endStartDate != null and params.endStartDate != ''">
+                and date_format(p.start_date,'%y%m%d') &lt;= date_format(#{params.endStartDate},'%y%m%d')
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询项目名称列表（用于智能提示） -->
+    <select id="selectProjectNameList" parameterType="String" resultType="String">
+        select distinct project_name
+        from pm_project
+        <where>
+            <if test="projectName != null and projectName != ''">
+                and project_name like concat('%', #{projectName}, '%')
+            </if>
+            and del_flag = '0'
+        </where>
+        order by project_name
+        limit 20
+    </select>
+
+    <!-- 查询项目编号列表（用于智能提示） -->
+    <select id="selectProjectCodeList" parameterType="String" resultType="String">
+        select distinct project_code
+        from pm_project
+        <where>
+            <if test="projectCode != null and projectCode != ''">
+                and project_code like concat('%', #{projectCode}, '%')
+            </if>
+            and del_flag = '0'
+        </where>
+        order by project_code
+        limit 20
+    </select>
+</mapper>
