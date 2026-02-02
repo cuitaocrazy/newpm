@@ -1,80 +1,42 @@
 ---
 name: ruoyi-gen
-description: RuoYi 交互式代码生成。支持三种输入方式（DDL SQL、业务实体描述、数据库查询），智能生成配置并引导用户确认，调用 CLI 生成脚手架代码，部署到项目目录，并根据自定义描述做精细化定制。当用户提到"生成代码"、"建表"、"新增模块"、"CRUD"等场景时使用。
-argument-hint: "[DDL / 业务描述 / 表名]"
+description: RuoYi 交互式代码生成。输入表名，自动从 pm-sql/init/ 查找 DDL，智能生成配置并引导用户确认，调用 CLI 生成脚手架代码，部署到项目目录，并根据自定义描述做精细化定制。当用户提到"生成代码"、"新增模块"、"CRUD"等场景时使用。
+argument-hint: "<表名>"
 ---
 
 # RuoYi 交互式代码生成
 
-你是 RuoYi-Vue 项目的代码生成助手。用户可以通过三种方式告诉你要生成什么，你负责完成从获取表结构到代码落地的全流程。
+你是 RuoYi-Vue 项目的代码生成助手。用户提供表名，你负责从 `pm-sql/init/00_tables_ddl.sql` 查找 DDL，完成从表结构分析到代码落地的全流程。
 
 ## 重要文件路径
 
 - **CLI JAR**: `ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar`（如不存在先执行构建）
-- **规格目录**: `docs/gen-specs/<表名>.yml`（每张表一个规格文件，DDL 和配置一起持久化保存）
+- **DDL 数据源**: `pm-sql/init/00_tables_ddl.sql`（所有表的 DDL 统一存放于此）
+- **菜单数据**: `pm-sql/init/02_menu_data.sql`（菜单权限 SQL 统一存放于此）
+- **规格目录**: `docs/gen-specs/<表名>.yml`（每张表一个规格文件，持久化保存配置）
 - **项目 generator.yml**: `ruoyi-generator/src/main/resources/generator.yml`（读取默认 author/packageName/tablePrefix）
 - **业务代码目标模块**: `ruoyi-project/`（生成的 Java 代码统一部署到此模块，不放 ruoyi-admin）
 - **前端代码目标**: `ruoyi-ui/`（Vue/API 文件部署到前端目录）
-- **SQL文件管理**: `pm-sql/`（新增：版本化SQL文件管理）
-- **项目文档**: `docs/pm/`（新增：项目管理文档）
-
-## SQL文件版本管理结构
-
-```
-pm-sql/
-├── init/                           # 初始版本（基准版本）
-│   ├── 00_tables_ddl.sql          # 表结构定义（优先级00）
-│   ├── 01_tables_data.sql         # 表初始数据（优先级01）
-│   └── 02_menu_data.sql           # 菜单权限数据（优先级02）
-├── newVersion/                     # 当前最新版本
-│   ├── 00_tables_ddl.sql          # 表结构定义
-│   ├── 01_tables_data.sql         # 表初始数据
-└── └──02_menu_data.sql            # 菜单权限数据
-
-docs/pm/                           # 项目管理文档
-├── requirements/                   # 需求文档
-├── design/                        # 设计方案
-├── database/                      # 库表设计文档
-└── changelog.md                   # 项目变更记录
-```
 
 ---
 
-## 阶段 1：识别输入，获取 DDL
+## 阶段 1：查找 DDL + 关联分析
 
-根据 `$ARGUMENTS` 判断输入模式：
+`$ARGUMENTS` 为表名（如 `pm_project`）。
 
-### 模式 A：DDL 模式
+### 1.1 查找 DDL
 
-#### 单表DDL
-- 用户给了一个 `CREATE TABLE` 语句，或给了单表的 `.sql` 文件
-- 直接使用该 DDL，按原有流程处理
+1. 读取 `pm-sql/init/00_tables_ddl.sql`
+2. 按 `CREATE TABLE` 语句拆分，匹配目标表名
+3. **找到** → 提取该表的完整 DDL，进入 1.2
+4. **找不到** → 提示用户："在 `pm-sql/init/00_tables_ddl.sql` 中未找到表 `xxx`，请先将 DDL 添加到该文件"，流程终止
 
-#### 多表DDL
-- 用户给了多个 `CREATE TABLE` 语句（用分号或空行分隔）
-- 或给了包含多个表的 `.sql` 文件
-- 触发多表处理流程：
-  1. 解析所有表的DDL
-  2. 分析外键约束（`FOREIGN KEY ... REFERENCES ...`），构建表关系图
-  3. 拓扑排序，确定生成顺序（先主表后子表）
-  4. 判断生成策略：
-     - 主子表关系（2层）→ 主表用 `crud`，子表用 `sub`
-     - 多层关系（3层+）→ 前2层用主子表，第3层用独立 `crud`
-     - 独立表 → 使用 `crud`
-  5. 展示关系分析结果和生成策略，询问用户确认
-  6. 按顺序逐表生成代码
+### 1.2 外键关联分析
 
-### 模式 B：业务描述模式
-- 用户用自然语言描述实体，如"产品表，有名称、类型、价格、状态"
-- 你生成规范的 MySQL DDL（包含合理的列类型、注释、主键、AUTO_INCREMENT）
-- **展示 DDL 给用户确认**后再继续
-
-### 模式 C：数据库查询模式
-- 用户提到"从数据库拉"、"查数据库"等
-- 询问连接方式：
-  - IP:端口 + 用户名/密码 + 数据库名 → 使用 `mysql -h<host> -P<port> -u<user> -p'<pass>' <db> -e "SHOW CREATE TABLE <table>\G"`
-  - Docker container ID → 使用 `docker exec <id> mysql -u<user> -p'<pass>' <db> -e "SHOW CREATE TABLE <table>\G"`
-- 询问要拉哪些表
+1. 解析主表 DDL 中的 `FOREIGN KEY ... REFERENCES <parent_table>(...)` 约束，记录主表引用了哪些父表
+2. 扫描整个 `00_tables_ddl.sql` 中所有表的 DDL，找出哪些表的外键引用了主表（即主表的子表）
+3. 记录关联信息，在阶段 3 配置展示时作为参考呈现给用户
+4. 关联分析**不**自动为关联表生成代码，只影响主表自身配置的决策参考
 
 ### 增量重跑模式
 - 如果用户说"重新生成 xxx" 且 `docs/gen-specs/<表名>.yml` 已存在
@@ -137,12 +99,6 @@ genInfo:
 customizations: {}
   # <列名>:
   #   description: "描述你想要的非标准 UI 效果"
-
-# ============================
-# 原始 DDL
-# ============================
-ddl: |
-  <完整的 CREATE TABLE 语句>
 ```
 
 ### 智能推断规则
@@ -189,6 +145,10 @@ ddl: |
 === 基本信息 ===
 表名称: sys_product    表描述: 产品表
 实体类: Product        作者: ruoyi
+
+=== 关联分析 ===
+本表外键引用: (无)
+被以下表引用: pm_project_approval(project_id), pm_contract(project_id)
 
 === 生成信息 ===
 模板: 单表(crud)       前端: element-plus
@@ -238,7 +198,7 @@ mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true
 
 ### 4.3 准备临时文件
 
-从规格文件中提取 DDL 写入到 `pm-sql/newVersion/00_tables_ddl.sql` 文件，提取 config 部分转换为 CLI 可用的 `gen-config.yml` 格式：
+从 `pm-sql/init/00_tables_ddl.sql` 中提取目标表的 DDL 写入临时 `.sql` 文件，提取 config 部分转换为 CLI 可用的 `gen-config.yml` 格式：
 
 ```yaml
 global:
@@ -292,44 +252,14 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 
 ### 4.6 菜单SQL管理
 
-**检查菜单是否存在**：
-- 连接数据库，查询 `sys_menu` 表
-- 通过权限标识前缀匹配：`SELECT COUNT(*) FROM sys_menu WHERE perms LIKE '<module>:<business>:%'`
-- 如果已存在，显示"✓ 检测到菜单已存在，跳过菜单导入"
-- 如果不存在，继续菜单导入流程
-
 **提取菜单SQL**：
 - 从生成的 ZIP 中找到 `*Menu.sql` 文件
-- 将菜单SQL追加到 `pm-sql/newVersion/02_menu_data.sql` 文件
 
-**执行菜单SQL**：
-- 询问用户："如何连接数据库？A) Docker容器 B) 直接连接 C) SSH隧道"
-- 根据用户选择，收集连接信息并执行：
-  ```bash
-  # Docker方式
-  docker exec -i <container_id> mysql -u<user> -p'<pass>' <db> < pm-sql/newVersion/02_menu_data.sql
-
-  # 直接连接方式
-  mysql -h<host> -P<port> -u<user> -p'<pass>' <db> < pm-sql/newVersion/02_menu_data.sql
-
-  # SSH方式
-  scp pm-sql/newVersion/02_menu_data.sql <ssh_user>@<ssh_host>:/tmp/
-  ssh <ssh_user>@<ssh_host> "mysql -u<user> -p'<pass>' <db> < /tmp/02_menu_data.sql"
-  ```
-
-**执行结果**：
-- 成功：显示"✓ 菜单已导入数据库"
-- 失败：显示错误信息和手动执行命令
-
-### 4.7 临时文件清理
-
-所有表的代码生成并部署完成后，自动清理临时文件：
-
-```bash
-rm -rf temp-*.yml temp-*.zip temp-extracted/
-```
-
-显示："✓ 临时文件已清理"
+**对比去重**：
+- 读取 `pm-sql/init/02_menu_data.sql`
+- 通过权限标识前缀匹配（如 `<module>:<business>:%`），判断该业务的菜单是否已存在
+- **不存在** → 将菜单 SQL 追加到 `pm-sql/init/02_menu_data.sql` 末尾，显示"✓ 菜单SQL已追加到 02_menu_data.sql"
+- **已存在** → 显示"✓ 检测到菜单已存在于 02_menu_data.sql，跳过写入"
 
 ---
 
