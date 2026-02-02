@@ -1,0 +1,452 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_contract
+  tableComment: 合同管理表
+  className: Contract
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  contract_id:
+    columnComment: 合同主键ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: contractId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  contract_code:
+    columnComment: 合同编号
+    columnType: varchar(100)
+    javaType: String
+    javaField: contractCode
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  contract_name:
+    columnComment: 合同名称
+    columnType: varchar(200)
+    javaType: String
+    javaField: contractName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  customer_id:
+    columnComment: 关联客户ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: customerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  dept_id:
+    columnComment: 部门ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: deptId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  contract_type:
+    columnComment: 合同类型
+    columnType: varchar(50)
+    javaType: String
+    javaField: contractType
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: sys_htlx
+
+  contract_status:
+    columnComment: 合同状态
+    columnType: varchar(50)
+    javaType: String
+    javaField: contractStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_htzt
+
+  contract_sign_date:
+    columnComment: 合同签订日期
+    columnType: date
+    javaType: Date
+    javaField: contractSignDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  contract_period:
+    columnComment: 合同周期(月)
+    columnType: int(11)
+    javaType: Integer
+    javaField: contractPeriod
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  contract_amount:
+    columnComment: 合同金额(含税)
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: contractAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  tax_rate:
+    columnComment: 税率(%)
+    columnType: decimal(5,2)
+    javaType: BigDecimal
+    javaField: taxRate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  amount_no_tax:
+    columnComment: 不含税金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: amountNoTax
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  tax_amount:
+    columnComment: 税金
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: taxAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_amount:
+    columnComment: 合同确认金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: confirmAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_year:
+    columnComment: 确认年份
+    columnType: varchar(10)
+    javaType: String
+    javaField: confirmYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_ndgl
+
+  free_maintenance_period:
+    columnComment: 免维期(月)
+    columnType: int(11)
+    javaType: Integer
+    javaField: freeMaintenancePeriod
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志(0正常 1删除)
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  reserved_field1:
+    columnComment: 备用域1
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField1
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field2:
+    columnComment: 备用域2
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField2
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field3:
+    columnComment: 备用域3
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField3
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field4:
+    columnComment: 备用域4
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField4
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field5:
+    columnComment: 备用域5
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField5
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: contract
+  functionName: 合同管理
+  parentMenuId: 3
+
+# ============================
+# 自定义 UI（超出标准9种显示类型的需求）
+# ============================
+customizations:
+  amount_no_tax:
+    description: "不含税金额自动计算：amount_no_tax = contract_amount / (1 + tax_rate / 100)"
+  tax_amount:
+    description: "税金自动计算：tax_amount = contract_amount - amount_no_tax"
+
+# ============================
+# 原始 DDL
+# ============================
+ddl: |
+  CREATE TABLE `pm_contract` (
+    `contract_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '合同主键ID',
+    `contract_code` varchar(100) DEFAULT NULL COMMENT '合同编号',
+    `contract_name` varchar(200) NOT NULL COMMENT '合同名称',
+    `customer_id` bigint(20) NOT NULL COMMENT '关联客户ID',
+    `dept_id` bigint(20) DEFAULT NULL COMMENT '部门ID',
+    `contract_type` varchar(50) NOT NULL COMMENT '合同类型(字典:sys_htlx)',
+    `contract_status` varchar(50) DEFAULT '未签署' COMMENT '合同状态(字典:sys_htzt)',
+    `contract_sign_date` date DEFAULT NULL COMMENT '合同签订日期',
+    `contract_period` int(11) DEFAULT NULL COMMENT '合同周期(月)',
+    `contract_amount` decimal(15,2) NOT NULL COMMENT '合同金额(含税)',
+    `tax_rate` decimal(5,2) DEFAULT NULL COMMENT '税率(%)',
+    `amount_no_tax` decimal(15,2) DEFAULT NULL COMMENT '不含税金额',
+    `tax_amount` decimal(15,2) DEFAULT NULL COMMENT '税金',
+    `confirm_amount` decimal(15,2) DEFAULT 0.00 COMMENT '合同确认金额',
+    `confirm_year` varchar(10) DEFAULT NULL COMMENT '确认年份(字典:sys_ndgl)',
+    `free_maintenance_period` int(11) DEFAULT NULL COMMENT '免维期(月)',
+    `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+    `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+    `reserved_field1` varchar(64) DEFAULT NULL COMMENT '备用域1',
+    `reserved_field2` varchar(64) DEFAULT NULL COMMENT '备用域2',
+    `reserved_field3` varchar(64) DEFAULT NULL COMMENT '备用域3',
+    `reserved_field4` varchar(64) DEFAULT NULL COMMENT '备用域4',
+    `reserved_field5` varchar(64) DEFAULT NULL COMMENT '备用域5',
+    PRIMARY KEY (`contract_id`),
+    UNIQUE KEY `uk_contract_code` (`contract_code`),
+    KEY `idx_customer_id` (`customer_id`),
+    KEY `idx_contract_status` (`contract_status`),
+    KEY `idx_contract_sign_date` (`contract_sign_date`),
+    KEY `idx_create_time` (`create_time`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='合同管理表';

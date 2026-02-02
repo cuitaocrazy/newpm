@@ -59,3 +59,7 @@ spring:
                 wall:
                     config:
                         multi-statement-allow: true
+# 附件上传配置
+attachment:
+    # 单个文件最大大小(MB)
+    max-file-size: 50

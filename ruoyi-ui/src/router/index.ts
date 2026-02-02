@@ -157,6 +157,26 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
+  },
+  {
+    path: '/project/contract',
+    component: Layout,
+    hidden: true,
+    permissions: ['project:contract:add', 'project:contract:edit'],
+    children: [
+      {
+        path: 'form',
+        component: () => import('@/views/project/contract/form.vue'),
+        name: 'ContractForm',
+        meta: { title: '合同新增', activeMenu: '/htkx/htgl' }
+      },
+      {
+        path: 'detail',
+        component: () => import('@/views/project/contract/detail.vue'),
+        name: 'ContractDetail',
+        meta: { title: '合同详情', activeMenu: '/htkx/htgl' }
+      }
+    ]
   }
 ]
 
