@@ -253,4 +253,15 @@ public class SysUserController extends BaseController
     {
         return success(deptService.selectDeptTreeList(dept));
     }
+
+    /**
+     * 根据岗位编码查询用户列表
+     */
+    @PreAuthorize("@ss.hasPermi('system:user:list')")
+    @GetMapping("/listByPost")
+    public AjaxResult listByPost(String postCode)
+    {
+        List<SysUser> list = userService.selectUserListByPostCode(postCode);
+        return success(list);
+    }
 }

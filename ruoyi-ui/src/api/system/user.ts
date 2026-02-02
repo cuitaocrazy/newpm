@@ -135,3 +135,12 @@ export function deptTreeSelect(): Promise<AjaxResult<TreeSelect>> {
     method: 'get'
   })
 }
+
+// 根据岗位编码查询用户列表
+export function listUserByPost(postCode: string): Promise<AjaxResult<SysUser[]>> {
+  return request({
+    url: '/system/user/listByPost',
+    method: 'get',
+    params: { postCode }
+  })
+}

@@ -144,4 +144,12 @@ public interface SysUserMapper
      * @return 结果
      */
     public SysUser checkEmailUnique(String email);
+
+    /**
+     * 根据岗位编码查询用户列表
+     *
+     * @param postCode 岗位编码
+     * @return 用户列表
+     */
+    public List<SysUser> selectUserListByPostCode(String postCode);
 }
