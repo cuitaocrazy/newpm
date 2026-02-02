@@ -17,15 +17,13 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="客户" prop="customerId">
-        <el-select v-model="queryParams.customerId" placeholder="请选择客户" clearable filterable>
-          <el-option
-            v-for="customer in customerOptions"
-            :key="customer.customerId"
-            :label="customer.customerSimpleName"
-            :value="customer.customerId"
-          />
-        </el-select>
+      <el-form-item label="客户ID" prop="customerId">
+        <el-input
+          v-model="queryParams.customerId"
+          placeholder="请输入客户ID"
+          clearable
+          @keyup.enter="handleQuery"
+        />
       </el-form-item>
       <el-form-item label="部门" prop="deptId">
         <el-tree-select
@@ -137,9 +135,9 @@
           <span v-if="!scope.row.isSummary">{{ scope.row.contractName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="客户" align="center" prop="customerId" width="180" show-overflow-tooltip>
+      <el-table-column label="客户ID" align="center" prop="customerId" width="180" show-overflow-tooltip>
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ getCustomerName(scope.row.customerId) }}</span>
+          <span v-if="!scope.row.isSummary">{{ scope.row.customerId || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="部门" align="center" prop="deptId" width="150" show-overflow-tooltip>
@@ -320,7 +318,6 @@
 <script setup name="Contract">
 import { listContract, getContract, delContract } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
-import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, getAttachmentLog } from "@/api/project/attachment"
 import { getToken } from "@/utils/auth"
@@ -371,7 +368,6 @@ const showSearch = ref(true)
 const showMoreQuery = ref(false)
 const total = ref(0)
 const deptOptions = ref([])
-const customerOptions = ref([])
 const projectOptions = ref([])
 const attachmentList = ref([])
 const logList = ref([])
@@ -416,25 +412,11 @@ function getDeptTree() {
   })
 }
 
-/** 查询客户列表 */
-function getCustomerList() {
-  listCustomer().then(response => {
-    customerOptions.value = response.rows
-  })
-}
-
 /** 查询项目列表 */
 function getProjectList() {
   listProject().then(response => {
     projectOptions.value = response.rows
   })
-}
-
-/** 根据客户ID获取客户名称 */
-function getCustomerName(customerId) {
-  if (!customerId) return ''
-  const customer = customerOptions.value.find(item => item.customerId === customerId)
-  return customer ? customer.customerSimpleName : customerId
 }
 
 /** 根据部门ID获取部门名称 */
@@ -635,7 +617,6 @@ onActivated(() => {
 })
 
 getDeptTree()
-getCustomerList()
 getProjectList()
 getList()
 </script>

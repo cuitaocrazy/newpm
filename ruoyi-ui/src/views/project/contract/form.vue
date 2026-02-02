@@ -42,15 +42,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="关联客户" prop="customerId">
-              <el-select v-model="form.customerId" placeholder="请选择客户" clearable filterable style="width: 100%">
-                <el-option
-                  v-for="customer in customerOptions"
-                  :key="customer.customerId"
-                  :label="customer.customerSimpleName"
-                  :value="customer.customerId"
-                />
-              </el-select>
+            <el-form-item label="客户ID" prop="customerId">
+              <el-input v-model="form.customerId" placeholder="请输入客户ID" clearable style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -201,7 +194,6 @@
 <script setup name="ContractForm">
 import { getContract, addContract, updateContract } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
-import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
@@ -211,7 +203,6 @@ const router = useRouter()
 
 const title = ref("合同新增")
 const deptOptions = ref([])
-const customerOptions = ref([])
 const projectOptions = ref([])
 const allProjectOptions = ref([])
 const submitLoading = ref(false)
@@ -251,7 +242,7 @@ const data = reactive({
       { required: true, message: "部门不能为空", trigger: "change" }
     ],
     customerId: [
-      { required: true, message: "关联客户不能为空", trigger: "change" }
+      { required: true, message: "客户ID不能为空", trigger: "blur" }
     ],
     contractType: [
       { required: true, message: "合同类型不能为空", trigger: "change" }
@@ -274,13 +265,6 @@ const { form, rules } = toRefs(data)
 function getDeptTree() {
   deptTreeSelect().then(response => {
     deptOptions.value = response.data
-  })
-}
-
-/** 查询客户列表 */
-function getCustomerList() {
-  listCustomer().then(response => {
-    customerOptions.value = response.rows
   })
 }
 
@@ -397,7 +381,6 @@ function handleBack() {
 /** 初始化数据 */
 function init() {
   getDeptTree()
-  getCustomerList()
   getProjectList()
 
   // 如果有contractId参数，则是编辑模式

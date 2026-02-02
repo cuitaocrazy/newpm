@@ -16,8 +16,8 @@
         <el-descriptions-item label="合同名称" label-class-name="label-bold">
           {{ detailData.contractName }}
         </el-descriptions-item>
-        <el-descriptions-item label="客户" label-class-name="label-bold">
-          {{ getCustomerName(detailData.customerId) }}
+        <el-descriptions-item label="客户ID" label-class-name="label-bold">
+          {{ detailData.customerId || '无' }}
         </el-descriptions-item>
         <el-descriptions-item label="部门" label-class-name="label-bold">
           {{ getDeptName(detailData.deptId) }}
@@ -103,7 +103,6 @@
 <script setup name="ContractDetail">
 import { getContract } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
-import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
@@ -113,7 +112,6 @@ const router = useRouter()
 
 const detailData = ref({})
 const deptOptions = ref([])
-const customerOptions = ref([])
 const projectOptions = ref([])
 
 /** 查询部门下拉树结构 */
@@ -123,25 +121,11 @@ function getDeptTree() {
   })
 }
 
-/** 查询客户列表 */
-function getCustomerList() {
-  listCustomer().then(response => {
-    customerOptions.value = response.rows
-  })
-}
-
 /** 查询项目列表 */
 function getProjectList() {
   listProject().then(response => {
     projectOptions.value = response.rows
   })
-}
-
-/** 根据客户ID获取客户名称 */
-function getCustomerName(customerId) {
-  if (!customerId) return ''
-  const customer = customerOptions.value.find(item => item.customerId === customerId)
-  return customer ? customer.customerSimpleName : customerId
 }
 
 /** 根据部门ID获取部门名称 */
@@ -191,7 +175,6 @@ function handleBack() {
 /** 初始化数据 */
 function init() {
   getDeptTree()
-  getCustomerList()
   getProjectList()
 
   const contractId = route.query.contractId

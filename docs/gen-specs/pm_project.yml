@@ -38,6 +38,7 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    # 支持自动完成，配置见 customizations.autoCompleteFields
   project_name:
     columnComment: 项目名称
     columnType: varchar(200)
@@ -51,6 +52,7 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    # 支持自动完成，配置见 customizations.autoCompleteFields
   project_full_name:
     columnComment: 项目全称
     columnType: varchar(500)
@@ -106,7 +108,7 @@ columns:
   year:
     columnComment: 年份
     columnType: int
-    javaType: Integer
+    javaType: Long
     javaField: year
     isInsert: true
     isEdit: true
@@ -175,7 +177,7 @@ columns:
     javaField: estimatedWorkload
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -188,7 +190,7 @@ columns:
     javaField: actualWorkload
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -201,7 +203,7 @@ columns:
     javaField: projectAddress
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -240,12 +242,13 @@ columns:
     javaField: projectManagerId
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
+    # 使用用户选择器，配置见 customizations.userSelectors
   market_manager_id:
     columnComment: 市场经理ID
     columnType: bigint
@@ -253,12 +256,13 @@ columns:
     javaField: marketManagerId
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
+    # 使用用户选择器，配置见 customizations.userSelectors
   participants:
     columnComment: 参与人员ID列表(逗号分隔)
     columnType: varchar(500)
@@ -272,6 +276,7 @@ columns:
     isRequired: false
     htmlType: textarea
     dictType: ""
+    # 使用多选用户选择器，配置见 customizations.participantsSelector
   sales_manager_id:
     columnComment: 销售负责人ID
     columnType: bigint
@@ -279,12 +284,13 @@ columns:
     javaField: salesManagerId
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
+    # 使用用户选择器，配置见 customizations.userSelectors
   sales_contact:
     columnComment: 销售联系方式
     columnType: varchar(50)
@@ -292,7 +298,7 @@ columns:
     javaField: salesContact
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -305,12 +311,13 @@ columns:
     javaField: teamLeaderId
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
+    # 使用用户选择器，配置见 customizations.userSelectors
   customer_id:
     columnComment: 客户ID
     columnType: bigint
@@ -318,12 +325,13 @@ columns:
     javaField: customerId
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
+    # 使用客户选择器，配置见 customizations.customerSelector
   customer_contact_id:
     columnComment: 客户联系人ID
     columnType: bigint
@@ -331,12 +339,13 @@ columns:
     javaField: customerContactId
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false
+    isQuery: false
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
+    # 使用客户联系人选择器（依赖客户ID），配置见 customizations.customerContactSelector
   merchant_contact:
     columnComment: 商户联系人
     columnType: varchar(100)
@@ -344,7 +353,7 @@ columns:
     javaField: merchantContact
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -357,7 +366,7 @@ columns:
     javaField: merchantPhone
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -370,7 +379,7 @@ columns:
     javaField: startDate
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: BETWEEN
     isRequired: false
@@ -383,7 +392,7 @@ columns:
     javaField: endDate
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: BETWEEN
     isRequired: false
@@ -396,8 +405,8 @@ columns:
     javaField: productionDate
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false
+    isQuery: false
     queryType: BETWEEN
     isRequired: false
     htmlType: datetime
@@ -409,8 +418,8 @@ columns:
     javaField: acceptanceDate
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false
+    isQuery: false
     queryType: BETWEEN
     isRequired: false
     htmlType: datetime
@@ -435,7 +444,7 @@ columns:
     javaField: projectBudget
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -448,7 +457,7 @@ columns:
     javaField: projectCost
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -461,7 +470,7 @@ columns:
     javaField: costBudget
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -474,7 +483,7 @@ columns:
     javaField: budgetCost
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -487,7 +496,7 @@ columns:
     javaField: laborCost
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -500,7 +509,7 @@ columns:
     javaField: purchaseCost
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -539,8 +548,8 @@ columns:
     javaField: industryCode
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false
+    isQuery: false
     queryType: EQ
     isRequired: false
     htmlType: input
@@ -552,8 +561,8 @@ columns:
     javaField: regionCode
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false
+    isQuery: false
     queryType: EQ
     isRequired: false
     htmlType: select
@@ -565,7 +574,7 @@ columns:
     javaField: approvalTime
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: BETWEEN
     isRequired: false
@@ -578,8 +587,8 @@ columns:
     javaField: approverId
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false
+    isQuery: false
     queryType: EQ
     isRequired: false
     htmlType: input
@@ -604,37 +613,11 @@ columns:
     javaField: taxRate
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
     htmlType: input
-    dictType: ""
-  confirm_user_id:
-    columnComment: 确认人ID
-    columnType: bigint
-    javaType: Long
-    javaField: confirmUserId
-    isInsert: true
-    isEdit: true
-    isList: true
-    isQuery: true
-    queryType: EQ
-    isRequired: false
-    htmlType: input
-    dictType: ""
-  confirm_time:
-    columnComment: 确认时间
-    columnType: datetime
-    javaType: Date
-    javaField: confirmTime
-    isInsert: true
-    isEdit: true
-    isList: true
-    isQuery: true
-    queryType: BETWEEN
-    isRequired: false
-    htmlType: datetime
     dictType: ""
   reserved_field1:
     columnComment: 备用域1
@@ -643,7 +626,7 @@ columns:
     javaField: reservedField1
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -656,7 +639,7 @@ columns:
     javaField: reservedField2
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -669,7 +652,7 @@ columns:
     javaField: reservedField3
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -682,7 +665,7 @@ columns:
     javaField: reservedField4
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -695,7 +678,7 @@ columns:
     javaField: reservedField5
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -773,7 +756,7 @@ columns:
     javaField: confirmStatus
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
@@ -786,7 +769,7 @@ columns:
     javaField: confirmQuarter
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: false
@@ -799,7 +782,7 @@ columns:
     javaField: confirmAmount
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -812,22 +795,9 @@ columns:
     javaField: afterTaxAmount
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
-    isRequired: false
-    htmlType: input
-    dictType: ""
-  confirm_user_name:
-    columnComment: 确认人姓名
-    columnType: varchar(64)
-    javaType: String
-    javaField: confirmUserName
-    isInsert: true
-    isEdit: true
-    isList: true
-    isQuery: true
-    queryType: LIKE
     isRequired: false
     htmlType: input
     dictType: ""
@@ -847,7 +817,92 @@ genInfo:
 # ============================
 # 自定义 UI（超出标准9种显示类型的需求）
 # ============================
-customizations: {}
+customizations:
+  # 用户选择器字段配置
+  userSelectors:
+    - field: projectManagerId
+      label: 项目经理
+      placeholder: 请选择项目经理
+      apiEndpoint: /system/user/list
+      valueField: userId
+      labelField: nickName
+      searchField: userName,nickName
+
+    - field: marketManagerId
+      label: 市场经理
+      placeholder: 请选择市场经理
+      apiEndpoint: /system/user/list
+      valueField: userId
+      labelField: nickName
+      searchField: userName,nickName
+
+    - field: salesManagerId
+      label: 销售负责人
+      placeholder: 请选择销售负责人
+      apiEndpoint: /system/user/list
+      valueField: userId
+      labelField: nickName
+      searchField: userName,nickName
+
+    - field: teamLeaderId
+      label: 团队负责人
+      placeholder: 请选择团队负责人
+      apiEndpoint: /system/user/list
+      valueField: userId
+      labelField: nickName
+      searchField: userName,nickName
+
+  # 客户选择器配置
+  customerSelector:
+    field: customerId
+    label: 客户
+    placeholder: 请选择客户
+    apiEndpoint: /project/customer/list
+    valueField: customerId
+    labelField: customerName
+    searchField: customerName
+
+  # 客户联系人选择器配置（依赖客户ID）
+  customerContactSelector:
+    field: customerContactId
+    label: 客户联系人
+    placeholder: 请先选择客户
+    apiEndpoint: /project/contact/list
+    valueField: contactId
+    labelField: contactName
+    searchField: contactName
+    dependsOn: customerId
+
+  # 参与人员多选配置
+  participantsSelector:
+    field: participants
+    label: 参与人员
+    placeholder: 请选择参与人员
+    apiEndpoint: /system/user/list
+    valueField: userId
+    labelField: nickName
+    searchField: userName,nickName
+    multiple: true
+
+  # 自动完成字段配置
+  autoCompleteFields:
+    - field: projectName
+      label: 项目名称
+      placeholder: 请输入项目名称
+      apiEndpoint: /project/project/nameList
+      paramName: projectName
+      minLength: 2
+      debounce: 300
+      description: 输入2个字符后显示匹配的项目名称列表
+
+    - field: projectCode
+      label: 项目编号
+      placeholder: 请输入项目编号
+      apiEndpoint: /project/project/codeList
+      paramName: projectCode
+      minLength: 1
+      debounce: 300
+      description: 输入项目编号时显示匹配的编号列表（格式：行业-区域-简称-年份）
 
 # ============================
 # 原始 DDL
