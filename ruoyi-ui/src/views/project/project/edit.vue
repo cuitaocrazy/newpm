@@ -398,7 +398,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { getProject, updateProject } from '@/api/project/project'
 import { listUser, listUserByPost } from '@/api/system/user'
 import { listDept } from '@/api/system/dept'
-import { listContact } from '@/api/project/contact'
 
 const router = useRouter()
 const route = useRoute()
@@ -496,7 +495,6 @@ const projectManagers = ref([])
 const marketManagers = ref([])
 const salesManagers = ref([])
 const allUsers = ref([])
-const customerContacts = ref([])
 const selectedParticipants = ref([])
 const participantInput = ref('')
 const participantAutocomplete = ref(null)
@@ -563,13 +561,6 @@ function loadAllUsers() {
   })
 }
 
-// 加载客户联系人列表
-function loadCustomerContacts(customerId) {
-  listContact({ customerId }).then(response => {
-    customerContacts.value = response.rows || []
-  })
-}
-
 // 参与人员变化时同步更新已选人员列表
 function handleParticipantsChange(userIds) {
   selectedParticipants.value = allUsers.value.filter(user => userIds.includes(user.userId))
@@ -631,10 +622,6 @@ function loadProjectData() {
     }
     // 填充表单
     Object.assign(form.value, data)
-    // 加载关联数据
-    if (data.customerId) {
-      loadCustomerContacts(data.customerId)
-    }
   }).catch(() => {
     proxy.$modal.msgError('加载项目数据失败')
     router.push('/project/project')

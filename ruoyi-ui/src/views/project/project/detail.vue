@@ -367,7 +367,6 @@ import { useRouter } from 'vue-router'
 import { addProject } from '@/api/project/project'
 import { listUser, listUserByPost } from '@/api/system/user'
 import { listDept } from '@/api/system/dept'
-import { listContact } from '@/api/project/contact'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
@@ -463,7 +462,6 @@ const projectManagers = ref([])
 const marketManagers = ref([])
 const salesManagers = ref([])
 const allUsers = ref([])
-const customerContacts = ref([])
 const selectedParticipants = ref([])
 const participantInput = ref('')
 const participantAutocomplete = ref(null)
@@ -527,13 +525,6 @@ function loadSalesManagers() {
 function loadAllUsers() {
   listUser({}).then(response => {
     allUsers.value = response.rows || []
-  })
-}
-
-// 加载客户联系人列表
-function loadCustomerContacts(customerId) {
-  listContact({ customerId }).then(response => {
-    customerContacts.value = response.rows || []
   })
 }
 
