@@ -1,19 +1,33 @@
 <template>
-  <div class="app-container project-apply">
+  <div class="app-container project-edit">
     <!-- 页面标题 -->
     <el-card class="page-header" shadow="never">
       <div class="header-content">
-        <h2>项目立项申请</h2>
-        <p class="tips">请完整填写项目信息，提交后将进入审核流程</p>
+        <h2>编辑项目</h2>
+        <p class="tips">修改项目信息，保存后将更新项目数据</p>
       </div>
     </el-card>
 
     <!-- 表单主体 -->
-    <el-form ref="applyFormRef" :model="form" :rules="rules" label-width="140px">
+    <el-form ref="editFormRef" :model="form" :rules="rules" label-width="140px" v-loading="loading">
       <el-collapse v-model="activeNames" class="apply-collapse">
         
         <!-- 面板1：项目基本信息 -->
         <el-collapse-item name="1" title="一、项目基本信息">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="项目编号">
+                <el-input v-model="form.projectCode" disabled
+                  style="background-color: #f5f7fa;" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="项目名称" prop="projectName">
+                <el-input v-model="form.projectName" placeholder="请输入项目名称" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="行业" prop="industry">
@@ -128,8 +142,25 @@
           <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="项目描述" prop="projectDescription">
-                <el-input v-model="form.projectDescription" type="textarea" :rows="3" 
+                <el-input v-model="form.projectDescription" type="textarea" :rows="3"
                   placeholder="请输入项目描述" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="审核状态">
+                <el-tag v-if="form.approvalStatus === '0'" type="warning">待审核</el-tag>
+                <el-tag v-else-if="form.approvalStatus === '1'" type="success">审核通过</el-tag>
+                <el-tag v-else-if="form.approvalStatus === '2'" type="danger">审核拒绝</el-tag>
+                <span v-else>-</span>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="审核原因">
+                <el-input v-model="form.approvalReason" disabled
+                  placeholder="暂无审核意见" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -363,7 +394,7 @@
     <!-- 底部操作按钮 -->
     <div class="form-footer">
       <el-button type="primary" size="large" @click="submitForm" :loading="submitLoading">
-        提交申请
+        保存
       </el-button>
       <el-button size="large" @click="cancel">取消</el-button>
     </div>
@@ -371,15 +402,17 @@
 </template>
 
 <script setup name="ProjectApply">
-import { ref, reactive, toRefs, watch, getCurrentInstance } from 'vue'
-import { useRouter } from 'vue-router'
-import { addProject } from '@/api/project/project'
+import { ref, reactive, toRefs, watch, getCurrentInstance, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { getProject, updateProject } from '@/api/project/project'
 import { listUser, listUserByPost } from '@/api/system/user'
 import { listDept } from '@/api/system/dept'
 import { listCustomer } from '@/api/project/customer'
 import { listContact } from '@/api/project/contact'
 
 const router = useRouter()
+const route = useRoute()
+const loading = ref(false)
 const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_xmjd, sys_yszt, sys_shzt, sys_qrzt, industry, sys_yjqy, sys_jdgl } = 
   proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_shzt', 'sys_qrzt', 'industry', 'sys_yjqy', 'sys_jdgl')
@@ -588,9 +621,9 @@ function removeParticipant(userId) {
 
 // 提交表单
 function submitForm() {
-  proxy.$refs['applyFormRef'].validate(valid => {
+  proxy.$refs['editFormRef'].validate(valid => {
     if (valid) {
-      proxy.$modal.confirm('确认提交立项申请？').then(() => {
+      proxy.$modal.confirm('确认保存项目信息？').then(() => {
         submitLoading.value = true
         // 深拷贝表单数据，避免修改原始数据
         const submitData = { ...form.value }
@@ -598,9 +631,9 @@ function submitForm() {
         if (Array.isArray(submitData.participants)) {
           submitData.participants = submitData.participants.join(',')
         }
-        addProject(submitData).then(response => {
-          proxy.$modal.msgSuccess('立项申请提交成功')
-          router.push('/project/list')
+        updateProject(submitData).then(response => {
+          proxy.$modal.msgSuccess('保存成功')
+          router.push('/project/project')
         }).finally(() => {
           submitLoading.value = false
         })
@@ -613,18 +646,51 @@ function submitForm() {
 
 // 取消
 function cancel() {
-  proxy.$modal.confirm('确认取消立项申请？未保存的数据将丢失').then(() => {
-    router.push('/project/list')
+  proxy.$modal.confirm('确认取消编辑？未保存的数据将丢失').then(() => {
+    router.push('/project/project')
   })
 }
 
-// 初始化
-getDeptTree()
-loadProjectManagers()
-loadMarketManagers()
-loadSalesManagers()
-loadAllUsers()
-loadCustomers()
+// 加载项目数据
+function loadProjectData() {
+  const projectId = route.params.projectId
+  if (!projectId) {
+    proxy.$modal.msgError('缺少项目ID参数')
+    router.push('/project/project')
+    return
+  }
+
+  loading.value = true
+  getProject(projectId).then(response => {
+    const data = response.data
+    // 转换参与人员格式：字符串 → 数组
+    if (data.participants) {
+      data.participants = data.participants.split(',').map(Number)
+    }
+    // 填充表单
+    Object.assign(form.value, data)
+    // 加载关联数据
+    if (data.customerId) {
+      loadCustomerContacts(data.customerId)
+    }
+  }).catch(() => {
+    proxy.$modal.msgError('加载项目数据失败')
+    router.push('/project/project')
+  }).finally(() => {
+    loading.value = false
+  })
+}
+
+// 页面加载时初始化
+onMounted(() => {
+  getDeptTree()
+  loadProjectManagers()
+  loadMarketManagers()
+  loadSalesManagers()
+  loadAllUsers()
+  loadCustomers()
+  loadProjectData()
+})
 </script>
 
 <style scoped lang="scss">

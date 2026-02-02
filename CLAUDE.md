@@ -43,10 +43,68 @@ ruoyi-system      → Business services: user/role/menu/dept/dict/config/notice 
 ruoyi-common      → Base classes, custom annotations, utilities (Excel, XSS filter, file ops)
 ruoyi-quartz      → Quartz scheduled task management
 ruoyi-generator   → Velocity-based CRUD code generator from DB tables
+ruoyi-project     → Project management business module (see details below)
 ruoyi-ui          → Vue 3 + TypeScript + Vite frontend (RuoYi-Vue3 typescript branch)
 ```
 
-Dependencies flow: admin → framework → system → common. Quartz and generator depend on common.
+Dependencies flow: admin → framework → system → common. Quartz, generator, and project depend on common.
+
+### ruoyi-project Module
+
+**Purpose:** Project management business module for handling project lifecycle, customer management, and approval workflows.
+
+**Package:** `com.ruoyi.project`
+
+**Business Entities:**
+
+| Entity | Table | Description |
+|--------|-------|-------------|
+| `Project` | `pm_project` | 项目管理 - Project lifecycle management with budget, workload, and approval tracking |
+| `ProjectApproval` | `pm_project_approval` | 项目审核 - Project approval workflow (pending/approved/rejected) |
+| `Customer` | `pm_customer` | 客户管理 - Customer information with industry and region classification |
+| `CustomerContact` | `pm_customer_contact` | 客户联系人 - Customer contact persons |
+
+**Key Features:**
+
+- **Project Management:** Full project lifecycle tracking including:
+  - Project coding: `{industry}-{region}-{shortName}-{year}` format
+  - Budget management: project budget, cost budget, labor cost, purchase cost
+  - Workload tracking: estimated vs actual workload (in person-days)
+  - Timeline: start/end/production/acceptance dates
+  - Team assignment: project manager, market manager, sales manager, team leader, participants
+  - Status tracking: project stage (字典: sys_xmjd), acceptance status (字典: sys_yszt)
+
+- **Customer Management:** Customer database with:
+  - Industry classification (字典: industry)
+  - Region classification (字典: sys_yjqy)
+  - Sales manager assignment
+  - Multiple contact persons per customer
+
+- **Approval Workflow:** Project approval process with:
+  - Approval status: 0=pending, 1=approved, 2=rejected
+  - Approval reason/comments
+  - Approver tracking with timestamp
+
+**Dictionary Dependencies:**
+
+- `industry` - 行业分类
+- `sys_yjqy` - 区域分类
+- `sys_xmfl` - 项目分类
+- `sys_xmjd` - 项目阶段
+- `sys_yszt` - 验收状态
+
+**Controllers:**
+
+- `ProjectController` - `/project/project/**` - Project CRUD and approval operations
+- `ProjectApprovalController` - `/project/approval/**` - Approval workflow management
+- `CustomerController` - `/project/customer/**` - Customer management
+- `CustomerContactController` - `/project/contact/**` - Contact management
+
+**Frontend Routes:**
+
+- `/project/project` - 项目列表 (Project list with approval actions)
+- `/project/apply` - 项目立项申请 (Project initiation application)
+- Customer and contact management pages
 
 ## Backend Patterns
 

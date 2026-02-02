@@ -43,6 +43,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="budgetCost"    column="budget_cost"    />
         <result property="laborCost"    column="labor_cost"    />
         <result property="purchaseCost"    column="purchase_cost"    />
+        <result property="confirmStatus"    column="confirm_status"    />
+        <result property="confirmQuarter"    column="confirm_quarter"    />
+        <result property="confirmAmount"    column="confirm_amount"    />
+        <result property="afterTaxAmount"    column="after_tax_amount"    />
+        <result property="taxRate"    column="tax_rate"    />
         <result property="approvalStatus"    column="approval_status"    />
         <result property="approvalReason"    column="approval_reason"    />
         <result property="industryCode"    column="industry_code"    />
@@ -68,7 +73,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectVo">
-        select p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region, p.short_name, p.year, p.project_category, p.project_dept, p.project_status, p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.implementation_year, p.project_budget, p.project_cost, p.cost_budget, p.budget_cost, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark, p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
+        select p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region, p.short_name, p.year, p.project_category, p.project_dept, p.project_status, p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.implementation_year, p.project_budget, p.project_cost, p.cost_budget, p.budget_cost, p.labor_cost, p.purchase_cost, p.confirm_status, p.confirm_quarter, p.confirm_amount, p.after_tax_amount, p.tax_rate, p.approval_status, p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark, p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
                c.customer_simple_name as customer_name,
                pm.nick_name as project_manager_name,
                mm.nick_name as market_manager_name,
@@ -88,7 +93,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
             <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
             <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
-            <if test="confirmQuarter != null  and confirmQuarter != ''"> and p.confirm_quarter = #{confirmQuarter}</if>
             <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
             <if test="params.beginStartDate != null and params.beginStartDate != ''"><!-- 立项开始时间 -->
                 and date_format(p.start_date,'%y%m%d') &gt;= date_format(#{params.beginStartDate},'%y%m%d')
@@ -144,6 +148,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="budgetCost != null">budget_cost,</if>
             <if test="laborCost != null">labor_cost,</if>
             <if test="purchaseCost != null">purchase_cost,</if>
+            <if test="confirmStatus != null">confirm_status,</if>
+            <if test="confirmQuarter != null">confirm_quarter,</if>
+            <if test="confirmAmount != null">confirm_amount,</if>
+            <if test="afterTaxAmount != null">after_tax_amount,</if>
+            <if test="taxRate != null">tax_rate,</if>
             <if test="approvalStatus != null">approval_status,</if>
             <if test="approvalReason != null">approval_reason,</if>
             <if test="industryCode != null">industry_code,</if>
@@ -200,6 +209,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="budgetCost != null">#{budgetCost},</if>
             <if test="laborCost != null">#{laborCost},</if>
             <if test="purchaseCost != null">#{purchaseCost},</if>
+            <if test="confirmStatus != null">#{confirmStatus},</if>
+            <if test="confirmQuarter != null">#{confirmQuarter},</if>
+            <if test="confirmAmount != null">#{confirmAmount},</if>
+            <if test="afterTaxAmount != null">#{afterTaxAmount},</if>
+            <if test="taxRate != null">#{taxRate},</if>
             <if test="approvalStatus != null">#{approvalStatus},</if>
             <if test="approvalReason != null">#{approvalReason},</if>
             <if test="industryCode != null">#{industryCode},</if>
@@ -260,6 +274,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="budgetCost != null">budget_cost = #{budgetCost},</if>
             <if test="laborCost != null">labor_cost = #{laborCost},</if>
             <if test="purchaseCost != null">purchase_cost = #{purchaseCost},</if>
+            <if test="confirmStatus != null">confirm_status = #{confirmStatus},</if>
+            <if test="confirmQuarter != null">confirm_quarter = #{confirmQuarter},</if>
+            <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
+            <if test="afterTaxAmount != null">after_tax_amount = #{afterTaxAmount},</if>
+            <if test="taxRate != null">tax_rate = #{taxRate},</if>
             <if test="approvalStatus != null">approval_status = #{approvalStatus},</if>
             <if test="approvalReason != null">approval_reason = #{approvalReason},</if>
             <if test="industryCode != null">industry_code = #{industryCode},</if>
@@ -295,8 +314,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 查询项目金额汇总 -->
     <select id="selectProjectSummary" parameterType="Project" resultType="java.util.Map">
         select
-            COALESCE(SUM(p.project_budget), 0) as projectBudgetSum,
-            COALESCE(SUM(p.confirm_amount), 0) as confirmAmountSum
+            COALESCE(SUM(p.project_budget), 0) as projectBudgetSum
         from pm_project p
         <where>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
@@ -304,7 +322,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
             <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
             <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
-            <if test="confirmQuarter != null  and confirmQuarter != ''"> and p.confirm_quarter = #{confirmQuarter}</if>
             <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
             <if test="params.beginStartDate != null and params.beginStartDate != ''">
                 and date_format(p.start_date,'%y%m%d') &gt;= date_format(#{params.beginStartDate},'%y%m%d')

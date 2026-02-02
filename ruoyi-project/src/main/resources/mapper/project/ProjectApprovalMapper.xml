@@ -57,20 +57,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="budgetCost"    column="p_budget_cost"    />
             <result property="laborCost"    column="p_labor_cost"    />
             <result property="purchaseCost"    column="p_purchase_cost"    />
+            <result property="confirmStatus"    column="p_confirm_status"    />
+            <result property="confirmQuarter"    column="p_confirm_quarter"    />
+            <result property="confirmAmount"    column="p_confirm_amount"    />
+            <result property="afterTaxAmount"    column="p_after_tax_amount"    />
+            <result property="taxRate"    column="p_tax_rate"    />
             <result property="approvalStatus"    column="p_approval_status"    />
             <result property="approvalReason"    column="p_approval_reason"    />
             <result property="industryCode"    column="p_industry_code"    />
             <result property="regionCode"    column="p_region_code"    />
             <result property="approvalTime"    column="p_approval_time"    />
             <result property="approverId"    column="p_approver_id"    />
-            <result property="taxRate"    column="p_tax_rate"    />
-            <result property="confirmUserId"    column="p_confirm_user_id"    />
-            <result property="confirmTime"    column="p_confirm_time"    />
-            <result property="confirmStatus"    column="p_confirm_status"    />
-            <result property="confirmQuarter"    column="p_confirm_quarter"    />
-            <result property="confirmAmount"    column="p_confirm_amount"    />
-            <result property="afterTaxAmount"    column="p_after_tax_amount"    />
-            <result property="confirmUserName"    column="p_confirm_user_name"    />
         </association>
     </resultMap>
 
@@ -117,20 +114,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.budget_cost as p_budget_cost,
             p.labor_cost as p_labor_cost,
             p.purchase_cost as p_purchase_cost,
+            p.confirm_status as p_confirm_status,
+            p.confirm_quarter as p_confirm_quarter,
+            p.confirm_amount as p_confirm_amount,
+            p.after_tax_amount as p_after_tax_amount,
+            p.tax_rate as p_tax_rate,
             p.approval_status as p_approval_status,
             p.approval_reason as p_approval_reason,
             p.industry_code as p_industry_code,
             p.region_code as p_region_code,
             p.approval_time as p_approval_time,
-            p.approver_id as p_approver_id,
-            p.tax_rate as p_tax_rate,
-            p.confirm_user_id as p_confirm_user_id,
-            p.confirm_time as p_confirm_time,
-            p.confirm_status as p_confirm_status,
-            p.confirm_quarter as p_confirm_quarter,
-            p.confirm_amount as p_confirm_amount,
-            p.after_tax_amount as p_after_tax_amount,
-            p.confirm_user_name as p_confirm_user_name
+            p.approver_id as p_approver_id
         from pm_project_approval a
         left join pm_project p on a.project_id = p.project_id
     </sql>

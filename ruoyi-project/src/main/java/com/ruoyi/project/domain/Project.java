@@ -173,6 +173,26 @@ public class Project extends BaseEntity
     @Excel(name = "采购成本")
     private BigDecimal purchaseCost;
 
+    /** 确认状态(字典:sys_qrzt 未确认、待确认、已确认、无法确认) */
+    @Excel(name = "确认状态")
+    private String confirmStatus;
+
+    /** 确认季度(格式:2026年Q1,字典:sys_jdgl) */
+    @Excel(name = "确认季度")
+    private String confirmQuarter;
+
+    /** 确认金额(含税) */
+    @Excel(name = "确认金额(含税)")
+    private BigDecimal confirmAmount;
+
+    /** 税后金额 */
+    @Excel(name = "税后金额")
+    private BigDecimal afterTaxAmount;
+
+    /** 税率(%) */
+    @Excel(name = "税率(%)")
+    private BigDecimal taxRate;
+
     /** 审批状态(待审核/已通过/已拒绝) */
     @Excel(name = "审批状态(待审核/已通过/已拒绝)")
     private String approvalStatus;
@@ -608,9 +628,59 @@ public class Project extends BaseEntity
         this.purchaseCost = purchaseCost;
     }
 
-    public BigDecimal getPurchaseCost() 
+    public BigDecimal getPurchaseCost()
     {
         return purchaseCost;
+    }
+
+    public void setConfirmStatus(String confirmStatus)
+    {
+        this.confirmStatus = confirmStatus;
+    }
+
+    public String getConfirmStatus()
+    {
+        return confirmStatus;
+    }
+
+    public void setConfirmQuarter(String confirmQuarter)
+    {
+        this.confirmQuarter = confirmQuarter;
+    }
+
+    public String getConfirmQuarter()
+    {
+        return confirmQuarter;
+    }
+
+    public void setConfirmAmount(BigDecimal confirmAmount)
+    {
+        this.confirmAmount = confirmAmount;
+    }
+
+    public BigDecimal getConfirmAmount()
+    {
+        return confirmAmount;
+    }
+
+    public void setAfterTaxAmount(BigDecimal afterTaxAmount)
+    {
+        this.afterTaxAmount = afterTaxAmount;
+    }
+
+    public BigDecimal getAfterTaxAmount()
+    {
+        return afterTaxAmount;
+    }
+
+    public void setTaxRate(BigDecimal taxRate)
+    {
+        this.taxRate = taxRate;
+    }
+
+    public BigDecimal getTaxRate()
+    {
+        return taxRate;
     }
 
     public void setApprovalStatus(String approvalStatus) 
@@ -814,6 +884,11 @@ public class Project extends BaseEntity
             .append("budgetCost", getBudgetCost())
             .append("laborCost", getLaborCost())
             .append("purchaseCost", getPurchaseCost())
+            .append("confirmStatus", getConfirmStatus())
+            .append("confirmQuarter", getConfirmQuarter())
+            .append("confirmAmount", getConfirmAmount())
+            .append("afterTaxAmount", getAfterTaxAmount())
+            .append("taxRate", getTaxRate())
             .append("approvalStatus", getApprovalStatus())
             .append("approvalReason", getApprovalReason())
             .append("industryCode", getIndustryCode())

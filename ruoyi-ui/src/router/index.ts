@@ -61,6 +61,25 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/project/project',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'edit/:projectId(\\d+)',
+        component: () => import('@/views/project/project/edit.vue'),
+        name: 'ProjectEdit',
+        meta: { title: '编辑项目', activeMenu: '/project/project' }
+      },
+      {
+        path: 'detail/:projectId(\\d+)',
+        component: () => import('@/views/project/project/detail.vue'),
+        name: 'ProjectDetail',
+        meta: { title: '项目详情', activeMenu: '/project/project' }
+      }
+    ]
+  },
+  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404.vue'),
     hidden: true
