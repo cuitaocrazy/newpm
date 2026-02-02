@@ -416,7 +416,7 @@
 import { ref, reactive, toRefs, watch, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { addProject } from '@/api/project/project'
-import { listUser, listUserByPost } from '@/api/system/user'
+import { listUser } from '@/api/system/user'
 import { listDept } from '@/api/system/dept'
 import { listCustomer } from '@/api/project/customer'
 import { listContact } from '@/api/project/contact'
@@ -561,21 +561,21 @@ function getDeptTree() {
 
 // 加载项目经理列表
 function loadProjectManagers() {
-  listUserByPost('pm').then(response => {
+  proxy.$http.get('/system/user/listByPost', { params: { postCode: 'pm' } }).then(response => {
     projectManagers.value = response.data || []
   })
 }
 
 // 加载市场经理列表
 function loadMarketManagers() {
-  listUserByPost('scjl').then(response => {
+  proxy.$http.get('/system/user/listByPost', { params: { postCode: 'scjl' } }).then(response => {
     marketManagers.value = response.data || []
   })
 }
 
 // 加载销售负责人列表
 function loadSalesManagers() {
-  listUserByPost('xsfzr').then(response => {
+  proxy.$http.get('/system/user/listByPost', { params: { postCode: 'xsfzr' } }).then(response => {
     salesManagers.value = response.data || []
   })
 }

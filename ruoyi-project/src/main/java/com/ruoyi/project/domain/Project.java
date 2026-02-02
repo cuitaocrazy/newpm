@@ -198,19 +198,6 @@ public class Project extends BaseEntity
     @Excel(name = "审批人")
     private String approverId;
 
-    /** 税率(%) */
-    @Excel(name = "税率(%)")
-    private BigDecimal taxRate;
-
-    /** 确认人ID */
-    @Excel(name = "确认人ID")
-    private Long confirmUserId;
-
-    /** 确认时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "确认时间", width = 30, dateFormat = "yyyy-MM-dd")
-    private Date confirmTime;
-
     /** 备用域1 */
     @Excel(name = "备用域1")
     private String reservedField1;
@@ -233,26 +220,6 @@ public class Project extends BaseEntity
 
     /** 删除标志(0正常 1删除) */
     private String delFlag;
-
-    /** 确认状态（字典表 字典类型 sys_qrzt） */
-    @Excel(name = "确认状态", readConverterExp = "字=典表,字=典类型,s=ys_qrzt")
-    private String confirmStatus;
-
-    /** 确认季度(字典表 字典类型 sys_jdgl) */
-    @Excel(name = "确认季度(字典表 字典类型 sys_jdgl)")
-    private String confirmQuarter;
-
-    /** 确认金额（含税） */
-    @Excel(name = "确认金额", readConverterExp = "含=税")
-    private BigDecimal confirmAmount;
-
-    /** 税后金额 */
-    @Excel(name = "税后金额")
-    private BigDecimal afterTaxAmount;
-
-    /** 确认人姓名 */
-    @Excel(name = "确认人姓名")
-    private String confirmUserName;
 
     /** 客户名称（关联查询） */
     private String customerName;
@@ -701,39 +668,9 @@ public class Project extends BaseEntity
         this.approverId = approverId;
     }
 
-    public String getApproverId() 
+    public String getApproverId()
     {
         return approverId;
-    }
-
-    public void setTaxRate(BigDecimal taxRate) 
-    {
-        this.taxRate = taxRate;
-    }
-
-    public BigDecimal getTaxRate() 
-    {
-        return taxRate;
-    }
-
-    public void setConfirmUserId(Long confirmUserId) 
-    {
-        this.confirmUserId = confirmUserId;
-    }
-
-    public Long getConfirmUserId() 
-    {
-        return confirmUserId;
-    }
-
-    public void setConfirmTime(Date confirmTime) 
-    {
-        this.confirmTime = confirmTime;
-    }
-
-    public Date getConfirmTime() 
-    {
-        return confirmTime;
     }
 
     public void setReservedField1(String reservedField1) 
@@ -791,59 +728,9 @@ public class Project extends BaseEntity
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag() 
+    public String getDelFlag()
     {
         return delFlag;
-    }
-
-    public void setConfirmStatus(String confirmStatus) 
-    {
-        this.confirmStatus = confirmStatus;
-    }
-
-    public String getConfirmStatus() 
-    {
-        return confirmStatus;
-    }
-
-    public void setConfirmQuarter(String confirmQuarter) 
-    {
-        this.confirmQuarter = confirmQuarter;
-    }
-
-    public String getConfirmQuarter() 
-    {
-        return confirmQuarter;
-    }
-
-    public void setConfirmAmount(BigDecimal confirmAmount) 
-    {
-        this.confirmAmount = confirmAmount;
-    }
-
-    public BigDecimal getConfirmAmount() 
-    {
-        return confirmAmount;
-    }
-
-    public void setAfterTaxAmount(BigDecimal afterTaxAmount) 
-    {
-        this.afterTaxAmount = afterTaxAmount;
-    }
-
-    public BigDecimal getAfterTaxAmount() 
-    {
-        return afterTaxAmount;
-    }
-
-    public void setConfirmUserName(String confirmUserName)
-    {
-        this.confirmUserName = confirmUserName;
-    }
-
-    public String getConfirmUserName()
-    {
-        return confirmUserName;
     }
 
     public void setCustomerName(String customerName)
@@ -934,9 +821,6 @@ public class Project extends BaseEntity
             .append("approvalTime", getApprovalTime())
             .append("approverId", getApproverId())
             .append("remark", getRemark())
-            .append("taxRate", getTaxRate())
-            .append("confirmUserId", getConfirmUserId())
-            .append("confirmTime", getConfirmTime())
             .append("reservedField1", getReservedField1())
             .append("reservedField2", getReservedField2())
             .append("reservedField3", getReservedField3())
@@ -947,11 +831,6 @@ public class Project extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
-            .append("confirmStatus", getConfirmStatus())
-            .append("confirmQuarter", getConfirmQuarter())
-            .append("confirmAmount", getConfirmAmount())
-            .append("afterTaxAmount", getAfterTaxAmount())
-            .append("confirmUserName", getConfirmUserName())
             .toString();
     }
 }

@@ -48,6 +48,19 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/project/apply',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/apply/index.vue'),
+        name: 'ProjectApply',
+        meta: { title: '项目立项申请', activeMenu: '/project/list' }
+      }
+    ]
+  },
+  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404.vue'),
     hidden: true

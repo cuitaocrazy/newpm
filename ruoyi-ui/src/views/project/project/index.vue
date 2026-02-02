@@ -408,20 +408,6 @@
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
         </el-form-item>
-        <el-form-item label="税率(%)" prop="taxRate">
-          <el-input v-model="form.taxRate" placeholder="请输入税率(%)" />
-        </el-form-item>
-        <el-form-item label="确认人ID" prop="confirmUserId">
-          <el-input v-model="form.confirmUserId" placeholder="请输入确认人ID" />
-        </el-form-item>
-        <el-form-item label="确认时间" prop="confirmTime">
-          <el-date-picker clearable
-            v-model="form.confirmTime"
-            type="date"
-            value-format="YYYY-MM-DD"
-            placeholder="请选择确认时间">
-          </el-date-picker>
-        </el-form-item>
         <el-form-item label="备用域1" prop="reservedField1">
           <el-input v-model="form.reservedField1" placeholder="请输入备用域1" />
         </el-form-item>
@@ -440,27 +426,6 @@
         <el-form-item label="删除标志(0正常 1删除)" prop="delFlag">
           <el-input v-model="form.delFlag" placeholder="请输入删除标志(0正常 1删除)" />
         </el-form-item>
-        <el-form-item label="确认状态" prop="confirmStatus">
-          <el-radio-group v-model="form.confirmStatus">
-            <el-radio
-              v-for="dict in sys_qrzt"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="确认季度(字典表 字典类型 sys_jdgl)" prop="confirmQuarter">
-          <el-input v-model="form.confirmQuarter" placeholder="请输入确认季度(字典表 字典类型 sys_jdgl)" />
-        </el-form-item>
-        <el-form-item label="确认金额" prop="confirmAmount">
-          <el-input v-model="form.confirmAmount" placeholder="请输入确认金额" />
-        </el-form-item>
-        <el-form-item label="税后金额" prop="afterTaxAmount">
-          <el-input v-model="form.afterTaxAmount" placeholder="请输入税后金额" />
-        </el-form-item>
-        <el-form-item label="确认人姓名" prop="confirmUserName">
-          <el-input v-model="form.confirmUserName" placeholder="请输入确认人姓名" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -478,7 +443,7 @@ import { listDept } from "@/api/system/dept"
 import { parseTime } from '@/utils/ruoyi'
 
 const { proxy } = getCurrentInstance()
-const { sys_qrzt, sys_shzt, sys_xmjd, sys_yszt, industry, sys_yjqy, sys_jdgl, sys_htzt } = proxy.useDict('sys_qrzt', 'sys_shzt', 'sys_xmjd', 'sys_yszt', 'industry', 'sys_yjqy', 'sys_jdgl', 'sys_htzt')
+const { sys_shzt, sys_xmjd, sys_yszt, industry, sys_yjqy, sys_htzt } = proxy.useDict('sys_shzt', 'sys_xmjd', 'sys_yszt', 'industry', 'sys_yjqy', 'sys_htzt')
 
 const projectList = ref([])
 const open = ref(false)
@@ -647,9 +612,6 @@ function reset() {
     approvalTime: null,
     approverId: null,
     remark: null,
-    taxRate: null,
-    confirmUserId: null,
-    confirmTime: null,
     reservedField1: null,
     reservedField2: null,
     reservedField3: null,
@@ -659,12 +621,7 @@ function reset() {
     createBy: null,
     createTime: null,
     updateBy: null,
-    updateTime: null,
-    confirmStatus: null,
-    confirmQuarter: null,
-    confirmAmount: null,
-    afterTaxAmount: null,
-    confirmUserName: null
+    updateTime: null
   }
   proxy.resetForm("projectRef")
 }
