@@ -106,9 +106,9 @@
           type="primary"
           plain
           icon="Plus"
-          @click="handleAdd"
+          @click="handleApply"
           v-hasPermi="['project:project:add']"
-        >新增</el-button>
+        >立项申请</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -694,6 +694,11 @@ function handleAdd() {
   reset()
   open.value = true
   title.value = "添加项目管理"
+}
+
+/** 立项申请按钮操作 */
+function handleApply() {
+  proxy.$router.push('/project/apply')
 }
 
 /** 修改按钮操作 */
