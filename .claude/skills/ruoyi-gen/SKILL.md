@@ -94,11 +94,23 @@ genInfo:
   # subTableName / subTableFkName              (tplCategory=sub)
 
 # ============================
-# 自定义 UI（超出标准9种显示类型的需求）
+# 定制需求（超出标准模板的组件/交互/接口需求）
 # ============================
-customizations: {}
-  # <列名>:
-  #   description: "描述你想要的非标准 UI 效果"
+customizations:
+  # <功能标识>:                    # 语义化命名，如 dept_tree_select
+  #   intent: <用户原始意图>
+  #   component:
+  #     type: <组件名 | "custom">  # 已有组件写组件名，自建写 "custom"
+  #     props: { ... }             # 已有组件：关键 props（接口级）
+  #     events: { ... }            # 已有组件：关键事件绑定（可选）
+  #     spec: <功能描述+关键约束>   # 自建组件：意图+约束
+  #   bindTo: <锚点>               # 列名 | 列名数组 | toolbar | form | dialog | page（可选）
+  #   service:                     # null 表示纯前端
+  #     endpoint: <HTTP method + path>
+  #     source: <"复用 XxxService" | "new">
+  #     returns: <返回数据描述>     # 可选
+  #     newApi: <bool>
+  #   notes: <补充说明>             # 可选
 ```
 
 ### 智能推断规则
@@ -172,12 +184,10 @@ remark          备注      String      ✓✓--      -        -    -           
 
 **特别注意**：
 - `dictType` 标记为"(待确认)"的需要问用户：该字段是否关联字典？字典编码是什么？
-- 如果用户在输入中描述了非标准 UI 需求，列出 `customizations` 部分让用户确认
 
 用户可以：
 - 说"OK"直接确认
 - 指出需要修改的部分（如"price 的查询方式改成 BETWEEN"、"product_type 的字典是 sys_product_type"）
-- 描述自定义 UI 需求（如"price 字段前面加个 ¥ 符号"）
 
 修改后再次展示确认，直到用户满意。
 
@@ -263,18 +273,126 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 
 ---
 
-## 阶段 5：精细化定制
+## 阶段 5：定制需求探查 + 精细化改造
 
-如果 `customizations` 不为空：
+代码生成部署完成后，进入定制环节。
 
-1. 读取已部署的 Vue 文件和相关后端文件
-2. 根据每个自定义描述，修改对应代码：
-   - 替换标准 `<el-input>` / `<el-select>` 等为自定义实现
-   - 如需要新组件（如树形选择器），添加相应的 import 和组件引用
-   - 如需要后端新接口（如加载树形数据），修改 Controller/Service/Mapper
-3. 展示修改的文件清单和变更摘要
+### 5.1 定制需求探查
 
-如果 `customizations` 为空，跳过此阶段。
+1. **主动识别候选字段**：扫描字段列表，找出可能需要定制的字段（外键关联、`_id` 结尾、标准 select/input 可能不够用的），列出告知用户："这些字段可能需要定制：xxx、yyy、zzz，你有哪些定制需求？也可以补充其他的。"
+2. **用户描述需求**：用户说需求，可能一次多个或逐个说，也可以补充 AI 未识别的
+3. **逐个探查关键决策点**：每个需求只问影响实现方式的关键信息：
+   - 数据量级 → 决定前端过滤还是后端搜索
+   - 选择行为 → 决定组件配置（如树是否只能选叶子）
+   - 现有接口 → 决定 service 是复用还是新建
+   - 技术细节（debounce 值、renderAfterExpand 等）由 AI 自行决定，不问用户
+4. **展示确认**：全部确认后展示完整 customizations yaml 汇总
+5. **循环直到完成**：用户说 OK 或继续补充，不预设轮数
+6. **持久化**：将确认后的 customizations 写入 `docs/gen-specs/<表名>.yml`
+
+**已有组件 vs 自建组件**：
+- 已有组件（如 el-tree-select、el-autocomplete）：写到 props 级，因为接口已知
+- 自建组件（type: custom）：只写意图 + 关键约束
+
+如果用户无定制需求，跳过整个阶段 5。
+
+### 5.1 交互示例
+
+以 `pm_project` 表为例，假设字段中有 `dept_id`、`customer_id`、`project_manager`：
+
+```
+=== 定制需求探查 ===
+
+AI: 以下字段可能需要定制组件：dept_id、customer_id、project_manager。
+    你有哪些定制需求？也可以补充其他字段或页面级需求。
+
+用户: dept_id 做树形选择关联 dept 表，customer_id 做 autocomplete 关联客户表，
+     project_manager 做 autocomplete 关联 manager 表
+
+AI: dept_id 树形选择——部门是分层级的，Element Plus 有 el-tree-select。
+    选择时是只能选叶子节点，还是任意层级都能选？
+
+用户: 任意层级
+
+AI: customer_id autocomplete——搜索匹配客户名称，提交 customer_id。
+    客户数据量大概多少？几十个前端过滤就够，上千就需要后端搜索。
+
+用户: 上万
+
+AI: project_manager autocomplete——同样按姓名搜索。manager 数据量呢？
+
+用户: 几十个
+
+AI: 好的，完整定制规格如下：
+
+customizations:
+  dept_tree_select:
+    intent: "部门选择，树形结构，任意层级可选"
+    component:
+      type: el-tree-select
+      props:
+        data: "部门树数据"
+        checkStrictly: true
+        valueKey: "id"
+        renderAfterExpand: false
+    bindTo: dept_id
+    service:
+      endpoint: "GET /system/dept/treeselect"
+      source: "复用 SysDeptService，RuoYi 自带"
+      newApi: false
+    notes: null
+
+  customer_autocomplete:
+    intent: "客户选择，按客户名称远程模糊搜索，数据量大"
+    component:
+      type: el-autocomplete
+      props:
+        fetchSuggestions: "后端远程搜索"
+        valueKey: "customerName"
+        debounce: 300
+        triggerOnFocus: false
+    bindTo: customer_id
+    service:
+      endpoint: "GET /project/customer/search?name={keyword}"
+      source: "复用 PmCustomerService，需新增轻量搜索接口返回 id+name"
+      returns: "[{ customerId, customerName }]"
+      newApi: true
+    notes: "提交值为 customerId，显示值为 customerName"
+
+  manager_autocomplete:
+    intent: "项目经理选择，按姓名搜索，数据量小前端过滤"
+    component:
+      type: el-autocomplete
+      props:
+        fetchSuggestions: "前端过滤"
+        valueKey: "managerName"
+    bindTo: project_manager
+    service:
+      endpoint: "GET /project/manager/listAll"
+      source: "复用 PmManagerService，需新增返回全量 id+name 的接口"
+      returns: "[{ managerId, managerName }]"
+      newApi: true
+    notes: "页面加载时一次性获取全量数据，前端 filter 匹配"
+
+还有其他定制需求吗？
+
+用户: OK
+
+AI: → 写入 docs/gen-specs/pm_project.yml，进入 5.2 改造
+```
+
+### 5.2 精细化改造
+
+读取已部署的 Vue 文件和相关后端文件，理解 CLI 生成的代码结构，然后遍历 `customizations` 中的每个功能条目，按规格执行改造：
+
+- **已有组件**（`type` 非 `custom`）：按 `props`/`events` 配置替换标准组件，添加 import
+- **自建组件**（`type: custom`）：根据 `spec` 设计组件接口，创建组件文件，集成到页面
+- **后端服务**（`service` 非 null）：
+  - `newApi: false` → 直接在前端调用已有接口
+  - `newApi: true` → 在 Controller/Service/Mapper 中添加新接口
+- **bindTo** 决定改造位置：列名→替换表单/表格中对应字段的组件；toolbar/form/dialog/page→在对应区域添加功能
+
+展示修改的文件清单和变更摘要。
 
 ---
 
