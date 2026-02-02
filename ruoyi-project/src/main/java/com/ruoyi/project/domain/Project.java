@@ -241,9 +241,6 @@ public class Project extends BaseEntity
     /** 删除标志(0正常 1删除) */
     private String delFlag;
 
-    /** 客户名称（关联查询） */
-    private String customerName;
-
     /** 项目经理名称（关联查询） */
     private String projectManagerName;
 
@@ -801,16 +798,6 @@ public class Project extends BaseEntity
     public String getDelFlag()
     {
         return delFlag;
-    }
-
-    public void setCustomerName(String customerName)
-    {
-        this.customerName = customerName;
-    }
-
-    public String getCustomerName()
-    {
-        return customerName;
     }
 
     public void setProjectManagerName(String projectManagerName)

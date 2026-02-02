@@ -66,7 +66,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
         <!-- 关联查询字段 -->
-        <result property="customerName"    column="customer_name"    />
         <result property="projectManagerName"    column="project_manager_name"    />
         <result property="marketManagerName"    column="market_manager_name"    />
         <result property="deptName"    column="dept_name"    />
@@ -74,12 +73,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectProjectVo">
         select p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region, p.short_name, p.year, p.project_category, p.project_dept, p.project_status, p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.implementation_year, p.project_budget, p.project_cost, p.cost_budget, p.budget_cost, p.labor_cost, p.purchase_cost, p.confirm_status, p.confirm_quarter, p.confirm_amount, p.after_tax_amount, p.tax_rate, p.approval_status, p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark, p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
-               c.customer_simple_name as customer_name,
                pm.nick_name as project_manager_name,
                mm.nick_name as market_manager_name,
                d.dept_name
         from pm_project p
-        left join pm_customer c on p.customer_id = c.customer_id
         left join sys_user pm on p.project_manager_id = pm.user_id
         left join sys_user mm on p.market_manager_id = mm.user_id
         left join sys_dept d on p.project_dept = d.dept_id
