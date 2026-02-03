@@ -234,86 +234,6 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
-
-    <!-- 附件管理对话框 -->
-    <el-dialog title="附件管理" v-model="attachmentOpen" width="1000px" append-to-body>
-      <el-row :gutter="10" class="mb8">
-        <el-col :span="1.5">
-          <el-upload
-            ref="uploadRef"
-            :action="uploadUrl"
-            :headers="uploadHeaders"
-            :data="uploadData"
-            :before-upload="beforeUpload"
-            :on-success="handleUploadSuccess"
-            :on-error="handleUploadError"
-            :show-file-list="false"
-            :limit="1"
-          >
-            <el-button type="primary" icon="Upload" v-hasPermi="['project:attachment:upload']">上传附件</el-button>
-          </el-upload>
-        </el-col>
-      </el-row>
-
-      <el-table v-loading="attachmentLoading" :data="attachmentList">
-        <el-table-column label="文件名" align="center" prop="fileOriginalName" show-overflow-tooltip />
-        <el-table-column label="文件类型" align="center" prop="fileType" width="100" />
-        <el-table-column label="文件大小" align="center" prop="fileSize" width="120">
-          <template #default="scope">
-            {{ formatFileSize(scope.row.fileSize) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="文档类型" align="center" prop="documentType" width="120">
-          <template #default="scope">
-            <dict-tag :options="sys_wdlx" :value="scope.row.documentType"/>
-          </template>
-        </el-table-column>
-        <el-table-column label="上传人" align="center" prop="uploadUserName" width="100" />
-        <el-table-column label="下载次数" align="center" prop="downloadCount" width="100" />
-        <el-table-column label="上传时间" align="center" prop="createTime" width="180">
-          <template #default="scope">
-            <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
-          <template #default="scope">
-            <el-button link type="primary" icon="Download" @click="handleDownload(scope.row)" v-hasPermi="['project:attachment:download']">下载</el-button>
-            <el-button link type="primary" icon="View" @click="handleViewLog(scope.row)" v-hasPermi="['project:attachment:log']">日志</el-button>
-            <el-button link type="primary" icon="Delete" @click="handleDeleteAttachment(scope.row)" v-hasPermi="['project:attachment:remove']">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="attachmentOpen = false">关 闭</el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <!-- 操作日志对话框 -->
-    <el-dialog title="操作日志" v-model="logOpen" width="900px" append-to-body>
-      <el-table v-loading="logLoading" :data="logList">
-        <el-table-column label="操作描述" align="center" prop="operationDesc" min-width="200" show-overflow-tooltip />
-        <el-table-column label="文档类型" align="center" prop="documentType" width="120">
-          <template #default="scope">
-            <dict-tag :options="sys_wdlx" :value="scope.row.documentType"/>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作时间" align="center" prop="operationTime" width="180">
-          <template #default="scope">
-            <span>{{ parseTime(scope.row.operationTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作人" align="center" prop="operationUserName" width="120" />
-      </el-table>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="logOpen = false">关 闭</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -522,13 +442,7 @@ function handleExport() {
 
 /** 附件按钮操作 */
 function handleAttachment(row) {
-  currentContractId.value = row.contractId
-  uploadData.value = {
-    businessType: 'contract',
-    businessId: row.contractId
-  }
-  getAttachmentList()
-  attachmentOpen.value = true
+  router.push({ path: '/project/contract/attachment', query: { contractId: row.contractId } })
 }
 
 /** 查询附件列表 */

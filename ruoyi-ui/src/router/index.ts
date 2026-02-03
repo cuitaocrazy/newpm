@@ -207,6 +207,12 @@ export const dynamicRoutes = [
         component: () => import('@/views/project/contract/detail.vue'),
         name: 'ContractDetail',
         meta: { title: '合同详情', activeMenu: '/htkx/htgl' }
+      },
+      {
+        path: 'attachment',
+        component: () => import('@/views/project/contract/attachment.vue'),
+        name: 'ContractAttachment',
+        meta: { title: '附件管理', activeMenu: '/htkx/htgl' }
       }
     ]
   }

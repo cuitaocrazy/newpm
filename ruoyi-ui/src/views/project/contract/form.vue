@@ -102,6 +102,23 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <!-- 已选项目列表 -->
+        <el-row :gutter="20" v-if="selectedProjects.length > 0">
+          <el-col :span="24">
+            <el-form-item label-width="140px">
+              <el-table :data="selectedProjects" border style="width: 100%">
+                <el-table-column type="index" label="序号" width="60" align="center" />
+                <el-table-column prop="projectName" label="项目名称" />
+                <el-table-column prop="projectCode" label="项目编号" width="180" />
+                <el-table-column label="操作" width="80" align="center">
+                  <template #default="scope">
+                    <el-button type="text" icon="Delete" @click="handleRemoveProject(scope.row.projectId)">移除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
         <!-- 第二部分：合同时间与周期 -->
         <el-divider content-position="left">
@@ -286,7 +303,7 @@ function getCustomerList() {
 
 /** 查询项目列表 */
 function getProjectList() {
-  listProject().then(response => {
+  return listProject().then(response => {
     allProjectOptions.value = response.rows
     projectOptions.value = response.rows
   })
@@ -365,6 +382,24 @@ function calculateAmounts() {
   }
 }
 
+/** 计算已选项目列表 */
+const selectedProjects = computed(() => {
+  if (!form.value.projectIds || form.value.projectIds.length === 0) {
+    return []
+  }
+  return allProjectOptions.value.filter(project =>
+    form.value.projectIds.includes(project.projectId)
+  )
+})
+
+/** 移除项目 */
+function handleRemoveProject(projectId) {
+  const index = form.value.projectIds.indexOf(projectId)
+  if (index > -1) {
+    form.value.projectIds.splice(index, 1)
+  }
+}
+
 /** 提交按钮 */
 function submitForm() {
   proxy.$refs["contractRef"].validate(valid => {
@@ -395,10 +430,9 @@ function handleBack() {
 }
 
 /** 初始化数据 */
-function init() {
+async function init() {
   getDeptTree()
   getCustomerList()
-  getProjectList()
 
   // 如果有contractId参数，则是编辑模式
   const contractId = route.query.contractId
@@ -408,16 +442,28 @@ function init() {
     if (route.meta) {
       route.meta.title = "合同编辑"
     }
+
+    // 先加载项目列表，再加载合同数据
+    await getProjectList()
+
     getContract(contractId).then(response => {
       form.value = response.data
       // 编辑模式下，根据已选部门过滤项目
       if (form.value.deptId) {
-        // 延迟执行，确保项目列表已加载
-        setTimeout(() => {
-          handleDeptChange(form.value.deptId)
-          // 恢复已选项目（因为handleDeptChange会清空）
-          form.value.projectIds = response.data.projectIds || []
-        }, 100)
+        // 获取当前部门及所有子部门的ID
+        const deptIds = getAllDeptIds(form.value.deptId)
+
+        // 过滤项目：项目的部门ID在部门ID列表中
+        filteredProjectOptions.value = allProjectOptions.value.filter(project => {
+          return project.projectDept && deptIds.includes(parseInt(project.projectDept))
+        })
+
+        // 更新提示文本
+        if (filteredProjectOptions.value.length === 0) {
+          projectPlaceholder.value = "该部门暂无项目"
+        } else {
+          projectPlaceholder.value = "请选择关联项目"
+        }
       }
     })
   } else {
@@ -428,6 +474,8 @@ function init() {
     }
     // 重置表单数据
     resetForm()
+    // 加载项目列表
+    getProjectList()
   }
 }
 

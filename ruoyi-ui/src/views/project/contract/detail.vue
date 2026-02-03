@@ -8,19 +8,22 @@
         </div>
       </template>
 
+      <!-- 第一部分：合同基本信息 -->
+      <el-divider content-position="left">
+        <span style="font-size: 16px; font-weight: bold; color: #409EFF;">合同基本信息</span>
+      </el-divider>
       <el-descriptions :column="2" border>
-        <!-- 第一部分：合同基本信息 -->
+        <el-descriptions-item label="合同名称" :span="2" label-class-name="label-bold">
+          {{ detailData.contractName }}
+        </el-descriptions-item>
         <el-descriptions-item label="合同编号" label-class-name="label-bold">
           {{ detailData.contractCode }}
         </el-descriptions-item>
-        <el-descriptions-item label="合同名称" label-class-name="label-bold">
-          {{ detailData.contractName }}
-        </el-descriptions-item>
-        <el-descriptions-item label="客户" label-class-name="label-bold">
-          {{ getCustomerName(detailData.customerId) }}
-        </el-descriptions-item>
         <el-descriptions-item label="部门" label-class-name="label-bold">
           {{ getDeptName(detailData.deptId) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="关联客户" label-class-name="label-bold">
+          {{ getCustomerName(detailData.customerId) }}
         </el-descriptions-item>
         <el-descriptions-item label="合同类型" label-class-name="label-bold">
           <dict-tag :options="sys_htlx" :value="detailData.contractType"/>
@@ -28,8 +31,49 @@
         <el-descriptions-item label="合同状态" label-class-name="label-bold">
           <dict-tag :options="sys_htzt" :value="detailData.contractStatus"/>
         </el-descriptions-item>
+      </el-descriptions>
 
-        <!-- 第二部分：合同时间与周期 -->
+      <!-- 关联项目列表 -->
+      <div style="margin-top: 20px;" v-if="relatedProjects.length > 0">
+        <div style="margin-bottom: 10px; font-weight: bold; color: #606266;">关联项目</div>
+        <el-table :data="relatedProjects" border style="width: 100%">
+          <el-table-column type="index" label="序号" width="60" align="center" />
+          <el-table-column label="项目名称" min-width="200">
+            <template #default="scope">
+              <el-link type="primary" @click="handleViewProject(scope.row.projectId)">
+                {{ scope.row.projectName }}
+              </el-link>
+            </template>
+          </el-table-column>
+          <el-table-column label="预计金额(元)" width="150" align="right">
+            <template #default="scope">
+              {{ formatAmount(scope.row.projectBudget) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="预计人天(人/天)" width="150" align="center">
+            <template #default="scope">
+              {{ scope.row.estimatedWorkload || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="实际人天(人/天)" width="150" align="center">
+            <template #default="scope">
+              {{ scope.row.actualWorkload || '-' }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div style="margin-top: 20px; color: #909399;" v-else>
+        <div style="margin-bottom: 10px; font-weight: bold; color: #606266;">关联项目</div>
+        <div style="padding: 20px; text-align: center; background-color: #f5f7fa; border: 1px solid #e4e7ed; border-radius: 4px;">
+          暂无关联项目
+        </div>
+      </div>
+
+      <!-- 第二部分：合同时间与周期 -->
+      <el-divider content-position="left">
+        <span style="font-size: 16px; font-weight: bold; color: #409EFF;">合同时间与周期</span>
+      </el-divider>
+      <el-descriptions :column="2" border>
         <el-descriptions-item label="合同签订日期" label-class-name="label-bold">
           {{ parseTime(detailData.contractSignDate, '{y}-{m}-{d}') }}
         </el-descriptions-item>
@@ -39,9 +83,13 @@
         <el-descriptions-item label="免维期" label-class-name="label-bold">
           {{ detailData.freeMaintenancePeriod }} 月
         </el-descriptions-item>
-        <el-descriptions-item></el-descriptions-item>
+      </el-descriptions>
 
-        <!-- 第三部分：合同金额 -->
+      <!-- 第三部分：合同金额 -->
+      <el-divider content-position="left">
+        <span style="font-size: 16px; font-weight: bold; color: #409EFF;">合同金额</span>
+      </el-divider>
+      <el-descriptions :column="2" border>
         <el-descriptions-item label="合同金额(含税)" label-class-name="label-bold">
           <span style="color: #409EFF; font-weight: bold; font-size: 16px;">{{ formatAmount(detailData.contractAmount) }} 元</span>
         </el-descriptions-item>
@@ -60,16 +108,13 @@
         <el-descriptions-item label="确认年份" label-class-name="label-bold">
           <dict-tag :options="sys_ndgl" :value="detailData.confirmYear"/>
         </el-descriptions-item>
+      </el-descriptions>
 
-        <!-- 第四部分：关联项目 -->
-        <el-descriptions-item label="关联项目" :span="2" label-class-name="label-bold">
-          <el-tag v-for="projectId in detailData.projectIds" :key="projectId" style="margin-right: 5px;">
-            {{ getProjectName(projectId) }}
-          </el-tag>
-          <span v-if="!detailData.projectIds || detailData.projectIds.length === 0">无</span>
-        </el-descriptions-item>
-
-        <!-- 第五部分：创建和更新信息 -->
+      <!-- 第四部分：其他信息 -->
+      <el-divider content-position="left">
+        <span style="font-size: 16px; font-weight: bold; color: #409EFF;">其他信息</span>
+      </el-divider>
+      <el-descriptions :column="2" border>
         <el-descriptions-item label="创建人" label-class-name="label-bold">
           {{ detailData.createBy }}
         </el-descriptions-item>
@@ -82,8 +127,6 @@
         <el-descriptions-item label="更新时间" label-class-name="label-bold">
           {{ parseTime(detailData.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
         </el-descriptions-item>
-
-        <!-- 第六部分：备注 -->
         <el-descriptions-item label="备注" :span="2" label-class-name="label-bold">
           {{ detailData.remark || '无' }}
         </el-descriptions-item>
@@ -92,7 +135,6 @@
       <!-- 操作按钮 -->
       <el-row :gutter="20">
         <el-col :span="24" style="text-align: center; margin-top: 20px;">
-          <el-button type="primary" icon="Edit" @click="handleEdit" v-hasPermi="['project:contract:edit']">编辑</el-button>
           <el-button @click="handleBack">返回</el-button>
         </el-col>
       </el-row>
@@ -170,17 +212,27 @@ function getProjectName(projectId) {
   return project ? project.projectName : projectId
 }
 
+/** 计算关联项目列表 */
+const relatedProjects = computed(() => {
+  if (!detailData.value.projectIds || detailData.value.projectIds.length === 0) {
+    return []
+  }
+  return projectOptions.value.filter(project =>
+    detailData.value.projectIds.includes(project.projectId)
+  )
+})
+
+/** 跳转到项目详情 */
+function handleViewProject(projectId) {
+  router.push({ path: '/project/project/detail', query: { projectId: projectId } })
+}
+
 /** 格式化金额，保留2位小数 */
 function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === '') return ''
   const num = parseFloat(amount)
   if (isNaN(num)) return amount
   return num.toFixed(2)
-}
-
-/** 编辑按钮 */
-function handleEdit() {
-  router.push({ path: '/project/contract/form', query: { contractId: detailData.value.contractId } })
 }
 
 /** 返回按钮 */

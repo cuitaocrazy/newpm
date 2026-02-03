@@ -68,6 +68,7 @@ public class ContractServiceImpl implements IContractService
     @Transactional
     public int insertContract(Contract contract)
     {
+        contract.setCreateBy(SecurityUtils.getUsername());
         contract.setCreateTime(DateUtils.getNowDate());
         int result = contractMapper.insertContract(contract);
 
@@ -87,6 +88,7 @@ public class ContractServiceImpl implements IContractService
     @Transactional
     public int updateContract(Contract contract)
     {
+        contract.setUpdateBy(SecurityUtils.getUsername());
         contract.setUpdateTime(DateUtils.getNowDate());
 
         // 删除原有的项目关联关系

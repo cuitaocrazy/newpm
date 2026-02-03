@@ -27,10 +27,19 @@ npm run build:prod       # Production build → dist/
 npm run build:stage      # Staging build
 ```
 
+### Code Generation CLI (ruoyi-gen-cli)
+
+```bash
+mvn clean package -Dmaven.test.skip=true        # Build CLI JAR
+java -jar ruoyi-gen-cli/target/ruoyi-gen-cli.jar --sql=<ddl>.sql --config=<config>.yml --output=<output>.zip
+```
+
+The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use the `/ruoyi-gen` skill for interactive code generation.
+
 ### Prerequisites
 
 - Java 17, Maven
-- MySQL 8.x (database: `ry-vue`, init scripts in `sql/`)
+- MySQL 8.x (database: `ry-vue`, init scripts in `pm-sql/init/`)
 - Redis (localhost:6379)
 - Node.js with npm
 
@@ -43,11 +52,12 @@ ruoyi-system      → Business services: user/role/menu/dept/dict/config/notice 
 ruoyi-common      → Base classes, custom annotations, utilities (Excel, XSS filter, file ops)
 ruoyi-quartz      → Quartz scheduled task management
 ruoyi-generator   → Velocity-based CRUD code generator from DB tables
+ruoyi-gen-cli     → Standalone CLI code generator (no MySQL/Redis required)
 ruoyi-project     → Project management business module (see details below)
 ruoyi-ui          → Vue 3 + TypeScript + Vite frontend (RuoYi-Vue3 typescript branch)
 ```
 
-Dependencies flow: admin → framework → system → common. Quartz, generator, and project depend on common.
+Dependencies flow: admin → framework → system → common. Quartz, generator, gen-cli, and project depend on common.
 
 ### ruoyi-project Module
 
@@ -63,6 +73,10 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `ProjectApproval` | `pm_project_approval` | 项目审核 - Project approval workflow (pending/approved/rejected) |
 | `Customer` | `pm_customer` | 客户管理 - Customer information with industry and region classification |
 | `CustomerContact` | `pm_customer_contact` | 客户联系人 - Customer contact persons |
+| `Contract` | `pm_contract` | 合同管理 - Contract management with project associations |
+| `ProjectContractRel` | `pm_project_contract_rel` | 项目合同关联 - Many-to-many relationship between projects and contracts |
+| `Attachment` | `pm_attachment` | 附件管理 - File attachments for various business entities |
+| `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations |
 
 **Key Features:**
 
@@ -99,11 +113,13 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `ProjectApprovalController` - `/project/approval/**` - Approval workflow management
 - `CustomerController` - `/project/customer/**` - Customer management
 - `CustomerContactController` - `/project/contact/**` - Contact management
+- `ContractController` - `/project/contract/**` - Contract management with attachment support
 
 **Frontend Routes:**
 
 - `/project/project` - 项目列表 (Project list with approval actions)
 - `/project/apply` - 项目立项申请 (Project initiation application)
+- `/project/contract` - 合同管理 (Contract management with file attachments)
 - Customer and contact management pages
 
 ## Backend Patterns
@@ -172,6 +188,25 @@ public AjaxResult add(@Validated @RequestBody Entity entity) {
 - Druid starter: `druid-spring-boot-3-starter`
 - MySQL driver: `mysql-connector-j`
 
+### File Upload & Attachment Management
+
+File uploads are handled by `FileUploadUtils` in `ruoyi-common`. Standard pattern:
+
+```java
+// Upload file
+String filePath = FileUploadUtils.upload(file);
+
+// Save attachment record
+Attachment attachment = new Attachment();
+attachment.setBusinessType("contract");
+attachment.setBusinessId(contractId);
+attachment.setFileName(file.getOriginalFilename());
+attachment.setFilePath(filePath);
+attachmentService.insertAttachment(attachment);
+```
+
+Frontend uses `FileUpload` component with `v-model:file-list` binding. Files are uploaded to the server's upload directory configured in `application.yml`.
+
 ## Frontend Patterns
 
 ### Tech Stack
@@ -219,3 +254,23 @@ All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>
 - Frontend dev: 80
 - Druid monitor: http://localhost:8080/druid (ruoyi/123456)
 - Swagger UI: http://localhost:8080/swagger-ui.html
+
+## Database Schema
+
+Database initialization scripts are in `pm-sql/init/`:
+- `00_tables_ddl.sql` - Table structure definitions
+- `01_tables_data.sql` - Initial data and dictionary entries
+
+When adding new business modules, place DDL files in `pm-sql/init/` for the `/ruoyi-gen` skill to discover.
+
+## Code Generation Workflow
+
+Use the `/ruoyi-gen` skill for interactive CRUD generation:
+
+1. **Input modes**: DDL SQL, business description, or database query
+2. **Smart inference**: Automatically infers field types, query types, and UI components from DDL
+3. **Configuration**: Generates spec file in `docs/gen-specs/<table>.yml` for review
+4. **Deployment**: Generates and deploys code to appropriate modules (backend + frontend)
+5. **Customization**: Applies custom UI requirements from spec file
+
+The skill handles menu generation, SQL file management, and database imports automatically.
