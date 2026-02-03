@@ -500,7 +500,6 @@ const { form, rules } = toRefs(data)
 
 // 其他数据
 const submitLoading = ref(false)
-const contractInfo = ref({})
 const deptOptions = ref([])
 const projectManagers = ref([])
 const marketManagers = ref([])

@@ -73,10 +73,6 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `ProjectApproval` | `pm_project_approval` | 项目审核 - Project approval workflow (pending/approved/rejected) |
 | `Customer` | `pm_customer` | 客户管理 - Customer information with industry and region classification |
 | `CustomerContact` | `pm_customer_contact` | 客户联系人 - Customer contact persons |
-| `Contract` | `pm_contract` | 合同管理 - Contract management with project associations |
-| `ProjectContractRel` | `pm_project_contract_rel` | 项目合同关联 - Many-to-many relationship between projects and contracts |
-| `Attachment` | `pm_attachment` | 附件管理 - File attachments for various business entities |
-| `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations |
 
 **Key Features:**
 
@@ -113,13 +109,11 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `ProjectApprovalController` - `/project/approval/**` - Approval workflow management
 - `CustomerController` - `/project/customer/**` - Customer management
 - `CustomerContactController` - `/project/contact/**` - Contact management
-- `ContractController` - `/project/contract/**` - Contract management with attachment support
 
 **Frontend Routes:**
 
 - `/project/project` - 项目列表 (Project list with approval actions)
 - `/project/apply` - 项目立项申请 (Project initiation application)
-- `/project/contract` - 合同管理 (Contract management with file attachments)
 - Customer and contact management pages
 
 ## Backend Patterns
@@ -187,25 +181,6 @@ public AjaxResult add(@Validated @RequestBody Entity entity) {
 - API docs via springdoc-openapi (`/v3/api-docs`, `/swagger-ui.html`)
 - Druid starter: `druid-spring-boot-3-starter`
 - MySQL driver: `mysql-connector-j`
-
-### File Upload & Attachment Management
-
-File uploads are handled by `FileUploadUtils` in `ruoyi-common`. Standard pattern:
-
-```java
-// Upload file
-String filePath = FileUploadUtils.upload(file);
-
-// Save attachment record
-Attachment attachment = new Attachment();
-attachment.setBusinessType("contract");
-attachment.setBusinessId(contractId);
-attachment.setFileName(file.getOriginalFilename());
-attachment.setFilePath(filePath);
-attachmentService.insertAttachment(attachment);
-```
-
-Frontend uses `FileUpload` component with `v-model:file-list` binding. Files are uploaded to the server's upload directory configured in `application.yml`.
 
 ## Frontend Patterns
 
