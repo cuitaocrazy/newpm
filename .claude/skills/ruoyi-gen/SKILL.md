@@ -18,6 +18,17 @@ argument-hint: "<表名>"
 - **业务代码目标模块**: `ruoyi-project/`（生成的 Java 代码统一部署到此模块，不放 ruoyi-admin）
 - **前端代码目标**: `ruoyi-ui/`（Vue/API 文件部署到前端目录）
 
+## 模块依赖关系
+
+`ruoyi-project` 模块已配置以下依赖（见 `ruoyi-project/pom.xml`）：
+- **ruoyi-common**: 通用工具类、基础实体、注解等
+- **ruoyi-system**: 系统模块，提供用户、部门、角色等系统服务的访问能力
+
+这意味着在 `ruoyi-project` 中生成的代码可以：
+- 直接使用 `ruoyi-common` 中的 `BaseEntity`、`AjaxResult`、`TableDataInfo` 等基础类
+- 直接注入和调用 `ruoyi-system` 中的服务，如 `ISysUserService`、`ISysDeptService` 等
+- 无需额外配置依赖即可实现跨模块的业务关联（如项目关联用户、部门等）
+
 ---
 
 ## 阶段 1：查找 DDL + 关联分析
@@ -48,6 +59,15 @@ argument-hint: "<表名>"
 
 拿到 DDL 后，先读取 `ruoyi-generator/src/main/resources/generator.yml` 获取项目默认值，然后生成完整规格。
 
+**主子表模式特殊处理**：
+- 如果检测到外键关联或用户指定为主子表，则 `tplCategory` 设为 "sub"
+- 需要在 `genInfo` 中添加 `subTableName`、`subTableFkName` 和 `subTableGenerateMenu`
+- **询问用户子表菜单需求**：
+  - "子表需要独立菜单吗？"
+  - **是**（`subTableGenerateMenu: true`）：子表有独立的管理页面和菜单（模式1：主子表独立维护）
+  - **否**（`subTableGenerateMenu: false`）：子表只在主表的新增/编辑页面中维护，不生成独立菜单（模式2：主子表一体化维护，推荐）
+- 规格文件中保存主表配置和子表字段信息（`subTableColumns`），子表完整配置在生成临时文件时自动创建
+
 ### 规格文件结构（`docs/gen-specs/<表名>.yml`）
 
 ```yaml
@@ -67,7 +87,6 @@ basicInfo:
 columns:
   <列名>:
     columnComment: <字段描述>          # 从 DDL COMMENT 读取
-    columnType: <物理类型>             # 如 varchar(100), int(11), decimal(10,2)
     javaType: <Java类型>               # 推断规则见下
     javaField: <java属性>              # 列名转 camelCase
     isInsert: <bool>                   # 默认 true
@@ -78,6 +97,8 @@ columns:
     isRequired: <bool>                 # DDL 中 NOT NULL 为 true
     htmlType: <显示类型>               # 推断规则见下
     dictType: ""                       # 需要用户确认
+
+# 注意：不要包含 columnType 和 isPk 字段，CLI 会从 DDL 自动解析
 
 # ============================
 # Tab 3: 生成信息
@@ -91,7 +112,26 @@ genInfo:
   functionName: <从tableComment去除"表"字>
   parentMenuId: 3
   # treeCode / treeParentCode / treeName       (tplCategory=tree)
-  # subTableName / subTableFkName              (tplCategory=sub)
+  # subTableName / subTableFkName / subTableGenerateMenu  (tplCategory=sub)
+
+# ============================
+# 子表字段信息（仅 tplCategory=sub 时需要）
+# ============================
+subTableColumns:
+  <列名>:
+    columnComment: <字段描述>
+    javaType: <Java类型>
+    javaField: <java属性>
+    isInsert: <bool>
+    isEdit: <bool>
+    isList: <bool>
+    isQuery: <bool>
+    queryType: <查询方式>
+    isRequired: <bool>
+    htmlType: <显示类型>
+    dictType: ""
+
+# 注意：子表字段也不要包含 columnType 和 isPk，CLI 会从 DDL 自动解析
 
 # ============================
 # 定制需求（超出标准模板的组件/交互/接口需求）
@@ -208,7 +248,14 @@ mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true
 
 ### 4.3 准备临时文件
 
-从 `pm-sql/init/00_tables_ddl.sql` 中提取目标表的 DDL 写入临时 `.sql` 文件，提取 config 部分转换为 CLI 可用的 `gen-config.yml` 格式：
+从 `pm-sql/init/00_tables_ddl.sql` 中提取目标表的 DDL 写入临时 `.sql` 文件。
+
+**⚠️ 主子表模式特殊处理**：
+- 如果 `tplCategory` 为 "sub"，则需要同时提取主表和子表的 DDL
+- 子表名从 `genInfo.subTableName` 获取
+- SQL 文件中主表和子表的 DDL 都要包含
+
+提取 config 部分转换为 CLI 可用的 `gen-config.yml` 格式：
 
 ```yaml
 global:
@@ -221,15 +268,58 @@ global:
   tablePrefix: <根据 generator.yml>
 
 tables:
-  <tableName>:
+  <主表名>:
     className: <basicInfo.className>
     functionName: <genInfo.functionName>
     businessName: <genInfo.businessName>
     moduleName: <genInfo.moduleName>
-    # tree/sub 相关字段如有
+    # 主子表配置（tplCategory=sub 时必须）
+    subTableName: <genInfo.subTableName>
+    subTableFkName: <genInfo.subTableFkName>
     columns:
-      <从规格文件 columns 节转换>
+      <列名>:
+        columnComment: <字段描述>
+        javaType: <Java类型>
+        javaField: <java属性>
+        isInsert: <bool>
+        isEdit: <bool>
+        isList: <bool>
+        isQuery: <bool>
+        queryType: <查询方式>
+        isRequired: <bool>
+        htmlType: <显示类型>
+        dictType: ""
+
+  # 如果是主子表模式，必须同时配置子表
+  <子表名>:
+    className: <子表实体类名>
+    functionName: <子表功能名>
+    businessName: <子表业务名>
+    moduleName: <genInfo.moduleName>
+    tplCategory: crud  # 子表必须设为 crud
+    columns:
+      <子表字段配置，格式同上>
 ```
+
+**重要**：
+1. 配置文件中的 columns 不要包含 `columnType` 和 `isPk` 字段
+2. 主子表模式下，配置文件中必须同时包含主表和子表的完整配置
+
+**⚠️ CLI 配置格式注意事项**：
+1. **不要包含 `columnType` 和 `isPk` 字段**：CLI 的 `ColumnConfig` 类不支持这些字段，会导致 YAML 解析错误
+   - `columnType`（如 `bigint(20)`）会从 DDL 的 SQL 文件中自动解析
+   - `isPk`（是否主键）会从 DDL 的 `PRIMARY KEY` 约束中自动识别
+   - 配置文件只需要配置**业务逻辑相关的字段属性**（如 isInsert/isEdit/isList/isQuery 等）
+
+2. **主子表模式的 tplCategory 设置**：
+   - **全局配置**的 `tplCategory` 应设为 `crud`（默认值）
+   - **主表配置**中单独指定 `tplCategory: sub`
+   - **子表配置**中必须设为 `tplCategory: crud`（不能是 sub）
+   - 原因：全局配置会影响所有表，如果全局设为 sub，子表也会继承该配置并被误当作主子表处理
+
+3. **CLI 已应用的修复**（`ruoyi-gen-cli/src/main/java/com/ruoyi/gen/cli/CodeGenerator.java`）：
+   - 添加了 `linkSubTables()` 方法：在生成代码前自动建立主子表的对象关联
+   - 添加了跳过子表独立生成的逻辑：子表的代码会在主表生成时一起生成，避免重复
 
 ### 4.4 调用 CLI
 
@@ -239,6 +329,16 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
   --config=<tmp-config>.yml \
   --output=<tmp>.zip
 ```
+
+**主子表模式注意事项**：
+- 确保 SQL 文件包含主表和子表的 DDL
+- 确保配置文件的 `tables` 节同时包含主表和子表的配置
+- 主表配置中必须有 `subTableName` 和 `subTableFkName`
+- 所有列配置必须包含 `isPk` 字段（主键为 "1"，非主键为 "0"）
+
+如果 CLI 执行失败，检查错误信息：
+- `NullPointerException: getSubTable() is null` → 配置文件缺少子表配置
+- 其他错误 → 检查 SQL 语法或配置格式
 
 ### 4.5 解压部署
 
@@ -258,6 +358,15 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 
 **注意**：如果目标文件已存在，询问用户是否覆盖。
 
+**⚠️ 主子表模式特殊处理**：
+- 如果 `tplCategory` 为 "sub" 且 `subTableGenerateMenu: false`（主子表一体化维护）：
+  - **不部署子表的前端页面**：跳过 `vue/views/<module>/<subBusiness>/` 目录
+  - **不部署子表的 API 文件**：跳过 `vue/api/<module>/<subBusiness>.js` 文件
+  - **只部署主表相关文件**：主表的 Controller、Service、Mapper、Domain、Vue 页面和 API
+  - **部署子表的后端代码**：子表的 Domain、Mapper、Service 仍需部署（主表 Service 会引用）
+- 如果 `subTableGenerateMenu: true`（主子表独立维护）：
+  - 正常部署所有文件，包括子表的前端页面和 API
+
 展示已部署的文件列表。
 
 ### 4.6 菜单SQL管理
@@ -265,11 +374,77 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar \
 **提取菜单SQL**：
 - 从生成的 ZIP 中找到 `*Menu.sql` 文件
 
+**⚠️ 主子表模式特殊处理**：
+- 如果 `tplCategory` 为 "sub" 且 `subTableGenerateMenu: false`（主子表一体化维护）：
+  - **过滤子表菜单 SQL**：从菜单 SQL 中移除子表相关的菜单记录
+  - 识别方法：通过权限标识（`perms` 字段）匹配 `<module>:<subBusiness>:%` 的记录
+  - **只保留主表菜单 SQL**：仅保留主表相关的菜单记录
+- 如果 `subTableGenerateMenu: true`（主子表独立维护）：
+  - 保留完整的菜单 SQL，包括主表和子表的菜单
+
 **对比去重**：
 - 读取 `pm-sql/init/02_menu_data.sql`
 - 通过权限标识前缀匹配（如 `<module>:<business>:%`），判断该业务的菜单是否已存在
 - **不存在** → 将菜单 SQL 追加到 `pm-sql/init/02_menu_data.sql` 末尾，显示"✓ 菜单SQL已追加到 02_menu_data.sql"
 - **已存在** → 显示"✓ 检测到菜单已存在于 02_menu_data.sql，跳过写入"
+
+---
+
+## 常见问题与修复
+
+### 问题1：字符集排序规则冲突
+
+**错误信息**：
+```
+java.sql.SQLException: Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT)
+and (utf8mb4_unicode_ci,IMPLICIT) for operation '='
+```
+
+**原因**：
+- MySQL 8.0 新建表默认使用 `utf8mb4_0900_ai_ci` 排序规则
+- 旧系统表（如 `sys_dict_data`、`sys_user`）使用 `utf8mb4_unicode_ci` 排序规则
+- 在 JOIN 或 WHERE 条件中比较不同排序规则的字段时，MySQL 无法确定使用哪个规则，导致报错
+
+**触发场景**：
+- CLI 生成的标准代码不会触发此问题（只查询单表）
+- 当在阶段 5 定制改造中添加以下功能时会触发：
+  - 关联字典表显示字典名称（而不是字典值）
+  - 关联用户表显示用户昵称（而不是用户ID）
+  - 关联部门表显示部门名称（而不是部门ID）
+  - 任何新建表与系统表的 JOIN 操作
+
+**解决方案**：
+在 Mapper.xml 的 JOIN 条件中显式指定排序规则，统一使用 `utf8mb4_unicode_ci`：
+
+```xml
+<!-- 错误写法 -->
+left join sys_dict_data d1 on c.industry = d1.dict_value and d1.dict_type = 'industry'
+
+<!-- 正确写法 -->
+left join sys_dict_data d1 on c.industry COLLATE utf8mb4_unicode_ci = d1.dict_value and d1.dict_type = 'industry'
+```
+
+**修复位置**：
+- `ruoyi-project/src/main/resources/mapper/<module>/<Entity>Mapper.xml`
+- 在 `select<Entity>List` 查询中的所有 JOIN 条件
+- 任何包含 JOIN 系统表的自定义查询
+
+**示例**（以 Customer 为例）：
+```xml
+<select id="selectCustomerList" parameterType="Customer" resultMap="CustomerCustomerContactResult">
+    select
+        c.customer_id,
+        c.customer_simple_name,
+        d1.dict_label as industry_name,
+        d2.dict_label as region_name,
+        u.nick_name as sales_manager_name
+    from pm_customer c
+    left join sys_dict_data d1 on c.industry COLLATE utf8mb4_unicode_ci = d1.dict_value and d1.dict_type = 'industry'
+    left join sys_dict_data d2 on c.region COLLATE utf8mb4_unicode_ci = d2.dict_value and d2.dict_type = 'sys_yjqy'
+    left join sys_user u on c.sales_manager_id = u.user_id
+    ...
+</select>
+```
 
 ---
 
@@ -391,6 +566,43 @@ AI: → 写入 docs/gen-specs/pm_project.yml，进入 5.2 改造
   - `newApi: false` → 直接在前端调用已有接口
   - `newApi: true` → 在 Controller/Service/Mapper 中添加新接口
 - **bindTo** 决定改造位置：列名→替换表单/表格中对应字段的组件；toolbar/form/dialog/page→在对应区域添加功能
+
+**⚠️ 前端 HTTP 请求规范**：
+在 Vue 组件中调用后端接口时，必须使用以下方式之一：
+
+```typescript
+// 方式 1：使用封装好的 API 函数（推荐）
+import { listUser } from '@/api/system/user'
+listUser(queryParams).then(response => {
+  // response.rows, response.total
+})
+
+// 方式 2：直接调用 request（用于自定义接口）
+import request from '@/utils/request'
+request({
+  url: '/system/user/listByPost',
+  method: 'get',
+  params: { postCode: 'xsfzr' }
+}).then(response => {
+  // response.data
+})
+
+// ❌ 错误：不要使用 proxy.$http 或 proxy.request
+// const { proxy } = getCurrentInstance()
+// proxy.$http.get(...)  // 不存在
+// proxy.request(...)    // 不存在
+```
+
+**⚠️ 添加后端方法的重要规范**：
+1. **添加前必须检查**：使用 `grep -n "方法名" 文件路径` 搜索方法是否已存在
+2. **检查位置**：
+   - Interface 文件：检查整个文件（包括文件末尾）
+   - ServiceImpl 文件：检查整个文件（包括文件末尾）
+   - Mapper.xml 文件：检查是否已有对应的 SQL 实现
+3. **如果已存在**：
+   - 无需重复添加，直接使用已有方法
+   - 在 notes 中记录"方法已存在，无需添加"
+4. **避免重复定义**：同一方法在同一文件中只能定义一次，否则会导致编译错误
 
 展示修改的文件清单和变更摘要。
 
