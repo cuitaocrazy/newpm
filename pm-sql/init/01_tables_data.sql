@@ -1552,3 +1552,82 @@ insert into sys_user_role values(248,2);
 insert into sys_user_role values(249,2);
 insert into sys_user_role values(250,100);
 
+
+-- =============================================
+-- 16. 插入省级区域数据（36个省级行政区，不含港澳台）
+-- =============================================
+INSERT INTO pm_secondary_region (province_code, province_name, province_type, region_dict_value, sort_order, create_by, remark) VALUES
+   -- 华北地区
+   ('11', '北京市', '1', 'BJ', 1, 'admin', '首都'),
+   ('12', '天津市', '1', 'HBQY', 2, 'admin', NULL),
+   ('13', '河北省', '0', 'HBQY', 3, 'admin', NULL),
+   ('14', '山西省', '0', 'HBQY', 4, 'admin', NULL),
+   ('15', '内蒙古自治区', '2', 'HBQY', 5, 'admin', NULL),
+
+   -- 东北地区
+   ('21', '辽宁省', '0', 'DBQY', 6, 'admin', NULL),
+   ('2102', '大连市', '4', 'DBQY', 7, 'admin', '计划单列市'),
+   ('22', '吉林省', '0', 'DBQY', 8, 'admin', NULL),
+   ('23', '黑龙江省', '0', 'DBQY', 9, 'admin', NULL),
+
+   -- 华东地区
+   ('31', '上海市', '1', 'HDQY', 10, 'admin', NULL),
+   ('32', '江苏省', '0', 'HDQY', 11, 'admin', NULL),
+   ('33', '浙江省', '0', 'HDQY', 12, 'admin', NULL),
+   ('3302', '宁波市', '4', 'HDQY', 13, 'admin', '计划单列市'),
+   ('34', '安徽省', '0', 'HDQY', 14, 'admin', NULL),
+   ('35', '福建省', '0', 'HDQY', 15, 'admin', NULL),
+   ('3502', '厦门市', '4', 'HDQY', 16, 'admin', '计划单列市'),
+   ('36', '江西省', '0', 'HDQY', 17, 'admin', NULL),
+   ('37', '山东省', '0', 'HDQY', 18, 'admin', NULL),
+   ('3702', '青岛市', '4', 'HDQY', 19, 'admin', '计划单列市'),
+
+   -- 华中地区
+   ('41', '河南省', '0', 'HZQY', 20, 'admin', NULL),
+   ('42', '湖北省', '0', 'HZQY', 21, 'admin', NULL),
+   ('43', '湖南省', '0', 'HZQY', 22, 'admin', NULL),
+
+   -- 华南地区
+   ('44', '广东省', '0', 'HNQY', 23, 'admin', NULL),
+   ('4403', '深圳市', '4', 'HNQY', 24, 'admin', '计划单列市'),
+   ('45', '广西壮族自治区', '2', 'HNQY', 25, 'admin', NULL),
+   ('46', '海南省', '0', 'HNQY', 26, 'admin', NULL),
+
+   -- 西南地区
+   ('50', '重庆市', '1', 'XNQY', 27, 'admin', NULL),
+   ('51', '四川省', '0', 'XNQY', 28, 'admin', NULL),
+   ('52', '贵州省', '0', 'XNQY', 29, 'admin', NULL),
+   ('53', '云南省', '0', 'XNQY', 30, 'admin', NULL),
+   ('54', '西藏自治区', '2', 'XNQY', 31, 'admin', NULL),
+
+   -- 西北地区
+   ('61', '陕西省', '0', 'XBQY', 32, 'admin', NULL),
+   ('62', '甘肃省', '0', 'XBQY', 33, 'admin', NULL),
+   ('63', '青海省', '0', 'XBQY', 34, 'admin', NULL),
+   ('64', '宁夏回族自治区', '2', 'XBQY', 35, 'admin', NULL),
+   ('65', '新疆维吾尔自治区', '2', 'XBQY', 36, 'admin', NULL);
+
+-- =============================================
+-- 说明：
+-- 1. 省份代码使用国家标准行政区划代码的前2位或前4位
+-- 2. 计划单列市使用4位代码（如大连2102、青岛3702等）
+-- 3. 一级区域通过 region_dict_value 关联字典表的 dict_value
+-- 4. 北京市使用独立的区域值：BJ
+-- 5. 其他省份使用区域缩写：HBQY、DBQY、HDQY、HZQY、HNQY、XNQY、XBQY
+-- 6. 共36个省级行政区（31个省/直辖市/自治区 + 5个计划单列市，不含港澳台）
+-- 7. 计划单列市：大连、青岛、宁波、厦门、深圳
+-- 8. 市级数据需要根据实际需求插入（约325个地级市，不含已提升为省级的5个计划单列市）
+-- 9. 一级区域字典数据需要在字典管理中手动维护
+-- =============================================
+
+
+
+-- 省份类型字典
+insert into sys_dict_type values(115,'省份类型','sflx','0','admin',sysdate(),'',NULL,'省份类型列表');
+
+-- 省份类型字典数据
+insert into sys_dict_data values(205,0,'省','0','sflx','','','Y','0','admin',sysdate(),'',NULL,'省');
+insert into sys_dict_data values(206,1,'直辖市','1','sflx','','','N','0','admin',sysdate(),'',NULL,'直辖市');
+insert into sys_dict_data values(207,2,'自治区','2','sflx','','','N','0','admin',sysdate(),'',NULL,'自治区');
+insert into sys_dict_data values(208,3,'特别行政区','3','sflx','','','N','0','admin',sysdate(),'',NULL,'特别行政区');
+insert into sys_dict_data values(209,4,'计划单列市','4','sflx','','','N','0','admin',sysdate(),'',NULL,'计划单列市');
