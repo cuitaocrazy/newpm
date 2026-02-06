@@ -88,7 +88,7 @@ columns:
     queryType: EQ
     isRequired: true
     htmlType: select
-    dictType: "region"
+    dictType: "sys_yjqy"
 
   short_name:
     columnComment: 简称
@@ -1046,9 +1046,9 @@ customizations:
       5. 一级区域 (region)
          - 组件类型: el-select（下拉选择）
          - 数据源: 字典表 sys_dict_data
-         - 字典类型: region（一级区域）
+         - 字典类型: sys_yjqy（一级区域）
          - 返回字段: { value, label }
-         - 说明: 通过 useDict('region') 获取，变化时触发二级区域加载
+         - 说明: 通过 useDict('sys_yjqy') 获取，变化时触发二级区域加载
 
       6. 二级区域 (region_code)
          - 组件类型: el-select（下拉选择，级联）
@@ -1106,8 +1106,8 @@ customizations:
       ========================================
 
       1. 字典数据加载:
-         const { sys_xmfl, sys_ndgl, region, sys_spzt, sys_xmjd, sys_yszt } =
-           proxy.useDict('sys_xmfl', 'sys_ndgl', 'region', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
+         const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } =
+           proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
 
       2. 页面加载时初始化:
          - loadProjectManagers()    // 加载项目经理列表
@@ -1128,11 +1128,10 @@ customizations:
       需要在系统管理 → 字典管理中配置以下字典类型：
       - sys_ndgl: 年度管理（如：2024, 2025, 2026）
       - sys_xmfl: 项目分类（如：软件开发、系统集成、技术服务）
-      - region: 一级区域（如：华北、华东、华南）
+      - sys_yjqy: 一级区域（如：华北区域、华东区域、华南区域）
       - sys_xmjd: 项目阶段（如：立项、实施、验收、结项）
       - sys_spzt: 审批状态（如：待审核、已通过、已驳回）
       - sys_yszt: 验收状态（如：未验收、已验收、验收不通过）
-      - sys_yjqy: 二级区域（省级区域代码）
       - sys_htzt: 合同状态（用于列表显示）
 
       ========================================

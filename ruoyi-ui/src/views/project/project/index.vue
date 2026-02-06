@@ -46,7 +46,7 @@
       <el-form-item label="一级区域" prop="region">
         <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable @change="handleRegionChange" style="width: 200px">
           <el-option
-            v-for="dict in region"
+            v-for="dict in sys_yjqy"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -269,7 +269,7 @@
         <el-form-item label="一级区域" prop="region">
           <el-select v-model="form.region" placeholder="请选择一级区域">
             <el-option
-              v-for="dict in region"
+              v-for="dict in sys_yjqy"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -541,7 +541,7 @@ import { listProject, getProject, delProject, addProject, updateProject } from "
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_ndgl, region, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'region', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
+const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
 
 const projectList = ref([])
 const projectApprovalList = ref([])
