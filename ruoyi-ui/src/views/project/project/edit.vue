@@ -151,14 +151,12 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="审核状态">
-                <el-tag v-if="form.approvalStatus === '0'" type="warning">待审核</el-tag>
-                <el-tag v-else-if="form.approvalStatus === '1'" type="success">审核通过</el-tag>
-                <el-tag v-else-if="form.approvalStatus === '2'" type="danger">审核拒绝</el-tag>
+                <dict-tag :options="sys_spzt" :value="form.approvalStatus" v-if="form.approvalStatus" />
                 <span v-else>-</span>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="审核原因">
+              <el-form-item label="审核意见">
                 <el-input v-model="form.approvalReason" disabled
                   placeholder="暂无审核意见" />
               </el-form-item>
@@ -403,8 +401,8 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_yszt, sys_shzt, sys_qrzt, industry, sys_yjqy, sys_jdgl } = 
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_shzt', 'sys_qrzt', 'industry', 'sys_yjqy', 'sys_jdgl')
+const { sys_xmfl, sys_xmjd, sys_yszt, sys_shzt, sys_qrzt, industry, sys_yjqy, sys_jdgl, sys_spzt } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_shzt', 'sys_qrzt', 'industry', 'sys_yjqy', 'sys_jdgl', 'sys_spzt')
 
 // 折叠面板激活状态
 const activeNames = ref(['1', '2', '3', '4', '5', '6'])

@@ -1276,25 +1276,77 @@ customizations:
       props:
         filterable: true
         clearable: true
+        disabled: "!form.customerId"
     bindTo: customer_contact_id
     service:
       endpoint: "GET /project/customer/contact/listByCustomer?customerId={customerId}"
-      source: "复用 CustomerService，需新增接口"
+      source: "复用 CustomerService，接口已存在"
       returns: "[{ contactId, contactName, contactPhone }]"
-      newApi: true
-    notes: "监听 customer_id 变化，动态加载联系人列表"
+      newApi: false
+    notes: |
+      监听 customer_id 变化，动态加载联系人列表
 
-  merchant_phone_auto:
-    intent: "商户联系方式自动带出，选择客户联系人后自动填充"
+      实现要点：
+      1. 选择客户后，清空客户联系人和客户联系方式
+      2. 调用接口加载该客户的联系人列表
+      3. 选择联系人后，自动填充客户联系方式（只读）
+      4. 前端使用 response.data 获取数据（不是 response.rows）
+
+  customer_contact_phone_auto:
+    intent: "客户联系方式自动带出，选择客户联系人后自动填充，只读显示"
     component:
-      type: custom
-      spec: "监听 customer_contact_id 变化，自动填充 merchant_phone"
-    bindTo: merchant_phone
+      type: el-input
+      props:
+        readonly: true
+        placeholder: "自动带出"
+    bindTo: customerContactPhone
     service:
       endpoint: null
       source: "从 customer_contact_cascade 返回的数据中获取 contactPhone"
       newApi: false
-    notes: "只读显示，不可手动编辑，数据来自客户联系人选择"
+    notes: |
+      只读显示，不可手动编辑，数据来自客户联系人选择
+
+      实现逻辑：
+      1. 使用临时变量 customerContactPhone（不保存到数据库）
+      2. 监听 customer_contact_id 变化
+      3. 从 contactOptions 中找到对应的联系人
+      4. 自动填充 customerContactPhone.value = contact.contactPhone
+
+  merchant_contact_manual:
+    intent: "商户联系人手动输入，独立字段，不关联客户联系人"
+    component:
+      type: el-input
+      props:
+        placeholder: "请输入商户联系人"
+    bindTo: merchant_contact
+    service:
+      endpoint: null
+      source: "前端手动输入"
+      newApi: false
+    notes: "商户联系人是独立字段，手动输入，不从客户联系人自动带出"
+
+  merchant_phone_manual:
+    intent: "商户联系方式手动输入，独立字段，不关联客户联系方式"
+    component:
+      type: el-input
+      props:
+        placeholder: "请输入商户联系方式"
+    bindTo: merchant_phone
+    service:
+      endpoint: null
+      source: "前端手动输入"
+      newApi: false
+    notes: |
+      商户联系方式是独立字段，手动输入，不从客户联系方式自动带出
+
+      字段说明：
+      - customerContactPhone：临时变量，显示客户联系人的电话（只读，不保存）
+      - merchantPhone：数据库字段，保存商户联系方式（可编辑，保存到数据库）
+
+      布局结构：
+      第一行：客户名称 | 客户联系人 | 客户联系方式（只读，临时变量）
+      第二行：商户联系人 | 商户联系方式（可编辑，保存到数据库）
 
   project_code_auto:
     intent: "项目编号自动生成，格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}"
@@ -1449,4 +1501,326 @@ customizations:
       source: "前端计算：合同金额/(1+税率)，确认金额/(1+税率)"
       newApi: false
     notes: "公式：金额 / (1 + 税率/100)"
+
+  # ========================================
+  # 立项申请页面折叠面板（2026-02-06）
+  # ========================================
+  apply_page_title:
+    intent: "立项申请页面标题"
+    component:
+      type: h2
+      props:
+        style: "margin-bottom: 20px; font-weight: bold;"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端静态内容"
+      newApi: false
+    notes: "内容：立项申请"
+
+  apply_page_title:
+    intent: "立项申请页面标题"
+    component:
+      type: h2
+      props:
+        style: "margin: 0 0 6px 0; font-weight: bold;"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端静态内容"
+      newApi: false
+    notes: "内容：立项申请"
+
+  apply_page_collapse_panels:
+    intent: "立项申请页面使用 el-card 实现折叠面板，支持全部展开/折叠"
+    component:
+      type: el-card
+      props:
+        shadow: hover
+        style: "margin-bottom: 15px"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端实现"
+      newApi: false
+    notes: |
+      工具栏：右对齐，两个 el-link（type="primary"）
+      - "全部展开"：activeNames.value = ['1', '3', '4', '5', '6', '7']
+      - "全部折叠"：activeNames.value = []
+
+      Card header：可点击，显示箭头图标和标题
+      - 点击切换：togglePanel(name) 添加/移除 name
+      - 箭头图标：activeNames.includes(name) ? 'el-icon-arrow-down' : 'el-icon-arrow-right'
+      - 内容区：v-show="activeNames.includes(name)"
+
+      7个面板：name="1", "3", "4", "5", "6", "7"（默认全部展开）
+      对应：一、项目基本信息  二、人员配置  三、客户信息  四、时间规划  五、成本预算  六、备注
+
+      CSS样式：禁用 label 点击触发表单控件
+      ```css
+      :deep(.el-form-item__label) {
+        pointer-events: none;
+      }
+      ```
+
+  # ========================================
+  # 编辑页面特殊字段（2026-02-06）
+  # ========================================
+  edit_page_approval_fields:
+    intent: "编辑页面显示审核状态和审核意见（只读）"
+    component:
+      type: dict-tag
+      props:
+        options: sys_spzt
+        value: form.approvalStatus
+    bindTo: ["approval_status", "approval_reason"]
+    service:
+      endpoint: null
+      source: "字典表 sys_spzt（用于翻译显示）"
+      newApi: false
+    notes: |
+      审核状态（只读显示）：
+      - 组件：dict-tag（字典标签组件）
+      - 数据源：字典表 sys_spzt
+      - 值映射：
+        - 0=待审核（type="warning" 黄色）
+        - 1=审核通过（type="success" 绿色）
+        - 2=审核拒绝（type="danger" 红色）
+
+      审核意见（只读显示）：
+      - 组件：el-input（disabled）
+      - placeholder: "暂无审核意见"
+
+      位置：项目基本信息面板的最后一行
+
+      字典加载：proxy.useDict('sys_spzt')
+
+  # ========================================
+  # 路由配置原则（2026-02-06）
+  # ========================================
+  route_configuration_principle:
+    intent: "项目管理模块只使用动态路由，不使用静态路由"
+    component:
+      type: null
+    bindTo: page
+    service:
+      endpoint: "GET /getRouters"
+      source: "后端动态生成路由"
+      newApi: false
+    notes: |
+      **重要原则：**
+      1. 不要在 router/index.ts 中添加静态路由
+      2. 所有路由通过数据库菜单表动态生成
+      3. 编辑和详情等隐藏路由必须挂在目录类型（M）的菜单下
+
+      **路由层级结构：**
+      - 项目管理（menu_type=M, parent_id=0）
+        - 立项申请（menu_type=C, visible=0）
+        - 项目列表（menu_type=C, visible=0）
+        - 编辑项目（menu_type=C, visible=1, 隐藏）
+        - 项目详情（menu_type=C, visible=1, 隐藏）
+
+      **关键配置：**
+      - 编辑路由：parent_id=项目管理ID, path='list/edit/:projectId(\\d+)'
+      - 详情路由：parent_id=项目管理ID, path='list/detail/:projectId(\\d+)'
+      - 完整路径：/project/list/edit/:id, /project/list/detail/:id
+
+      **防止菜单重复：**
+      SQL 初始化脚本中添加删除语句：
+      ```sql
+      DELETE FROM sys_menu WHERE menu_name = '项目管理' AND parent_id = 0 AND path = 'project';
+      ```
+
+      **后端路由生成逻辑：**
+      - 只有 menu_type='M'（目录）的菜单会递归生成子路由
+      - menu_type='C'（菜单）的子路由不会被生成
+      - 因此编辑/详情必须挂在项目管理（M）下，不能挂在项目列表（C）下
+
+      位置：项目基本信息面板的最后一行
+
+  # ========================================
+  # 路由配置（2026-02-06）
+  # ========================================
+  route_configuration:
+    intent: "项目管理模块的路由配置，全部使用动态路由，避免路由名称冲突"
+    component:
+      type: custom
+      spec: "数据库菜单配置 + 前端动态路由加载"
+    bindTo: page
+    service:
+      endpoint: "GET /getRouters"
+      source: "RuoYi 框架自带的动态路由接口"
+      newApi: false
+    notes: |
+      ========================================
+      路由结构说明
+      ========================================
+
+      项目管理 (menu_id=2034, visible=0, route_name='ProjectManage')
+      ├─ 立项申请 (menu_id=2035, path='apply', visible=0, route_name='ProjectApply')
+      │  └─ 组件: project/project/apply.vue
+      │
+      └─ 项目列表 (menu_id=2036, path='list', visible=0, route_name='ProjectList')
+         ├─ 组件: project/project/index.vue
+         ├─ 编辑项目 (menu_id=2043, path='edit/:projectId(\\d+)', visible=1, route_name='ProjectEdit')
+         │  └─ 组件: project/project/edit.vue
+         └─ 项目详情 (menu_id=2044, path='detail/:projectId(\\d+)', visible=1, route_name='ProjectDetail')
+            └─ 组件: project/project/detail.vue
+
+      ========================================
+      关键配置说明
+      ========================================
+
+      1. 路由名称 (route_name)
+         - 父菜单: ProjectManage
+         - 立项申请: ProjectApply
+         - 项目列表: ProjectList
+         - 编辑项目: ProjectEdit
+         - 项目详情: ProjectDetail
+         - 作用: 避免路由名称冲突，每个路由必须有唯一的 route_name
+
+      2. 路由路径 (path)
+         - 父菜单: project (一级路径)
+         - 立项申请: apply (相对路径，完整路径为 /project/apply)
+         - 项目列表: list (相对路径，完整路径为 /project/list)
+         - 编辑项目: edit/:projectId(\\d+) (带参数的相对路径)
+         - 项目详情: detail/:projectId(\\d+) (带参数的相对路径)
+
+      3. 可见性 (visible)
+         - visible=0: 显示在侧边栏菜单
+         - visible=1: 隐藏菜单（不显示在侧边栏，但可以通过路由访问）
+         - 编辑和详情页设置为 visible=1，作为隐藏路由
+
+      4. 组件路径 (component)
+         - 立项申请: project/project/apply
+         - 项目列表: project/project/index
+         - 编辑项目: project/project/edit
+         - 项目详情: project/project/detail
+         - 注意: 不需要 .vue 后缀，框架会自动添加
+
+      5. activeMenu 配置
+         - 编辑和详情页的 meta.activeMenu 设置为 '/project/list'
+         - 作用: 访问编辑/详情页时，侧边栏高亮"项目列表"菜单
+         - 由后端 buildMenus() 方法自动处理
+
+      ========================================
+      数据库菜单配置 SQL
+      ========================================
+
+      位置: pm-sql/init/02_menu_data.sql
+
+      -- 一级菜单：项目管理
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('项目管理', 0, 3, 'project', NULL, 1, 0, 'M', '0', '0', '',
+        'project', 'admin', sysdate(), 'ProjectManage', '项目管理目录');
+
+      -- 二级菜单：立项申请
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('立项申请', @projectRootMenuId, 1, 'apply', 'project/project/apply',
+        1, 0, 'C', '0', '0', 'project:project:add', 'edit', 'admin', sysdate(),
+        'ProjectApply', '项目立项申请菜单');
+
+      -- 二级菜单：项目列表
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('项目列表', @projectRootMenuId, 2, 'list', 'project/project/index',
+        1, 0, 'C', '0', '0', 'project:project:list', 'list', 'admin', sysdate(),
+        'ProjectList', '项目列表菜单');
+
+      -- 隐藏菜单：编辑项目
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('编辑项目', @projectMenuId, 10, 'edit/:projectId(\\d+)',
+        'project/project/edit', 1, 0, 'C', '1', '0', 'project:project:edit',
+        '#', 'admin', sysdate(), 'ProjectEdit', '编辑项目页面');
+
+      -- 隐藏菜单：项目详情
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('项目详情', @projectMenuId, 11, 'detail/:projectId(\\d+)',
+        'project/project/detail', 1, 0, 'C', '1', '0', 'project:project:query',
+        '#', 'admin', sysdate(), 'ProjectDetail', '项目详情页面');
+
+      ========================================
+      前端路由配置
+      ========================================
+
+      位置: ruoyi-ui/src/router/index.ts
+
+      说明:
+      - 删除了所有项目相关的静态路由配置
+      - 完全依赖后端动态加载路由
+      - 路由由 permission.ts 中的 generateRoutes() 方法动态添加
+
+      ========================================
+      文件结构
+      ========================================
+
+      ruoyi-ui/src/views/project/
+      ├─ project/
+      │  ├─ apply.vue      # 立项申请页面
+      │  ├─ index.vue      # 项目列表页面
+      │  ├─ edit.vue       # 编辑项目页面
+      │  └─ detail.vue     # 项目详情页面
+      ├─ customer/
+      ├─ approval/
+      └─ ...
+
+      注意: 删除了 project/apply/ 目录，统一使用 project/project/ 目录
+
+      ========================================
+      路由跳转示例
+      ========================================
+
+      1. 跳转到立项申请页面:
+         router.push('/project/apply')
+
+      2. 跳转到项目列表页面:
+         router.push('/project/list')
+
+      3. 跳转到编辑项目页面:
+         router.push(`/project/list/edit/${projectId}`)
+
+      4. 跳转到项目详情页面:
+         router.push(`/project/list/detail/${projectId}`)
+
+      ========================================
+      常见问题与解决方案
+      ========================================
+
+      问题1: 路由名称冲突错误
+      错误信息: "A route named 'Project' has been added as a child of a route
+                with the same name"
+
+      原因: 父路由和子路由使用了相同的路由名称
+
+      解决方案:
+      - 为每个菜单配置明确的 route_name 字段
+      - 确保所有 route_name 全局唯一
+      - 父菜单: ProjectManage
+      - 子菜单: ProjectApply, ProjectList, ProjectEdit, ProjectDetail
+
+      问题2: 侧边栏菜单不高亮
+
+      原因: 隐藏路由没有配置 activeMenu
+
+      解决方案:
+      - 编辑和详情页的 meta.activeMenu 设置为 '/project/list'
+      - 由后端 SysMenuServiceImpl.buildMenus() 自动处理
+
+      问题3: 路由跳转404
+
+      原因: 路径配置错误或组件路径不存在
+
+      解决方案:
+      - 检查数据库中的 path 和 component 字段
+      - 确保组件文件存在于 ruoyi-ui/src/views/ 对应路径
+      - 子路由的 path 使用相对路径（不以 / 开头）
 

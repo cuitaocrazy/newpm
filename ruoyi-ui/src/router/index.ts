@@ -48,38 +48,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/project/apply',
-    component: Layout,
-    hidden: true,
-    children: [
-      {
-        path: '',
-        component: () => import('@/views/project/apply/index.vue'),
-        name: 'ProjectApply',
-        meta: { title: '项目立项申请', activeMenu: '/project/list' }
-      }
-    ]
-  },
-  {
-    path: '/project/project',
-    component: Layout,
-    hidden: true,
-    children: [
-      {
-        path: 'edit/:projectId(\\d+)',
-        component: () => import('@/views/project/project/edit.vue'),
-        name: 'ProjectEdit',
-        meta: { title: '编辑项目', activeMenu: '/project/project' }
-      },
-      {
-        path: 'detail/:projectId(\\d+)',
-        component: () => import('@/views/project/project/detail.vue'),
-        name: 'ProjectDetail',
-        meta: { title: '项目详情', activeMenu: '/project/project' }
-      }
-    ]
-  },
-  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404.vue'),
     hidden: true

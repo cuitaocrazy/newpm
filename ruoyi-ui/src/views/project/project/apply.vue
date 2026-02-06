@@ -1,11 +1,27 @@
 <template>
   <div class="app-container">
+    <!-- 页面标题 -->
+    <h2 style="margin: 0 0 6px 0; font-weight: bold;">立项申请</h2>
+
     <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
+      <!-- 折叠控制工具栏 -->
+      <div style="text-align: right; margin-bottom: 10px;">
+        <el-link type="primary" @click="expandAll" style="margin-right: 10px;">全部展开</el-link>
+        <el-link type="primary" @click="collapseAll">全部折叠</el-link>
+      </div>
+
       <!-- 一、项目基本信息 -->
-      <el-divider content-position="left">
-        <span style="font-size: 16px; font-weight: bold;">一、项目基本信息</span>
-      </el-divider>
-      
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header>
+          <div style="display: flex; align-items: center;">
+            <div @click="togglePanel('1')" style="cursor: pointer; user-select: none; flex: 1;">
+              <i :class="activeNames.includes('1') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
+              <span style="font-size: 16px; font-weight: bold;">一、项目基本信息</span>
+            </div>
+          </div>
+        </template>
+        <div v-show="activeNames.includes('1')">
+
       <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item label="行业" prop="industry">
@@ -170,11 +186,18 @@
           </el-form-item>
         </el-col>
       </el-row>
+        </div>
+      </el-card>
 
-      <!-- 三、人员配置 -->
-      <el-divider content-position="left">
-        <span style="font-size: 16px; font-weight: bold;">三、人员配置</span>
-      </el-divider>
+      <!-- 二、人员配置 -->
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header>
+          <div @click="togglePanel('3')" style="cursor: pointer; user-select: none;">
+            <i :class="activeNames.includes('3') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
+            <span style="font-size: 16px; font-weight: bold;">二、人员配置</span>
+          </div>
+        </template>
+        <div v-show="activeNames.includes('3')">
 
       <el-row :gutter="20">
         <el-col :span="8">
@@ -234,11 +257,18 @@
           </el-form-item>
         </el-col>
       </el-row>
+        </div>
+      </el-card>
 
-      <!-- 四、客户信息 -->
-      <el-divider content-position="left">
-        <span style="font-size: 16px; font-weight: bold;">四、客户信息</span>
-      </el-divider>
+      <!-- 三、客户信息 -->
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header>
+          <div @click="togglePanel('4')" style="cursor: pointer; user-select: none;">
+            <i :class="activeNames.includes('4') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
+            <span style="font-size: 16px; font-weight: bold;">三、客户信息</span>
+          </div>
+        </template>
+        <div v-show="activeNames.includes('4')">
 
       <el-row :gutter="20">
         <el-col :span="8">
@@ -266,8 +296,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="客户联系方式" prop="merchantPhone">
-            <el-input v-model="form.merchantPhone" placeholder="自动带出" readonly />
+          <el-form-item label="客户联系方式">
+            <el-input v-model="customerContactPhone" placeholder="自动带出" readonly />
           </el-form-item>
         </el-col>
       </el-row>
@@ -278,12 +308,24 @@
             <el-input v-model="form.merchantContact" placeholder="请输入商户联系人" />
           </el-form-item>
         </el-col>
+        <el-col :span="8">
+          <el-form-item label="商户联系方式">
+            <el-input v-model="form.merchantPhone" placeholder="请输入商户联系方式" />
+          </el-form-item>
+        </el-col>
       </el-row>
+        </div>
+      </el-card>
 
-      <!-- 五、时间规划 -->
-      <el-divider content-position="left">
-        <span style="font-size: 16px; font-weight: bold;">五、时间规划</span>
-      </el-divider>
+      <!-- 四、时间规划 -->
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header>
+          <div @click="togglePanel('5')" style="cursor: pointer; user-select: none;">
+            <i :class="activeNames.includes('5') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
+            <span style="font-size: 16px; font-weight: bold;">四、时间规划</span>
+          </div>
+        </template>
+        <div v-show="activeNames.includes('5')">
 
       <el-row :gutter="20">
         <el-col :span="6">
@@ -331,11 +373,18 @@
           </el-form-item>
         </el-col>
       </el-row>
+        </div>
+      </el-card>
 
-      <!-- 六、成本预算 -->
-      <el-divider content-position="left">
-        <span style="font-size: 16px; font-weight: bold;">六、成本预算</span>
-      </el-divider>
+      <!-- 五、成本预算 -->
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header>
+          <div @click="togglePanel('6')" style="cursor: pointer; user-select: none;">
+            <i :class="activeNames.includes('6') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
+            <span style="font-size: 16px; font-weight: bold;">五、成本预算</span>
+          </div>
+        </template>
+        <div v-show="activeNames.includes('6')">
 
       <el-row :gutter="20">
         <el-col :span="8">
@@ -367,11 +416,18 @@
           </el-form-item>
         </el-col>
       </el-row>
+        </div>
+      </el-card>
 
-      <!-- 七、备注 -->
-      <el-divider content-position="left">
-        <span style="font-size: 16px; font-weight: bold;">七、备注</span>
-      </el-divider>
+      <!-- 六、备注 -->
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header>
+          <div @click="togglePanel('7')" style="cursor: pointer; user-select: none;">
+            <i :class="activeNames.includes('7') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
+            <span style="font-size: 16px; font-weight: bold;">六、备注</span>
+          </div>
+        </template>
+        <div v-show="activeNames.includes('7')">
 
       <el-row :gutter="20">
         <el-col :span="24">
@@ -380,6 +436,8 @@
           </el-form-item>
         </el-col>
       </el-row>
+        </div>
+      </el-card>
 
       <!-- 按钮 -->
       <el-row>
@@ -393,6 +451,13 @@
   </div>
 </template>
 
+<style scoped>
+/* 禁用 label 点击触发表单控件的默认行为 */
+:deep(.el-form-item__label) {
+  pointer-events: none;
+}
+</style>
+
 <script setup name="ProjectApply">
 import { addProject } from "@/api/project/project"
 import request from '@/utils/request'
@@ -402,6 +467,8 @@ const router = useRouter()
 const { industry, sys_xmfl, sys_ndgl, sys_yjqy, sys_xmjd, sys_yszt } = proxy.useDict('industry', 'sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_xmjd', 'sys_yszt')
 
 const formRef = ref()
+const activeNames = ref(['1', '3', '4', '5', '6', '7']) // 默认展开所有折叠面板
+const allPanelNames = ['1', '3', '4', '5', '6', '7'] // 所有面板的name
 const form = ref({
   industry: null,
   region: null,
@@ -473,6 +540,12 @@ const allUserOptions = ref([])
 const customerOptions = ref([])
 const contactOptions = ref([])
 const participantIds = ref([])
+const customerContactPhone = ref('')
+
+// 监听参与人员变化，同步到表单
+watch(participantIds, (newVal) => {
+  form.value.participants = newVal.join(',')
+})
 
 /** 获取部门树 */
 function getDeptTree() {
@@ -565,7 +638,7 @@ function handleSalesManagerChange(userId) {
 /** 客户变化处理 */
 function handleCustomerChange(customerId) {
   form.value.customerContactId = null
-  form.value.merchantPhone = null
+  customerContactPhone.value = ''
   if (!customerId) {
     contactOptions.value = []
     return
@@ -575,19 +648,19 @@ function handleCustomerChange(customerId) {
     method: 'get',
     params: { customerId: customerId }
   }).then(response => {
-    contactOptions.value = response.rows || []
+    contactOptions.value = response.data || []
   })
 }
 
 /** 客户联系人变化处理 */
 function handleContactChange(contactId) {
   if (!contactId) {
-    form.value.merchantPhone = null
+    customerContactPhone.value = ''
     return
   }
   const contact = contactOptions.value.find(c => c.contactId === contactId)
   if (contact) {
-    form.value.merchantPhone = contact.contactPhone || ''
+    customerContactPhone.value = contact.contactPhone || ''
   }
 }
 
@@ -603,12 +676,9 @@ function generateProjectCode() {
 function submitForm() {
   formRef.value.validate(valid => {
     if (valid) {
-      // 转换参与人员为逗号分隔字符串
-      form.value.participants = participantIds.value.join(',')
-      
       addProject(form.value).then(response => {
         proxy.$modal.msgSuccess("提交成功")
-        router.push('/project/project')
+        router.push('/project/list')
       })
     }
   })
@@ -618,6 +688,7 @@ function submitForm() {
 function resetForm() {
   formRef.value.resetFields()
   participantIds.value = []
+  customerContactPhone.value = ''
   secondaryRegionOptions.value = []
   contactOptions.value = []
 }
@@ -625,6 +696,26 @@ function resetForm() {
 /** 取消 */
 function cancel() {
   router.push('/project/project')
+}
+
+/** 全部展开 */
+function expandAll() {
+  activeNames.value = [...allPanelNames]
+}
+
+/** 全部折叠 */
+function collapseAll() {
+  activeNames.value = []
+}
+
+/** 切换面板展开/折叠 */
+function togglePanel(name) {
+  const index = activeNames.value.indexOf(name)
+  if (index > -1) {
+    activeNames.value.splice(index, 1)
+  } else {
+    activeNames.value.push(name)
+  }
 }
 
 // 初始化数据

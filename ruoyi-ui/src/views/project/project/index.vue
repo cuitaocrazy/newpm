@@ -532,6 +532,7 @@ import { listProject, getProject, delProject, addProject, updateProject } from "
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
+const router = useRouter()
 const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
 
 const projectList = ref([])
@@ -821,14 +822,8 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  reset()
   const _projectId = row.projectId || ids.value
-  getProject(_projectId).then(response => {
-    form.value = response.data
-    projectApprovalList.value = response.data.projectApprovalList
-    open.value = true
-    title.value = "修改项目管理"
-  })
+  router.push(`/project/list/edit/${_projectId}`)
 }
 
 /** 提交按钮 */
