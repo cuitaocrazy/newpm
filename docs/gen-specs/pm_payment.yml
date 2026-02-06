@@ -1,0 +1,313 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_payment
+  tableComment: 款项表
+  className: Payment
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  payment_id:
+    columnComment: 款项主键ID
+    columnType: bigint
+    javaType: Long
+    javaField: paymentId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  contract_id:
+    columnComment: 合同ID
+    columnType: bigint
+    javaType: Long
+    javaField: contractId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  payment_method_name:
+    columnComment: 付款方式名称
+    columnType: varchar(200)
+    javaType: String
+    javaField: paymentMethodName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  payment_amount:
+    columnComment: 付款总金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: paymentAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  has_penalty:
+    columnComment: 是否涉及违约扣款(1是 0否)
+    columnType: char(1)
+    javaType: String
+    javaField: hasPenalty
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: radio
+    dictType: ""
+
+  penalty_amount:
+    columnComment: 扣款金额(元)
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: penaltyAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  payment_status:
+    columnComment: 付款状态
+    columnType: varchar(50)
+    javaType: String
+    javaField: paymentStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_fkzt
+
+  expected_quarter:
+    columnComment: 预计回款所属季度
+    columnType: varchar(20)
+    javaType: String
+    javaField: expectedQuarter
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_jdgl
+
+  actual_quarter:
+    columnComment: 实际回款所属季度
+    columnType: varchar(20)
+    javaType: String
+    javaField: actualQuarter
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_jdgl
+
+  submit_acceptance_date:
+    columnComment: 提交验收材料日期
+    columnType: date
+    javaType: Date
+    javaField: submitAcceptanceDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  actual_payment_date:
+    columnComment: 实际回款日期
+    columnType: date
+    javaType: Date
+    javaField: actualPaymentDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  flow_status:
+    columnComment: 流程状态
+    columnType: varchar(50)
+    javaType: String
+    javaField: flowStatus
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_year:
+    columnComment: 款项确认年份
+    columnType: varchar(10)
+    javaType: String
+    javaField: confirmYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_ndgl
+
+  del_flag:
+    columnComment: 删除标志(0正常 1删除)
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: payment
+  functionName: 款项管理
+  parentMenuId: 3
+
+# ============================
+# 关联信息
+# ============================
+relations:
+  foreignKeys:
+    - parentTable: pm_contract
+      foreignKey: contract_id
+      description: 合同ID
+
+  businessLogic:
+    - relatedTable: pm_attachment
+      relationType: business_type='payment'
+      description: 款项附件管理
+    - relatedTable: pm_attachment_log
+      relationType: business_type='payment'
+      description: 附件操作日志
+
+# ============================
+# 定制需求（超出标准模板的组件/交互/接口需求）
+# ============================
+customizations: {}

@@ -1631,3 +1631,33 @@ insert into sys_dict_data values(206,1,'直辖市','1','sflx','','','N','0','adm
 insert into sys_dict_data values(207,2,'自治区','2','sflx','','','N','0','admin',sysdate(),'',NULL,'自治区');
 insert into sys_dict_data values(208,3,'特别行政区','3','sflx','','','N','0','admin',sysdate(),'',NULL,'特别行政区');
 insert into sys_dict_data values(209,4,'计划单列市','4','sflx','','','N','0','admin',sysdate(),'',NULL,'计划单列市');
+
+-- =============================================
+-- 合同状态字典颜色优化
+-- 日期: 2026-02-06
+-- 说明: 为合同状态添加颜色标识，便于在列表中快速识别
+-- =============================================
+
+-- 1-已签：成功（绿色）
+UPDATE sys_dict_data SET list_class = 'success' WHERE dict_type = 'sys_htzt' AND dict_value = '1';
+
+-- 2-未签：警告（橙色）
+UPDATE sys_dict_data SET list_class = 'warning' WHERE dict_type = 'sys_htzt' AND dict_value = '2';
+
+-- 3-待变更：信息（蓝色）
+UPDATE sys_dict_data SET list_class = 'info' WHERE dict_type = 'sys_htzt' AND dict_value = '3';
+
+-- 4-已变更：主要（深蓝色）
+UPDATE sys_dict_data SET list_class = 'primary' WHERE dict_type = 'sys_htzt' AND dict_value = '4';
+
+-- 5-合同作废：危险（红色）
+UPDATE sys_dict_data SET list_class = 'danger' WHERE dict_type = 'sys_htzt' AND dict_value = '5';
+
+-- =============================================
+-- 颜色说明：
+-- success (绿色)  - 已签：表示合同已正式签订，状态正常
+-- warning (橙色)  - 未签：表示合同尚未签订，需要关注
+-- info (蓝色)     - 待变更：表示合同需要变更，处于待处理状态
+-- primary (深蓝色) - 已变更：表示合同已完成变更
+-- danger (红色)   - 合同作废：表示合同已作废，需要特别注意
+-- =============================================

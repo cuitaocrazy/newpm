@@ -30,7 +30,7 @@
             <el-form-item label="部门" prop="deptId">
               <el-tree-select
                 v-model="form.deptId"
-                :data="deptOptions"
+                :data="filteredDeptOptions"
                 :props="{ value: 'id', label: 'label', children: 'children' }"
                 value-key="id"
                 placeholder="请选择部门"
@@ -84,21 +84,53 @@
           <el-col :span="24">
             <el-form-item label="关联项目" prop="projectIds">
               <el-select
-                v-model="form.projectIds"
+                v-model="selectedProjectId"
                 :placeholder="projectPlaceholder"
-                multiple
                 clearable
                 filterable
                 style="width: 100%"
                 :disabled="!form.deptId"
+                @change="handleProjectSelect"
               >
                 <el-option
-                  v-for="project in filteredProjectOptions"
+                  v-for="project in availableProjectOptions"
                   :key="project.projectId"
                   :label="project.projectName"
                   :value="project.projectId"
                 />
               </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 已选项目列表 -->
+        <el-row :gutter="20" v-if="selectedProjects.length > 0">
+          <el-col :span="24">
+            <el-form-item label=" " label-width="140px">
+              <el-table :data="selectedProjects" border style="width: 100%">
+                <el-table-column type="index" label="序号" width="60" align="center" />
+                <el-table-column prop="projectName" label="项目名称" min-width="200" />
+                <el-table-column prop="projectBudget" label="预算金额（元）" width="150" align="right">
+                  <template #default="scope">
+                    {{ scope.row.projectBudget ? Number(scope.row.projectBudget).toFixed(2) : '0.00' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="estimatedWorkload" label="预估工作量（人天）" width="160" align="right">
+                  <template #default="scope">
+                    {{ scope.row.estimatedWorkload ? Number(scope.row.estimatedWorkload).toFixed(2) : '0.00' }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="actualWorkload" label="实际工作量（人天）" width="160" align="right">
+                  <template #default="scope">
+                    {{ scope.row.actualWorkload ? Number(scope.row.actualWorkload).toFixed(2) : '0.00' }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="80" align="center">
+                  <template #default="scope">
+                    <el-button type="text" icon="Delete" @click="handleRemoveProject(scope.$index)">移除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
             </el-form-item>
           </el-col>
         </el-row>
@@ -186,6 +218,37 @@
           </el-col>
         </el-row>
 
+        <!-- 第五部分：审计信息（仅编辑模式显示） -->
+        <template v-if="form.contractId">
+          <el-divider content-position="left">
+            <span style="font-size: 16px; font-weight: bold; color: #409EFF;">审计信息</span>
+          </el-divider>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="创建人">
+                <el-input v-model="form.createByName" :placeholder="form.createBy" :disabled="true" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="创建时间">
+                <el-input :value="parseTime(form.createTime, '{y}-{m}-{d} {h}:{i}:{s}')" :disabled="true" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="更新人">
+                <el-input v-model="form.updateByName" :placeholder="form.updateBy" :disabled="true" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="更新时间">
+                <el-input :value="parseTime(form.updateTime, '{y}-{m}-{d} {h}:{i}:{s}')" :disabled="true" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
         <!-- 操作按钮 -->
         <el-row :gutter="20">
           <el-col :span="24" style="text-align: center; margin-top: 20px;">
@@ -199,10 +262,10 @@
 </template>
 
 <script setup name="ContractForm">
-import { getContract, addContract, updateContract } from "@/api/project/contract"
+import { getContract, addContract, updateContract, checkContractNameUnique } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
-import { listProject } from "@/api/project/project"
+import { listProjectByDept } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
 const { sys_htlx, sys_htzt } = proxy.useDict('sys_htlx', 'sys_htzt')
@@ -211,12 +274,14 @@ const router = useRouter()
 
 const title = ref("合同新增")
 const deptOptions = ref([])
+const filteredDeptOptions = ref([])
 const customerOptions = ref([])
-const projectOptions = ref([])
-const allProjectOptions = ref([])
 const submitLoading = ref(false)
 const filteredProjectOptions = ref([])
+const availableProjectOptions = ref([])
 const projectPlaceholder = ref("请先选择部门")
+const selectedProjectId = ref(null)
+const selectedProjects = ref([])
 
 const data = reactive({
   form: {
@@ -237,15 +302,18 @@ const data = reactive({
     confirmYear: null,
     freeMaintenancePeriod: null,
     createBy: null,
+    createByName: null,
     createTime: null,
     updateBy: null,
+    updateByName: null,
     updateTime: null,
     remark: null,
     projectIds: []
   },
   rules: {
     contractName: [
-      { required: true, message: "合同名称不能为空", trigger: "blur" }
+      { required: true, message: "合同名称不能为空", trigger: "blur" },
+      { validator: validateContractName, trigger: "blur" }
     ],
     deptId: [
       { required: true, message: "部门不能为空", trigger: "change" }
@@ -259,9 +327,6 @@ const data = reactive({
     contractSignDate: [
       { required: true, message: "合同签订日期不能为空", trigger: "change" }
     ],
-    freeMaintenancePeriod: [
-      { required: true, message: "免维期不能为空", trigger: "blur" }
-    ],
     contractAmount: [
       { required: true, message: "合同金额(含税)不能为空", trigger: "blur" }
     ],
@@ -270,11 +335,57 @@ const data = reactive({
 
 const { form, rules } = toRefs(data)
 
+/** 合同名称唯一性校验 */
+async function validateContractName(rule, value, callback) {
+  if (!value || value.trim() === '') {
+    callback()
+    return
+  }
+
+  try {
+    const response = await checkContractNameUnique(value.trim(), form.value.contractId)
+    if (response.data === true) {
+      callback()
+    } else {
+      callback(new Error('合同名称已存在，请使用其他名称'))
+    }
+  } catch (error) {
+    console.error('校验合同名称唯一性失败:', error)
+    callback()
+  }
+}
+
 /** 查询部门下拉树结构 */
 function getDeptTree() {
   deptTreeSelect().then(response => {
     deptOptions.value = response.data
+    // 过滤出第三级及以下部门
+    filteredDeptOptions.value = filterDeptFromLevel3(response.data)
   })
+}
+
+/** 过滤部门树，只保留第三级及以下部门 */
+function filterDeptFromLevel3(deptTree, level = 1) {
+  if (!deptTree || !Array.isArray(deptTree)) return []
+
+  const result = []
+  for (const dept of deptTree) {
+    if (level >= 3) {
+      // 第三级及以下，保留该节点
+      const newDept = { ...dept }
+      if (dept.children && dept.children.length > 0) {
+        newDept.children = filterDeptFromLevel3(dept.children, level + 1)
+      }
+      result.push(newDept)
+    } else {
+      // 第一、二级，只递归处理子节点
+      if (dept.children && dept.children.length > 0) {
+        const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
+        result.push(...childrenResult)
+      }
+    }
+  }
+  return result
 }
 
 /** 查询客户列表 */
@@ -286,60 +397,69 @@ function getCustomerList() {
 
 /** 查询项目列表 */
 function getProjectList() {
-  listProject().then(response => {
-    allProjectOptions.value = response.rows
-    projectOptions.value = response.rows
-  })
-}
-
-/** 获取部门及其所有子部门的ID列表 */
-function getAllDeptIds(deptId) {
-  const deptIds = [deptId]
-
-  // 递归获取所有子部门ID
-  function getChildDeptIds(depts, parentId) {
-    if (!depts || !Array.isArray(depts)) return
-    for (const dept of depts) {
-      if (dept.id === parentId && dept.children && dept.children.length > 0) {
-        for (const child of dept.children) {
-          deptIds.push(child.id)
-          getChildDeptIds(dept.children, child.id)
-        }
-      } else if (dept.children && dept.children.length > 0) {
-        getChildDeptIds(dept.children, parentId)
-      }
-    }
-  }
-
-  getChildDeptIds(deptOptions.value, deptId)
-  return deptIds
+  // 不再在初始化时查询所有项目，而是根据部门动态查询
 }
 
 /** 部门变化时过滤项目 */
 function handleDeptChange(deptId) {
   // 清空已选项目
-  form.value.projectIds = []
+  selectedProjects.value = []
+  selectedProjectId.value = null
 
   if (!deptId) {
     filteredProjectOptions.value = []
+    availableProjectOptions.value = []
     projectPlaceholder.value = "请先选择部门"
     return
   }
 
-  // 获取当前部门及所有子部门的ID
-  const deptIds = getAllDeptIds(deptId)
+  // 根据部门查询项目（排除已被其他合同关联的项目）
+  const excludeContractId = form.value.contractId || null
+  listProjectByDept(deptId, excludeContractId).then(response => {
+    filteredProjectOptions.value = response.data || []
 
-  // 过滤项目：项目的部门ID在部门ID列表中
-  filteredProjectOptions.value = allProjectOptions.value.filter(project => {
-    return project.projectDept && deptIds.includes(parseInt(project.projectDept))
+    // 更新可选项目列表
+    updateAvailableProjects()
+
+    // 更新提示文本
+    if (filteredProjectOptions.value.length === 0) {
+      projectPlaceholder.value = "该部门暂无可关联的项目"
+    } else {
+      projectPlaceholder.value = "请选择关联项目"
+    }
+  }).catch(error => {
+    console.error('查询项目列表失败:', error)
+    filteredProjectOptions.value = []
+    availableProjectOptions.value = []
+    projectPlaceholder.value = "查询项目失败"
   })
+}
 
-  // 更新提示文本
-  if (filteredProjectOptions.value.length === 0) {
-    projectPlaceholder.value = "该部门暂无项目"
-  } else {
-    projectPlaceholder.value = "请选择关联项目"
+/** 更新可选项目列表（排除已选项目） */
+function updateAvailableProjects() {
+  const selectedIds = selectedProjects.value.map(p => p.projectId)
+  availableProjectOptions.value = filteredProjectOptions.value.filter(project => {
+    return !selectedIds.includes(project.projectId)
+  })
+}
+
+/** 项目选择变化时自动添加到列表 */
+function handleProjectSelect(projectId) {
+  if (!projectId) return
+
+  const project = filteredProjectOptions.value.find(p => p.projectId === projectId)
+  if (project) {
+    selectedProjects.value.push({ ...project })
+    // 清空选择，允许继续选择其他项目
+    selectedProjectId.value = null
+    updateAvailableProjects()
   }
+}
+
+/** 从已选列表移除项目 */
+function handleRemoveProject(index) {
+  selectedProjects.value.splice(index, 1)
+  updateAvailableProjects()
 }
 
 // 计算不含税金额和税金
@@ -370,6 +490,9 @@ function submitForm() {
   proxy.$refs["contractRef"].validate(valid => {
     if (valid) {
       submitLoading.value = true
+      // 将已选项目ID列表赋值给form
+      form.value.projectIds = selectedProjects.value.map(p => p.projectId)
+
       if (form.value.contractId != null) {
         updateContract(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
@@ -401,7 +524,7 @@ function init() {
   getProjectList()
 
   // 如果有contractId参数，则是编辑模式
-  const contractId = route.query.contractId
+  const contractId = route.params.contractId
   if (contractId) {
     title.value = "合同编辑"
     // 动态修改路由的 meta.title 以更新面包屑
@@ -412,11 +535,30 @@ function init() {
       form.value = response.data
       // 编辑模式下，根据已选部门过滤项目
       if (form.value.deptId) {
-        // 延迟执行，确保项目列表已加载
+        // 延迟执行，确保部门数据已加载
         setTimeout(() => {
-          handleDeptChange(form.value.deptId)
-          // 恢复已选项目（因为handleDeptChange会清空）
-          form.value.projectIds = response.data.projectIds || []
+          // 查询该部门的项目（包含当前合同已关联的项目）
+          listProjectByDept(form.value.deptId, contractId).then(projectResponse => {
+            filteredProjectOptions.value = projectResponse.data || []
+
+            // 恢复已选项目列表
+            const projectIds = response.data.projectIds || []
+            selectedProjects.value = filteredProjectOptions.value.filter(project => {
+              return projectIds.includes(project.projectId)
+            })
+
+            // 更新可选项目列表
+            updateAvailableProjects()
+
+            // 更新提示文本
+            if (filteredProjectOptions.value.length === 0) {
+              projectPlaceholder.value = "该部门暂无可关联的项目"
+            } else {
+              projectPlaceholder.value = "请选择关联项目"
+            }
+          }).catch(error => {
+            console.error('查询项目列表失败:', error)
+          })
         }, 100)
       }
     })
@@ -458,11 +600,14 @@ function resetForm() {
     projectIds: []
   }
   filteredProjectOptions.value = []
+  availableProjectOptions.value = []
+  selectedProjects.value = []
+  selectedProjectId.value = null
   projectPlaceholder.value = "请先选择部门"
 }
 
 // 监听路由参数变化，当 contractId 变化时重新加载数据
-watch(() => route.query.contractId, (newId, oldId) => {
+watch(() => route.params.contractId, (newId, oldId) => {
   // 只有当 contractId 真正变化时才重新加载
   if (newId !== oldId) {
     init()

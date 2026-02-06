@@ -1,0 +1,1862 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_contract
+  tableComment: 合同管理表
+  className: Contract
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  contract_id:
+    columnComment: 合同主键ID
+    columnType: bigint
+    javaType: Long
+    javaField: contractId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  contract_code:
+    columnComment: 合同编号
+    columnType: varchar(100)
+    javaType: String
+    javaField: contractCode
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      合同编号不做唯一性校验：
+      - 数据库层面删除了 UNIQUE KEY uk_contract_code 约束
+      - 添加了普通索引 idx_contract_code 以提高查询性能
+      - 允许重复的合同编号
+  contract_name:
+    columnComment: 合同名称
+    columnType: varchar(200)
+    javaType: String
+    javaField: contractName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    notes: |
+      合同名称唯一性校验：
+      - 新增和编辑时校验合同名称唯一性
+      - 校验方式：精确匹配（EQ），不使用模糊匹配（LIKE）
+      - 避免误判：例如"测试合同"和"测试合同1"不会被误判为重复
+      - 前端失去焦点时触发校验
+      - 后端 Service 层实现唯一性检查逻辑
+  customer_id:
+    columnComment: 关联客户ID
+    columnType: bigint
+    javaType: Long
+    javaField: customerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+  dept_id:
+    columnComment: 部门ID
+    columnType: bigint
+    javaType: Long
+    javaField: deptId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+  contract_type:
+    columnComment: 合同类型
+    columnType: varchar(50)
+    javaType: String
+    javaField: contractType
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: sys_htlx
+  contract_status:
+    columnComment: 合同状态
+    columnType: varchar(50)
+    javaType: String
+    javaField: contractStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_htzt
+    notes: |
+      合同状态字典值及颜色标识：
+      - 1-已签：success (绿色) - 合同已正式签订，状态正常
+      - 2-未签：warning (橙色) - 合同尚未签订，需要关注
+      - 3-待变更：info (蓝色) - 合同需要变更，处于待处理状态
+      - 4-已变更：primary (深蓝色) - 合同已完成变更
+      - 5-合同作废：danger (红色) - 合同已作废，需要特别注意
+
+      颜色配置：
+      - 数据库字段：sys_dict_data.list_class
+      - 前端组件：<dict-tag> 自动根据 list_class 显示对应颜色
+      - SQL脚本：pm-sql/fix_contract_status_color.sql
+
+      优化日期：2026-02-06
+  contract_sign_date:
+    columnComment: 合同签订日期
+    columnType: date
+    javaType: Date
+    javaField: contractSignDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: datetime
+    dictType: ""
+  contract_period:
+    columnComment: 合同周期(月)
+    columnType: int
+    javaType: Integer
+    javaField: contractPeriod
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  contract_amount:
+    columnComment: 合同金额(含税)
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: contractAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+  tax_rate:
+    columnComment: 税率(%)
+    columnType: decimal(5,2)
+    javaType: BigDecimal
+    javaField: taxRate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      税率字段说明：
+      - 前端表单不设置默认值，由用户自行填写
+      - 用于自动计算不含税金额和税金
+      - 计算公式：不含税金额 = 合同金额 / (1 + 税率/100)
+  amount_no_tax:
+    columnComment: 不含税金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: amountNoTax
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  tax_amount:
+    columnComment: 税金
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: taxAmount
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  confirm_amount:
+    columnComment: 合同确认金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: confirmAmount
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  confirm_year:
+    columnComment: 确认年份
+    columnType: varchar(10)
+    javaType: String
+    javaField: confirmYear
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_ndgl
+  free_maintenance_period:
+    columnComment: 免维期(月)
+    columnType: int
+    javaType: Integer
+    javaField: freeMaintenancePeriod
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  del_flag:
+    columnComment: 删除标志
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      更新人字段说明：
+      - 后端自动填充：contract.setUpdateBy(SecurityUtils.getUsername())
+      - 编辑页面展示：通过 updateByName 字段显示用户姓名
+      - Service 层查询时关联 sys_user 表获取用户姓名
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    notes: |
+      更新时间字段说明：
+      - 后端自动填充：contract.setUpdateTime(DateUtils.getNowDate())
+      - 编辑页面展示更新时间
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+  reserved_field1:
+    columnComment: 备用域1
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField1
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  reserved_field2:
+    columnComment: 备用域2
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField2
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  reserved_field3:
+    columnComment: 备用域3
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField3
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  reserved_field4:
+    columnComment: 备用域4
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField4
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+  reserved_field5:
+    columnComment: 备用域5
+    columnType: varchar(64)
+    javaType: String
+    javaField: reservedField5
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: contract
+  functionName: 合同管理
+  parentMenuId: 3
+
+# ============================
+# 定制需求
+# ============================
+customizations:
+  # ==================
+  # 列表页定制
+  # ==================
+  list_query_form:
+    intent: "查询表单字段配置和顺序"
+    component:
+      type: el-form
+      props:
+        inline: true
+        labelWidth: "100px"
+    bindTo: query_form
+    service: null
+    notes: |
+      查询表单字段顺序（从左到右）：
+
+      基础字段（默认显示）：
+      1. 合同名称 - 输入框，支持模糊查询
+      2. 部门 - 树形选择器，从第三级开始展示
+      3. 客户 - 下拉选择器，支持筛选
+      4. 合同类型 - 下拉选择器，字典 sys_htlx
+      5. 合同状态 - 下拉选择器，字典 sys_htzt
+
+      高级字段（点击"更多"展开）：
+      1. 合同编号 - 输入框，精确查询
+      2. 合同签订日期 - 日期选择器
+      3. 合同确认金额 - 输入框
+      4. 确认年份 - 下拉选择器，字典 sys_ndgl
+
+      字段顺序优化说明：
+      - 合同名称作为最常用的模糊查询条件，放在第一位
+      - 部门作为重要的组织维度查询条件，放在第二位
+      - 合同编号为精确查询，使用频率相对较低，移到"更多"中
+      - 基础查询条件保持5个，界面简洁易用
+
+  list_toolbar_buttons:
+    intent: "工具栏只保留查询、重置、新增、导出4个按钮"
+    component:
+      type: custom
+      spec: "保留查询、重置、新增、导出按钮"
+    bindTo: toolbar
+    service: null
+    notes: "纯前端修改"
+
+  list_operation_buttons:
+    intent: "操作列包含编辑、删除、详情、附件按钮"
+    component:
+      type: custom
+      spec: "操作列显示编辑、删除、详情、附件按钮"
+    bindTo: table_operations
+    service: null
+    notes: "删除按钮需要确认提示"
+
+  list_dept_tree_select:
+    intent: "部门选择，树形结构，任意层级可选"
+    component:
+      type: el-tree-select
+      props:
+        data: "部门树数据"
+        checkStrictly: true
+        valueKey: "id"
+        renderAfterExpand: false
+    bindTo: dept_id
+    service:
+      endpoint: "GET /system/dept/treeselect"
+      source: "复用 SysDeptService，RuoYi 自带"
+      returns: "部门树结构数据"
+      newApi: false
+    notes: |
+      查询表单使用部门树选择
+
+      部门展示层级优化：
+      - 部门选择器从第三级开始展示，过滤掉第一级和第二级部门
+      - 第三级及以下的部门保留完整的层级结构
+      - 第三级部门会被提升到根层级显示（扁平化展示）
+
+      前端实现：
+      - 使用 filterDeptFromLevel3 函数进行过滤处理
+      - 递归遍历部门树，level < 3 的节点不保留，但继续处理其子节点
+      - level >= 3 的节点及其所有子节点都会被保留
+
+      实现代码（index.vue）：
+      ```javascript
+      function filterDeptFromLevel3(deptTree, level = 1) {
+        if (!deptTree || !Array.isArray(deptTree)) return []
+        const result = []
+        for (const dept of deptTree) {
+          if (level >= 3) {
+            // 第三级及以下，保留该节点
+            const newDept = { ...dept }
+            if (dept.children && dept.children.length > 0) {
+              newDept.children = filterDeptFromLevel3(dept.children, level + 1)
+            }
+            result.push(newDept)
+          } else {
+            // 第一级和第二级，只递归处理子节点
+            if (dept.children && dept.children.length > 0) {
+              const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
+              result.push(...childrenResult)
+            }
+          }
+        }
+        return result
+      }
+      ```
+
+  list_customer_select:
+    intent: "客户选择，显示客户简称，提交客户ID"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+        placeholder: "请选择客户"
+    bindTo: customer_id
+    service:
+      endpoint: "GET /project/customer/listAll"
+      source: "复用 PmCustomerService，需新增轻量接口返回 customerId + customerSimpleName"
+      returns: "[{ customerId, customerSimpleName }]"
+      newApi: true
+    notes: "查询表单使用客户下拉选择"
+
+  list_table_index_column:
+    intent: "列表第一列增加序号列"
+    component:
+      type: el-table-column
+      props:
+        type: "index"
+        label: "序号"
+        width: "60"
+    bindTo: table
+    service: null
+    notes: "纯前端修改"
+
+  list_column_order_and_width:
+    intent: "列表展示列的顺序和列宽"
+    component:
+      type: custom
+      spec: |
+        列展示顺序（从左到右）：
+        1. 序号 (60px)
+        2. 合同名称 (200px)
+        3. 关联项目 (180px) - 分行展示，每个项目占一行
+        4. 客户名称 (150px)
+        5. 部门 (120px)
+        6. 合同类型 (100px)
+        7. 合同状态 (100px)
+        8. 合同签订日期 (120px)
+        9. 合同周期（月）(110px)
+        10. 合同金额（元）(130px)
+        11. 不含税金额（元）(140px)
+        12. 免维期（月）(110px)
+        13. 备注 (150px)
+        14. 创建日期 (180px)
+        15. 创建人 (100px)
+        16. 最后更新日期 (180px)
+        17. 最后更新人 (100px)
+        18. 操作 (280px, fixed right)
+    bindTo: table
+    service: null
+    notes: |
+      - 删除了"合同编号"和"税金(元)"列
+      - 新增了"关联项目"、"合同状态"、"合同签订日期"、"合同周期（月）"、"免维期（月）"、"备注"列
+      - 新增了审计信息列："创建日期"、"创建人"、"最后更新日期"、"最后更新人"
+      - 所有列都添加 show-overflow-tooltip 属性
+      - 审计信息列显示在备注列之后、操作列之前
+      - 创建日期和最后更新日期显示格式：yyyy-MM-dd HH:mm:ss
+      - 创建人和最后更新人显示用户姓名（createByName/updateByName），如果姓名为空则显示用户名（createBy/updateBy）
+
+      关联项目分行展示优化（2026-02-06）：
+      - 一个合同关联多个项目时，每个项目占一行
+      - 合同信息列（除"关联项目"列外）进行单元格合并
+      - 序号只在合并单元格的第一行显示
+      - 关联项目列显示当前行的项目名称（currentProject.projectName）
+      - 无关联项目的合同正常显示，不分行
+
+      后端实现（ContractServiceImpl.selectContractList）：
+      - 查询合同列表后，将合同-项目关系展开为多行
+      - 每个合同的每个项目生成一行数据
+      - 设置 isFirstRow 标记（用于前端合并单元格判断）
+      - 设置 rowSpan 值（合并行数 = 项目数量）
+      - 设置 currentProject 字段（当前行的项目信息）
+
+      前端实现（index.vue）：
+      - 使用 el-table 的 span-method 属性实现单元格合并
+      - arraySpanMethod 方法：
+        * 合计行不合并
+        * "关联项目"列不合并（每行显示一个项目）
+        * 其他列：第一行显示并合并 rowSpan 行，其他行隐藏
+      - 序号计算优化：只在合并单元格的第一行显示序号
+      - 关联项目列显示：scope.row.currentProject.projectName
+
+      数据结构（Contract 实体类新增字段）：
+      - currentProject: Project - 当前行的项目信息
+      - isFirstRow: Boolean - 是否为第一行（用于合并判断）
+      - rowSpan: Integer - 行合并数量（项目数量）
+
+      展示效果示例：
+      ```
+      序号 | 合同名称    | 关联项目   | 客户名称 | ...
+      -----+------------+-----------+---------+-----
+      1    | 测试合同A  | 项目1     | 客户A   | ...
+           |            | 项目2     |         | ...
+           |            | 项目3     |         | ...
+      2    | 测试合同B  | 项目4     | 客户B   | ...
+      3    | 测试合同C  | -         | 客户C   | ...
+      ```
+
+  list_display_names:
+    intent: "列表中部门、客户、合同类型、关联项目、创建人、更新人展示名称而非ID"
+    component:
+      type: custom
+      spec: "列表查询时关联查询名称字段，前端展示名称"
+    bindTo: [dept_id, customer_id, contract_type, project_list, create_by, update_by]
+    service:
+      endpoint: "GET /project/contract/list (修改)"
+      source: "修改 ContractServiceImpl.selectContractList，关联查询名称和项目列表"
+      returns: "列表数据包含 deptName, customerName, contractTypeName, projectList, createByName, updateByName"
+      newApi: false
+    notes: |
+      后端修改：
+      - deptName: LEFT JOIN sys_dept ON pm_contract.dept_id = sys_dept.dept_id
+      - customerName: LEFT JOIN pm_customer ON pm_contract.customer_id = pm_customer.customer_id (取customer_simple_name)
+      - contractTypeName: 字典翻译 sys_htlx
+      - projectList: 为每个合同查询关联项目列表（通过 pm_project_contract_rel 关联表）
+      - createByName: LEFT JOIN sys_user u1 ON pm_contract.create_by = u1.user_name (取u1.nick_name)
+      - updateByName: LEFT JOIN sys_user u2 ON pm_contract.update_by = u2.user_name (取u2.nick_name)
+
+      实现代码（ContractServiceImpl.selectContractList）：
+      ```java
+      List<Contract> contractList = contractMapper.selectContractList(contract);
+      // 为每个合同查询关联项目列表
+      for (Contract c : contractList) {
+          List<Project> projectList = projectMapper.selectProjectListByContractId(c.getContractId());
+          c.setProjectList(projectList);
+      }
+      return contractList;
+      ```
+
+      前端显示逻辑：
+      - 创建人和更新人优先显示姓名（createByName/updateByName）
+      - 如果姓名为空，降级显示用户名（createBy/updateBy）
+      - 显示代码：{{ scope.row.createByName || scope.row.createBy }}
+
+  list_table_summary:
+    intent: "列表首行显示合同金额、不含税金额的总计（所有查询结果的总计，非当前页）"
+    component:
+      type: custom
+      spec: |
+        合计行作为表格第一行数据显示：
+        - 合同名称列显示"合计"（粗体）
+        - 序号列显示"-"
+        - 合同金额、不含税金额显示总计值（粗体）
+        - 其他列为空
+        - 操作列为空
+    bindTo: table
+    service:
+      endpoint: "GET /project/contract/list (修改)"
+      source: "修改查询接口，返回总计数据"
+      returns: "{ rows: [...], total: 100, extra: { summary: { contractAmountSum, amountNoTaxSum } } }"
+      newApi: false
+    notes: |
+      后端实现：
+      1. Controller 层（ContractController.list）：
+         ```java
+         TableDataInfo dataInfo = getDataTable(list);
+         // 添加金额总计
+         Map<String, BigDecimal> summary = contractService.selectContractSummary(contract);
+         dataInfo.put("summary", summary);
+         return dataInfo;
+         ```
+
+      2. Mapper 层（ContractMapper.xml - selectContractSummary）：
+         ```sql
+         select
+             IFNULL(SUM(c.contract_amount), 0) as contractAmountSum,
+             IFNULL(SUM(c.amount_no_tax), 0) as amountNoTaxSum
+         from pm_contract c
+         <where>
+             c.del_flag = '0'
+             -- 与列表查询相同的条件（支持按部门、客户、合同类型等过滤）
+         </where>
+         ```
+
+      前端实现：
+      1. 定义响应式变量存储总计数据：const summaryData = ref({})
+      2. 从 response.extra.summary 获取后端返回的总计数据
+      3. 使用 computed 计算属性构建带合计行的表格数据
+      4. 通过 v-if="scope.row.isSummary" 判断是否为合计行，控制显示内容
+
+      关键特性：
+      - 计算的是所有查询结果的总计，不是当前页的总计
+      - 支持查询条件过滤（部门、客户、合同类型、合同状态、确认年份等）
+      - 总计金额以粗体显示，并保留两位小数
+
+      前端数据获取（index.vue - getList）：
+      ```javascript
+      function getList() {
+        loading.value = true
+        listContract(queryParams.value).then(response => {
+          console.log('合同列表响应数据:', response)
+          contractList.value = response.rows
+          total.value = response.total
+          // 从 extra.summary 中获取总计数据
+          summaryData.value = (response.extra && response.extra.summary) || {}
+          console.log('总计数据:', summaryData.value)
+          loading.value = false
+        })
+      }
+      ```
+
+      前端合计行构建（index.vue - tableDataWithSummary）：
+      ```javascript
+      const summaryData = ref({})
+      const tableDataWithSummary = computed(() => {
+        if (contractList.value.length === 0) {
+          return []
+        }
+        // 使用后端返回的总计数据
+        const summary = {
+          isSummary: true,
+          contractAmount: Number(summaryData.value.contractAmountSum || 0).toFixed(2),
+          amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2)
+        }
+        // 将合计行放在第一行
+        return [summary, ...contractList.value]
+      })
+      ```
+
+      数据结构说明：
+      - 后端通过 TableDataInfo.put("summary", summary) 将总计数据放入 extra 中
+      - 前端从 response.extra.summary 获取，而不是 response.summary
+      - summary 对象包含：contractAmountSum（合同金额总计）、amountNoTaxSum（不含税金额总计）
+
+      调试说明：
+      - 已添加 console.log 输出，可在浏览器控制台查看返回数据结构
+      - 检查 response.extra.summary 是否包含 contractAmountSum 和 amountNoTaxSum
+      - 如果数据为空，检查后端 selectContractSummary 方法是否正确执行
+      - 测试完成后可删除 console.log 调试代码
+
+  list_delete_confirm:
+    intent: "删除合同时弹出确认提示，显示合同名称；检查关联款项和附件，不允许删除"
+    component:
+      type: el-message-box
+      props:
+        message: "确认删除【{contract_name}】吗？"
+        type: "warning"
+    bindTo: delete_button
+    service:
+      endpoint: "DELETE /project/contract/:contractId"
+      source: "修改 ContractServiceImpl.deleteContractByIds，检查款项和附件，逻辑删除合同及关联数据"
+      returns: "{ code: 200, msg: '删除成功' } 或 { code: 500, msg: '错误提示' }"
+      newApi: false
+    notes: |
+      删除业务规则（2026-02-06优化）：
+
+      1. 前端确认提示：
+         - 显示合同名称：确认删除【{合同名称}】吗？
+         - 用户点击确认后，调用后端删除接口
+
+      2. 后端检查逻辑（按顺序执行）：
+         a. 检查是否有关联款项：
+            - SQL: SELECT COUNT(*) FROM pm_payment WHERE contract_id = ? AND del_flag = '0'
+            - 如果有款项（count > 0）：返回错误提示
+              "【{合同名称}】下已有款项里程碑信息，不可进行删除操作！"
+            - 如果无款项：继续下一步检查
+
+         b. 检查是否有关联附件：
+            - SQL: SELECT COUNT(*) FROM pm_attachment WHERE business_type = 'contract' AND business_id = ? AND del_flag = '0'
+            - 如果有附件（count > 0）：返回错误提示
+              "【{合同名称}】已上传附件信息，不可进行删除操作！"
+            - 如果无附件：继续删除操作
+
+      3. 删除操作（通过所有检查后）：
+         a. 物理删除项目关联关系：
+            - DELETE FROM pm_project_contract_rel WHERE contract_id = ?
+            - 采用物理删除，不保留历史记录
+
+         b. 逻辑删除合同：
+            - UPDATE pm_contract SET del_flag = '1', update_by = ?, update_time = ? WHERE contract_id = ?
+            - 保留合同数据，仅标记为已删除
+
+      4. 前端提示：
+         - 删除成功：显示"删除成功"
+         - 删除失败：显示后端返回的错误信息
+
+      后端实现（ContractServiceImpl.deleteContractByContractIds）：
+      ```java
+      @Override
+      @Transactional
+      public int deleteContractByContractIds(Long[] contractIds) {
+          for (Long contractId : contractIds) {
+              Contract contract = contractMapper.selectContractByContractId(contractId);
+              if (contract == null) {
+                  throw new ServiceException("合同不存在");
+              }
+
+              String contractName = contract.getContractName();
+
+              // 检查是否有关联款项
+              int paymentCount = paymentMapper.countPaymentByContractId(contractId);
+              if (paymentCount > 0) {
+                  throw new ServiceException("【" + contractName + "】下已有款项里程碑信息，不可进行删除操作！");
+              }
+
+              // 检查是否有关联附件
+              int attachmentCount = attachmentMapper.countAttachmentByBusiness("contract", contractId);
+              if (attachmentCount > 0) {
+                  throw new ServiceException("【" + contractName + "】已上传附件信息，不可进行删除操作！");
+              }
+
+              // 物理删除项目关联关系
+              projectContractRelMapper.deleteProjectContractRelByContractId(contractId);
+
+              // 逻辑删除合同
+              contract.setDelFlag("1");
+              contract.setUpdateBy(SecurityUtils.getUsername());
+              contract.setUpdateTime(DateUtils.getNowDate());
+              contractMapper.updateContract(contract);
+          }
+          return contractIds.length;
+      }
+      ```
+
+      前端实现（index.vue - handleDelete）：
+      ```javascript
+      function handleDelete(row) {
+        const contractName = row.contractName || '该合同'
+        proxy.$modal.confirm(`确认删除【${contractName}】吗？`).then(function() {
+          return delContract(row.contractId)
+        }).then(() => {
+          getList()
+          proxy.$modal.msgSuccess("删除成功")
+        }).catch((error) => {
+          // 后端返回的错误信息会自动显示
+          if (error !== 'cancel') {
+            console.error('删除失败:', error)
+          }
+        })
+      }
+      ```
+
+      新增 Mapper 方法：
+      1. PaymentMapper.countPaymentByContractId(Long contractId)
+         - 统计合同下的有效款项数量
+         - SQL: SELECT COUNT(*) FROM pm_payment WHERE contract_id = ? AND del_flag = '0'
+
+      2. AttachmentMapper.countAttachmentByBusiness(String businessType, Long businessId)
+         - 统计业务附件数量（别名方法，复用 countByBusinessTypeAndId）
+
+      删除流程图：
+      ```
+      用户点击删除
+          ↓
+      前端确认：确认删除【合同名】吗？
+          ↓
+      后端检查1：是否有款项？
+          ├─ 有 → 提示：【合同名】下已有款项里程碑信息，不可进行删除操作！
+          └─ 无 → 继续
+          ↓
+      后端检查2：是否有附件？
+          ├─ 有 → 提示：【合同名】已上传附件信息，不可进行删除操作！
+          └─ 无 → 继续
+          ↓
+      删除操作：
+          1. 物理删除项目关联关系（pm_project_contract_rel）
+          2. 逻辑删除合同（pm_contract.del_flag = '1'）
+          ↓
+      前端提示：删除成功
+      ```
+
+      项目-合同关联表删除策略：
+      - 采用物理删除（DELETE），不是逻辑删除（UPDATE del_flag='1'）
+      - 原因：中间表不需要保留历史记录，物理删除避免唯一键冲突
+      - 相关文件：ProjectContractRelMapper.xml - deleteProjectContractRelByContractId
+
+      优化日期：2026-02-06
+
+  # ==================
+  # 新增合同页面
+  # ==================
+  add_page_layout:
+    intent: "新增合同页面，独立路由页面，包含4个部分"
+    component:
+      type: custom
+      spec: |
+        路由: /project/contract/add
+
+        页面布局：
+        - 删除页面顶部的标题和描述信息（无需显示"新增合同"标题和说明文字）
+        - 使用折叠面板组织表单内容
+        - 所有面板默认展开
+
+        第一部分：合同基本信息
+        - 合同名称（单独一行，必填）
+        - 合同编号、部门（部门树，从第三级开始展示，必填）、关联客户（客户下拉，必填）
+        - 合同类型（字典sys_htlx，必填）、合同状态（字典sys_htzt）
+        - 关联项目（下拉模糊查询选择，选择后自动添加到下方列表，列表展示项目详情）
+
+        第二部分：合同时间与周期
+        - 合同签订日期（必填）、合同周期（月）、免维期（月）
+
+        第三部分：合同金额
+        - 合同金额（含税，必填）、税率（%）
+        - 不含税金额（自动计算）、税金（自动计算）
+
+        第四部分：备注
+        - 备注信息（文本域）
+    bindTo: page
+    service:
+      endpoint: "POST /project/contract"
+      source: "修改 ContractServiceImpl.insertContract，保存合同及关联项目"
+      returns: "{ code: 200, msg: '新增成功' }"
+      newApi: false
+    notes: |
+      UI优化：
+      1. 删除了页面顶部的"新增合同"标题和"填写合同信息，保存后将创建新的合同记录"描述
+      2. 删除了每个部分前面的序号（一、二、三、四）
+      3. 折叠面板标题简洁明了：合同基本信息、合同时间与周期、合同金额、备注
+      4. 税率字段不设置默认值，由用户自行填写
+
+      必填项验证（前端 rules 配置）：
+      - 合同名称（contractName）- 必填，且必须唯一
+      - 部门（deptId）- 必填
+      - 关联客户（customerId）- 必填
+      - 合同类型（contractType）- 必填
+      - 合同签订日期（contractSignDate）- 必填
+      - 合同金额（contractAmount）- 必填，且必须为有效数字
+
+      合同名称唯一性校验：
+      - 校验时机：失去焦点时（blur）触发
+      - 校验方式：调用后端接口 /project/contract/checkContractNameUnique
+      - 新增模式：检查数据库中是否存在同名合同
+      - 编辑模式：排除当前合同，检查是否存在其他同名合同
+      - 错误提示：合同名称已存在，请使用其他名称
+      - 自动去除首尾空格，避免因空格导致的重复
+
+      前端校验实现（form.vue）：
+      ```javascript
+      /** 合同名称唯一性校验 */
+      async function validateContractName(rule, value, callback) {
+        if (!value || value.trim() === '') {
+          callback()
+          return
+        }
+
+        try {
+          const response = await checkContractNameUnique(value.trim(), form.value.contractId)
+          if (response.data === true) {
+            callback()
+          } else {
+            callback(new Error('合同名称已存在，请使用其他名称'))
+          }
+        } catch (error) {
+          console.error('校验合同名称唯一性失败:', error)
+          callback()
+        }
+      }
+
+      // 在 rules 中配置
+      rules: {
+        contractName: [
+          { required: true, message: "合同名称不能为空", trigger: "blur" },
+          { validator: validateContractName, trigger: "blur" }
+        ]
+      }
+      ```
+
+      后端校验实现（ContractServiceImpl.java）：
+      ```java
+      @Override
+      public boolean checkContractNameUnique(String contractName, Long contractId) {
+          if (contractName == null || contractName.trim().isEmpty()) {
+              return false;
+          }
+
+          Contract contract = new Contract();
+          contract.setContractName(contractName.trim());
+          List<Contract> list = contractMapper.selectContractList(contract);
+
+          // 如果没有找到同名合同，则唯一
+          if (list == null || list.isEmpty()) {
+              return true;
+          }
+
+          // 如果是编辑模式，排除自己
+          if (contractId != null) {
+              for (Contract c : list) {
+                  if (!contractId.equals(c.getContractId())) {
+                      // 找到其他同名合同，不唯一
+                      return false;
+                  }
+              }
+              // 只找到自己，唯一
+              return true;
+          }
+
+          // 新增模式，找到同名合同，不唯一
+          return false;
+      }
+      ```
+
+      API 接口（contract.js）：
+      ```javascript
+      // 检查合同名称是否唯一
+      export function checkContractNameUnique(contractName, contractId) {
+        return request({
+          url: '/project/contract/checkContractNameUnique',
+          method: 'get',
+          params: {
+            contractName,
+            contractId
+          }
+        })
+      }
+      ```
+
+      合同编号：
+      - 不做唯一性校验
+      - 数据库层面删除了 UNIQUE KEY uk_contract_code 约束
+      - 添加了普通索引 idx_contract_code 以提高查询性能
+
+      保存和取消逻辑：
+      - 保存成功后：跳转到 /htkx/contract?t={timestamp}，触发列表页面刷新
+      - 取消操作后：跳转到 /htkx/contract?t={timestamp}，触发列表页面刷新
+      - 列表页面通过 watch 监听 route.query.t 参数变化，自动刷新数据
+
+      路由配置（ruoyi-ui/src/router/index.ts）：
+      - 合同管理列表页面：/htkx/contract（后端菜单配置的路径）
+      - 新增合同页面：/project/contract/add（动态路由，hidden: true）
+      - 编辑合同页面：/project/contract/edit/:contractId（动态路由，使用路径参数）
+      - 详情页面：/project/contract/detail/:contractId（动态路由，使用路径参数）
+      - 附件页面：/project/contract/attachment/:contractId（动态路由，使用路径参数）
+
+      路由跳转方式：
+      - 新增：router.push({ path: '/project/contract/add' })
+      - 编辑：router.push({ path: `/project/contract/edit/${contractId}` })
+      - 详情：router.push({ path: `/project/contract/detail/${contractId}` })
+      - 返回列表：router.push({ path: '/htkx/contract', query: { t: Date.now() } })
+
+      参数获取方式：
+      - 新增页面：无需获取参数
+      - 编辑/详情页面：const contractId = route.params.contractId（使用路径参数，不是 query 参数）
+
+      路由配置代码：
+      ```typescript
+      {
+        path: '/project/contract',
+        component: Layout,
+        hidden: true,
+        children: [
+          {
+            path: 'add',
+            component: () => import('@/views/project/contract/form.vue'),
+            name: 'ContractAdd',
+            meta: { title: '新增合同', activeMenu: '/project/contract' }
+          },
+          {
+            path: 'edit/:contractId(\\d+)',
+            component: () => import('@/views/project/contract/form.vue'),
+            name: 'ContractEdit',
+            meta: { title: '编辑合同', activeMenu: '/project/contract' }
+          },
+          {
+            path: 'detail/:contractId(\\d+)',
+            component: () => import('@/views/project/contract/detail.vue'),
+            name: 'ContractDetail',
+            meta: { title: '合同详情', activeMenu: '/project/contract' }
+          }
+        ]
+      }
+      ```
+
+      动态路由优势：
+      - URL更简洁美观：/project/contract/edit/123 比 /project/contract/form?contractId=123 更清晰
+      - SEO友好：路径参数对搜索引擎更友好
+      - 类型安全：路由配置中使用正则 \\d+ 确保参数是数字
+      - 面包屑导航：自动高亮对应的菜单项（通过 activeMenu 配置）
+      - 符合RESTful规范：资源路径更符合REST API设计原则
+
+      菜单高亮配置：
+      - 所有合同相关页面（新增、编辑、详情、附件）都配置了 activeMenu: '/project/contract'
+      - 确保在这些页面时，左侧合同管理菜单保持高亮状态
+      - 用户可以清楚地知道当前在哪个模块下操作
+
+      部门选择器优化：
+      - 部门树从第三级开始展示，过滤掉第一级和第二级部门
+      - 使用 filterDeptFromLevel3 函数进行过滤处理
+      - 第三级及以下的部门保留完整的层级结构
+      - 第三级部门会被提升到根层级显示（扁平化展示）
+
+      部门过滤实现代码（form.vue）：
+      ```javascript
+      /** 过滤部门树，只保留第三级及以下部门 */
+      function filterDeptFromLevel3(deptTree, level = 1) {
+        if (!deptTree || !Array.isArray(deptTree)) return []
+        const result = []
+        for (const dept of deptTree) {
+          if (level >= 3) {
+            // 第三级及以下，保留该节点
+            const newDept = { ...dept }
+            if (dept.children && dept.children.length > 0) {
+              newDept.children = filterDeptFromLevel3(dept.children, level + 1)
+            }
+            result.push(newDept)
+          } else {
+            // 第一、二级，只递归处理子节点
+            if (dept.children && dept.children.length > 0) {
+              const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
+              result.push(...childrenResult)
+            }
+          }
+        }
+        return result
+      }
+
+      /** 查询部门下拉树结构 */
+      function getDeptTree() {
+        deptTreeSelect().then(response => {
+          deptOptions.value = response.data
+          // 过滤出第三级及以下部门
+          filteredDeptOptions.value = filterDeptFromLevel3(response.data)
+        })
+      }
+      ```
+
+      计算规则：
+      - 不含税金额 = 合同金额 / (1 + 税率/100)
+      - 税金 = 合同金额 - 不含税金额
+
+  add_project_selector:
+    intent: "关联项目组件，根据部门查询项目（包含该部门及其所有子部门），支持模糊查询选择，确保项目关联唯一性"
+    component:
+      type: custom
+      spec: "下拉模糊查询选择项目，选择后自动添加到下方列表，已选项目以表格形式展示，可删除"
+    bindTo: project_ids
+    service:
+      endpoint: "GET /project/project/listByDept?deptId={deptId}&excludeContractId={contractId}"
+      source: "ProjectController.listByDept，根据部门查询项目（包含子部门），排除已关联的项目"
+      returns: "[{ projectId, projectName, projectBudget, estimatedWorkload, actualWorkload }]"
+      newApi: false
+    notes: |
+      业务规则：
+      - 一个项目只能被一个合同关联
+      - 一个合同可以关联多个项目
+      - 新增合同时：排除所有已被其他合同关联的项目
+      - 编辑合同时：排除已被其他合同关联的项目，但保留当前合同已关联的项目
+
+      功能说明：
+      - 监听部门变化，动态查询项目列表
+      - 查询范围：该部门及其所有下级部门的项目
+      - 自动过滤已被关联的项目，确保唯一性约束
+
+      前端交互优化：
+      1. 下拉框支持模糊查询（filterable 属性）
+      2. 选择项目后自动添加到下方列表
+      3. 下拉框自动清空，可以继续选择其他项目
+      4. 已选项目不在下拉框中重复显示
+      5. 已选项目列表以表格形式展示，包含详细信息
+      6. 支持移除已选项目
+
+      前端实现代码（form.vue）：
+      ```javascript
+      // 响应式变量
+      const selectedProjectId = ref(null)  // 当前选择的项目ID
+      const selectedProjects = ref([])     // 已选项目列表
+      const availableProjectOptions = ref([])  // 可选项目列表（排除已选）
+
+      /** 项目选择变化时自动添加到列表 */
+      function handleProjectSelect(projectId) {
+        if (!projectId) return
+        const project = filteredProjectOptions.value.find(p => p.projectId === projectId)
+        if (project) {
+          selectedProjects.value.push({ ...project })
+          // 清空选择，允许继续选择其他项目
+          selectedProjectId.value = null
+          updateAvailableProjects()
+        }
+      }
+
+      /** 更新可选项目列表（排除已选项目） */
+      function updateAvailableProjects() {
+        const selectedIds = selectedProjects.value.map(p => p.projectId)
+        availableProjectOptions.value = filteredProjectOptions.value.filter(project => {
+          return !selectedIds.includes(project.projectId)
+        })
+      }
+
+      /** 从已选列表移除项目 */
+      function handleRemoveProject(index) {
+        selectedProjects.value.splice(index, 1)
+        updateAvailableProjects()
+      }
+
+      /** 提交时将已选项目ID列表赋值给form */
+      function submitForm() {
+        form.value.projectIds = selectedProjects.value.map(p => p.projectId)
+        // ... 提交逻辑
+      }
+      ```
+
+      已选项目列表展示：
+      - 使用 el-table 组件展示
+      - 列：序号、项目名称、预算金额（元）、预估工作量（人天）、实际工作量（人天）、操作
+      - 金额和工作量保留两位小数
+      - 操作列包含"移除"按钮
+
+      已选项目表格代码（form.vue）：
+      ```vue
+      <el-row :gutter="20" v-if="selectedProjects.length > 0">
+        <el-col :span="24">
+          <el-form-item label=" " label-width="140px">
+            <el-table :data="selectedProjects" border style="width: 100%">
+              <el-table-column type="index" label="序号" width="60" align="center" />
+              <el-table-column prop="projectName" label="项目名称" min-width="200" />
+              <el-table-column prop="projectBudget" label="预算金额（元）" width="150" align="right">
+                <template #default="scope">
+                  {{ scope.row.projectBudget ? Number(scope.row.projectBudget).toFixed(2) : '0.00' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="estimatedWorkload" label="预估工作量（人天）" width="160" align="right">
+                <template #default="scope">
+                  {{ scope.row.estimatedWorkload ? Number(scope.row.estimatedWorkload).toFixed(2) : '0.00' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="actualWorkload" label="实际工作量（人天）" width="160" align="right">
+                <template #default="scope">
+                  {{ scope.row.actualWorkload ? Number(scope.row.actualWorkload).toFixed(2) : '0.00' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="80" align="center">
+                <template #default="scope">
+                  <el-button type="text" icon="Delete" @click="handleRemoveProject(scope.$index)">移除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      ```
+
+      后端实现（ProjectServiceImpl.selectProjectListByDept）：
+      ```java
+      @Override
+      public List<Project> selectProjectListByDept(Long deptId, Long excludeContractId) {
+          if (deptId == null) {
+              return new ArrayList<>();
+          }
+          return projectMapper.selectProjectListByDeptAndChildren(deptId, excludeContractId);
+      }
+      ```
+
+      SQL查询逻辑（ProjectMapper.xml - selectProjectListByDeptAndChildren）：
+      ```sql
+      SELECT p.* FROM pm_project p
+      WHERE p.del_flag = '0'
+      AND (
+          p.project_dept = #{deptId}  -- 该部门的项目
+          OR p.project_dept IN (
+              SELECT dept_id FROM sys_dept
+              WHERE del_flag = '0'
+              AND FIND_IN_SET(#{deptId}, ancestors)  -- 所有子部门
+          )
+      )
+      -- 排除已被其他合同关联的项目，但允许显示当前合同已关联的项目
+      AND (
+          p.project_id NOT IN (
+              SELECT project_id FROM pm_project_contract_rel
+              WHERE del_flag = '0'
+          )
+          <if test="excludeContractId != null">
+              -- 编辑时：允许显示当前合同已关联的项目
+              OR p.project_id IN (
+                  SELECT project_id FROM pm_project_contract_rel
+                  WHERE del_flag = '0'
+                  AND contract_id = #{excludeContractId}
+              )
+          </if>
+      )
+      ORDER BY p.create_time DESC
+      ```
+
+      SQL逻辑说明：
+      - 新增场景（excludeContractId 为 null）：
+        只显示未被任何合同关联的项目
+      - 编辑场景（excludeContractId 不为 null）：
+        显示未被关联的项目 OR 被当前合同关联的项目
+        确保不会显示被其他合同关联的项目
+
+      前端调用：
+      - 新增页面：listProjectByDept(deptId, null)
+        排除所有已关联的项目
+      - 编辑页面：listProjectByDept(deptId, contractId)
+        排除其他合同已关联的项目，保留当前合同的关联
+
+      数据库约束：
+      - pm_project_contract_rel 表的唯一键约束：
+        UNIQUE KEY `uk_project_contract` (`project_id`,`contract_id`,`del_flag`)
+      - 确保同一项目和合同的组合只能存在一条有效记录
+
+      查询原理：
+      - 使用 sys_dept.ancestors 字段（存储祖先部门ID列表，如 "0,100,101"）
+      - FIND_IN_SET 函数查找所有包含该部门ID的子部门
+      - 查询结果包含该部门及其所有下级部门的项目
+
+      示例：
+      部门结构：技术部(100) -> 开发组(101) -> 前端组(102)
+      - 选择"技术部"：返回技术部、开发组、前端组的所有项目
+      - 选择"开发组"：返回开发组、前端组的项目
+      - 选择"前端组"：只返回前端组的项目
+
+      测试场景：
+      1. 新增合同：
+         - 项目P1未被关联 -> 可选
+         - 项目P2被合同A关联 -> 不可选
+      2. 编辑合同A（已关联P1）：
+         - 项目P1（当前合同的） -> 可选（允许保留）
+         - 项目P2被合同B关联 -> 不可选
+         - 项目P3未被关联 -> 可选
+
+      相关文件：
+      - ProjectServiceImpl.java
+      - ProjectMapper.java
+      - ProjectMapper.xml
+      - 详细文档：docs/contract-project-unique-constraint.md
+      - SQL修复文档：docs/contract-project-sql-fix.md
+
+  add_form_defaults:
+    intent: "新增合同表单字段默认值设置"
+    component:
+      type: custom
+      spec: |
+        表单初始化时的默认值：
+        - contractCode: '' (空字符串，无默认值)
+        - contractName: '' (空字符串，无默认值)
+        - customerId: '' (空字符串，无默认值)
+        - deptId: '' (空字符串，无默认值)
+        - contractType: '' (空字符串，无默认值)
+        - contractStatus: '' (空字符串，无默认值)
+        - contractSignDate: '' (空字符串，无默认值)
+        - contractPeriod: '' (空字符串，无默认值)
+        - contractAmount: '' (空字符串，无默认值)
+        - taxRate: '' (空字符串，无默认值，之前为 '13')
+        - amountNoTax: '' (空字符串，自动计算)
+        - taxAmount: '' (空字符串，自动计算)
+        - freeMaintenancePeriod: '' (空字符串，无默认值)
+        - projectIds: [] (空数组，无默认值)
+        - remark: '' (空字符串，无默认值)
+    bindTo: form
+    service: null
+    notes: |
+      重要变更：
+      1. 税率字段（taxRate）不再设置默认值 '13'，改为空字符串
+      2. 所有字段都由用户手动填写，不预设任何默认值
+      3. 不含税金额和税金字段会根据合同金额和税率自动计算
+
+  # ==================
+  # 编辑合同页面
+  # ==================
+  edit_page_layout:
+    intent: "编辑合同页面，独立路由页面，包含5个部分"
+    component:
+      type: custom
+      spec: |
+        路由: /project/contract/edit/:contractId
+
+        页面布局：
+        - 删除页面顶部的标题和描述信息（无需显示"编辑合同"标题和说明文字）
+        - 使用折叠面板组织表单内容
+        - 所有面板默认展开
+
+        前4部分与新增页面一致：
+        - 第一部分：合同基本信息
+        - 第二部分：合同时间与周期
+        - 第三部分：合同金额
+        - 第四部分：备注
+
+        第五部分：审计信息（只读，横向排列）
+        - 创建人（显示用户姓名）、创建时间 | 更新人（显示用户姓名）、更新时间
+    bindTo: page
+    service:
+      endpoint: "PUT /project/contract"
+      source: "修改 ContractServiceImpl.updateContract，更新合同及关联项目"
+      returns: "{ code: 200, msg: '修改成功' }"
+      newApi: false
+    notes: |
+      UI优化：
+      1. 删除了页面顶部的"编辑合同"标题和"修改合同信息，保存后将更新合同数据"描述
+      2. 页面布局与新增页面保持一致
+
+      必填项验证（前端 rules 配置）：
+      - 合同名称（contractName）- 必填，且必须唯一（排除自己）
+      - 部门（deptId）- 必填
+      - 关联客户（customerId）- 必填
+      - 合同类型（contractType）- 必填
+      - 合同签订日期（contractSignDate）- 必填
+      - 合同金额（contractAmount）- 必填，且必须为有效数字
+
+      合同名称唯一性校验：
+      - 编辑模式下，校验时会排除当前合同自己
+      - 只检查是否存在其他同名合同
+      - 校验逻辑与新增页面相同，详见 add_page_layout 定制需求
+
+      数据回显：
+      - 所有字段回显
+      - 关联项目列表回显（自动展示已关联的项目，包含项目名称、预算金额、预估工作量、实际工作量）
+      - 计算字段回显（不含税金额、税金）
+      - 审计信息回显（创建人姓名、创建时间、更新人姓名、更新时间）
+
+      项目回显实现：
+      - 后端查询合同详情时，同时查询关联的项目列表（projectList）
+      - 后端从 projectList 提取项目ID列表（projectIds），用于前端回显
+      - 前端根据 projectIds 过滤出已选项目，填充到 selectedProjects 列表
+      - 已选项目以表格形式展示在"关联项目"下拉框下方
+
+      后端实现（ContractServiceImpl.selectContractByContractId）：
+      ```java
+      // 查询关联项目列表
+      List<Project> projectList = projectMapper.selectProjectListByContractId(contractId);
+      contract.setProjectList(projectList);
+
+      // 提取项目ID列表（用于编辑页面回显）
+      if (projectList != null && !projectList.isEmpty()) {
+          List<Long> projectIds = new java.util.ArrayList<>();
+          for (Project project : projectList) {
+              projectIds.add(project.getProjectId());
+          }
+          contract.setProjectIds(projectIds);
+      }
+      ```
+
+      前端实现（form.vue - init 方法）：
+      ```javascript
+      getContract(contractId).then(response => {
+        form.value = response.data
+        if (form.value.deptId) {
+          setTimeout(() => {
+            // 查询该部门的项目（包含当前合同已关联的项目）
+            listProjectByDept(form.value.deptId, contractId).then(projectResponse => {
+              filteredProjectOptions.value = projectResponse.data || []
+
+              // 恢复已选项目列表
+              const projectIds = response.data.projectIds || []
+              selectedProjects.value = filteredProjectOptions.value.filter(project => {
+                return projectIds.includes(project.projectId)
+              })
+
+              // 更新可选项目列表
+              updateAvailableProjects()
+            })
+          }, 100)
+        }
+      })
+      ```
+
+      审计信息显示逻辑：
+      - 创建人和更新人优先显示姓名（createByName/updateByName）
+      - 如果姓名为空，降级显示用户名（createBy/updateBy）
+      - 审计信息字段为只读，横向排列（4列）
+      - 后端查询时关联 sys_user 表获取用户姓名（nick_name）
+
+      项目关联唯一性约束：
+      - 编辑时查询项目列表，排除已被其他合同关联的项目
+      - 保留当前合同已关联的项目，允许用户保持或取消关联
+      - 前端调用：listProjectByDept(deptId, contractId)
+      - 详细说明：参见 add_project_selector 定制需求
+
+      更新人信息处理：
+      - 后端自动填充：contract.setUpdateBy(SecurityUtils.getUsername())
+      - 后端自动填充：contract.setUpdateTime(DateUtils.getNowDate())
+      - 查询时关联 sys_user 表获取用户姓名：updateByName
+      - 前端展示：updateByName（用户姓名）、updateTime（更新时间）
+
+      保存和取消逻辑：
+      - 保存成功后：跳转到 /htkx/contract?t={timestamp}，触发列表页面刷新
+      - 取消操作后：跳转到 /htkx/contract?t={timestamp}，触发列表页面刷新
+      - 加载失败时：跳转到 /htkx/contract?t={timestamp}，触发列表页面刷新
+      - 列表页面通过 watch 监听 route.query.t 参数变化，自动刷新数据
+
+      路由配置（ruoyi-ui/src/router/index.ts）：
+      - 合同管理列表页面：/htkx/contract（后端菜单配置的路径）
+      - 新增合同页面：/project/contract/add（动态路由，hidden: true）
+      - 编辑合同页面：/project/contract/edit/:contractId（动态路由，使用路径参数）
+      - 详情页面：/project/contract/detail/:contractId（动态路由，使用路径参数）
+      - 附件页面：/project/contract/attachment/:contractId（动态路由，使用路径参数）
+
+      路由跳转方式：
+      - 新增：router.push({ path: '/project/contract/add' })
+      - 编辑：router.push({ path: `/project/contract/edit/${contractId}` })
+      - 详情：router.push({ path: `/project/contract/detail/${contractId}` })
+      - 返回列表：router.push({ path: '/htkx/contract', query: { t: Date.now() } })
+
+      参数获取方式：
+      - 编辑页面：const contractId = route.params.contractId（使用路径参数，不是 query 参数）
+      - 监听参数变化：watch(() => route.params.contractId, ...)
+
+      路由配置代码：
+      ```typescript
+      {
+        path: '/project/contract',
+        component: Layout,
+        hidden: true,
+        children: [
+          {
+            path: 'add',
+            component: () => import('@/views/project/contract/form.vue'),
+            name: 'ContractAdd',
+            meta: { title: '新增合同', activeMenu: '/project/contract' }
+          },
+          {
+            path: 'edit/:contractId(\\d+)',
+            component: () => import('@/views/project/contract/form.vue'),
+            name: 'ContractEdit',
+            meta: { title: '编辑合同', activeMenu: '/project/contract' }
+          },
+          {
+            path: 'detail/:contractId(\\d+)',
+            component: () => import('@/views/project/contract/detail.vue'),
+            name: 'ContractDetail',
+            meta: { title: '合同详情', activeMenu: '/project/contract' }
+          }
+        ]
+      }
+      ```
+
+      动态路由优势：
+      - URL更简洁美观：/project/contract/edit/123 比 /project/contract/form?contractId=123 更清晰
+      - SEO友好：路径参数对搜索引擎更友好
+      - 类型安全：路由配置中使用正则 \\d+ 确保参数是数字
+      - 面包屑导航：自动高亮对应的菜单项（通过 activeMenu 配置）
+      - 符合RESTful规范：资源路径更符合REST API设计原则
+
+      后端实现要点：
+      1. ContractServiceImpl.updateContract 方法：
+         - 自动填充 updateBy 和 updateTime
+         - 计算不含税金额和税金
+         - 更新合同基本信息
+         - 物理删除旧的项目关联关系（DELETE，避免唯一键冲突）
+         - 保存新的项目关联关系
+
+      2. ContractServiceImpl.selectContractByContractId 方法：
+         - 查询合同基本信息
+         - 查询关联项目列表
+         - 查询创建人和更新人姓名（关联 sys_user 表获取 nick_name）
+         - 返回字段包含：createByName, updateByName
+
+      3. 项目关联删除策略：
+         - 采用物理删除（DELETE），不是逻辑删除
+         - 原因：中间表不需要保留历史记录，避免唯一键冲突
+         - 详细说明：docs/contract-edit-save-fix.md
+
+  # ==================
+  # 合同详情页面
+  # ==================
+  detail_page_layout:
+    intent: "合同详情页面，独立路由页面，包含7个部分"
+    component:
+      type: custom
+      spec: |
+        路由: /project/contract/detail/:contractId
+        第一部分：合同基本信息（只读）
+        - 关联项目列表（表格形式，项目名称可点击跳转）
+        第二部分：合同时间与周期（只读）
+        第三部分：合同金额（只读）
+        第四部分：付款里程碑信息（表格形式，首行合计）
+        第五部分：合同附件列表（表格形式，下载按钮）
+        第六部分：备注（只读）
+        第七部分：审计信息（只读）
+    bindTo: page
+    service:
+      endpoint: "GET /project/contract/:contractId"
+      source: "修改 ContractServiceImpl.selectContractById，返回完整详情"
+      returns: "{ contract: {...}, projects: [...], payments: [...], attachments: [...] }"
+      newApi: false
+    notes: |
+      展示规则：
+      - 所有字段只读
+      - 部门、客户、合同类型展示名称
+      - 金额保留2位小数
+      - 项目名称可点击跳转到 /project/project/detail/:projectId
+      - 创建人和更新人显示姓名（createByName/updateByName），如果姓名为空则显示用户名（createBy/updateBy）
+
+      审计信息显示：
+      - 后端查询时关联 sys_user 表获取用户姓名（nick_name）
+      - 前端优先显示姓名，降级显示用户名
+      - 显示代码：{{ detailData.createByName || detailData.createBy }}
+
+      路由配置（ruoyi-ui/src/router/index.ts）：
+      - 合同管理列表页面：/htkx/contract（后端菜单配置的路径）
+      - 新增合同页面：/project/contract/add（动态路由，hidden: true）
+      - 编辑合同页面：/project/contract/edit/:contractId（动态路由，使用路径参数）
+      - 详情页面：/project/contract/detail/:contractId（动态路由，使用路径参数）
+      - 附件页面：/project/contract/attachment/:contractId（动态路由，使用路径参数）
+
+      路由跳转方式：
+      - 从列表跳转详情：router.push({ path: `/project/contract/detail/${contractId}` })
+      - 从详情跳转编辑：router.push({ path: `/project/contract/edit/${contractId}` })
+      - 返回列表：router.back() 或 router.push({ path: '/htkx/contract' })
+
+      参数获取方式：
+      - 详情页面：const contractId = route.params.contractId（使用路径参数，不是 query 参数）
+
+      路由配置代码：
+      ```typescript
+      {
+        path: '/project/contract',
+        component: Layout,
+        hidden: true,
+        children: [
+          {
+            path: 'add',
+            component: () => import('@/views/project/contract/form.vue'),
+            name: 'ContractAdd',
+            meta: { title: '新增合同', activeMenu: '/project/contract' }
+          },
+          {
+            path: 'edit/:contractId(\\d+)',
+            component: () => import('@/views/project/contract/form.vue'),
+            name: 'ContractEdit',
+            meta: { title: '编辑合同', activeMenu: '/project/contract' }
+          },
+          {
+            path: 'detail/:contractId(\\d+)',
+            component: () => import('@/views/project/contract/detail.vue'),
+            name: 'ContractDetail',
+            meta: { title: '合同详情', activeMenu: '/project/contract' }
+          }
+        ]
+      }
+      ```
+
+      动态路由优势：
+      - URL更简洁美观：/project/contract/detail/123 比 /project/contract/detail?contractId=123 更清晰
+      - SEO友好：路径参数对搜索引擎更友好
+      - 类型安全：路由配置中使用正则 \\d+ 确保参数是数字
+      - 面包屑导航：自动高亮对应的菜单项（通过 activeMenu 配置）
+      - 符合RESTful规范：资源路径更符合REST API设计原则
+
+  detail_payment_milestone:
+    intent: "付款里程碑信息表格，首行显示总计"
+    component:
+      type: el-table
+      props:
+        showSummary: true
+        data: "付款里程碑列表"
+    bindTo: payment_milestone
+    service:
+      endpoint: "GET /project/payment/listByContract?contractId={contractId}"
+      source: "查询 pm_payment 表"
+      returns: "[{ milestoneName, paymentAmount, paymentStatus, ... }]"
+      newApi: true
+    notes: |
+      表格列：序号、里程碑名称、付款金额、付款状态、预计回款季度、实际回款季度、
+      实际回款日期、确认年份、是否违约扣款、扣款金额、备注
+      首行合计：付款金额总计、扣款金额总计
+
+  detail_attachment_list:
+    intent: "合同附件列表表格"
+    component:
+      type: el-table
+      props:
+        data: "附件列表"
+    bindTo: attachment_list
+    service:
+      endpoint: "GET /project/attachment/list?businessType=contract&businessId={contractId}"
+      source: "查询 pm_attachment 表"
+      returns: "[{ attachmentId, documentType, fileName, fileDescription, createBy, createTime }]"
+      newApi: true
+    notes: "表格列：序号、文档类型、文件名称、文件说明、上传人员、上传时间、操作（下载）"
+
+  detail_project_list:
+    intent: "关联项目列表表格，项目名称可点击"
+    component:
+      type: el-table
+      props:
+        data: "项目列表"
+    bindTo: project_list
+    service:
+      endpoint: "GET /project/contract/:contractId (包含项目列表)"
+      source: "查询 pm_project_contract_rel + pm_project"
+      returns: "[{ projectId, projectName, projectBudget, estimatedWorkload, actualWorkload }]"
+      newApi: false
+    notes: "表格列：序号、项目名称（超链接）、预算金额、预估工作量、实际人天"
+
+  # ==================
+  # 附件管理页面
+  # ==================
+  attachment_page_layout:
+    intent: "附件管理页面，独立路由页面"
+    component:
+      type: custom
+      spec: |
+        路由: /project/contract/attachment/:contractId
+
+        页面布局：
+        - 删除页面顶部的标题和描述信息（无需显示"合同附件管理"标题和"管理合同相关附件文档"描述）
+
+        第一部分：合同信息（只读，2列布局）
+        - 第1行：合同名称（占满整行）
+        - 第2行：合同编号、客户名称
+        - 第3行：合同类型、合同金额（元）
+        - 第4行：合同签订日期、所属部门
+
+        第二部分：附件上传表单
+        - 文档类型（必填，字典sys_wdlx）
+        - 上传附件（单文件，格式限制，30MB）
+        - 文档说明（文本域）
+
+        第三部分：附件列表（表格形式）
+    bindTo: page
+    service:
+      endpoint: "POST /project/attachment"
+      source: "新增 AttachmentController.upload，上传附件"
+      returns: "{ code: 200, msg: '上传成功' }"
+      newApi: true
+    notes: |
+      数据库表结构：
+      - pm_attachment：附件表，存储附件基本信息
+      - pm_attachment_log：附件操作日志表，记录上传、删除、下载操作
+      - 表结构定义：pm-sql/init/00_tables_ddl.sql
+
+      UI优化：
+      1. 删除了页面顶部的"合同附件管理"标题和"管理合同相关附件文档"描述
+      2. 页面直接从"合同基本信息"卡片开始显示，更加简洁
+
+      文件格式：doc、docx、xls、xlsx、pdf、csv、png、jpg、gif、txt、7z、zip、gz
+      文件大小：单个不超过30MB
+      文件路径：{部署路径}/合同/{contract_id}_{contract_name}/{yyyyMMdd}/{文件名}
+
+      文件格式更新记录：
+      - 2026-02-04：新增 gif 格式支持（图片类型）
+
+  attachment_upload:
+    intent: "附件上传功能"
+    component:
+      type: el-upload
+      props:
+        limit: 1
+        accept: ".doc,.docx,.xls,.xlsx,.pdf,.csv,.png,.jpg,.gif,.txt,.7z,.zip,.gz"
+    bindTo: file_upload
+    service:
+      endpoint: "POST /project/attachment"
+      source: "AttachmentServiceImpl.uploadAttachment"
+      returns: "{ code: 200, msg: '上传成功', data: { attachmentId } }"
+      newApi: true
+    notes: |
+      系统配置（application.yml）：
+      - spring.servlet.multipart.max-file-size: 30MB（单个文件大小限制）
+      - spring.servlet.multipart.max-request-size: 30MB（总上传请求大小限制）
+      - 配置文件位置：ruoyi-admin/src/main/resources/application.yml
+      - 修改后需要重启后端服务生效
+
+      后端文件格式校验：
+      - AttachmentServiceImpl.ALLOWED_EXTENSIONS 常量定义允许的文件扩展名
+      - 支持格式：.doc, .docx, .xls, .xlsx, .pdf, .csv, .png, .jpg, .gif, .txt, .7z, .zip, .gz
+      - 文件大小限制：30MB（MAX_FILE_SIZE = 30 * 1024 * 1024）
+
+      上传成功后：
+      1. 保存文件到服务器
+      2. 记录到 pm_attachment 表
+      3. 记录日志到 pm_attachment_log（操作描述：【上传文件】：{文件名}）
+      4. 刷新附件列表
+
+      格式更新记录：
+      - 2026-02-04：新增 .gif 格式支持（前端 + 后端同步更新）
+
+      配置更新记录：
+      - 2026-02-04：文件上传大小限制从 10MB 调整为 30MB（系统级配置）
+
+  attachment_delete:
+    intent: "附件删除功能"
+    component:
+      type: el-button
+      props:
+        type: "danger"
+        text: "删除"
+    bindTo: delete_button
+    service:
+      endpoint: "DELETE /project/attachment/:attachmentId"
+      source: "AttachmentServiceImpl.deleteAttachment"
+      returns: "{ code: 200, msg: '删除成功' }"
+      newApi: true
+    notes: |
+      删除操作：
+      1. 逻辑删除：pm_attachment.del_flag = '1'
+      2. 记录日志到 pm_attachment_log（操作描述：【删除文件】：{文件名}）
+      3. 刷新附件列表
+
+  attachment_download:
+    intent: "附件下载功能"
+    component:
+      type: el-button
+      props:
+        type: "primary"
+        text: "下载"
+    bindTo: download_button
+    service:
+      endpoint: "GET /project/attachment/download/:attachmentId"
+      source: "AttachmentController.download"
+      returns: "文件流"
+      newApi: true
+    notes: "下载文件"
+
+  attachment_log:
+    intent: "附件操作日志弹窗"
+    component:
+      type: el-dialog
+      props:
+        title: "合同附件操作日志"
+        width: "80%"
+    bindTo: log_dialog
+    service:
+      endpoint: "GET /project/attachment/log?businessType=contract&businessId={contractId}"
+      source: "查询 pm_attachment_log 表，关联 sys_dict_data 表获取字典标签"
+      returns: "[{ logId, operationDesc, documentTypeName, operatorName, createTime }]"
+      newApi: true
+    notes: |
+      日志表格列：序号、调整说明、文档类型、调整人、调整时间
+      调整说明格式：【上传文件】：测试文件.pdf 或 【删除文件】：测试文件.pdf
+
+      字段映射说明：
+      - 前端字段 documentTypeName ← 后端字段 documentTypeName（字典标签）
+      - 前端字段 createTime ← 后端字段 operationTime（操作时间）
+      - 后端同时返回 operationTime 和 createTime，两者值相同
+
+      后端实现（AttachmentLogMapper.xml）：
+      - SQL 查询关联 sys_dict_data 表获取文档类型字典标签
+      - LEFT JOIN sys_dict_data ON document_type = dict_value AND dict_type = 'sys_wdlx'
+      - 查询结果包含 document_type_name（字典标签）
+      - resultMap 中将 operation_time 同时映射到 operationTime 和 createTime
+
+      实体类字段（AttachmentLog.java）：
+      - documentType: 文档类型字典值（如 "1"）
+      - documentTypeName: 文档类型字典标签（如 "1-合同扫描件"）
+      - operationTime: 操作时间
+      - createTime: 前端兼容字段，映射到 operationTime
+
+      优化记录：
+      - 2026-02-04：添加字典翻译，文档类型显示字典标签而非字典值
+      - 2026-02-04：添加 createTime 字段映射，解决前端调整时间不显示问题
+

@@ -62,9 +62,16 @@ public interface ICustomerService
 
     /**
      * 删除客户管理信息
-     * 
+     *
      * @param customerId 客户管理主键
      * @return 结果
      */
     public int deleteCustomerByCustomerId(Long customerId);
+
+    /**
+     * 查询所有客户列表（用于下拉选择）
+     *
+     * @return 客户列表
+     */
+    public List<Customer> selectCustomerListAll();
 }

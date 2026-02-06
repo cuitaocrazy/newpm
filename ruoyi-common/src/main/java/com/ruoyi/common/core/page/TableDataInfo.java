@@ -1,11 +1,13 @@
 package com.ruoyi.common.core.page;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 表格分页数据对象
- * 
+ *
  * @author ruoyi
  */
 public class TableDataInfo implements Serializable
@@ -23,6 +25,9 @@ public class TableDataInfo implements Serializable
 
     /** 消息内容 */
     private String msg;
+
+    /** 额外数据 */
+    private Map<String, Object> extra;
 
     /**
      * 表格数据对象
@@ -81,5 +86,30 @@ public class TableDataInfo implements Serializable
     public void setMsg(String msg)
     {
         this.msg = msg;
+    }
+
+    public Map<String, Object> getExtra()
+    {
+        return extra;
+    }
+
+    public void setExtra(Map<String, Object> extra)
+    {
+        this.extra = extra;
+    }
+
+    /**
+     * 添加额外数据
+     *
+     * @param key 键
+     * @param value 值
+     */
+    public void put(String key, Object value)
+    {
+        if (this.extra == null)
+        {
+            this.extra = new HashMap<>();
+        }
+        this.extra.put(key, value);
     }
 }

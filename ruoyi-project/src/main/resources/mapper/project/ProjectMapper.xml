@@ -118,8 +118,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             mm.nick_name AS market_manager_name,
             d.dept_name
         FROM pm_project p
-        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id COLLATE utf8mb4_unicode_ci
-            AND pcr.is_main = '1' AND pcr.del_flag = '0'
+        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id AND pcr.del_flag = '0'
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
         LEFT JOIN sys_user pm ON p.project_manager_id = pm.user_id
         LEFT JOIN sys_user mm ON p.market_manager_id = mm.user_id
@@ -379,4 +378,125 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ( #{item.approvalId}, #{item.projectId}, #{item.approvalStatus}, #{item.approvalReason}, #{item.approverId}, #{item.approvalTime}, #{item.delFlag}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
         </foreach>
     </insert>
+
+    <select id="selectProjectListByContractId" parameterType="Long" resultMap="ProjectResult">
+        SELECT
+            p.project_id, p.project_code, p.project_name, p.project_full_name,
+            p.industry, p.region, p.short_name, p.established_year,
+            p.project_category, p.project_dept, p.project_status, p.acceptance_status,
+            p.project_manager_id, p.market_manager_id,
+            pm.nick_name AS project_manager_name,
+            mm.nick_name AS market_manager_name
+        FROM pm_project p
+        INNER JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id
+        LEFT JOIN sys_user pm ON p.project_manager_id = pm.user_id
+        LEFT JOIN sys_user mm ON p.market_manager_id = mm.user_id
+        WHERE pcr.contract_id = #{contractId}
+        AND pcr.del_flag = '0'
+        AND p.del_flag = '0'
+        ORDER BY p.create_time DESC
+    </select>
+
+    <select id="selectProjectListByDept" resultMap="ProjectResult">
+        SELECT
+            p.project_id, p.project_code, p.project_name, p.project_budget,
+            p.estimated_workload, p.actual_workload, p.project_dept
+        FROM pm_project p
+        WHERE p.del_flag = '0'
+        <if test="deptId != null">
+            AND (
+                p.project_dept = CAST(#{deptId} AS CHAR)
+                OR p.project_dept IN (
+                    SELECT dept_id FROM sys_dept
+                    WHERE del_flag = '0'
+                    AND FIND_IN_SET(#{deptId}, ancestors)
+                )
+            )
+        </if>
+        AND (
+            p.project_id NOT IN (
+                SELECT project_id FROM pm_project_contract_rel
+                WHERE del_flag = '0'
+            )
+            <if test="excludeContractId != null">
+                OR p.project_id IN (
+                    SELECT project_id FROM pm_project_contract_rel
+                    WHERE del_flag = '0'
+                    AND contract_id = #{excludeContractId}
+                )
+            </if>
+        )
+        ORDER BY p.create_time DESC
+    </select>
+
+    <select id="selectProjectNameList" parameterType="String" resultType="String">
+        SELECT DISTINCT project_name
+        FROM pm_project
+        WHERE del_flag = '0'
+        <if test="projectName != null and projectName != ''">
+            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        ORDER BY project_name
+        LIMIT 10
+    </select>
+
+    <select id="selectProjectCodeList" parameterType="String" resultType="String">
+        SELECT DISTINCT project_code
+        FROM pm_project
+        WHERE del_flag = '0'
+        <if test="projectCode != null and projectCode != ''">
+            AND project_code LIKE CONCAT('%', #{projectCode}, '%')
+        </if>
+        ORDER BY project_code
+        LIMIT 10
+    </select>
+
+    <select id="selectProjectSummary" parameterType="Project" resultType="map">
+        SELECT
+            IFNULL(SUM(p.project_budget), 0) as projectBudgetSum,
+            IFNULL(SUM(p.project_cost), 0) as projectCostSum
+        FROM pm_project p
+        <where>
+            p.del_flag = '0'
+            <if test="projectName != null and projectName != ''">
+                AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+            </if>
+            <if test="region != null and region != ''">
+                AND p.region = #{region}
+            </if>
+            <if test="establishedYear != null">
+                AND p.established_year = #{establishedYear}
+            </if>
+            <if test="projectCategory != null and projectCategory != ''">
+                AND p.project_category = #{projectCategory}
+            </if>
+            <if test="projectDept != null and projectDept != ''">
+                AND p.project_dept = #{projectDept}
+            </if>
+            <if test="projectStatus != null and projectStatus != ''">
+                AND p.project_status = #{projectStatus}
+            </if>
+            <if test="acceptanceStatus != null and acceptanceStatus != ''">
+                AND p.acceptance_status = #{acceptanceStatus}
+            </if>
+            <if test="projectManagerId != null">
+                AND p.project_manager_id = #{projectManagerId}
+            </if>
+            <if test="marketManagerId != null">
+                AND p.market_manager_id = #{marketManagerId}
+            </if>
+            <if test="approvalStatus != null and approvalStatus != ''">
+                AND p.approval_status = #{approvalStatus}
+            </if>
+            <if test="regionCode != null and regionCode != ''">
+                AND p.region_code = #{regionCode}
+            </if>
+            <if test="revenueConfirmStatus != null and revenueConfirmStatus != ''">
+                AND p.revenue_confirm_status = #{revenueConfirmStatus}
+            </if>
+            <if test="revenueConfirmYear != null and revenueConfirmYear != ''">
+                AND p.revenue_confirm_year = #{revenueConfirmYear}
+            </if>
+        </where>
+    </select>
 </mapper>

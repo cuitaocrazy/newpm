@@ -159,7 +159,7 @@ public class CustomerServiceImpl implements ICustomerService
 
     /**
      * 新增客户联系人信息
-     * 
+     *
      * @param customer 客户管理对象
      */
     public void insertCustomerContact(Customer customer)
@@ -179,5 +179,16 @@ public class CustomerServiceImpl implements ICustomerService
                 customerMapper.batchCustomerContact(list);
             }
         }
+    }
+
+    /**
+     * 查询所有客户列表（用于下拉选择）
+     *
+     * @return 客户列表
+     */
+    @Override
+    public List<Customer> selectCustomerListAll()
+    {
+        return customerMapper.selectCustomerList(new Customer());
     }
 }

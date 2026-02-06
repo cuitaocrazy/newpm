@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.AttachmentMapper">
+
+    <resultMap type="Attachment" id="AttachmentResult">
+        <result property="attachmentId"    column="attachment_id"    />
+        <result property="businessType"    column="business_type"    />
+        <result property="businessId"    column="business_id"    />
+        <result property="documentType"    column="document_type"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="fileSize"    column="file_size"    />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileDescription"    column="file_description"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+        <result property="documentTypeName"    column="document_type_name"    />
+        <result property="createByName"    column="create_by_name"    />
+    </resultMap>
+
+    <sql id="selectAttachmentVo">
+        select attachment_id, business_type, business_id, document_type, file_name, file_path, file_size, file_type, file_description, del_flag, create_by, create_time, update_by, update_time, remark from pm_attachment
+    </sql>
+
+    <select id="selectAttachmentList" resultMap="AttachmentResult">
+        select
+            a.attachment_id, a.business_type, a.business_id, a.document_type, a.file_name,
+            a.file_path, a.file_size, a.file_type, a.file_description, a.del_flag,
+            a.create_by, a.create_time, a.update_by, a.update_time, a.remark,
+            dict.dict_label as document_type_name,
+            u.nick_name as create_by_name
+        from pm_attachment a
+        left join sys_dict_data dict on a.document_type = dict.dict_value and dict.dict_type = 'sys_wdlx'
+        left join sys_user u on a.create_by = u.user_name
+        where a.del_flag = '0'
+            and a.business_type = #{businessType}
+            and a.business_id = #{businessId}
+        order by a.create_time desc
+    </select>
+
+    <select id="selectAttachmentByAttachmentId" parameterType="Long" resultMap="AttachmentResult">
+        <include refid="selectAttachmentVo"/>
+        where attachment_id = #{attachmentId}
+    </select>
+
+    <insert id="insertAttachment" parameterType="Attachment" useGeneratedKeys="true" keyProperty="attachmentId">
+        insert into pm_attachment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="businessType != null and businessType != ''">business_type,</if>
+            <if test="businessId != null">business_id,</if>
+            <if test="documentType != null">document_type,</if>
+            <if test="fileName != null and fileName != ''">file_name,</if>
+            <if test="filePath != null and filePath != ''">file_path,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="fileType != null">file_type,</if>
+            <if test="fileDescription != null">file_description,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="remark != null">remark,</if>
+            create_time
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="businessType != null and businessType != ''">#{businessType},</if>
+            <if test="businessId != null">#{businessId},</if>
+            <if test="documentType != null">#{documentType},</if>
+            <if test="fileName != null and fileName != ''">#{fileName},</if>
+            <if test="filePath != null and filePath != ''">#{filePath},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="fileType != null">#{fileType},</if>
+            <if test="fileDescription != null">#{fileDescription},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="remark != null">#{remark},</if>
+            sysdate()
+         </trim>
+    </insert>
+
+    <update id="updateAttachment" parameterType="Attachment">
+        update pm_attachment
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="businessType != null and businessType != ''">business_type = #{businessType},</if>
+            <if test="businessId != null">business_id = #{businessId},</if>
+            <if test="documentType != null">document_type = #{documentType},</if>
+            <if test="fileName != null and fileName != ''">file_name = #{fileName},</if>
+            <if test="filePath != null and filePath != ''">file_path = #{filePath},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="fileType != null">file_type = #{fileType},</if>
+            <if test="fileDescription != null">file_description = #{fileDescription},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </trim>
+        where attachment_id = #{attachmentId}
+    </update>
+
+    <delete id="deleteAttachmentByAttachmentId" parameterType="Long">
+        update pm_attachment set del_flag = '1' where attachment_id = #{attachmentId}
+    </delete>
+
+    <delete id="deleteAttachmentByAttachmentIds" parameterType="Long">
+        update pm_attachment set del_flag = '1' where attachment_id in
+        <foreach item="attachmentId" collection="array" open="(" separator="," close=")">
+            #{attachmentId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteAttachmentByBusinessId">
+        update pm_attachment set del_flag = '1'
+        where business_type = #{businessType} and business_id = #{businessId}
+    </delete>
+</mapper>

@@ -1,0 +1,20 @@
+{
+  "name": "ruoyi-vue-project",
+  "version": "3.9.1",
+  "description": "RuoYi-Vue 项目管理系统",
+  "private": true,
+  "workspaces": [
+    "ruoyi-ui"
+  ],
+  "scripts": {
+    "dev": "cd ruoyi-ui && npm run dev",
+    "build": "cd ruoyi-ui && npm run build:prod",
+    "preview": "cd ruoyi-ui && npm run preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/y_project/RuoYi-Vue.git"
+  },
+  "author": "ruoyi",
+  "license": "MIT"
+}

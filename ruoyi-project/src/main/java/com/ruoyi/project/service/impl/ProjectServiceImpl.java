@@ -1,6 +1,8 @@
 package com.ruoyi.project.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import com.ruoyi.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,12 +16,12 @@ import com.ruoyi.project.service.IProjectService;
 
 /**
  * 项目管理Service业务层处理
- * 
+ *
  * @author ruoyi
  * @date 2026-02-05
  */
 @Service
-public class ProjectServiceImpl implements IProjectService 
+public class ProjectServiceImpl implements IProjectService
 {
     @Autowired
     private ProjectMapper projectMapper;
@@ -110,7 +112,7 @@ public class ProjectServiceImpl implements IProjectService
 
     /**
      * 新增项目审核信息
-     * 
+     *
      * @param project 项目管理对象
      */
     public void insertProjectApproval(Project project)
@@ -130,5 +132,54 @@ public class ProjectServiceImpl implements IProjectService
                 projectMapper.batchProjectApproval(list);
             }
         }
+    }
+
+    /**
+     * 根据部门查询项目列表（用于下拉选择）
+     *
+     * @param deptId 部门ID
+     * @param excludeContractId 排除已关联此合同的项目（编辑时使用）
+     * @return 项目列表
+     */
+    @Override
+    public List<Project> selectProjectListByDept(Long deptId, Long excludeContractId)
+    {
+        return projectMapper.selectProjectListByDept(deptId, excludeContractId);
+    }
+
+    /**
+     * 获取项目名称列表（用于智能提示）
+     *
+     * @param projectName 项目名称关键词
+     * @return 项目名称列表
+     */
+    @Override
+    public List<String> selectProjectNameList(String projectName)
+    {
+        return projectMapper.selectProjectNameList(projectName);
+    }
+
+    /**
+     * 获取项目编号列表（用于智能提示）
+     *
+     * @param projectCode 项目编号关键词
+     * @return 项目编号列表
+     */
+    @Override
+    public List<String> selectProjectCodeList(String projectCode)
+    {
+        return projectMapper.selectProjectCodeList(projectCode);
+    }
+
+    /**
+     * 获取项目金额汇总
+     *
+     * @param project 查询条件
+     * @return 汇总数据
+     */
+    @Override
+    public Map<String, BigDecimal> selectProjectSummary(Project project)
+    {
+        return projectMapper.selectProjectSummary(project);
     }
 }

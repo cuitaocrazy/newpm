@@ -61,37 +61,164 @@
           <dict-tag :options="sys_ndgl" :value="detailData.confirmYear"/>
         </el-descriptions-item>
 
-        <!-- 第四部分：关联项目 -->
-        <el-descriptions-item label="关联项目" :span="2" label-class-name="label-bold">
-          <el-tag v-for="projectId in detailData.projectIds" :key="projectId" style="margin-right: 5px;">
-            {{ getProjectName(projectId) }}
-          </el-tag>
-          <span v-if="!detailData.projectIds || detailData.projectIds.length === 0">无</span>
+        <!-- 第四部分：备注 -->
+        <el-descriptions-item label="备注" :span="2" label-class-name="label-bold">
+          {{ detailData.remark || '无' }}
         </el-descriptions-item>
 
         <!-- 第五部分：创建和更新信息 -->
         <el-descriptions-item label="创建人" label-class-name="label-bold">
-          {{ detailData.createBy }}
+          {{ detailData.createByName || detailData.createBy }}
         </el-descriptions-item>
         <el-descriptions-item label="创建时间" label-class-name="label-bold">
           {{ parseTime(detailData.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
         </el-descriptions-item>
         <el-descriptions-item label="更新人" label-class-name="label-bold">
-          {{ detailData.updateBy }}
+          {{ detailData.updateByName || detailData.updateBy }}
         </el-descriptions-item>
         <el-descriptions-item label="更新时间" label-class-name="label-bold">
           {{ parseTime(detailData.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
         </el-descriptions-item>
-
-        <!-- 第六部分：备注 -->
-        <el-descriptions-item label="备注" :span="2" label-class-name="label-bold">
-          {{ detailData.remark || '无' }}
-        </el-descriptions-item>
       </el-descriptions>
+    </el-card>
 
-      <!-- 操作按钮 -->
+    <!-- 第六部分：关联项目列表 -->
+    <el-card class="box-card" style="margin-top: 20px;" v-if="projectList.length > 0">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
+      </template>
+      <el-table :data="projectList" border>
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column label="项目名称" align="center" prop="projectName" show-overflow-tooltip>
+          <template #default="scope">
+            <el-link type="primary" @click="handleViewProject(scope.row.projectId)">
+              {{ scope.row.projectName }}
+            </el-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="预算金额(元)" align="center" prop="projectBudget" width="150">
+          <template #default="scope">
+            {{ formatAmount(scope.row.projectBudget) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="预估工作量(人天)" align="center" prop="estimatedWorkload" width="150">
+          <template #default="scope">
+            {{ scope.row.estimatedWorkload }}
+          </template>
+        </el-table-column>
+        <el-table-column label="实际人天" align="center" prop="actualWorkload" width="150">
+          <template #default="scope">
+            {{ scope.row.actualWorkload || '-' }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 第七部分：付款里程碑信息 -->
+    <el-card class="box-card" style="margin-top: 20px;">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">付款里程碑信息</span>
+      </template>
+      <el-table :data="paymentListWithSummary" border>
+        <el-table-column label="序号" width="60" align="center">
+          <template #default="scope">
+            <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
+            <span v-else>{{ scope.$index }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="付款方式名称" align="center" prop="paymentMethodName" show-overflow-tooltip>
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.paymentMethodName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="付款金额(元)" align="center" prop="paymentAmount" width="130">
+          <template #default="scope">
+            <span :style="scope.row.isSummary ? 'font-weight: bold; color: #409EFF;' : ''">
+              {{ formatAmount(scope.row.paymentAmount) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="付款状态" align="center" prop="paymentStatus" width="100">
+          <template #default="scope">
+            <dict-tag v-if="!scope.row.isSummary" :options="sys_fkzt" :value="scope.row.paymentStatus"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="预计回款季度" align="center" prop="expectedQuarter" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.expectedQuarter }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="实际回款季度" align="center" prop="actualQuarter" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.actualQuarter || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="实际回款日期" align="center" prop="actualPaymentDate" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.actualPaymentDate ? parseTime(scope.row.actualPaymentDate, '{y}-{m}-{d}') : '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="确认年份" align="center" prop="confirmYear" width="100">
+          <template #default="scope">
+            <dict-tag v-if="!scope.row.isSummary" :options="sys_ndgl" :value="scope.row.confirmYear"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="是否违约扣款" align="center" prop="hasPenalty" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.hasPenalty === '1' ? '是' : '否' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="扣款金额(元)" align="center" prop="penaltyAmount" width="120">
+          <template #default="scope">
+            <span :style="scope.row.isSummary ? 'font-weight: bold; color: #F56C6C;' : ''">
+              {{ scope.row.penaltyAmount ? formatAmount(scope.row.penaltyAmount) : '-' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" align="center" prop="remark" show-overflow-tooltip>
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.remark || '-' }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 第八部分：合同附件列表 -->
+    <el-card class="box-card" style="margin-top: 20px;">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">合同附件列表</span>
+      </template>
+      <el-table :data="attachmentList" border>
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column label="文档类型" align="center" prop="documentType" width="120">
+          <template #default="scope">
+            <dict-tag :options="sys_wdlx" :value="scope.row.documentType"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="文件名称" align="center" prop="fileOriginalName" show-overflow-tooltip />
+        <el-table-column label="文件说明" align="center" prop="fileDescription" show-overflow-tooltip>
+          <template #default="scope">
+            {{ scope.row.fileDescription || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="上传人员" align="center" prop="uploadUserName" width="100" />
+        <el-table-column label="上传时间" align="center" prop="createTime" width="180">
+          <template #default="scope">
+            {{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" align="center" width="100">
+          <template #default="scope">
+            <el-button link type="primary" icon="Download" @click="handleDownload(scope.row)">下载</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 操作按钮 -->
+    <el-card class="box-card" style="margin-top: 20px;">
       <el-row :gutter="20">
-        <el-col :span="24" style="text-align: center; margin-top: 20px;">
+        <el-col :span="24" style="text-align: center;">
           <el-button type="primary" icon="Edit" @click="handleEdit" v-hasPermi="['project:contract:edit']">编辑</el-button>
           <el-button @click="handleBack">返回</el-button>
         </el-col>
@@ -102,12 +229,14 @@
 
 <script setup name="ContractDetail">
 import { getContract } from "@/api/project/contract"
+import { listPayment } from "@/api/project/payment"
+import { listAttachment, downloadAttachment } from "@/api/project/attachment"
 import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
-const { sys_htlx, sys_htzt, sys_ndgl } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl')
+const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx')
 const route = useRoute()
 const router = useRouter()
 
@@ -115,6 +244,35 @@ const detailData = ref({})
 const deptOptions = ref([])
 const customerOptions = ref([])
 const projectOptions = ref([])
+const projectList = ref([])
+const paymentList = ref([])
+const attachmentList = ref([])
+
+/** 付款里程碑列表（带合计行） */
+const paymentListWithSummary = computed(() => {
+  if (paymentList.value.length === 0) {
+    return []
+  }
+
+  // 计算合计
+  const summary = {
+    isSummary: true,
+    paymentAmount: 0,
+    penaltyAmount: 0
+  }
+
+  paymentList.value.forEach(item => {
+    summary.paymentAmount += Number(item.paymentAmount) || 0
+    summary.penaltyAmount += Number(item.penaltyAmount) || 0
+  })
+
+  // 保留两位小数
+  summary.paymentAmount = summary.paymentAmount.toFixed(2)
+  summary.penaltyAmount = summary.penaltyAmount.toFixed(2)
+
+  // 将合计行放在第一行
+  return [summary, ...paymentList.value]
+})
 
 /** 查询部门下拉树结构 */
 function getDeptTree() {
@@ -180,12 +338,41 @@ function formatAmount(amount) {
 
 /** 编辑按钮 */
 function handleEdit() {
-  router.push({ path: '/project/contract/form', query: { contractId: detailData.value.contractId } })
+  router.push({ path: `/project/contract/edit/${detailData.value.contractId}` })
 }
 
 /** 返回按钮 */
 function handleBack() {
   router.back()
+}
+
+/** 查看项目详情 */
+function handleViewProject(projectId) {
+  router.push({ path: `/project/project/detail/${projectId}` })
+}
+
+/** 下载附件 */
+function handleDownload(row) {
+  downloadAttachment(row.attachmentId).then(response => {
+    proxy.download(response)
+  })
+}
+
+/** 查询付款里程碑列表 */
+function getPaymentList(contractId) {
+  listPayment({ contractId: contractId }).then(response => {
+    paymentList.value = response.rows || []
+  })
+}
+
+/** 查询附件列表 */
+function getAttachmentList(contractId) {
+  listAttachment({
+    businessType: 'contract',
+    businessId: contractId
+  }).then(response => {
+    attachmentList.value = response.rows || []
+  })
 }
 
 /** 初始化数据 */
@@ -194,11 +381,23 @@ function init() {
   getCustomerList()
   getProjectList()
 
-  const contractId = route.query.contractId
+  const contractId = route.params.contractId
   if (contractId) {
+    // 查询合同详情
     getContract(contractId).then(response => {
       detailData.value = response.data
+
+      // 查询关联项目列表
+      if (response.data.projectList && response.data.projectList.length > 0) {
+        projectList.value = response.data.projectList
+      }
     })
+
+    // 查询付款里程碑列表
+    getPaymentList(contractId)
+
+    // 查询附件列表
+    getAttachmentList(contractId)
   }
 }
 

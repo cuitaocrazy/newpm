@@ -1,31 +1,14 @@
 <template>
-  <div class="app-container">
+  <div class="app-container contract-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="合同编号" prop="contractCode">
-        <el-input
-          v-model="queryParams.contractCode"
-          placeholder="请输入合同编号"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="合同名称" prop="contractName">
         <el-input
           v-model="queryParams.contractName"
           placeholder="请输入合同名称"
           clearable
           @keyup.enter="handleQuery"
+          style="width: 200px"
         />
-      </el-form-item>
-      <el-form-item label="客户" prop="customerId">
-        <el-select v-model="queryParams.customerId" placeholder="请选择客户" clearable filterable>
-          <el-option
-            v-for="customer in customerOptions"
-            :key="customer.customerId"
-            :label="customer.customerSimpleName"
-            :value="customer.customerId"
-          />
-        </el-select>
       </el-form-item>
       <el-form-item label="部门" prop="deptId">
         <el-tree-select
@@ -36,35 +19,56 @@
           placeholder="请选择部门"
           clearable
           check-strictly
+          style="width: 200px"
         />
       </el-form-item>
+      <el-form-item label="客户" prop="customerId">
+        <el-select v-model="queryParams.customerId" placeholder="请选择客户" clearable filterable style="width: 200px">
+          <el-option
+            v-for="customer in customerOptions"
+            :key="customer.customerId"
+            :label="customer.customerSimpleName"
+            :value="customer.customerId"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="合同类型" prop="contractType">
-        <el-select v-model="queryParams.contractType" placeholder="请选择合同类型" clearable>
+        <el-select v-model="queryParams.contractType" placeholder="请选择合同类型" clearable style="width: 200px">
           <el-option
             v-for="dict in sys_htlx"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
-          />
+          ></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="合同状态" prop="contractStatus">
-        <el-select v-model="queryParams.contractStatus" placeholder="请选择合同状态" clearable>
+        <el-select v-model="queryParams.contractStatus" placeholder="请选择合同状态" clearable style="width: 200px">
           <el-option
             v-for="dict in sys_htzt"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
-          />
+          ></el-option>
         </el-select>
       </el-form-item>
       <template v-if="showMoreQuery">
+        <el-form-item label="合同编号" prop="contractCode">
+          <el-input
+            v-model="queryParams.contractCode"
+            placeholder="请输入合同编号"
+            clearable
+            @keyup.enter="handleQuery"
+            style="width: 200px"
+          />
+        </el-form-item>
         <el-form-item label="合同签订日期" prop="contractSignDate">
           <el-date-picker clearable
             v-model="queryParams.contractSignDate"
             type="date"
             value-format="YYYY-MM-DD"
-            placeholder="请选择合同签订日期">
+            placeholder="请选择合同签订日期"
+            style="width: 200px">
           </el-date-picker>
         </el-form-item>
         <el-form-item label="合同确认金额" prop="confirmAmount">
@@ -73,10 +77,11 @@
             placeholder="请输入合同确认金额"
             clearable
             @keyup.enter="handleQuery"
+            style="width: 200px"
           />
         </el-form-item>
         <el-form-item label="确认年份" prop="confirmYear">
-          <el-select v-model="queryParams.confirmYear" placeholder="请选择确认年份" clearable>
+          <el-select v-model="queryParams.confirmYear" placeholder="请选择确认年份" clearable style="width: 200px">
             <el-option
               v-for="dict in sys_ndgl"
               :key="dict.value"
@@ -120,29 +125,42 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="tableDataWithSummary">
-      <el-table-column label="序号" width="60" align="center">
+    <el-table
+      v-loading="loading"
+      :data="tableDataWithSummary"
+      :height="tableHeight"
+      border
+      stripe
+      style="width: 100%">
+      <el-table-column label="序号" width="60" align="center" fixed="left">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
-          <span v-else>{{ indexMethod(scope.$index - 1) }}</span>
+          <span v-else>{{ (queryParams.pageNum - 1) * queryParams.pageSize + scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同编号" align="center" prop="contractCode" width="150">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.contractCode }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="合同名称" align="center" prop="contractName" width="200" show-overflow-tooltip>
+      <el-table-column label="合同名称" align="center" prop="contractName" min-width="180" show-overflow-tooltip fixed="left">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.contractName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="客户" align="center" prop="customerId" width="180" show-overflow-tooltip>
+      <el-table-column label="关联项目" align="center" prop="projectList" min-width="160" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <template v-if="scope.row.projectList && scope.row.projectList.length > 0">
+              <span v-for="(project, index) in scope.row.projectList" :key="project.projectId">
+                {{ project.projectName }}<span v-if="index < scope.row.projectList.length - 1">、</span>
+              </span>
+            </template>
+            <span v-else>-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="客户名称" align="center" prop="customerId" min-width="140" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getCustomerName(scope.row.customerId) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="部门" align="center" prop="deptId" width="150" show-overflow-tooltip>
+      <el-table-column label="部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getDeptName(scope.row.deptId) }}</span>
         </template>
@@ -167,55 +185,51 @@
           <span v-if="!scope.row.isSummary">{{ scope.row.contractPeriod }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额(含税)(元)" align="center" prop="contractAmount" width="160">
+      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="130">
         <template #default="scope">
           <span :style="scope.row.isSummary ? 'font-weight: bold; color: #409EFF;' : ''">
             {{ formatAmount(scope.row.contractAmount) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="税率(%)" align="center" prop="taxRate" width="100">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.taxRate }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="不含税金额(元)" align="center" prop="amountNoTax" width="140">
+      <el-table-column label="不含税金额(元)" align="right" prop="amountNoTax" min-width="140">
         <template #default="scope">
           <span :style="scope.row.isSummary ? 'font-weight: bold; color: #67C23A;' : ''">
             {{ formatAmount(scope.row.amountNoTax) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="税金(元)" align="center" prop="taxAmount" width="120">
-        <template #default="scope">
-          <span :style="scope.row.isSummary ? 'font-weight: bold; color: #E6A23C;' : ''">
-            {{ formatAmount(scope.row.taxAmount) }}
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="合同确认金额(元)" align="center" prop="confirmAmount" width="150">
-        <template #default="scope">
-          <span :style="scope.row.isSummary ? 'font-weight: bold; color: #F56C6C;' : ''">
-            {{ formatAmount(scope.row.confirmAmount) }}
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="确认年份" align="center" prop="confirmYear" width="100">
-        <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummary" :options="sys_ndgl" :value="scope.row.confirmYear"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="免维期(月)" align="center" prop="freeMaintenancePeriod" width="110">
+      <el-table-column label="免维期(月)" align="center" prop="freeMaintenancePeriod" width="100">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.freeMaintenancePeriod }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" width="150" show-overflow-tooltip>
+      <el-table-column label="备注" align="center" prop="remark" min-width="150" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.remark }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="250" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="创建日期" align="center" prop="createTime" width="160">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建人" align="center" prop="createByName" width="100">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ scope.row.createByName || scope.row.createBy }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="最后更新日期" align="center" prop="updateTime" width="160">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="最后更新人" align="center" prop="updateByName" width="100">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ scope.row.updateByName || scope.row.updateBy }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="280" fixed="right" class-name="small-padding fixed-width">
         <template #default="scope">
           <template v-if="!scope.row.isSummary">
             <el-button link type="primary" icon="View" @click="handleView(scope.row)" v-hasPermi="['project:contract:query']">详情</el-button>
@@ -322,7 +336,7 @@ import { listContract, getContract, delContract } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
-import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, getAttachmentLog } from "@/api/project/attachment"
+import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, listAttachmentLog } from "@/api/project/attachment"
 import { getToken } from "@/utils/auth"
 
 const { proxy } = getCurrentInstance()
@@ -331,32 +345,18 @@ const router = useRouter()
 const route = useRoute()
 
 const contractList = ref([])
+const summaryData = ref({})
 const tableDataWithSummary = computed(() => {
   if (contractList.value.length === 0) {
     return []
   }
 
-  // 计算合计
+  // 使用后端返回的总计数据
   const summary = {
     isSummary: true,
-    contractAmount: 0,
-    amountNoTax: 0,
-    taxAmount: 0,
-    confirmAmount: 0
+    contractAmount: Number(summaryData.value.contractAmountSum || 0).toFixed(2),
+    amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2)
   }
-
-  contractList.value.forEach(item => {
-    summary.contractAmount += Number(item.contractAmount) || 0
-    summary.amountNoTax += Number(item.amountNoTax) || 0
-    summary.taxAmount += Number(item.taxAmount) || 0
-    summary.confirmAmount += Number(item.confirmAmount) || 0
-  })
-
-  // 保留两位小数
-  summary.contractAmount = summary.contractAmount.toFixed(2)
-  summary.amountNoTax = summary.amountNoTax.toFixed(2)
-  summary.taxAmount = summary.taxAmount.toFixed(2)
-  summary.confirmAmount = summary.confirmAmount.toFixed(2)
 
   // 将合计行放在第一行
   return [summary, ...contractList.value]
@@ -370,6 +370,7 @@ const logLoading = ref(false)
 const showSearch = ref(true)
 const showMoreQuery = ref(false)
 const total = ref(0)
+const tableHeight = ref(600)
 const deptOptions = ref([])
 const customerOptions = ref([])
 const projectOptions = ref([])
@@ -403,8 +404,12 @@ const { queryParams } = toRefs(data)
 function getList() {
   loading.value = true
   listContract(queryParams.value).then(response => {
+    console.log('合同列表响应数据:', response)
     contractList.value = response.rows
     total.value = response.total
+    // 获取后端返回的总计数据（从 extra 中获取）
+    summaryData.value = (response.extra && response.extra.summary) || {}
+    console.log('总计数据:', summaryData.value)
     loading.value = false
   })
 }
@@ -412,8 +417,37 @@ function getList() {
 /** 查询部门下拉树结构 */
 function getDeptTree() {
   deptTreeSelect().then(response => {
-    deptOptions.value = response.data
+    // 过滤部门树，只保留第三级及以下的部门
+    deptOptions.value = filterDeptFromLevel3(response.data)
   })
+}
+
+/** 过滤部门树，从第三级开始展示 */
+function filterDeptFromLevel3(deptTree, level = 1) {
+  if (!deptTree || !Array.isArray(deptTree)) {
+    return []
+  }
+
+  const result = []
+
+  for (const dept of deptTree) {
+    if (level >= 3) {
+      // 第三级及以下，保留该节点
+      const newDept = { ...dept }
+      if (dept.children && dept.children.length > 0) {
+        newDept.children = filterDeptFromLevel3(dept.children, level + 1)
+      }
+      result.push(newDept)
+    } else {
+      // 第一级和第二级，只递归处理子节点
+      if (dept.children && dept.children.length > 0) {
+        const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
+        result.push(...childrenResult)
+      }
+    }
+  }
+
+  return result
 }
 
 /** 查询客户列表 */
@@ -473,7 +507,32 @@ function formatAmount(amount) {
 
 /** 序号计算方法 */
 function indexMethod(index) {
-  return (queryParams.value.pageNum - 1) * queryParams.value.pageSize + index + 1
+  // 跳过合计行，从实际数据开始计算
+  if (index < 0) return ''
+
+  const dataList = contractList.value
+  let contractIndex = 0
+  let currentIndex = 0
+
+  // 遍历数据，找到当前行对应的合同序号
+  for (let i = 0; i < dataList.length; i++) {
+    if (currentIndex === index) {
+      // 如果是第一行，显示序号
+      if (dataList[i].isFirstRow) {
+        return (queryParams.value.pageNum - 1) * queryParams.value.pageSize + contractIndex + 1
+      } else {
+        return '' // 非第一行不显示序号
+      }
+    }
+
+    // 如果是第一行，增加合同计数
+    if (dataList[i].isFirstRow) {
+      contractIndex++
+    }
+    currentIndex++
+  }
+
+  return ''
 }
 
 /** 搜索按钮操作 */
@@ -490,27 +549,33 @@ function resetQuery() {
 
 /** 新增按钮操作 */
 function handleAdd() {
-  router.push({ path: '/project/contract/form' })
+  router.push({ path: '/project/contract/add' })
 }
 
 /** 查看详情按钮操作 */
 function handleView(row) {
-  router.push({ path: '/project/contract/detail', query: { contractId: row.contractId } })
+  router.push({ path: `/project/contract/detail/${row.contractId}` })
 }
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  router.push({ path: '/project/contract/form', query: { contractId: row.contractId } })
+  router.push({ path: `/project/contract/edit/${row.contractId}` })
 }
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除该合同数据？').then(function() {
+  const contractName = row.contractName || '该合同'
+  proxy.$modal.confirm(`此操作将永久删除合同【${contractName}】及其所有关联数据，且无法恢复！是否继续？`).then(function() {
     return delContract(row.contractId)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
-  }).catch(() => {})
+  }).catch((error) => {
+    // 如果后端返回错误信息，会自动显示
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+    }
+  })
 }
 
 /** 导出按钮操作 */
@@ -606,7 +671,7 @@ function handleDeleteAttachment(row) {
 /** 查看操作日志 */
 function handleViewLog(row) {
   logLoading.value = true
-  getAttachmentLog(row.attachmentId).then(response => {
+  listAttachmentLog('contract', currentContractId.value).then(response => {
     logList.value = response.rows
     logLoading.value = false
     logOpen.value = true
@@ -621,6 +686,38 @@ function formatFileSize(bytes) {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]
 }
+
+/** 计算表格高度 */
+function calcTableHeight() {
+  nextTick(() => {
+    const windowHeight = window.innerHeight
+    const searchHeight = showSearch.value ? (showMoreQuery.value ? 160 : 100) : 0
+    const toolbarHeight = 50
+    const paginationHeight = 50
+    const padding = 120
+    tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding
+  })
+}
+
+// 监听窗口大小变化
+onMounted(() => {
+  calcTableHeight()
+  window.addEventListener('resize', calcTableHeight)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', calcTableHeight)
+})
+
+// 监听搜索框显示/隐藏
+watch(showSearch, () => {
+  calcTableHeight()
+})
+
+// 监听更多查询展开/收起
+watch(showMoreQuery, () => {
+  calcTableHeight()
+})
 
 // 监听路由变化，当从表单页面返回时自动查询
 watch(() => route.query.t, (newVal) => {
@@ -639,3 +736,35 @@ getCustomerList()
 getProjectList()
 getList()
 </script>
+
+<style scoped lang="scss">
+.contract-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :deep(.el-form--inline .el-form-item) {
+    margin-right: 20px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.el-table) {
+    font-size: 13px;
+
+    .el-table__header th {
+      background-color: #f5f7fa;
+      color: #606266;
+      font-weight: 600;
+    }
+
+    .el-table__body tr:hover > td {
+      background-color: #f5f7fa !important;
+    }
+  }
+
+  :deep(.el-pagination) {
+    margin-top: 15px;
+    text-align: right;
+  }
+}
+</style>

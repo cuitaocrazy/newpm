@@ -9,6 +9,18 @@ export function listProject(query) {
   })
 }
 
+// 根据部门查询项目列表（用于合同关联项目选择）
+export function listProjectByDept(deptId, excludeContractId) {
+  return request({
+    url: '/project/project/listByDept',
+    method: 'get',
+    params: {
+      deptId,
+      excludeContractId
+    }
+  })
+}
+
 // 查询项目管理详细
 export function getProject(projectId) {
   return request({

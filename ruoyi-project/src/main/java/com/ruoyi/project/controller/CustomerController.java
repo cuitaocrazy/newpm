@@ -129,4 +129,15 @@ public class CustomerController extends BaseController
         }
         return success(customer.getCustomerContactList());
     }
+
+    /**
+     * 查询所有客户列表（用于下拉选择）
+     */
+    @PreAuthorize("@ss.hasPermi('project:customer:list')")
+    @GetMapping("/listAll")
+    public AjaxResult listAll()
+    {
+        List<Customer> list = customerService.selectCustomerListAll();
+        return success(list);
+    }
 }

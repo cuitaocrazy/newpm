@@ -412,31 +412,7 @@ create table gen_table_column (
 -- ----------------------------
 -- 20、代码生成业务表字段
 -- ----------------------------
-DROP TABLE IF EXISTS `附件表`;
-CREATE TABLE `pm_attachment` (
-  `attachment_id` bigint NOT NULL AUTO_INCREMENT COMMENT '附件主键ID',
-  `business_type` varchar(50) NOT NULL COMMENT '业务类型(payment-款项、contract-合同、project-项目)',
-  `business_id` bigint NOT NULL COMMENT '业务ID',
-  `project_id` varchar(50) DEFAULT NULL COMMENT '项目ID(关联项目时)',
-  `contract_id` bigint DEFAULT NULL COMMENT '合同ID(关联合同时)',
-  `document_type` varchar(50) DEFAULT NULL COMMENT '文档类型(字典:sys_wdlx)',
-  `file_name` varchar(255) NOT NULL COMMENT '文件名',
-  `file_path` varchar(500) NOT NULL COMMENT '文件路径',
-  `file_size` bigint DEFAULT NULL COMMENT '文件大小(字节)',
-  `file_type` varchar(50) DEFAULT NULL COMMENT '文件类型(扩展名)',
-  `file_description` varchar(500) DEFAULT NULL COMMENT '文件描述',
-  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`attachment_id`),
-  KEY `idx_business_type_id` (`business_type`,`business_id`),
-  KEY `idx_project_id` (`project_id`),
-  KEY `idx_contract_id` (`contract_id`),
-  KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件表';
+-- 注意：附件表定义已移至下方统一定义（见 13. 附件表）
 
 
 -- ----------------------------
@@ -633,11 +609,7 @@ CREATE TABLE `pm_contract` (
   `contract_code` varchar(100) DEFAULT NULL COMMENT '合同编号',
   `contract_name` varchar(200) NOT NULL COMMENT '合同名称',
   `customer_id` bigint NOT NULL COMMENT '关联客户ID',
-  `customer_name` varchar(200) DEFAULT NULL COMMENT '客户名称',
   `dept_id` bigint DEFAULT NULL COMMENT '部门ID',
-  `dept_name` varchar(100) DEFAULT NULL COMMENT '部门名称',
-  `team_id` bigint DEFAULT NULL COMMENT '合同所属团队ID',
-  `team_leader_id` bigint DEFAULT NULL COMMENT '团队负责人ID',
   `contract_type` varchar(50) NOT NULL COMMENT '合同类型(字典:sys_htlx)',
   `contract_status` varchar(50) DEFAULT '未签署' COMMENT '合同状态(字典:sys_htzt)',
   `contract_sign_date` date DEFAULT NULL COMMENT '合同签订日期',
@@ -720,6 +692,7 @@ CREATE TABLE `pm_payment` (
   `payment_id` bigint NOT NULL AUTO_INCREMENT COMMENT '款项主键ID',
   `contract_id` bigint NOT NULL COMMENT '合同ID',
   `payment_method_name` varchar(200) DEFAULT NULL COMMENT '付款方式名称',
+  `payment_amount` decimal(15,2) DEFAULT '0.00' COMMENT '付款总金额',
   `has_penalty` char(1) DEFAULT '0' COMMENT '是否涉及违约扣款(1是 0否)',
   `penalty_amount` decimal(15,2) DEFAULT '0.00' COMMENT '扣款金额(元)',
   `payment_status` varchar(50) DEFAULT NULL COMMENT '付款状态(字典:sys_fkzt)',
@@ -727,7 +700,6 @@ CREATE TABLE `pm_payment` (
   `actual_quarter` varchar(20) DEFAULT NULL COMMENT '实际回款所属季度(字典:sys_jdgl)',
   `submit_acceptance_date` date DEFAULT NULL COMMENT '提交验收材料日期',
   `actual_payment_date` date DEFAULT NULL COMMENT '实际回款日期',
-  `flow_status` varchar(50) DEFAULT NULL COMMENT '流程状态',
   `confirm_year` varchar(10) DEFAULT NULL COMMENT '款项确认年份(字典:sys_ndgl)',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
@@ -742,27 +714,6 @@ CREATE TABLE `pm_payment` (
   KEY `idx_actual_quarter` (`actual_quarter`),
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='款项表';
-
--- ----------------------------
--- 5、款项里程碑表
--- ----------------------------
-DROP TABLE IF EXISTS `pm_payment_milestone`;
-CREATE TABLE `pm_payment_milestone` (
-  `milestone_id` bigint NOT NULL AUTO_INCREMENT COMMENT '里程碑主键ID',
-  `payment_id` bigint NOT NULL COMMENT '款项ID',
-  `milestone_name` varchar(200) NOT NULL COMMENT '里程碑名称',
-  `milestone_amount` decimal(15,2) NOT NULL COMMENT '里程碑金额(元)',
-  `milestone_order` int DEFAULT '0' COMMENT '里程碑排序',
-  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
-  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
-  PRIMARY KEY (`milestone_id`),
-  KEY `idx_payment_id` (`payment_id`),
-  KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='款项里程碑表';
 
 -- ----------------------------
 -- 6、项目管理表
@@ -868,12 +819,8 @@ CREATE TABLE `pm_project_approval` (
 DROP TABLE IF EXISTS `pm_project_contract_rel`;
 CREATE TABLE `pm_project_contract_rel` (
   `rel_id` bigint NOT NULL AUTO_INCREMENT COMMENT '关系主键ID',
-  `project_id` varchar(50) NOT NULL COMMENT '项目ID',
-  `project_name` varchar(200) DEFAULT NULL COMMENT '项目名称',
+  `project_id` bigint NOT NULL COMMENT '项目ID',
   `contract_id` bigint NOT NULL COMMENT '合同ID',
-  `contract_name` varchar(200) DEFAULT NULL COMMENT '合同名称',
-  `rel_type` varchar(50) DEFAULT '主合同' COMMENT '关联类型(主合同、补充协议、变更合同)',
-  `is_main` char(1) DEFAULT '1' COMMENT '是否主合同(1是 0否)',
   `rel_status` varchar(50) DEFAULT '有效' COMMENT '关系状态(有效、失效)',
   `bind_date` date DEFAULT NULL COMMENT '关联日期',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
@@ -883,12 +830,11 @@ CREATE TABLE `pm_project_contract_rel` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`rel_id`),
-  UNIQUE KEY `uk_project_contract` (`project_id`,`contract_id`,`del_flag`),
-  KEY `idx_project_id` (`project_id`),
-  KEY `idx_contract_id` (`contract_id`),
-  KEY `idx_is_main` (`is_main`),
-  KEY `idx_rel_status` (`rel_status`),
-  KEY `idx_create_time` (`create_time`)
+  UNIQUE KEY `uk_project_contract` (`project_id`,`contract_id`,`del_flag`)  COMMENT '项目-合同-删除标志唯一约束',
+  KEY `idx_project_id` (`project_id`) COMMENT '项目ID索引',
+  KEY `idx_contract_id` (`contract_id`) COMMENT '合同ID索引',
+  KEY `idx_rel_status` (`rel_status`) COMMENT '关系状态索引',
+  KEY `idx_create_time` (`create_time`) COMMENT '创建时间索引'
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目合同关系表';
 
 -- ----------------------------
@@ -999,6 +945,60 @@ CREATE TABLE `pm_secondary_region` (
   KEY `idx_region_dict_value` (`region_dict_value`),
   KEY `idx_sort_order` (`sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='省级区域表';
+
+-- ====================================================
+-- 附件管理表结构创建脚本
+-- 创建日期：2026-02-04
+-- 说明：创建附件表和附件操作日志表
+-- ====================================================
+-- ----------------------------
+-- 13. 附件表
+-- ----------------------------
+DROP TABLE IF EXISTS `pm_attachment`;
+CREATE TABLE `pm_attachment` (
+  `attachment_id` bigint NOT NULL AUTO_INCREMENT COMMENT '附件主键ID',
+  `business_type` varchar(50) NOT NULL COMMENT '业务类型(project-项目、contract-合同、payment-款项)',
+  `business_id` bigint NOT NULL COMMENT '业务ID(项目ID/合同ID/款项ID)',
+  `document_type` varchar(50) DEFAULT NULL COMMENT '文档类型(字典:sys_wdlx)',
+  `file_name` varchar(255) NOT NULL COMMENT '文件名',
+  `file_path` varchar(500) NOT NULL COMMENT '文件路径',
+  `file_size` bigint DEFAULT NULL COMMENT '文件大小(字节)',
+  `file_type` varchar(50) DEFAULT NULL COMMENT '文件类型(扩展名)',
+  `file_description` varchar(500) DEFAULT NULL COMMENT '文件描述',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`attachment_id`),
+  KEY `idx_business_type_id` (`business_type`,`business_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件表';
+
+-- ----------------------------
+-- 14. 附件操作日志表
+-- ----------------------------
+DROP TABLE IF EXISTS `pm_attachment_log`;
+CREATE TABLE `pm_attachment_log` (
+  `log_id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志主键ID',
+  `attachment_id` bigint DEFAULT NULL COMMENT '附件ID',
+  `business_type` varchar(50) NOT NULL COMMENT '业务类型(project-项目、contract-合同、payment-款项)',
+  `business_id` bigint NOT NULL COMMENT '业务ID(项目ID/合同ID/款项ID)',
+  `operation_type` varchar(20) NOT NULL COMMENT '操作类型(upload-上传、delete-删除、download-下载)',
+  `operation_desc` varchar(500) NOT NULL COMMENT '操作描述(如：【上传文件】：测试文件.pdf)',
+  `document_type` varchar(50) DEFAULT NULL COMMENT '文档类型(字典:sys_wdlx)',
+  `file_name` varchar(255) DEFAULT NULL COMMENT '文件名',
+  `operator_id` bigint DEFAULT NULL COMMENT '操作人ID',
+  `operator_name` varchar(100) DEFAULT NULL COMMENT '操作人姓名',
+  `operation_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`log_id`),
+  KEY `idx_business_type_id` (`business_type`,`business_id`),
+  KEY `idx_attachment_id` (`attachment_id`),
+  KEY `idx_operation_time` (`operation_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件操作日志表';
+
 
 
 
