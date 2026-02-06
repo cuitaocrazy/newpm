@@ -57,9 +57,9 @@
         <el-select v-model="queryParams.regionCode" placeholder="请选择二级区域" clearable style="width: 200px">
           <el-option
             v-for="item in secondaryRegionOptions"
-            :key="item.regionCode"
-            :label="item.regionName"
-            :value="item.regionCode"
+            :key="item.provinceCode"
+            :label="item.provinceName"
+            :value="item.provinceCode"
           />
         </el-select>
       </el-form-item>
