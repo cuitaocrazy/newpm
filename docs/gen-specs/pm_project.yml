@@ -1056,6 +1056,9 @@ customizations:
          - 接口: GET /project/secondaryRegion/listByRegion?regionDictValue={region}
          - 返回字段: { provinceCode, provinceName }
          - 说明: 根据一级区域动态加载，支持过滤搜索
+         - 禁用逻辑: 默认禁用，选择一级区域后才能选择
+         - 字段映射: 后端 provinceCode → 前端 regionCode（绑定值）
+         - 字段映射: 后端 provinceName → 前端显示标签
 
       7. 项目经理 (project_manager_id)
          - 组件类型: el-select（下拉选择）
@@ -1295,13 +1298,27 @@ customizations:
       props:
         filterable: true
         clearable: true
+        disabled: "!queryParams.region"  # 未选择一级区域时禁用
     bindTo: region_code
     service:
       endpoint: "GET /project/secondaryRegion/listByRegion?regionDictValue={regionDictValue}"
-      source: "复用 SecondaryRegionService，需新增接口"
+      source: "复用 SecondaryRegionService，接口已存在"
       returns: "[{ provinceCode, provinceName }]"
-      newApi: true
-    notes: "监听 region 变化，动态加载省份列表"
+      newApi: false
+    notes: |
+      监听 region 变化，动态加载省份列表
+
+      实现要点：
+      1. 一级区域字段使用 sys_yjqy 字典（不是 region 字典）
+      2. 二级区域字段名映射：provinceCode（后端）→ regionCode（前端绑定值）
+      3. 二级区域字段名映射：provinceName（后端）→ 显示标签
+      4. 默认禁用状态，选择一级区域后才能选择二级区域
+      5. 一级区域变化时清空二级区域值并重新加载数据
+
+      前端实现：
+      - :disabled="!queryParams.region"
+      - @change="handleRegionChange" 在一级区域上
+      - handleRegionChange 函数清空 regionCode 并调用 getSecondaryRegions
 
   # ========================================
   # 列表字段定制
