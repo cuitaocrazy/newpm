@@ -12,7 +12,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="industry"    column="industry"    />
         <result property="region"    column="region"    />
         <result property="shortName"    column="short_name"    />
-        <result property="year"    column="year"    />
+        <result property="establishedYear"    column="established_year"    />
         <result property="projectCategory"    column="project_category"    />
         <result property="projectDept"    column="project_dept"    />
         <result property="projectStatus"    column="project_status"    />
@@ -36,18 +36,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="endDate"    column="end_date"    />
         <result property="productionDate"    column="production_date"    />
         <result property="acceptanceDate"    column="acceptance_date"    />
-        <result property="implementationYear"    column="implementation_year"    />
         <result property="projectBudget"    column="project_budget"    />
         <result property="projectCost"    column="project_cost"    />
+        <result property="expenseBudget"    column="expense_budget"    />
         <result property="costBudget"    column="cost_budget"    />
-        <result property="budgetCost"    column="budget_cost"    />
         <result property="laborCost"    column="labor_cost"    />
         <result property="purchaseCost"    column="purchase_cost"    />
-        <result property="confirmStatus"    column="confirm_status"    />
-        <result property="confirmQuarter"    column="confirm_quarter"    />
-        <result property="confirmAmount"    column="confirm_amount"    />
-        <result property="afterTaxAmount"    column="after_tax_amount"    />
-        <result property="taxRate"    column="tax_rate"    />
         <result property="approvalStatus"    column="approval_status"    />
         <result property="approvalReason"    column="approval_reason"    />
         <result property="industryCode"    column="industry_code"    />
@@ -55,6 +49,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="approvalTime"    column="approval_time"    />
         <result property="approverId"    column="approver_id"    />
         <result property="remark"    column="remark"    />
+        <result property="taxRate"    column="tax_rate"    />
+        <result property="confirmUserId"    column="confirm_user_id"    />
+        <result property="confirmTime"    column="confirm_time"    />
         <result property="reservedField1"    column="reserved_field1"    />
         <result property="reservedField2"    column="reserved_field2"    />
         <result property="reservedField3"    column="reserved_field3"    />
@@ -65,44 +62,95 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createTime"    column="create_time"    />
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
-        <!-- 关联查询字段 -->
+        <result property="revenueConfirmStatus"    column="revenue_confirm_status"    />
+        <result property="revenueConfirmYear"    column="revenue_confirm_year"    />
+        <result property="confirmAmount"    column="confirm_amount"    />
+        <result property="afterTaxAmount"    column="after_tax_amount"    />
+        <result property="companyRevenueConfirmedByName"    column="company_revenue_confirmed_by_name"    />
+        <result property="contractAmount"    column="contract_amount"    />
+        <result property="contractStatus"    column="contract_status"    />
         <result property="projectManagerName"    column="project_manager_name"    />
         <result property="marketManagerName"    column="market_manager_name"    />
+        <result property="participantsNames"    column="participants_names"    />
         <result property="deptName"    column="dept_name"    />
     </resultMap>
 
+    <resultMap id="ProjectProjectApprovalResult" type="Project" extends="ProjectResult">
+        <collection property="projectApprovalList" ofType="ProjectApproval" column="project_id" select="selectProjectApprovalList" />
+    </resultMap>
+
+    <resultMap type="ProjectApproval" id="ProjectApprovalResult">
+        <result property="approvalId"    column="approval_id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="approvalStatus"    column="approval_status"    />
+        <result property="approvalReason"    column="approval_reason"    />
+        <result property="approverId"    column="approver_id"    />
+        <result property="approvalTime"    column="approval_time"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
     <sql id="selectProjectVo">
-        select p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region, p.short_name, p.year, p.project_category, p.project_dept, p.project_status, p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.implementation_year, p.project_budget, p.project_cost, p.cost_budget, p.budget_cost, p.labor_cost, p.purchase_cost, p.confirm_status, p.confirm_quarter, p.confirm_amount, p.after_tax_amount, p.tax_rate, p.approval_status, p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark, p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
-               pm.nick_name as project_manager_name,
-               mm.nick_name as market_manager_name,
-               d.dept_name
-        from pm_project p
-        left join sys_user pm on p.project_manager_id = pm.user_id
-        left join sys_user mm on p.market_manager_id = mm.user_id
-        left join sys_dept d on p.project_dept = d.dept_id
+        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by_name from pm_project
     </sql>
 
     <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
-        <include refid="selectProjectVo"/>
+        SELECT
+            p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region,
+            p.short_name, p.established_year, p.project_category, p.project_dept, p.project_status,
+            p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan,
+            p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id,
+            p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact,
+            p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget,
+            p.project_cost, p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status,
+            p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark,
+            p.tax_rate, p.confirm_user_id, p.confirm_time, p.reserved_field1, p.reserved_field2, p.reserved_field3,
+            p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
+            p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
+            p.company_revenue_confirmed_by_name,
+            c.contract_amount,
+            c.contract_status,
+            pm.nick_name AS project_manager_name,
+            mm.nick_name AS market_manager_name,
+            d.dept_name
+        FROM pm_project p
+        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id COLLATE utf8mb4_unicode_ci
+            AND pcr.is_main = '1' AND pcr.del_flag = '0'
+        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
+        LEFT JOIN sys_user pm ON p.project_manager_id = pm.user_id
+        LEFT JOIN sys_user mm ON p.market_manager_id = mm.user_id
+        LEFT JOIN sys_dept d ON p.project_dept = CAST(d.dept_id AS CHAR) COLLATE utf8mb4_unicode_ci
         <where>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
-            <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
-            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
+            <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
+            <if test="projectCategory != null  and projectCategory != ''"> and p.project_category = #{projectCategory}</if>
             <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
+            <if test="acceptanceStatus != null  and acceptanceStatus != ''"> and p.acceptance_status = #{acceptanceStatus}</if>
+            <if test="projectManagerId != null "> and p.project_manager_id = #{projectManagerId}</if>
+            <if test="marketManagerId != null "> and p.market_manager_id = #{marketManagerId}</if>
             <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
-            <if test="params.beginStartDate != null and params.beginStartDate != ''"><!-- 立项开始时间 -->
-                and date_format(p.start_date,'%y%m%d') &gt;= date_format(#{params.beginStartDate},'%y%m%d')
-            </if>
-            <if test="params.endStartDate != null and params.endStartDate != ''"><!-- 立项结束时间 -->
-                and date_format(p.start_date,'%y%m%d') &lt;= date_format(#{params.endStartDate},'%y%m%d')
-            </if>
+            <if test="regionCode != null  and regionCode != ''"> and p.region_code = #{regionCode}</if>
+            <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
+            <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
         </where>
     </select>
     
-    <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectResult">
-        <include refid="selectProjectVo"/>
+    <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectProjectApprovalResult">
+        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by_name
+        from pm_project
         where project_id = #{projectId}
+    </select>
+
+    <select id="selectProjectApprovalList" resultMap="ProjectApprovalResult">
+        select approval_id, project_id, approval_status, approval_reason, approver_id, approval_time, del_flag, create_by, create_time, update_by, update_time, remark
+        from pm_project_approval
+        where project_id = #{project_id}
     </select>
 
     <insert id="insertProject" parameterType="Project" useGeneratedKeys="true" keyProperty="projectId">
@@ -111,24 +159,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectCode != null and projectCode != ''">project_code,</if>
             <if test="projectName != null and projectName != ''">project_name,</if>
             <if test="projectFullName != null">project_full_name,</if>
-            <if test="industry != null">industry,</if>
-            <if test="region != null">region,</if>
+            <if test="industry != null and industry != ''">industry,</if>
+            <if test="region != null and region != ''">region,</if>
             <if test="shortName != null">short_name,</if>
-            <if test="year != null">year,</if>
-            <if test="projectCategory != null">project_category,</if>
-            <if test="projectDept != null">project_dept,</if>
-            <if test="projectStatus != null">project_status,</if>
-            <if test="acceptanceStatus != null">acceptance_status,</if>
+            <if test="establishedYear != null">established_year,</if>
+            <if test="projectCategory != null and projectCategory != ''">project_category,</if>
+            <if test="projectDept != null and projectDept != ''">project_dept,</if>
+            <if test="projectStatus != null and projectStatus != ''">project_status,</if>
+            <if test="acceptanceStatus != null and acceptanceStatus != ''">acceptance_status,</if>
             <if test="estimatedWorkload != null">estimated_workload,</if>
             <if test="actualWorkload != null">actual_workload,</if>
-            <if test="projectAddress != null">project_address,</if>
-            <if test="projectPlan != null">project_plan,</if>
-            <if test="projectDescription != null">project_description,</if>
+            <if test="projectAddress != null and projectAddress != ''">project_address,</if>
+            <if test="projectPlan != null and projectPlan != ''">project_plan,</if>
+            <if test="projectDescription != null and projectDescription != ''">project_description,</if>
             <if test="projectManagerId != null">project_manager_id,</if>
             <if test="marketManagerId != null">market_manager_id,</if>
-            <if test="participants != null">participants,</if>
+            <if test="participants != null and participants != ''">participants,</if>
             <if test="salesManagerId != null">sales_manager_id,</if>
-            <if test="salesContact != null">sales_contact,</if>
+            <if test="salesContact != null and salesContact != ''">sales_contact,</if>
             <if test="teamLeaderId != null">team_leader_id,</if>
             <if test="customerId != null">customer_id,</if>
             <if test="customerContactId != null">customer_contact_id,</if>
@@ -138,18 +186,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null">end_date,</if>
             <if test="productionDate != null">production_date,</if>
             <if test="acceptanceDate != null">acceptance_date,</if>
-            <if test="implementationYear != null">implementation_year,</if>
             <if test="projectBudget != null">project_budget,</if>
             <if test="projectCost != null">project_cost,</if>
+            <if test="expenseBudget != null">expense_budget,</if>
             <if test="costBudget != null">cost_budget,</if>
-            <if test="budgetCost != null">budget_cost,</if>
             <if test="laborCost != null">labor_cost,</if>
             <if test="purchaseCost != null">purchase_cost,</if>
-            <if test="confirmStatus != null">confirm_status,</if>
-            <if test="confirmQuarter != null">confirm_quarter,</if>
-            <if test="confirmAmount != null">confirm_amount,</if>
-            <if test="afterTaxAmount != null">after_tax_amount,</if>
-            <if test="taxRate != null">tax_rate,</if>
             <if test="approvalStatus != null">approval_status,</if>
             <if test="approvalReason != null">approval_reason,</if>
             <if test="industryCode != null">industry_code,</if>
@@ -157,6 +199,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approvalTime != null">approval_time,</if>
             <if test="approverId != null">approver_id,</if>
             <if test="remark != null">remark,</if>
+            <if test="taxRate != null">tax_rate,</if>
+            <if test="confirmUserId != null">confirm_user_id,</if>
+            <if test="confirmTime != null">confirm_time,</if>
             <if test="reservedField1 != null">reserved_field1,</if>
             <if test="reservedField2 != null">reserved_field2,</if>
             <if test="reservedField3 != null">reserved_field3,</if>
@@ -167,29 +212,34 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
+            <if test="revenueConfirmStatus != null">revenue_confirm_status,</if>
+            <if test="revenueConfirmYear != null">revenue_confirm_year,</if>
+            <if test="confirmAmount != null">confirm_amount,</if>
+            <if test="afterTaxAmount != null">after_tax_amount,</if>
+            <if test="companyRevenueConfirmedByName != null">company_revenue_confirmed_by_name,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="projectCode != null and projectCode != ''">#{projectCode},</if>
             <if test="projectName != null and projectName != ''">#{projectName},</if>
             <if test="projectFullName != null">#{projectFullName},</if>
-            <if test="industry != null">#{industry},</if>
-            <if test="region != null">#{region},</if>
+            <if test="industry != null and industry != ''">#{industry},</if>
+            <if test="region != null and region != ''">#{region},</if>
             <if test="shortName != null">#{shortName},</if>
-            <if test="year != null">#{year},</if>
-            <if test="projectCategory != null">#{projectCategory},</if>
-            <if test="projectDept != null">#{projectDept},</if>
-            <if test="projectStatus != null">#{projectStatus},</if>
-            <if test="acceptanceStatus != null">#{acceptanceStatus},</if>
+            <if test="establishedYear != null">#{establishedYear},</if>
+            <if test="projectCategory != null and projectCategory != ''">#{projectCategory},</if>
+            <if test="projectDept != null and projectDept != ''">#{projectDept},</if>
+            <if test="projectStatus != null and projectStatus != ''">#{projectStatus},</if>
+            <if test="acceptanceStatus != null and acceptanceStatus != ''">#{acceptanceStatus},</if>
             <if test="estimatedWorkload != null">#{estimatedWorkload},</if>
             <if test="actualWorkload != null">#{actualWorkload},</if>
-            <if test="projectAddress != null">#{projectAddress},</if>
-            <if test="projectPlan != null">#{projectPlan},</if>
-            <if test="projectDescription != null">#{projectDescription},</if>
+            <if test="projectAddress != null and projectAddress != ''">#{projectAddress},</if>
+            <if test="projectPlan != null and projectPlan != ''">#{projectPlan},</if>
+            <if test="projectDescription != null and projectDescription != ''">#{projectDescription},</if>
             <if test="projectManagerId != null">#{projectManagerId},</if>
             <if test="marketManagerId != null">#{marketManagerId},</if>
-            <if test="participants != null">#{participants},</if>
+            <if test="participants != null and participants != ''">#{participants},</if>
             <if test="salesManagerId != null">#{salesManagerId},</if>
-            <if test="salesContact != null">#{salesContact},</if>
+            <if test="salesContact != null and salesContact != ''">#{salesContact},</if>
             <if test="teamLeaderId != null">#{teamLeaderId},</if>
             <if test="customerId != null">#{customerId},</if>
             <if test="customerContactId != null">#{customerContactId},</if>
@@ -199,18 +249,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null">#{endDate},</if>
             <if test="productionDate != null">#{productionDate},</if>
             <if test="acceptanceDate != null">#{acceptanceDate},</if>
-            <if test="implementationYear != null">#{implementationYear},</if>
             <if test="projectBudget != null">#{projectBudget},</if>
             <if test="projectCost != null">#{projectCost},</if>
+            <if test="expenseBudget != null">#{expenseBudget},</if>
             <if test="costBudget != null">#{costBudget},</if>
-            <if test="budgetCost != null">#{budgetCost},</if>
             <if test="laborCost != null">#{laborCost},</if>
             <if test="purchaseCost != null">#{purchaseCost},</if>
-            <if test="confirmStatus != null">#{confirmStatus},</if>
-            <if test="confirmQuarter != null">#{confirmQuarter},</if>
-            <if test="confirmAmount != null">#{confirmAmount},</if>
-            <if test="afterTaxAmount != null">#{afterTaxAmount},</if>
-            <if test="taxRate != null">#{taxRate},</if>
             <if test="approvalStatus != null">#{approvalStatus},</if>
             <if test="approvalReason != null">#{approvalReason},</if>
             <if test="industryCode != null">#{industryCode},</if>
@@ -218,6 +262,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approvalTime != null">#{approvalTime},</if>
             <if test="approverId != null">#{approverId},</if>
             <if test="remark != null">#{remark},</if>
+            <if test="taxRate != null">#{taxRate},</if>
+            <if test="confirmUserId != null">#{confirmUserId},</if>
+            <if test="confirmTime != null">#{confirmTime},</if>
             <if test="reservedField1 != null">#{reservedField1},</if>
             <if test="reservedField2 != null">#{reservedField2},</if>
             <if test="reservedField3 != null">#{reservedField3},</if>
@@ -228,6 +275,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
+            <if test="revenueConfirmStatus != null">#{revenueConfirmStatus},</if>
+            <if test="revenueConfirmYear != null">#{revenueConfirmYear},</if>
+            <if test="confirmAmount != null">#{confirmAmount},</if>
+            <if test="afterTaxAmount != null">#{afterTaxAmount},</if>
+            <if test="companyRevenueConfirmedByName != null">#{companyRevenueConfirmedByName},</if>
          </trim>
     </insert>
 
@@ -237,24 +289,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectCode != null and projectCode != ''">project_code = #{projectCode},</if>
             <if test="projectName != null and projectName != ''">project_name = #{projectName},</if>
             <if test="projectFullName != null">project_full_name = #{projectFullName},</if>
-            <if test="industry != null">industry = #{industry},</if>
-            <if test="region != null">region = #{region},</if>
+            <if test="industry != null and industry != ''">industry = #{industry},</if>
+            <if test="region != null and region != ''">region = #{region},</if>
             <if test="shortName != null">short_name = #{shortName},</if>
-            <if test="year != null">year = #{year},</if>
-            <if test="projectCategory != null">project_category = #{projectCategory},</if>
-            <if test="projectDept != null">project_dept = #{projectDept},</if>
-            <if test="projectStatus != null">project_status = #{projectStatus},</if>
-            <if test="acceptanceStatus != null">acceptance_status = #{acceptanceStatus},</if>
+            <if test="establishedYear != null">established_year = #{establishedYear},</if>
+            <if test="projectCategory != null and projectCategory != ''">project_category = #{projectCategory},</if>
+            <if test="projectDept != null and projectDept != ''">project_dept = #{projectDept},</if>
+            <if test="projectStatus != null and projectStatus != ''">project_status = #{projectStatus},</if>
+            <if test="acceptanceStatus != null and acceptanceStatus != ''">acceptance_status = #{acceptanceStatus},</if>
             <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
             <if test="actualWorkload != null">actual_workload = #{actualWorkload},</if>
-            <if test="projectAddress != null">project_address = #{projectAddress},</if>
-            <if test="projectPlan != null">project_plan = #{projectPlan},</if>
-            <if test="projectDescription != null">project_description = #{projectDescription},</if>
+            <if test="projectAddress != null and projectAddress != ''">project_address = #{projectAddress},</if>
+            <if test="projectPlan != null and projectPlan != ''">project_plan = #{projectPlan},</if>
+            <if test="projectDescription != null and projectDescription != ''">project_description = #{projectDescription},</if>
             <if test="projectManagerId != null">project_manager_id = #{projectManagerId},</if>
             <if test="marketManagerId != null">market_manager_id = #{marketManagerId},</if>
-            <if test="participants != null">participants = #{participants},</if>
+            <if test="participants != null and participants != ''">participants = #{participants},</if>
             <if test="salesManagerId != null">sales_manager_id = #{salesManagerId},</if>
-            <if test="salesContact != null">sales_contact = #{salesContact},</if>
+            <if test="salesContact != null and salesContact != ''">sales_contact = #{salesContact},</if>
             <if test="teamLeaderId != null">team_leader_id = #{teamLeaderId},</if>
             <if test="customerId != null">customer_id = #{customerId},</if>
             <if test="customerContactId != null">customer_contact_id = #{customerContactId},</if>
@@ -264,18 +316,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null">end_date = #{endDate},</if>
             <if test="productionDate != null">production_date = #{productionDate},</if>
             <if test="acceptanceDate != null">acceptance_date = #{acceptanceDate},</if>
-            <if test="implementationYear != null">implementation_year = #{implementationYear},</if>
             <if test="projectBudget != null">project_budget = #{projectBudget},</if>
             <if test="projectCost != null">project_cost = #{projectCost},</if>
+            <if test="expenseBudget != null">expense_budget = #{expenseBudget},</if>
             <if test="costBudget != null">cost_budget = #{costBudget},</if>
-            <if test="budgetCost != null">budget_cost = #{budgetCost},</if>
             <if test="laborCost != null">labor_cost = #{laborCost},</if>
             <if test="purchaseCost != null">purchase_cost = #{purchaseCost},</if>
-            <if test="confirmStatus != null">confirm_status = #{confirmStatus},</if>
-            <if test="confirmQuarter != null">confirm_quarter = #{confirmQuarter},</if>
-            <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
-            <if test="afterTaxAmount != null">after_tax_amount = #{afterTaxAmount},</if>
-            <if test="taxRate != null">tax_rate = #{taxRate},</if>
             <if test="approvalStatus != null">approval_status = #{approvalStatus},</if>
             <if test="approvalReason != null">approval_reason = #{approvalReason},</if>
             <if test="industryCode != null">industry_code = #{industryCode},</if>
@@ -283,6 +329,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approvalTime != null">approval_time = #{approvalTime},</if>
             <if test="approverId != null">approver_id = #{approverId},</if>
             <if test="remark != null">remark = #{remark},</if>
+            <if test="taxRate != null">tax_rate = #{taxRate},</if>
+            <if test="confirmUserId != null">confirm_user_id = #{confirmUserId},</if>
+            <if test="confirmTime != null">confirm_time = #{confirmTime},</if>
             <if test="reservedField1 != null">reserved_field1 = #{reservedField1},</if>
             <if test="reservedField2 != null">reserved_field2 = #{reservedField2},</if>
             <if test="reservedField3 != null">reserved_field3 = #{reservedField3},</if>
@@ -293,6 +342,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="revenueConfirmStatus != null">revenue_confirm_status = #{revenueConfirmStatus},</if>
+            <if test="revenueConfirmYear != null">revenue_confirm_year = #{revenueConfirmYear},</if>
+            <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
+            <if test="afterTaxAmount != null">after_tax_amount = #{afterTaxAmount},</if>
+            <if test="companyRevenueConfirmedByName != null">company_revenue_confirmed_by_name = #{companyRevenueConfirmedByName},</if>
         </trim>
         where project_id = #{projectId}
     </update>
@@ -302,58 +356,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteProjectByProjectIds" parameterType="String">
-        delete from pm_project where project_id in
+        delete from pm_project where project_id in 
+        <foreach item="projectId" collection="array" open="(" separator="," close=")">
+            #{projectId}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteProjectApprovalByProjectIds" parameterType="String">
+        delete from pm_project_approval where project_id in 
         <foreach item="projectId" collection="array" open="(" separator="," close=")">
             #{projectId}
         </foreach>
     </delete>
 
-    <!-- 查询项目金额汇总 -->
-    <select id="selectProjectSummary" parameterType="Project" resultType="java.util.Map">
-        select
-            COALESCE(SUM(p.project_budget), 0) as projectBudgetSum
-        from pm_project p
-        <where>
-            <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
-            <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
-            <if test="region != null  and region != ''"> and p.region = #{region}</if>
-            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
-            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
-            <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
-            <if test="params.beginStartDate != null and params.beginStartDate != ''">
-                and date_format(p.start_date,'%y%m%d') &gt;= date_format(#{params.beginStartDate},'%y%m%d')
-            </if>
-            <if test="params.endStartDate != null and params.endStartDate != ''">
-                and date_format(p.start_date,'%y%m%d') &lt;= date_format(#{params.endStartDate},'%y%m%d')
-            </if>
-        </where>
-    </select>
+    <delete id="deleteProjectApprovalByProjectId" parameterType="Long">
+        delete from pm_project_approval where project_id = #{projectId}
+    </delete>
 
-    <!-- 查询项目名称列表（用于智能提示） -->
-    <select id="selectProjectNameList" parameterType="String" resultType="String">
-        select distinct project_name
-        from pm_project
-        <where>
-            <if test="projectName != null and projectName != ''">
-                and project_name like concat('%', #{projectName}, '%')
-            </if>
-            and del_flag = '0'
-        </where>
-        order by project_name
-        limit 20
-    </select>
-
-    <!-- 查询项目编号列表（用于智能提示） -->
-    <select id="selectProjectCodeList" parameterType="String" resultType="String">
-        select distinct project_code
-        from pm_project
-        <where>
-            <if test="projectCode != null and projectCode != ''">
-                and project_code like concat('%', #{projectCode}, '%')
-            </if>
-            and del_flag = '0'
-        </where>
-        order by project_code
-        limit 20
-    </select>
+    <insert id="batchProjectApproval">
+        insert into pm_project_approval( approval_id, project_id, approval_status, approval_reason, approver_id, approval_time, del_flag, create_by, create_time, update_by, update_time, remark) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.approvalId}, #{item.projectId}, #{item.approvalStatus}, #{item.approvalReason}, #{item.approverId}, #{item.approvalTime}, #{item.delFlag}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
+        </foreach>
+    </insert>
 </mapper>

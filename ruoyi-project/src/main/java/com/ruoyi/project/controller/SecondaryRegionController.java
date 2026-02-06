@@ -101,4 +101,20 @@ public class SecondaryRegionController extends BaseController
     {
         return toAjax(secondaryRegionService.deleteSecondaryRegionByProvinceIds(provinceIds));
     }
+
+    /**
+     * 根据一级区域查询省份列表
+     */
+    @GetMapping("/listByRegion")
+    public AjaxResult listByRegion(String regionDictValue)
+    {
+        if (regionDictValue == null || regionDictValue.trim().isEmpty())
+        {
+            return success();
+        }
+        SecondaryRegion query = new SecondaryRegion();
+        query.setRegionDictValue(regionDictValue);
+        List<SecondaryRegion> list = secondaryRegionService.selectSecondaryRegionList(query);
+        return success(list);
+    }
 }

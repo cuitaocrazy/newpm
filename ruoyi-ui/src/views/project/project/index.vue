@@ -7,49 +7,9 @@
           :fetch-suggestions="queryProjectNames"
           placeholder="请输入项目名称"
           clearable
-          style="width: 200px"
           @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="项目编号" prop="projectCode">
-        <el-autocomplete
-          v-model="queryParams.projectCode"
-          :fetch-suggestions="queryProjectCodes"
-          placeholder="请输入项目编号"
-          clearable
           style="width: 200px"
-          @keyup.enter="handleQuery"
         />
-      </el-form-item>
-      <el-form-item label="行业" prop="industry">
-        <el-select v-model="queryParams.industry" placeholder="请选择行业" clearable style="width: 200px">
-          <el-option
-            v-for="dict in industry"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="区域" prop="region">
-        <el-select v-model="queryParams.region" placeholder="请选择区域" clearable style="width: 200px">
-          <el-option
-            v-for="dict in sys_yjqy"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="项目状态" prop="projectStatus">
-        <el-select v-model="queryParams.projectStatus" placeholder="请选择项目状态" clearable style="width: 200px">
-          <el-option
-            v-for="dict in sys_xmjd"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
         <el-tree-select
@@ -63,10 +23,80 @@
           style="width: 200px"
         />
       </el-form-item>
-      <el-form-item label="确认年度" prop="confirmYear">
-        <el-select v-model="queryParams.confirmYear" placeholder="请选择确认年度" clearable style="width: 200px">
+      <el-form-item label="收入确认年度" prop="revenueConfirmYear">
+        <el-select v-model="queryParams.revenueConfirmYear" placeholder="请选择收入确认年度" clearable style="width: 200px">
           <el-option
-            v-for="dict in sys_jdgl"
+            v-for="dict in sys_ndgl"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="项目分类" prop="projectCategory">
+        <el-select v-model="queryParams.projectCategory" placeholder="请选择项目分类" clearable style="width: 200px">
+          <el-option
+            v-for="dict in sys_xmfl"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="一级区域" prop="region">
+        <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable @change="handleRegionChange" style="width: 200px">
+          <el-option
+            v-for="dict in region"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="二级区域" prop="regionCode">
+        <el-select v-model="queryParams.regionCode" placeholder="请选择二级区域" clearable style="width: 200px">
+          <el-option
+            v-for="item in secondaryRegionOptions"
+            :key="item.regionCode"
+            :label="item.regionName"
+            :value="item.regionCode"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="项目经理" prop="projectManagerId">
+        <el-select v-model="queryParams.projectManagerId" placeholder="请选择项目经理" clearable filterable style="width: 200px">
+          <el-option
+            v-for="user in projectManagerOptions"
+            :key="user.userId"
+            :label="user.nickName"
+            :value="user.userId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="市场经理" prop="marketManagerId">
+        <el-select v-model="queryParams.marketManagerId" placeholder="请选择市场经理" clearable filterable style="width: 200px">
+          <el-option
+            v-for="user in marketManagerOptions"
+            :key="user.userId"
+            :label="user.nickName"
+            :value="user.userId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="立项年度" prop="establishedYear">
+        <el-select v-model="queryParams.establishedYear" placeholder="请选择立项年度" clearable style="width: 200px">
+          <el-option
+            v-for="dict in sys_ndgl"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="项目阶段" prop="projectStatus">
+        <el-select v-model="queryParams.projectStatus" placeholder="请选择项目阶段" clearable style="width: 200px">
+          <el-option
+            v-for="dict in sys_xmjd"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -76,23 +106,22 @@
       <el-form-item label="审核状态" prop="approvalStatus">
         <el-select v-model="queryParams.approvalStatus" placeholder="请选择审核状态" clearable style="width: 200px">
           <el-option
-            v-for="dict in sys_shzt"
+            v-for="dict in sys_spzt"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="立项时间" prop="startDateRange">
-        <el-date-picker
-          v-model="dateRange"
-          type="daterange"
-          range-separator="-"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          value-format="YYYY-MM-DD"
-          style="width: 240px"
-        />
+      <el-form-item label="验收状态" prop="acceptanceStatus">
+        <el-select v-model="queryParams.acceptanceStatus" placeholder="请选择验收状态" clearable style="width: 200px">
+          <el-option
+            v-for="dict in sys_yszt"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -106,9 +135,9 @@
           type="primary"
           plain
           icon="Plus"
-          @click="handleApply"
+          @click="handleAdd"
           v-hasPermi="['project:project:add']"
-        >立项申请</el-button>
+        >新增</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -142,82 +171,70 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="projectList" @selection-change="handleSelectionChange" :row-class-name="tableRowClassName">
-      <el-table-column type="selection" width="55" align="center">
+    <el-table v-loading="loading" :data="projectList" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" align="center" />
+      <el-table-column label="序号" type="index" width="55" align="center" />
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目部门" align="center" prop="projectDeptName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
+      <el-table-column label="项目分类" align="center" prop="projectCategory" width="100">
         <template #default="scope">
-          <el-checkbox v-if="!scope.row.isSummary" v-model="scope.row.selected" @change="handleSelectionChange" />
+          <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
         </template>
       </el-table-column>
-      <el-table-column label="序号" type="index" width="60" align="center">
+      <el-table-column label="项目预算" align="center" prop="projectBudget" width="120" />
+      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" width="100" />
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100" />
+      <el-table-column label="合同金额" align="center" prop="contractAmount" width="120" />
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.$index }}</span>
+          <dict-tag :options="sys_ndgl" :value="scope.row.revenueConfirmYear"/>
         </template>
       </el-table-column>
-      <el-table-column label="项目名称" align="center" prop="projectName" width="180" show-overflow-tooltip>
+      <el-table-column label="合同状态" align="center" prop="contractStatus" width="100" />
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" width="120" />
+      <el-table-column label="确认金额" align="center" prop="confirmAmount" width="120" />
+      <el-table-column label="参与人员" align="center" prop="participantsNames" min-width="150" show-overflow-tooltip />
+      <el-table-column label="启动日期" align="center" prop="startDate" width="110">
         <template #default="scope">
-          <span v-if="scope.row.isSummary" style="font-weight: bold;">汇总</span>
-          <span v-else>{{ scope.row.projectName }}</span>
+          <span>{{ parseTime(scope.row.startDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目编号" align="center" prop="projectCode" width="150" show-overflow-tooltip>
+      <el-table-column label="结束日期" align="center" prop="endDate" width="110">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.projectCode }}</span>
-          <span v-else>-</span>
+          <span>{{ parseTime(scope.row.endDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目经理" align="center" prop="projectManagerName" width="100">
+      <el-table-column label="验收日期" align="center" prop="acceptanceDate" width="110">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.projectManagerName }}</span>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="市场经理" align="center" prop="marketManagerName" width="100">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.marketManagerName }}</span>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="实施年份" align="center" prop="implementationYear" width="100">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.implementationYear }}</span>
-          <span v-else>-</span>
+          <span>{{ parseTime(scope.row.acceptanceDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="审核状态" align="center" prop="approvalStatus" width="100">
         <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummary" :options="sys_shzt" :value="scope.row.approvalStatus"/>
-          <span v-else>-</span>
+          <dict-tag :options="sys_spzt" :value="scope.row.approvalStatus"/>
         </template>
       </el-table-column>
       <el-table-column label="项目状态" align="center" prop="projectStatus" width="100">
         <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummary" :options="sys_xmjd" :value="scope.row.projectStatus"/>
-          <span v-else>-</span>
+          <dict-tag :options="sys_xmjd" :value="scope.row.projectStatus"/>
         </template>
       </el-table-column>
       <el-table-column label="验收状态" align="center" prop="acceptanceStatus" width="100">
         <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummary" :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
-          <span v-else>-</span>
+          <dict-tag :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算(万元)" align="center" prop="projectBudget" width="130">
+      <el-table-column label="更新人" align="center" prop="updateBy" width="100" />
+      <el-table-column label="更新时间" align="center" prop="updateTime" width="110">
         <template #default="scope">
-          <span :style="scope.row.isSummary ? 'font-weight: bold;' : ''">{{ formatAmountToWan(scope.row.projectBudget) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="立项时间" align="center" prop="startDate" width="110">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.startDate, '{y}-{m}-{d}') }}</span>
-          <span v-else>-</span>
+          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="150" fixed="right" class-name="small-padding fixed-width">
         <template #default="scope">
-          <template v-if="!scope.row.isSummary">
-            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
-            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
-          </template>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -233,56 +250,77 @@
     <!-- 添加或修改项目管理对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="projectRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="项目编号(格式:行业-区域-简称-年份)" prop="projectCode">
-          <el-input v-model="form.projectCode" placeholder="请输入项目编号(格式:行业-区域-简称-年份)" />
-        </el-form-item>
         <el-form-item label="项目名称" prop="projectName">
           <el-input v-model="form.projectName" placeholder="请输入项目名称" />
         </el-form-item>
         <el-form-item label="项目全称" prop="projectFullName">
-          <el-input v-model="form.projectFullName" type="textarea" placeholder="请输入内容" />
+          <el-input v-model="form.projectFullName" placeholder="请输入项目全称" />
         </el-form-item>
-        <el-form-item label="行业 字典表 字典类型industry" prop="industry">
-          <el-input v-model="form.industry" placeholder="请输入行业 字典表 字典类型industry" />
+        <el-form-item label="行业" prop="industry">
+          <el-select v-model="form.industry" placeholder="请选择行业">
+            <el-option
+              v-for="dict in industry"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
-        <el-form-item label="区域 字典表 字典类型sys_yjqy" prop="region">
-          <el-input v-model="form.region" placeholder="请输入区域 字典表 字典类型sys_yjqy" />
+        <el-form-item label="区域" prop="region">
+          <el-select v-model="form.region" placeholder="请选择区域">
+            <el-option
+              v-for="dict in region"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="简称" prop="shortName">
           <el-input v-model="form.shortName" placeholder="请输入简称" />
         </el-form-item>
-        <el-form-item label="年份" prop="year">
-          <el-input v-model="form.year" placeholder="请输入年份" />
-        </el-form-item>
-        <el-form-item label="项目分类(字典表 字典类型sys_xmfl)" prop="projectCategory">
-          <el-input v-model="form.projectCategory" placeholder="请输入项目分类(字典表 字典类型sys_xmfl)" />
-        </el-form-item>
-        <el-form-item label="项目部门" prop="projectDept">
-          <el-input v-model="form.projectDept" placeholder="请输入项目部门" />
-        </el-form-item>
-        <el-form-item label="项目阶段(字典表 字典类型sys_xmjd)" prop="projectStatus">
-          <el-radio-group v-model="form.projectStatus">
-            <el-radio
-              v-for="dict in sys_xmjd"
+        <el-form-item label="立项年份" prop="establishedYear">
+          <el-select v-model="form.establishedYear" placeholder="请选择立项年份">
+            <el-option
+              v-for="dict in sys_ndgl"
               :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+              :label="dict.label"
+              :value="parseInt(dict.value)"
+            ></el-option>
+          </el-select>
         </el-form-item>
-        <el-form-item label="验收状态(字典表 字典类型sys_yszt)" prop="acceptanceStatus">
-          <el-radio-group v-model="form.acceptanceStatus">
-            <el-radio
+        <el-form-item label="项目分类" prop="projectCategory">
+          <el-select v-model="form.projectCategory" placeholder="请选择项目分类">
+            <el-option
+              v-for="dict in sys_xmfl"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="项目状态" prop="projectStatus">
+          <el-select v-model="form.projectStatus" placeholder="请选择项目状态">
+            <el-option
+              v-for="dict in sys_xmzt"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="验收状态" prop="acceptanceStatus">
+          <el-select v-model="form.acceptanceStatus" placeholder="请选择验收状态">
+            <el-option
               v-for="dict in sys_yszt"
               :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="预估工作量(人天)" prop="estimatedWorkload">
           <el-input v-model="form.estimatedWorkload" placeholder="请输入预估工作量(人天)" />
-        </el-form-item>
-        <el-form-item label="实际工作量(人天)" prop="actualWorkload">
-          <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量(人天)" />
         </el-form-item>
         <el-form-item label="项目地址" prop="projectAddress">
           <el-input v-model="form.projectAddress" type="textarea" placeholder="请输入内容" />
@@ -293,35 +331,11 @@
         <el-form-item label="项目描述" prop="projectDescription">
           <el-input v-model="form.projectDescription" type="textarea" placeholder="请输入内容" />
         </el-form-item>
-        <el-form-item label="项目经理ID" prop="projectManagerId">
-          <el-input v-model="form.projectManagerId" placeholder="请输入项目经理ID" />
-        </el-form-item>
-        <el-form-item label="市场经理ID" prop="marketManagerId">
-          <el-input v-model="form.marketManagerId" placeholder="请输入市场经理ID" />
-        </el-form-item>
-        <el-form-item label="参与人员ID列表(逗号分隔)" prop="participants">
-          <el-input v-model="form.participants" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="销售负责人ID" prop="salesManagerId">
-          <el-input v-model="form.salesManagerId" placeholder="请输入销售负责人ID" />
-        </el-form-item>
-        <el-form-item label="销售联系方式" prop="salesContact">
-          <el-input v-model="form.salesContact" placeholder="请输入销售联系方式" />
-        </el-form-item>
         <el-form-item label="团队负责人ID" prop="teamLeaderId">
           <el-input v-model="form.teamLeaderId" placeholder="请输入团队负责人ID" />
         </el-form-item>
-        <el-form-item label="客户ID" prop="customerId">
-          <el-input v-model="form.customerId" placeholder="请输入客户ID" />
-        </el-form-item>
-        <el-form-item label="客户联系人ID" prop="customerContactId">
-          <el-input v-model="form.customerContactId" placeholder="请输入客户联系人ID" />
-        </el-form-item>
         <el-form-item label="商户联系人" prop="merchantContact">
           <el-input v-model="form.merchantContact" placeholder="请输入商户联系人" />
-        </el-form-item>
-        <el-form-item label="商户联系方式" prop="merchantPhone">
-          <el-input v-model="form.merchantPhone" placeholder="请输入商户联系方式" />
         </el-form-item>
         <el-form-item label="启动日期" prop="startDate">
           <el-date-picker clearable
@@ -355,20 +369,17 @@
             placeholder="请选择验收日期">
           </el-date-picker>
         </el-form-item>
-        <el-form-item label="实施年度" prop="implementationYear">
-          <el-input v-model="form.implementationYear" placeholder="请输入实施年度" />
-        </el-form-item>
         <el-form-item label="项目预算(元)" prop="projectBudget">
           <el-input v-model="form.projectBudget" placeholder="请输入项目预算(元)" />
         </el-form-item>
         <el-form-item label="项目费用(元)" prop="projectCost">
           <el-input v-model="form.projectCost" placeholder="请输入项目费用(元)" />
         </el-form-item>
-        <el-form-item label="费用预算(元)" prop="costBudget">
-          <el-input v-model="form.costBudget" placeholder="请输入费用预算(元)" />
+        <el-form-item label="费用预算(元)" prop="expenseBudget">
+          <el-input v-model="form.expenseBudget" placeholder="请输入费用预算(元)" />
         </el-form-item>
-        <el-form-item label="成本预算(元)" prop="budgetCost">
-          <el-input v-model="form.budgetCost" placeholder="请输入成本预算(元)" />
+        <el-form-item label="成本预算(元)" prop="costBudget">
+          <el-input v-model="form.costBudget" placeholder="请输入成本预算(元)" />
         </el-form-item>
         <el-form-item label="人力费用(元)" prop="laborCost">
           <el-input v-model="form.laborCost" placeholder="请输入人力费用(元)" />
@@ -376,14 +387,15 @@
         <el-form-item label="采购成本" prop="purchaseCost">
           <el-input v-model="form.purchaseCost" placeholder="请输入采购成本" />
         </el-form-item>
-        <el-form-item label="审批状态(待审核/已通过/已拒绝)" prop="approvalStatus">
-          <el-radio-group v-model="form.approvalStatus">
-            <el-radio
-              v-for="dict in sys_shzt"
+        <el-form-item label="审批状态" prop="approvalStatus">
+          <el-select v-model="form.approvalStatus" placeholder="请选择审批状态">
+            <el-option
+              v-for="dict in sys_spzt"
               :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="审批意见" prop="approvalReason">
           <el-input v-model="form.approvalReason" type="textarea" placeholder="请输入内容" />
@@ -391,8 +403,15 @@
         <el-form-item label="行业代码" prop="industryCode">
           <el-input v-model="form.industryCode" placeholder="请输入行业代码" />
         </el-form-item>
-        <el-form-item label="区域代码(字典:sys_yjqy)" prop="regionCode">
-          <el-input v-model="form.regionCode" placeholder="请输入区域代码(字典:sys_yjqy)" />
+        <el-form-item label="区域代码" prop="regionCode">
+          <el-select v-model="form.regionCode" placeholder="请选择区域代码">
+            <el-option
+              v-for="dict in sys_yjqy"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="审批时间" prop="approvalTime">
           <el-date-picker clearable
@@ -407,6 +426,20 @@
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+        </el-form-item>
+        <el-form-item label="税率(%)" prop="taxRate">
+          <el-input v-model="form.taxRate" placeholder="请输入税率(%)" />
+        </el-form-item>
+        <el-form-item label="确认人ID" prop="confirmUserId">
+          <el-input v-model="form.confirmUserId" placeholder="请输入确认人ID" />
+        </el-form-item>
+        <el-form-item label="确认时间" prop="confirmTime">
+          <el-date-picker clearable
+            v-model="form.confirmTime"
+            type="date"
+            value-format="YYYY-MM-DD"
+            placeholder="请选择确认时间">
+          </el-date-picker>
         </el-form-item>
         <el-form-item label="备用域1" prop="reservedField1">
           <el-input v-model="form.reservedField1" placeholder="请输入备用域1" />
@@ -423,9 +456,75 @@
         <el-form-item label="备用域5" prop="reservedField5">
           <el-input v-model="form.reservedField5" placeholder="请输入备用域5" />
         </el-form-item>
-        <el-form-item label="删除标志(0正常 1删除)" prop="delFlag">
-          <el-input v-model="form.delFlag" placeholder="请输入删除标志(0正常 1删除)" />
+        <el-form-item label="收入确认年度" prop="revenueConfirmYear">
+          <el-select v-model="form.revenueConfirmYear" placeholder="请选择收入确认年度">
+            <el-option
+              v-for="dict in sys_ndgl"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
+        <el-form-item label="确认金额(含税)" prop="confirmAmount">
+          <el-input v-model="form.confirmAmount" placeholder="请输入确认金额(含税)" />
+        </el-form-item>
+        <el-form-item label="税后金额" prop="afterTaxAmount">
+          <el-input v-model="form.afterTaxAmount" placeholder="请输入税后金额" />
+        </el-form-item>
+        <el-form-item label="公司收入确认人姓名" prop="companyRevenueConfirmedByName">
+          <el-input v-model="form.companyRevenueConfirmedByName" placeholder="请输入公司收入确认人姓名" />
+        </el-form-item>
+        <el-divider content-position="center">项目审核信息</el-divider>
+        <el-row :gutter="10" class="mb8">
+          <el-col :span="1.5">
+            <el-button type="primary" icon="Plus" @click="handleAddProjectApproval">添加</el-button>
+          </el-col>
+          <el-col :span="1.5">
+            <el-button type="danger" icon="Delete" @click="handleDeleteProjectApproval">删除</el-button>
+          </el-col>
+        </el-row>
+        <el-table :data="projectApprovalList" :row-class-name="rowProjectApprovalIndex" @selection-change="handleProjectApprovalSelectionChange" ref="projectApproval">
+          <el-table-column type="selection" width="50" align="center" />
+          <el-table-column label="序号" align="center" prop="index" width="50"/>
+          <el-table-column label="审核状态" prop="approvalStatus" width="150">
+            <template #default="scope">
+              <el-select v-model="scope.row.approvalStatus" placeholder="请选择审核状态">
+                <el-option
+                  v-for="dict in sys_spzt"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                ></el-option>
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="审核人ID" prop="approverId" width="150">
+            <template #default="scope">
+              <el-input v-model="scope.row.approverId" placeholder="请输入审核人ID" />
+            </template>
+          </el-table-column>
+          <el-table-column label="审核时间" prop="approvalTime" width="240">
+            <template #default="scope">
+              <el-date-picker clearable
+                v-model="scope.row.approvalTime"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="请选择审核时间">
+              </el-date-picker>
+            </template>
+          </el-table-column>
+          <el-table-column label="创建时间" prop="createTime" width="240">
+            <template #default="scope">
+              <el-date-picker clearable
+                v-model="scope.row.createTime"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="请选择创建时间">
+              </el-date-picker>
+            </template>
+          </el-table-column>
+        </el-table>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -438,24 +537,30 @@
 </template>
 
 <script setup name="Project">
-import { listProject, getProject, delProject, addProject, updateProject, getProjectNameList, getProjectCodeList, getProjectSummary } from "@/api/project/project"
-import { listDept } from "@/api/system/dept"
-import { parseTime } from '@/utils/ruoyi'
+import { listProject, getProject, delProject, addProject, updateProject } from "@/api/project/project"
+import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_shzt, sys_xmjd, sys_yszt, industry, sys_yjqy, sys_htzt } = proxy.useDict('sys_shzt', 'sys_xmjd', 'sys_yszt', 'industry', 'sys_yjqy', 'sys_htzt')
+const { sys_xmfl, sys_ndgl, region, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'region', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
 
 const projectList = ref([])
+const projectApprovalList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
+const checkedProjectApproval = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-const dateRange = ref([])
+
+// 数据源选项
 const deptOptions = ref([])
+const projectManagerOptions = ref([])
+const marketManagerOptions = ref([])
+const secondaryRegionOptions = ref([])
+const projectNameList = ref([])
 
 const data = reactive({
   form: {},
@@ -463,99 +568,160 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     projectName: null,
-    projectCode: null,
-    industry: null,
-    region: null,
-    projectStatus: null,
     projectDept: null,
-    confirmYear: new Date().getFullYear().toString(), // 默认当年
-    approvalStatus: null
+    revenueConfirmYear: null,
+    projectCategory: null,
+    region: null,
+    regionCode: null,
+    projectManagerId: null,
+    marketManagerId: null,
+    establishedYear: null,
+    projectStatus: null,
+    approvalStatus: null,
+    acceptanceStatus: null,
   },
   rules: {
-    projectId: [
-      { required: true, message: "项目ID不能为空", trigger: "blur" }
-    ],
     projectCode: [
-      { required: true, message: "项目编号(格式:行业-区域-简称-年份)不能为空", trigger: "blur" }
+      { required: true, message: "项目编号不能为空", trigger: "blur" }
     ],
     projectName: [
       { required: true, message: "项目名称不能为空", trigger: "blur" }
+    ],
+    industry: [
+      { required: true, message: "行业不能为空", trigger: "change" }
+    ],
+    region: [
+      { required: true, message: "区域不能为空", trigger: "change" }
+    ],
+    establishedYear: [
+      { required: true, message: "立项年份不能为空", trigger: "change" }
+    ],
+    projectCategory: [
+      { required: true, message: "项目分类不能为空", trigger: "change" }
+    ],
+    projectDept: [
+      { required: true, message: "项目部门不能为空", trigger: "change" }
+    ],
+    projectStatus: [
+      { required: true, message: "项目状态不能为空", trigger: "change" }
+    ],
+    acceptanceStatus: [
+      { required: true, message: "验收状态不能为空", trigger: "change" }
+    ],
+    estimatedWorkload: [
+      { required: true, message: "预估工作量(人天)不能为空", trigger: "blur" }
+    ],
+    projectAddress: [
+      { required: true, message: "项目地址不能为空", trigger: "blur" }
+    ],
+    projectPlan: [
+      { required: true, message: "项目计划不能为空", trigger: "blur" }
+    ],
+    projectDescription: [
+      { required: true, message: "项目描述不能为空", trigger: "blur" }
+    ],
+    projectManagerId: [
+      { required: true, message: "项目经理ID不能为空", trigger: "change" }
+    ],
+    marketManagerId: [
+      { required: true, message: "市场经理ID不能为空", trigger: "change" }
+    ],
+    participants: [
+      { required: true, message: "参与人员ID列表不能为空", trigger: "change" }
+    ],
+    salesManagerId: [
+      { required: true, message: "销售负责人ID不能为空", trigger: "change" }
+    ],
+    salesContact: [
+      { required: true, message: "销售联系方式不能为空", trigger: "blur" }
+    ],
+    customerId: [
+      { required: true, message: "客户ID不能为空", trigger: "change" }
+    ],
+    customerContactId: [
+      { required: true, message: "客户联系人ID不能为空", trigger: "change" }
+    ],
+    projectBudget: [
+      { required: true, message: "项目预算(元)不能为空", trigger: "blur" }
     ],
   }
 })
 
 const { queryParams, form, rules } = toRefs(data)
 
+/** 加载部门树 */
+function getDeptTree() {
+  request({
+    url: '/system/dept/treeselect',
+    method: 'get'
+  }).then(response => {
+    deptOptions.value = response.data
+  })
+}
+
+/** 加载项目经理列表 */
+function getProjectManagers() {
+  request({
+    url: '/system/user/listByPost',
+    method: 'get',
+    params: { postCode: 'pm' }
+  }).then(response => {
+    projectManagerOptions.value = response.data
+  })
+}
+
+/** 加载市场经理列表 */
+function getMarketManagers() {
+  request({
+    url: '/system/user/listByPost',
+    method: 'get',
+    params: { postCode: 'scjl' }
+  }).then(response => {
+    marketManagerOptions.value = response.data
+  })
+}
+
+/** 加载二级区域列表 */
+function getSecondaryRegions(regionDictValue) {
+  if (!regionDictValue) {
+    secondaryRegionOptions.value = []
+    return
+  }
+  request({
+    url: '/project/secondaryRegion/listByRegion',
+    method: 'get',
+    params: { regionDictValue: regionDictValue }
+  }).then(response => {
+    secondaryRegionOptions.value = response.data || []
+  })
+}
+
+/** 一级区域变化处理 */
+function handleRegionChange(value) {
+  queryParams.value.regionCode = null
+  getSecondaryRegions(value)
+}
+
+/** 项目名称自动补全查询 */
+function queryProjectNames(queryString, cb) {
+  const results = queryString
+    ? projectNameList.value.filter(item => item.value.toLowerCase().includes(queryString.toLowerCase()))
+    : projectNameList.value
+  cb(results)
+}
+
 /** 查询项目管理列表 */
 function getList() {
   loading.value = true
-  const params = proxy.addDateRange(queryParams.value, dateRange.value, 'StartDate')
+  listProject(queryParams.value).then(response => {
+    projectList.value = response.rows
+    total.value = response.total
+    loading.value = false
 
-  // 先获取汇总数据
-  getProjectSummary(params).then(summaryResponse => {
-    const summaryData = summaryResponse.data || { projectBudgetSum: 0 }
-
-    // 再获取列表数据
-    listProject(params).then(response => {
-      // 创建汇总行
-      const summaryRow = {
-        isSummary: true,
-        projectName: '汇总',
-        projectBudget: summaryData.projectBudgetSum || 0
-      }
-
-      // 将汇总行插入到列表第一条
-      projectList.value = [summaryRow, ...response.rows]
-      total.value = response.total
-      loading.value = false
-    })
+    // 提取项目名称用于自动补全
+    const names = response.rows.map(item => ({ value: item.projectName }))
+    projectNameList.value = [...new Set(names.map(item => item.value))].map(name => ({ value: name }))
   })
-}
-
-/** 获取部门树 */
-function getDeptTree() {
-  listDept().then(response => {
-    // 手动转换数据结构，确保 label 字段正确
-    const deptData = response.data.map(dept => ({
-      ...dept,
-      id: dept.deptId,
-      label: dept.deptName
-    }))
-    // 使用 handleTree 构建树形结构
-    deptOptions.value = proxy.handleTree(deptData, "id")
-  })
-}
-
-/** 项目名称智能提示 */
-function queryProjectNames(queryString, cb) {
-  // 如果没有输入内容，传空字符串给后端获取所有数据
-  getProjectNameList(queryString || '').then(response => {
-    const results = response.data.map(name => ({ value: name }))
-    cb(results)
-  })
-}
-
-/** 项目编号智能提示 */
-function queryProjectCodes(queryString, cb) {
-  // 如果没有输入内容，传空字符串给后端获取所有数据
-  getProjectCodeList(queryString || '').then(response => {
-    const results = response.data.map(code => ({ value: code }))
-    cb(results)
-  })
-}
-
-/** 金额格式化为万元 */
-function formatAmountToWan(amount) {
-  if (amount == null || amount === '') return '0.00'
-  return (Number(amount) / 10000).toFixed(2)
-}
-
-/** 表格行样式 */
-function tableRowClassName({ row }) {
-  if (row.isSummary) {
-    return 'summary-row'
-  }
-  return ''
 }
 
 // 取消按钮
@@ -574,7 +740,7 @@ function reset() {
     industry: null,
     region: null,
     shortName: null,
-    year: null,
+    establishedYear: null,
     projectCategory: null,
     projectDept: null,
     projectStatus: null,
@@ -598,11 +764,10 @@ function reset() {
     endDate: null,
     productionDate: null,
     acceptanceDate: null,
-    implementationYear: null,
     projectBudget: null,
     projectCost: null,
+    expenseBudget: null,
     costBudget: null,
-    budgetCost: null,
     laborCost: null,
     purchaseCost: null,
     approvalStatus: null,
@@ -612,6 +777,9 @@ function reset() {
     approvalTime: null,
     approverId: null,
     remark: null,
+    taxRate: null,
+    confirmUserId: null,
+    confirmTime: null,
     reservedField1: null,
     reservedField2: null,
     reservedField3: null,
@@ -621,8 +789,14 @@ function reset() {
     createBy: null,
     createTime: null,
     updateBy: null,
-    updateTime: null
+    updateTime: null,
+    revenueConfirmStatus: null,
+    revenueConfirmYear: null,
+    confirmAmount: null,
+    afterTaxAmount: null,
+    companyRevenueConfirmedByName: null
   }
+  projectApprovalList.value = []
   proxy.resetForm("projectRef")
 }
 
@@ -634,8 +808,9 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
-  dateRange.value = []
   proxy.resetForm("queryRef")
+  queryParams.value.regionCode = null
+  secondaryRegionOptions.value = []
   handleQuery()
 }
 
@@ -653,17 +828,13 @@ function handleAdd() {
   title.value = "添加项目管理"
 }
 
-/** 立项申请按钮操作 */
-function handleApply() {
-  proxy.$router.push('/project/apply')
-}
-
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
   const _projectId = row.projectId || ids.value
   getProject(_projectId).then(response => {
     form.value = response.data
+    projectApprovalList.value = response.data.projectApprovalList
     open.value = true
     title.value = "修改项目管理"
   })
@@ -673,6 +844,7 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["projectRef"].validate(valid => {
     if (valid) {
+      form.value.projectApprovalList = projectApprovalList.value
       if (form.value.projectId != null) {
         updateProject(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
@@ -701,6 +873,40 @@ function handleDelete(row) {
   }).catch(() => {})
 }
 
+/** 项目审核序号 */
+function rowProjectApprovalIndex({ row, rowIndex }) {
+  row.index = rowIndex + 1
+}
+
+/** 项目审核添加按钮操作 */
+function handleAddProjectApproval() {
+  let obj = {}
+  obj.approvalStatus = ""
+  obj.approvalReason = ""
+  obj.approverId = ""
+  obj.approvalTime = ""
+  obj.createTime = ""
+  projectApprovalList.value.push(obj)
+}
+
+/** 项目审核删除按钮操作 */
+function handleDeleteProjectApproval() {
+  if (checkedProjectApproval.value.length == 0) {
+    proxy.$modal.msgError("请先选择要删除的项目审核数据")
+  } else {
+    const projectApprovals = projectApprovalList.value
+    const checkedProjectApprovals = checkedProjectApproval.value
+    projectApprovalList.value = projectApprovals.filter(function(item) {
+      return checkedProjectApprovals.indexOf(item.index) == -1
+    })
+  }
+}
+
+/** 复选框选中数据 */
+function handleProjectApprovalSelectionChange(selection) {
+  checkedProjectApproval.value = selection.map(item => item.index)
+}
+
 /** 导出按钮操作 */
 function handleExport() {
   proxy.download('project/project/export', {
@@ -708,14 +914,9 @@ function handleExport() {
   }, `project_${new Date().getTime()}.xlsx`)
 }
 
-// 初始化
+// 初始化数据
 getDeptTree()
+getProjectManagers()
+getMarketManagers()
 getList()
 </script>
-
-<style scoped>
-.summary-row {
-  background-color: #f5f7fa;
-  font-weight: bold;
-}
-</style>

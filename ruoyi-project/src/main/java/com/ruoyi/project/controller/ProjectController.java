@@ -25,7 +25,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * 项目管理Controller
  * 
  * @author ruoyi
- * @date 2026-02-01
+ * @date 2026-02-05
  */
 @RestController
 @RequestMapping("/project/project")
@@ -57,38 +57,6 @@ public class ProjectController extends BaseController
         List<Project> list = projectService.selectProjectList(project);
         ExcelUtil<Project> util = new ExcelUtil<Project>(Project.class);
         util.exportExcel(response, list, "项目管理数据");
-    }
-
-    /**
-     * 获取项目名称列表（用于智能提示）
-     */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/nameList")
-    public AjaxResult nameList(String projectName)
-    {
-        List<String> list = projectService.selectProjectNameList(projectName);
-        return success(list);
-    }
-
-    /**
-     * 获取项目编号列表（用于智能提示）
-     */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/codeList")
-    public AjaxResult codeList(String projectCode)
-    {
-        List<String> list = projectService.selectProjectCodeList(projectCode);
-        return success(list);
-    }
-
-    /**
-     * 获取项目金额汇总
-     */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/summary")
-    public AjaxResult summary(Project project)
-    {
-        return success(projectService.selectProjectSummary(project));
     }
 
     /**
@@ -134,4 +102,3 @@ public class ProjectController extends BaseController
         return toAjax(projectService.deleteProjectByProjectIds(projectIds));
     }
 }
-

@@ -111,4 +111,22 @@ public class CustomerController extends BaseController
     {
         return toAjax(customerService.deleteCustomerByCustomerIds(customerIds));
     }
+
+    /**
+     * 根据客户ID查询联系人列表
+     */
+    @GetMapping("/contact/listByCustomer")
+    public AjaxResult listContactByCustomer(Long customerId)
+    {
+        if (customerId == null)
+        {
+            return error("客户ID不能为空");
+        }
+        Customer customer = customerService.selectCustomerByCustomerId(customerId);
+        if (customer == null)
+        {
+            return error("客户不存在");
+        }
+        return success(customer.getCustomerContactList());
+    }
 }

@@ -1,6 +1,7 @@
 package com.ruoyi.project.domain;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -12,7 +13,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 项目管理对象 pm_project
  * 
  * @author ruoyi
- * @date 2026-02-01
+ * @date 2026-02-05
  */
 public class Project extends BaseEntity
 {
@@ -21,8 +22,8 @@ public class Project extends BaseEntity
     /** 项目ID */
     private Long projectId;
 
-    /** 项目编号(格式:行业-区域-简称-年份) */
-    @Excel(name = "项目编号(格式:行业-区域-简称-年份)")
+    /** 项目编号 */
+    @Excel(name = "项目编号")
     private String projectCode;
 
     /** 项目名称 */
@@ -30,39 +31,37 @@ public class Project extends BaseEntity
     private String projectName;
 
     /** 项目全称 */
-    @Excel(name = "项目全称")
     private String projectFullName;
 
-    /** 行业 字典表 字典类型industry */
-    @Excel(name = "行业 字典表 字典类型industry")
+    /** 行业 */
+    @Excel(name = "行业")
     private String industry;
 
-    /** 区域 字典表 字典类型sys_yjqy */
-    @Excel(name = "区域 字典表 字典类型sys_yjqy")
+    /** 区域 */
+    @Excel(name = "区域")
     private String region;
 
     /** 简称 */
-    @Excel(name = "简称")
     private String shortName;
 
-    /** 年份 */
-    @Excel(name = "年份")
-    private Long year;
+    /** 立项年份 */
+    @Excel(name = "立项年份")
+    private Integer establishedYear;
 
-    /** 项目分类(字典表 字典类型sys_xmfl) */
-    @Excel(name = "项目分类(字典表 字典类型sys_xmfl)")
+    /** 项目分类 */
+    @Excel(name = "项目分类")
     private String projectCategory;
 
     /** 项目部门 */
     @Excel(name = "项目部门")
     private String projectDept;
 
-    /** 项目阶段(字典表 字典类型sys_xmjd) */
-    @Excel(name = "项目阶段(字典表 字典类型sys_xmjd)")
+    /** 项目状态 */
+    @Excel(name = "项目状态")
     private String projectStatus;
 
-    /** 验收状态(字典表 字典类型sys_yszt) */
-    @Excel(name = "验收状态(字典表 字典类型sys_yszt)")
+    /** 验收状态 */
+    @Excel(name = "验收状态")
     private String acceptanceStatus;
 
     /** 预估工作量(人天) */
@@ -74,15 +73,12 @@ public class Project extends BaseEntity
     private BigDecimal actualWorkload;
 
     /** 项目地址 */
-    @Excel(name = "项目地址")
     private String projectAddress;
 
     /** 项目计划 */
-    @Excel(name = "项目计划")
     private String projectPlan;
 
     /** 项目描述 */
-    @Excel(name = "项目描述")
     private String projectDescription;
 
     /** 项目经理ID */
@@ -93,8 +89,8 @@ public class Project extends BaseEntity
     @Excel(name = "市场经理ID")
     private Long marketManagerId;
 
-    /** 参与人员ID列表(逗号分隔) */
-    @Excel(name = "参与人员ID列表(逗号分隔)")
+    /** 参与人员ID列表 */
+    @Excel(name = "参与人员ID列表")
     private String participants;
 
     /** 销售负责人ID */
@@ -102,7 +98,6 @@ public class Project extends BaseEntity
     private Long salesManagerId;
 
     /** 销售联系方式 */
-    @Excel(name = "销售联系方式")
     private String salesContact;
 
     /** 团队负责人ID */
@@ -114,15 +109,12 @@ public class Project extends BaseEntity
     private Long customerId;
 
     /** 客户联系人ID */
-    @Excel(name = "客户联系人ID")
     private Long customerContactId;
 
     /** 商户联系人 */
-    @Excel(name = "商户联系人")
     private String merchantContact;
 
     /** 商户联系方式 */
-    @Excel(name = "商户联系方式")
     private String merchantPhone;
 
     /** 启动日期 */
@@ -136,18 +128,12 @@ public class Project extends BaseEntity
     private Date endDate;
 
     /** 投产日期 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "投产日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date productionDate;
 
     /** 验收日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "验收日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date acceptanceDate;
-
-    /** 实施年度 */
-    @Excel(name = "实施年度")
-    private String implementationYear;
 
     /** 项目预算(元) */
     @Excel(name = "项目预算(元)")
@@ -158,96 +144,100 @@ public class Project extends BaseEntity
     private BigDecimal projectCost;
 
     /** 费用预算(元) */
-    @Excel(name = "费用预算(元)")
-    private BigDecimal costBudget;
+    private BigDecimal expenseBudget;
 
     /** 成本预算(元) */
-    @Excel(name = "成本预算(元)")
-    private BigDecimal budgetCost;
+    private BigDecimal costBudget;
 
     /** 人力费用(元) */
-    @Excel(name = "人力费用(元)")
     private BigDecimal laborCost;
 
     /** 采购成本 */
-    @Excel(name = "采购成本")
     private BigDecimal purchaseCost;
 
-    /** 确认状态(字典:sys_qrzt 未确认、待确认、已确认、无法确认) */
-    @Excel(name = "确认状态")
-    private String confirmStatus;
+    /** 审批状态 */
+    @Excel(name = "审批状态")
+    private String approvalStatus;
 
-    /** 确认季度(格式:2026年Q1,字典:sys_jdgl) */
-    @Excel(name = "确认季度")
-    private String confirmQuarter;
+    /** 审批意见 */
+    private String approvalReason;
+
+    /** 行业代码 */
+    private String industryCode;
+
+    /** 区域代码 */
+    private String regionCode;
+
+    /** 审批时间 */
+    private Date approvalTime;
+
+    /** 审批人 */
+    private String approverId;
+
+    /** 税率(%) */
+    private BigDecimal taxRate;
+
+    /** 确认人ID */
+    private Long confirmUserId;
+
+    /** 确认时间 */
+    private Date confirmTime;
+
+    /** 备用域1 */
+    private String reservedField1;
+
+    /** 备用域2 */
+    private String reservedField2;
+
+    /** 备用域3 */
+    private String reservedField3;
+
+    /** 备用域4 */
+    private String reservedField4;
+
+    /** 备用域5 */
+    private String reservedField5;
+
+    /** 删除标志 */
+    private String delFlag;
+
+    /** 收入确认状态 */
+    @Excel(name = "收入确认状态")
+    private String revenueConfirmStatus;
+
+    /** 收入确认年度 */
+    @Excel(name = "收入确认年度")
+    private String revenueConfirmYear;
 
     /** 确认金额(含税) */
     @Excel(name = "确认金额(含税)")
     private BigDecimal confirmAmount;
 
     /** 税后金额 */
-    @Excel(name = "税后金额")
     private BigDecimal afterTaxAmount;
 
-    /** 税率(%) */
-    @Excel(name = "税率(%)")
-    private BigDecimal taxRate;
+    /** 公司收入确认人姓名 */
+    private String companyRevenueConfirmedByName;
 
-    /** 审批状态(待审核/已通过/已拒绝) */
-    @Excel(name = "审批状态(待审核/已通过/已拒绝)")
-    private String approvalStatus;
+    /** 项目审核信息 */
+    private List<ProjectApproval> projectApprovalList;
 
-    /** 审批意见 */
-    @Excel(name = "审批意见")
-    private String approvalReason;
+    /** 合同金额 */
+    private BigDecimal contractAmount;
 
-    /** 行业代码 */
-    @Excel(name = "行业代码")
-    private String industryCode;
+    /** 合同状态 */
+    private String contractStatus;
 
-    /** 区域代码(字典:sys_yjqy) */
-    @Excel(name = "区域代码(字典:sys_yjqy)")
-    private String regionCode;
-
-    /** 审批时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "审批时间", width = 30, dateFormat = "yyyy-MM-dd")
-    private Date approvalTime;
-
-    /** 审批人 */
-    @Excel(name = "审批人")
-    private String approverId;
-
-    /** 备用域1 */
-    @Excel(name = "备用域1")
-    private String reservedField1;
-
-    /** 备用域2 */
-    @Excel(name = "备用域2")
-    private String reservedField2;
-
-    /** 备用域3 */
-    @Excel(name = "备用域3")
-    private String reservedField3;
-
-    /** 备用域4 */
-    @Excel(name = "备用域4")
-    private String reservedField4;
-
-    /** 备用域5 */
-    @Excel(name = "备用域5")
-    private String reservedField5;
-
-    /** 删除标志(0正常 1删除) */
-    private String delFlag;
-
-    /** 项目经理名称（关联查询） */
+    /** 项目经理姓名 */
     private String projectManagerName;
 
-    /** 市场经理名称（关联查询） */
+    /** 市场经理姓名 */
     private String marketManagerName;
 
-    /** 部门名称（关联查询） */
+    /** 参与人员姓名列表 */
+    private String participantsNames;
+
+    /** 部门名称 */
     private String deptName;
 
     public void setProjectId(Long projectId) 
@@ -320,14 +310,14 @@ public class Project extends BaseEntity
         return shortName;
     }
 
-    public void setYear(Long year) 
+    public void setEstablishedYear(Integer establishedYear) 
     {
-        this.year = year;
+        this.establishedYear = establishedYear;
     }
 
-    public Long getYear() 
+    public Integer getEstablishedYear() 
     {
-        return year;
+        return establishedYear;
     }
 
     public void setProjectCategory(String projectCategory) 
@@ -560,16 +550,6 @@ public class Project extends BaseEntity
         return acceptanceDate;
     }
 
-    public void setImplementationYear(String implementationYear) 
-    {
-        this.implementationYear = implementationYear;
-    }
-
-    public String getImplementationYear() 
-    {
-        return implementationYear;
-    }
-
     public void setProjectBudget(BigDecimal projectBudget) 
     {
         this.projectBudget = projectBudget;
@@ -590,6 +570,16 @@ public class Project extends BaseEntity
         return projectCost;
     }
 
+    public void setExpenseBudget(BigDecimal expenseBudget) 
+    {
+        this.expenseBudget = expenseBudget;
+    }
+
+    public BigDecimal getExpenseBudget() 
+    {
+        return expenseBudget;
+    }
+
     public void setCostBudget(BigDecimal costBudget) 
     {
         this.costBudget = costBudget;
@@ -598,16 +588,6 @@ public class Project extends BaseEntity
     public BigDecimal getCostBudget() 
     {
         return costBudget;
-    }
-
-    public void setBudgetCost(BigDecimal budgetCost) 
-    {
-        this.budgetCost = budgetCost;
-    }
-
-    public BigDecimal getBudgetCost() 
-    {
-        return budgetCost;
     }
 
     public void setLaborCost(BigDecimal laborCost) 
@@ -625,59 +605,9 @@ public class Project extends BaseEntity
         this.purchaseCost = purchaseCost;
     }
 
-    public BigDecimal getPurchaseCost()
+    public BigDecimal getPurchaseCost() 
     {
         return purchaseCost;
-    }
-
-    public void setConfirmStatus(String confirmStatus)
-    {
-        this.confirmStatus = confirmStatus;
-    }
-
-    public String getConfirmStatus()
-    {
-        return confirmStatus;
-    }
-
-    public void setConfirmQuarter(String confirmQuarter)
-    {
-        this.confirmQuarter = confirmQuarter;
-    }
-
-    public String getConfirmQuarter()
-    {
-        return confirmQuarter;
-    }
-
-    public void setConfirmAmount(BigDecimal confirmAmount)
-    {
-        this.confirmAmount = confirmAmount;
-    }
-
-    public BigDecimal getConfirmAmount()
-    {
-        return confirmAmount;
-    }
-
-    public void setAfterTaxAmount(BigDecimal afterTaxAmount)
-    {
-        this.afterTaxAmount = afterTaxAmount;
-    }
-
-    public BigDecimal getAfterTaxAmount()
-    {
-        return afterTaxAmount;
-    }
-
-    public void setTaxRate(BigDecimal taxRate)
-    {
-        this.taxRate = taxRate;
-    }
-
-    public BigDecimal getTaxRate()
-    {
-        return taxRate;
     }
 
     public void setApprovalStatus(String approvalStatus) 
@@ -735,9 +665,39 @@ public class Project extends BaseEntity
         this.approverId = approverId;
     }
 
-    public String getApproverId()
+    public String getApproverId() 
     {
         return approverId;
+    }
+
+    public void setTaxRate(BigDecimal taxRate) 
+    {
+        this.taxRate = taxRate;
+    }
+
+    public BigDecimal getTaxRate() 
+    {
+        return taxRate;
+    }
+
+    public void setConfirmUserId(Long confirmUserId) 
+    {
+        this.confirmUserId = confirmUserId;
+    }
+
+    public Long getConfirmUserId() 
+    {
+        return confirmUserId;
+    }
+
+    public void setConfirmTime(Date confirmTime) 
+    {
+        this.confirmTime = confirmTime;
+    }
+
+    public Date getConfirmTime() 
+    {
+        return confirmTime;
     }
 
     public void setReservedField1(String reservedField1) 
@@ -795,14 +755,89 @@ public class Project extends BaseEntity
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag()
+    public String getDelFlag() 
     {
         return delFlag;
     }
 
-    public void setProjectManagerName(String projectManagerName)
+    public void setRevenueConfirmStatus(String revenueConfirmStatus) 
     {
-        this.projectManagerName = projectManagerName;
+        this.revenueConfirmStatus = revenueConfirmStatus;
+    }
+
+    public String getRevenueConfirmStatus() 
+    {
+        return revenueConfirmStatus;
+    }
+
+    public void setRevenueConfirmYear(String revenueConfirmYear) 
+    {
+        this.revenueConfirmYear = revenueConfirmYear;
+    }
+
+    public String getRevenueConfirmYear() 
+    {
+        return revenueConfirmYear;
+    }
+
+    public void setConfirmAmount(BigDecimal confirmAmount) 
+    {
+        this.confirmAmount = confirmAmount;
+    }
+
+    public BigDecimal getConfirmAmount() 
+    {
+        return confirmAmount;
+    }
+
+    public void setAfterTaxAmount(BigDecimal afterTaxAmount) 
+    {
+        this.afterTaxAmount = afterTaxAmount;
+    }
+
+    public BigDecimal getAfterTaxAmount() 
+    {
+        return afterTaxAmount;
+    }
+
+    public void setCompanyRevenueConfirmedByName(String companyRevenueConfirmedByName) 
+    {
+        this.companyRevenueConfirmedByName = companyRevenueConfirmedByName;
+    }
+
+    public String getCompanyRevenueConfirmedByName() 
+    {
+        return companyRevenueConfirmedByName;
+    }
+
+    public List<ProjectApproval> getProjectApprovalList()
+    {
+        return projectApprovalList;
+    }
+
+    public void setProjectApprovalList(List<ProjectApproval> projectApprovalList)
+    {
+        this.projectApprovalList = projectApprovalList;
+    }
+
+    public BigDecimal getContractAmount()
+    {
+        return contractAmount;
+    }
+
+    public void setContractAmount(BigDecimal contractAmount)
+    {
+        this.contractAmount = contractAmount;
+    }
+
+    public String getContractStatus()
+    {
+        return contractStatus;
+    }
+
+    public void setContractStatus(String contractStatus)
+    {
+        this.contractStatus = contractStatus;
     }
 
     public String getProjectManagerName()
@@ -810,9 +845,9 @@ public class Project extends BaseEntity
         return projectManagerName;
     }
 
-    public void setMarketManagerName(String marketManagerName)
+    public void setProjectManagerName(String projectManagerName)
     {
-        this.marketManagerName = marketManagerName;
+        this.projectManagerName = projectManagerName;
     }
 
     public String getMarketManagerName()
@@ -820,14 +855,29 @@ public class Project extends BaseEntity
         return marketManagerName;
     }
 
-    public void setDeptName(String deptName)
+    public void setMarketManagerName(String marketManagerName)
     {
-        this.deptName = deptName;
+        this.marketManagerName = marketManagerName;
+    }
+
+    public String getParticipantsNames()
+    {
+        return participantsNames;
+    }
+
+    public void setParticipantsNames(String participantsNames)
+    {
+        this.participantsNames = participantsNames;
     }
 
     public String getDeptName()
     {
         return deptName;
+    }
+
+    public void setDeptName(String deptName)
+    {
+        this.deptName = deptName;
     }
 
     @Override
@@ -840,7 +890,7 @@ public class Project extends BaseEntity
             .append("industry", getIndustry())
             .append("region", getRegion())
             .append("shortName", getShortName())
-            .append("year", getYear())
+            .append("establishedYear", getEstablishedYear())
             .append("projectCategory", getProjectCategory())
             .append("projectDept", getProjectDept())
             .append("projectStatus", getProjectStatus())
@@ -864,18 +914,12 @@ public class Project extends BaseEntity
             .append("endDate", getEndDate())
             .append("productionDate", getProductionDate())
             .append("acceptanceDate", getAcceptanceDate())
-            .append("implementationYear", getImplementationYear())
             .append("projectBudget", getProjectBudget())
             .append("projectCost", getProjectCost())
+            .append("expenseBudget", getExpenseBudget())
             .append("costBudget", getCostBudget())
-            .append("budgetCost", getBudgetCost())
             .append("laborCost", getLaborCost())
             .append("purchaseCost", getPurchaseCost())
-            .append("confirmStatus", getConfirmStatus())
-            .append("confirmQuarter", getConfirmQuarter())
-            .append("confirmAmount", getConfirmAmount())
-            .append("afterTaxAmount", getAfterTaxAmount())
-            .append("taxRate", getTaxRate())
             .append("approvalStatus", getApprovalStatus())
             .append("approvalReason", getApprovalReason())
             .append("industryCode", getIndustryCode())
@@ -883,6 +927,9 @@ public class Project extends BaseEntity
             .append("approvalTime", getApprovalTime())
             .append("approverId", getApproverId())
             .append("remark", getRemark())
+            .append("taxRate", getTaxRate())
+            .append("confirmUserId", getConfirmUserId())
+            .append("confirmTime", getConfirmTime())
             .append("reservedField1", getReservedField1())
             .append("reservedField2", getReservedField2())
             .append("reservedField3", getReservedField3())
@@ -893,6 +940,12 @@ public class Project extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
+            .append("revenueConfirmStatus", getRevenueConfirmStatus())
+            .append("revenueConfirmYear", getRevenueConfirmYear())
+            .append("confirmAmount", getConfirmAmount())
+            .append("afterTaxAmount", getAfterTaxAmount())
+            .append("companyRevenueConfirmedByName", getCompanyRevenueConfirmedByName())
+            .append("projectApprovalList", getProjectApprovalList())
             .toString();
     }
 }

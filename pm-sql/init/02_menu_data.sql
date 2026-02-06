@@ -66,3 +66,44 @@ VALUES ('二级区域删除', @secondaryRegionMenuId, 4, '#', '', 1, 0, 'F', '0'
 -- 按钮权限：导出
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('二级区域导出', @secondaryRegionMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:secondaryRegion:export', '#', 'admin', sysdate(), '', NULL, '');
+-- ========================================
+-- 项目管理模块菜单数据
+-- ========================================
+
+-- 一级菜单：项目管理
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目管理', 0, 3, 'project', NULL, 1, 0, 'M', '0', '0', '', 'project', 'admin', sysdate(), '', NULL, '项目管理目录');
+
+-- 获取项目管理一级菜单ID
+SELECT @projectRootMenuId := LAST_INSERT_ID();
+
+-- 二级菜单：立项申请
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('立项申请', @projectRootMenuId, 1, 'apply', 'project/project/index', 1, 0, 'C', '0', '0', 'project:project:add', 'edit', 'admin', sysdate(), '', NULL, '项目立项申请菜单');
+
+-- 二级菜单：项目列表
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目列表', @projectRootMenuId, 2, 'list', 'project/project/index', 1, 0, 'C', '0', '0', 'project:project:list', 'list', 'admin', sysdate(), '', NULL, '项目列表菜单');
+
+-- 获取项目管理二级菜单ID
+SELECT @projectMenuId := LAST_INSERT_ID();
+
+-- 按钮权限：查询
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目列表查询', @projectMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:project:query', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：新增
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目列表新增', @projectMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:project:add', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：修改
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目列表修改', @projectMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'project:project:edit', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：删除
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目列表删除', @projectMenuId, 4, '#', '', 1, 0, 'F', '0', '0', 'project:project:remove', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：导出
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目列表导出', @projectMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:project:export', '#', 'admin', sysdate(), '', NULL, '');
