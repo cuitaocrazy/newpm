@@ -66,6 +66,9 @@
         <el-col :span="8">
           <el-form-item label="项目编号" prop="projectCode">
             <el-input v-model="form.projectCode" placeholder="自动生成" readonly />
+            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
+              格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}
+            </div>
           </el-form-item>
         </el-col>
       </el-row>
