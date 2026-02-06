@@ -380,7 +380,7 @@
 
       <!-- 按钮 -->
       <el-row>
-        <el-col :span="24" style="text-align: center; margin-top: 20px;">
+        <el-col :span="24" style="text-align: center; margin-top: 20px; margin-bottom: 60px;">
           <el-button type="primary" @click="submitForm">提交</el-button>
           <el-button @click="resetForm">重置</el-button>
           <el-button @click="cancel">取消</el-button>
@@ -624,7 +624,7 @@ function cancel() {
   router.push('/project/project')
 }
 
-/** 初始化 */
+// 初始化数据
 onMounted(() => {
   getDeptTree()
   getProjectManagers()
@@ -633,3 +633,9 @@ onMounted(() => {
   getCustomers()
 })
 </script>
+
+<style scoped>
+.app-container {
+  padding-bottom: 80px;
+}
+</style>
