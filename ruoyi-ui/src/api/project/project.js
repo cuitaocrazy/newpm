@@ -42,30 +42,3 @@ export function delProject(projectId) {
     method: 'delete'
   })
 }
-
-// 获取项目名称列表（用于智能提示）
-export function getProjectNameList(projectName) {
-  return request({
-    url: '/project/project/nameList',
-    method: 'get',
-    params: { projectName }
-  })
-}
-
-// 获取项目编号列表（用于智能提示）
-export function getProjectCodeList(projectCode) {
-  return request({
-    url: '/project/project/codeList',
-    method: 'get',
-    params: { projectCode }
-  })
-}
-
-// 获取金额汇总
-export function getProjectSummary(query) {
-  return request({
-    url: '/project/project/summary',
-    method: 'get',
-    params: query
-  })
-}

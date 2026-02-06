@@ -205,6 +205,31 @@ export function listUser(query: UserQueryParams): Promise<TableDataInfo<SysUser[
 - Built-in duplicate submission prevention (configurable via `headers.repeatSubmit` and `headers.interval`)
 - Response codes: 200=success, 401=re-login prompt, 500=error, 601=warning
 
+**Usage in Vue Components:**
+
+```typescript
+// Method 1: Use encapsulated API functions (Recommended)
+import { listUser } from '@/api/system/user'
+listUser(queryParams).then(response => {
+  // response.rows, response.total
+})
+
+// Method 2: Direct request call (for custom endpoints)
+import request from '@/utils/request'
+request({
+  url: '/system/user/listByPost',
+  method: 'get',
+  params: { postCode: 'xsfzr' }
+}).then(response => {
+  // response.data
+})
+
+// WRONG: Do NOT use proxy.$http or proxy.request
+// const { proxy } = getCurrentInstance()
+// proxy.$http.get(...)  ❌ Does not exist
+// proxy.request(...)    ❌ Does not exist
+```
+
 ### State Management (Pinia)
 
 Stores in `src/store/modules/`: user, app, permission, settings, tagsView, dict

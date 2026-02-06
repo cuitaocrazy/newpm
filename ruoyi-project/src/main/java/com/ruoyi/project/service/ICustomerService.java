@@ -7,7 +7,7 @@ import com.ruoyi.project.domain.Customer;
  * 客户管理Service接口
  * 
  * @author ruoyi
- * @date 2026-01-30
+ * @date 2026-02-04
  */
 public interface ICustomerService 
 {
@@ -21,15 +21,24 @@ public interface ICustomerService
 
     /**
      * 查询客户管理列表
-     * 
+     *
      * @param customer 客户管理
      * @return 客户管理集合
      */
     public List<Customer> selectCustomerList(Customer customer);
 
     /**
+     * 检查客户简称是否唯一
+     *
+     * @param customerSimpleName 客户简称
+     * @param customerId 客户ID（编辑时传入，新增时为null）
+     * @return true=唯一，false=重复
+     */
+    public boolean checkCustomerSimpleNameUnique(String customerSimpleName, Long customerId);
+
+    /**
      * 新增客户管理
-     * 
+     *
      * @param customer 客户管理
      * @return 结果
      */

@@ -1,0 +1,278 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_secondary_region
+  tableComment: 省级区域表
+  className: SecondaryRegion
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  province_id:
+    columnComment: 省份ID
+    javaType: Long
+    javaField: provinceId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  province_code:
+    columnComment: 省份代码（行政区划代码前2位）
+    javaType: String
+    javaField: provinceCode
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  province_name:
+    columnComment: 省份名称
+    javaType: String
+    javaField: provinceName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  province_type:
+    columnComment: 省份类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）
+    javaType: String
+    javaField: provinceType
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sflx"
+
+  region_dict_value:
+    columnComment: 一级区域
+    javaType: String
+    javaField: regionDictValue
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_yjqy"
+
+  sort_order:
+    columnComment: 排序
+    javaType: Integer
+    javaField: sortOrder
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  status:
+    columnComment: 状态（0正常 1停用）
+    javaType: String
+    javaField: status
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: radio
+    dictType: "sys_normal_disable"
+
+  del_flag:
+    columnComment: 删除标志（0存在 1删除）
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: secondaryRegion
+  functionName: 省级区域
+  parentMenuId: 3
+
+# ============================
+# 定制需求（超出标准模板的组件/交互/接口需求）
+# ============================
+customizations:
+  form_label_width:
+    intent: "调整表单标签宽度，确保所有标签文字在一行内完整显示"
+    component:
+      type: "el-form"
+      props:
+        label-width: "100px"  # 查询表单和新增/编辑表单统一使用 100px
+    bindTo: ["queryForm", "editForm"]
+    service: null
+    notes: "查询表单从 68px 调整为 100px，新增/编辑表单从 80px 调整为 100px"
+
+  sort_order_input:
+    intent: "排序字段使用数值输入组件，支持数值范围控制"
+    component:
+      type: "el-input-number"
+      props:
+        controls-position: "right"
+        min: 0
+        max: 9999
+        style: "width: 100%"
+    bindTo: "sort_order"
+    service: null
+    notes: "替换标准的 el-input，提供更好的数值输入体验，宽度与其他组件保持一致"
+
+  remove_del_flag:
+    intent: "新增和编辑表单中移除删除标志字段"
+    component: null
+    bindTo: "del_flag"
+    service: null
+    notes: "删除标志由系统自动管理，不需要用户手动输入"
+
+  remove_batch_operations:
+    intent: "移除批量修改、批量删除功能，只保留单行操作"
+    component: null
+    bindTo: ["toolbar", "table"]
+    service: null
+    notes: "删除工具栏的批量修改和批量删除按钮，删除表格的复选框列，删除相关变量（ids/single/multiple）和方法（handleSelectionChange），只保留操作列中的单行修改和删除按钮"
+
+  remove_export_button:
+    intent: "移除导出功能按钮"
+    component: null
+    bindTo: "toolbar"
+    service: null
+    notes: "删除工具栏的导出按钮和 handleExport 方法，不需要 Excel 导出功能"
+
+  province_autocomplete:
+    intent: "省份代码和省份名称查询条件支持自动完成功能"
+    component:
+      type: "el-autocomplete"
+      props:
+        fetch-suggestions: "前端过滤全量数据"
+        clearable: true
+        style: "width: 240px"
+    bindTo: ["province_code", "province_name"]
+    service:
+      endpoint: "GET /project/secondaryRegion/list?pageNum=1&pageSize=1000"
+      source: "复用 SecondaryRegionService.selectSecondaryRegionList"
+      returns: "全量省份数据列表"
+      newApi: false
+    notes: "页面加载时一次性获取全量省份数据（约37条），前端过滤匹配。省份代码支持模糊匹配，省份名称支持包含匹配。"
+
+  query_input_width:
+    intent: "统一查询条件输入框宽度"
+    component:
+      type: "all query inputs"
+      props:
+        style: "width: 240px"
+    bindTo: ["queryForm"]
+    service: null
+    notes: "所有查询条件的输入框（autocomplete、select）统一设置宽度为 240px，保持视觉一致性"
+
+  status_default_value:
+    intent: "新增和编辑页面状态默认值为正常"
+    component:
+      type: "el-radio-group"
+      props:
+        default: "0"
+    bindTo: "status"
+    service: null
+    notes: "在 reset() 方法中设置 status 默认值为 '0'（正常），新增页面打开时状态单选按钮默认选中正常"

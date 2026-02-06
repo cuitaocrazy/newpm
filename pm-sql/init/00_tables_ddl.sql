@@ -3,6 +3,10 @@
 -- 数据库: ry-vue
 -- ----------------------------
 
+-- ----------------------------
+-- 一、系统基础模块
+-- ----------------------------
+
 -- 禁用外键检查
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -406,17 +410,275 @@ create table gen_table_column (
 
 
 -- ----------------------------
--- 22、客户信息表
+-- 20、代码生成业务表字段
+-- ----------------------------
+DROP TABLE IF EXISTS `附件表`;
+CREATE TABLE `pm_attachment` (
+  `attachment_id` bigint NOT NULL AUTO_INCREMENT COMMENT '附件主键ID',
+  `business_type` varchar(50) NOT NULL COMMENT '业务类型(payment-款项、contract-合同、project-项目)',
+  `business_id` bigint NOT NULL COMMENT '业务ID',
+  `project_id` varchar(50) DEFAULT NULL COMMENT '项目ID(关联项目时)',
+  `contract_id` bigint DEFAULT NULL COMMENT '合同ID(关联合同时)',
+  `document_type` varchar(50) DEFAULT NULL COMMENT '文档类型(字典:sys_wdlx)',
+  `file_name` varchar(255) NOT NULL COMMENT '文件名',
+  `file_path` varchar(500) NOT NULL COMMENT '文件路径',
+  `file_size` bigint DEFAULT NULL COMMENT '文件大小(字节)',
+  `file_type` varchar(50) DEFAULT NULL COMMENT '文件类型(扩展名)',
+  `file_description` varchar(500) DEFAULT NULL COMMENT '文件描述',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`attachment_id`),
+  KEY `idx_business_type_id` (`business_type`,`business_id`),
+  KEY `idx_project_id` (`project_id`),
+  KEY `idx_contract_id` (`contract_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件表';
+
+
+-- ----------------------------
+-- 21、Blob类型的触发器表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_blob_triggers`;
+CREATE TABLE `qrtz_blob_triggers` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
+  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
+  `blob_data` blob COMMENT '存放持久化Trigger对象',
+  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
+  CONSTRAINT `qrtz_blob_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Blob类型的触发器表';
+
+-- ----------------------------
+-- 22、日历信息表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_calendars`;
+CREATE TABLE `qrtz_calendars` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `calendar_name` varchar(200) NOT NULL COMMENT '日历名称',
+  `calendar` blob NOT NULL COMMENT '存放持久化calendar对象',
+  PRIMARY KEY (`sched_name`,`calendar_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='日历信息表';
+
+-- ----------------------------
+-- 23、Cron类型的触发器表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_cron_triggers`;
+CREATE TABLE `qrtz_cron_triggers` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
+  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
+  `cron_expression` varchar(200) NOT NULL COMMENT 'cron表达式',
+  `time_zone_id` varchar(80) DEFAULT NULL COMMENT '时区',
+  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
+  CONSTRAINT `qrtz_cron_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Cron类型的触发器表';
+
+-- ----------------------------
+-- 24、已触发的触发器表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_fired_triggers`;
+CREATE TABLE `qrtz_fired_triggers` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `entry_id` varchar(95) NOT NULL COMMENT '调度器实例id',
+  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
+  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
+  `instance_name` varchar(200) NOT NULL COMMENT '调度器实例名',
+  `fired_time` bigint NOT NULL COMMENT '触发的时间',
+  `sched_time` bigint NOT NULL COMMENT '定时器制定的时间',
+  `priority` int NOT NULL COMMENT '优先级',
+  `state` varchar(16) NOT NULL COMMENT '状态',
+  `job_name` varchar(200) DEFAULT NULL COMMENT '任务名称',
+  `job_group` varchar(200) DEFAULT NULL COMMENT '任务组名',
+  `is_nonconcurrent` varchar(1) DEFAULT NULL COMMENT '是否并发',
+  `requests_recovery` varchar(1) DEFAULT NULL COMMENT '是否接受恢复执行',
+  PRIMARY KEY (`sched_name`,`entry_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='已触发的触发器表';
+
+
+-- ----------------------------
+-- 25、任务详细信息表
+-- ----------------------------
+DROP TABLE IF EXISTS `任务详细信息表`;
+CREATE TABLE `qrtz_job_details` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `job_name` varchar(200) NOT NULL COMMENT '任务名称',
+  `job_group` varchar(200) NOT NULL COMMENT '任务组名',
+  `description` varchar(250) DEFAULT NULL COMMENT '相关介绍',
+  `job_class_name` varchar(250) NOT NULL COMMENT '执行任务类名称',
+  `is_durable` varchar(1) NOT NULL COMMENT '是否持久化',
+  `is_nonconcurrent` varchar(1) NOT NULL COMMENT '是否并发',
+  `is_update_data` varchar(1) NOT NULL COMMENT '是否更新数据',
+  `requests_recovery` varchar(1) NOT NULL COMMENT '是否接受恢复执行',
+  `job_data` blob COMMENT '存放持久化job对象',
+  PRIMARY KEY (`sched_name`,`job_name`,`job_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务详细信息表';
+
+
+-- ----------------------------
+-- 26、存储的悲观锁信息表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_locks`;
+CREATE TABLE `qrtz_locks` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `lock_name` varchar(40) NOT NULL COMMENT '悲观锁名称',
+  PRIMARY KEY (`sched_name`,`lock_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='存储的悲观锁信息表';
+
+
+-- ----------------------------
+-- 27、暂停的触发器表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_paused_trigger_grps`;
+CREATE TABLE `qrtz_paused_trigger_grps` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
+  PRIMARY KEY (`sched_name`,`trigger_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='暂停的触发器表';
+
+
+-- ----------------------------
+-- 28、调度器状态表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_scheduler_state`;
+CREATE TABLE `qrtz_scheduler_state` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `instance_name` varchar(200) NOT NULL COMMENT '实例名称',
+  `last_checkin_time` bigint NOT NULL COMMENT '上次检查时间',
+  `checkin_interval` bigint NOT NULL COMMENT '检查间隔时间',
+  PRIMARY KEY (`sched_name`,`instance_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='调度器状态表';
+
+-- ----------------------------
+-- 29、简单触发器的信息表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_simple_triggers`;
+CREATE TABLE `qrtz_simple_triggers` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
+  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
+  `repeat_count` bigint NOT NULL COMMENT '重复的次数统计',
+  `repeat_interval` bigint NOT NULL COMMENT '重复的间隔时间',
+  `times_triggered` bigint NOT NULL COMMENT '已经触发的次数',
+  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
+  CONSTRAINT `qrtz_simple_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='简单触发器的信息表';
+
+-- ----------------------------
+-- 30、同步机制的行锁表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_simprop_triggers`;
+CREATE TABLE `qrtz_simprop_triggers` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
+  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
+  `str_prop_1` varchar(512) DEFAULT NULL COMMENT 'String类型的trigger的第一个参数',
+  `str_prop_2` varchar(512) DEFAULT NULL COMMENT 'String类型的trigger的第二个参数',
+  `str_prop_3` varchar(512) DEFAULT NULL COMMENT 'String类型的trigger的第三个参数',
+  `int_prop_1` int DEFAULT NULL COMMENT 'int类型的trigger的第一个参数',
+  `int_prop_2` int DEFAULT NULL COMMENT 'int类型的trigger的第二个参数',
+  `long_prop_1` bigint DEFAULT NULL COMMENT 'long类型的trigger的第一个参数',
+  `long_prop_2` bigint DEFAULT NULL COMMENT 'long类型的trigger的第二个参数',
+  `dec_prop_1` decimal(13,4) DEFAULT NULL COMMENT 'decimal类型的trigger的第一个参数',
+  `dec_prop_2` decimal(13,4) DEFAULT NULL COMMENT 'decimal类型的trigger的第二个参数',
+  `bool_prop_1` varchar(1) DEFAULT NULL COMMENT 'Boolean类型的trigger的第一个参数',
+  `bool_prop_2` varchar(1) DEFAULT NULL COMMENT 'Boolean类型的trigger的第二个参数',
+  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
+  CONSTRAINT `qrtz_simprop_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='同步机制的行锁表';
+
+-- ----------------------------
+-- 31、触发器详细信息表
+-- ----------------------------
+DROP TABLE IF EXISTS `qrtz_triggers`;
+CREATE TABLE `qrtz_triggers` (
+  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
+  `trigger_name` varchar(200) NOT NULL COMMENT '触发器的名字',
+  `trigger_group` varchar(200) NOT NULL COMMENT '触发器所属组的名字',
+  `job_name` varchar(200) NOT NULL COMMENT 'qrtz_job_details表job_name的外键',
+  `job_group` varchar(200) NOT NULL COMMENT 'qrtz_job_details表job_group的外键',
+  `description` varchar(250) DEFAULT NULL COMMENT '相关介绍',
+  `next_fire_time` bigint DEFAULT NULL COMMENT '上一次触发时间（毫秒）',
+  `prev_fire_time` bigint DEFAULT NULL COMMENT '下一次触发时间（默认为-1表示不触发）',
+  `priority` int DEFAULT NULL COMMENT '优先级',
+  `trigger_state` varchar(16) NOT NULL COMMENT '触发器状态',
+  `trigger_type` varchar(8) NOT NULL COMMENT '触发器的类型',
+  `start_time` bigint NOT NULL COMMENT '开始时间',
+  `end_time` bigint DEFAULT NULL COMMENT '结束时间',
+  `calendar_name` varchar(200) DEFAULT NULL COMMENT '日程表名称',
+  `misfire_instr` smallint DEFAULT NULL COMMENT '补偿执行的策略',
+  `job_data` blob COMMENT '存放持久化job对象',
+  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
+  KEY `sched_name` (`sched_name`,`job_name`,`job_group`),
+  CONSTRAINT `qrtz_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `job_name`, `job_group`) REFERENCES `qrtz_job_details` (`sched_name`, `job_name`, `job_group`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='触发器详细信息表';
+-- 启用外键检查
+SET FOREIGN_KEY_CHECKS=1;
+
+
+-- ----------------------------
+-- 二 、项目管理模块
+-- ----------------------------
+
+
+-- ----------------------------
+-- 1、合同管理表
+-- ----------------------------
+DROP TABLE IF EXISTS `pm_contract`;
+CREATE TABLE `pm_contract` (
+  `contract_id` bigint NOT NULL AUTO_INCREMENT COMMENT '合同主键ID',
+  `contract_code` varchar(100) DEFAULT NULL COMMENT '合同编号',
+  `contract_name` varchar(200) NOT NULL COMMENT '合同名称',
+  `customer_id` bigint NOT NULL COMMENT '关联客户ID',
+  `customer_name` varchar(200) DEFAULT NULL COMMENT '客户名称',
+  `dept_id` bigint DEFAULT NULL COMMENT '部门ID',
+  `dept_name` varchar(100) DEFAULT NULL COMMENT '部门名称',
+  `team_id` bigint DEFAULT NULL COMMENT '合同所属团队ID',
+  `team_leader_id` bigint DEFAULT NULL COMMENT '团队负责人ID',
+  `contract_type` varchar(50) NOT NULL COMMENT '合同类型(字典:sys_htlx)',
+  `contract_status` varchar(50) DEFAULT '未签署' COMMENT '合同状态(字典:sys_htzt)',
+  `contract_sign_date` date DEFAULT NULL COMMENT '合同签订日期',
+  `contract_period` int DEFAULT NULL COMMENT '合同周期(月)',
+  `contract_amount` decimal(15,2) NOT NULL COMMENT '合同金额(含税)',
+  `tax_rate` decimal(5,2) DEFAULT NULL COMMENT '税率(%)',
+  `amount_no_tax` decimal(15,2) DEFAULT NULL COMMENT '不含税金额',
+  `tax_amount` decimal(15,2) DEFAULT NULL COMMENT '税金',
+  `confirm_amount` decimal(15,2) DEFAULT '0.00' COMMENT '合同确认金额',
+  `confirm_year` varchar(10) DEFAULT NULL COMMENT '确认年份(字典:sys_ndgl)',
+  `free_maintenance_period` int DEFAULT NULL COMMENT '免维期(月)',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  `reserved_field1` varchar(64) DEFAULT NULL COMMENT '备用域1',
+  `reserved_field2` varchar(64) DEFAULT NULL COMMENT '备用域2',
+  `reserved_field3` varchar(64) DEFAULT NULL COMMENT '备用域3',
+  `reserved_field4` varchar(64) DEFAULT NULL COMMENT '备用域4',
+  `reserved_field5` varchar(64) DEFAULT NULL COMMENT '备用域5',
+  PRIMARY KEY (`contract_id`),
+  UNIQUE KEY `uk_contract_code` (`contract_code`),
+  KEY `idx_customer_id` (`customer_id`),
+  KEY `idx_contract_status` (`contract_status`),
+  KEY `idx_contract_sign_date` (`contract_sign_date`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='合同管理表';
+
+-- ----------------------------
+-- 2、客户信息表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_customer`;
 CREATE TABLE `pm_customer` (
   `customer_id` bigint NOT NULL AUTO_INCREMENT COMMENT '客户主键ID',
   `customer_simple_name` varchar(200) NOT NULL COMMENT '客户简称',
   `customer_all_name` varchar(200) NOT NULL COMMENT '客户全称',
-  `industry` varchar(100) DEFAULT NULL COMMENT '所属行业(字典表 字典类型industry)',
-  `region` varchar(100) DEFAULT NULL COMMENT '所属区域(字典表 : 字典类型sys_yjqy)',
+  `industry` varchar(100) DEFAULT NULL COMMENT '所属行业',
+  `region` varchar(100) DEFAULT NULL COMMENT '所属区域',
   `sales_manager_id` bigint DEFAULT NULL COMMENT '销售负责人ID',
-  `sales_manager_name` varchar(100) DEFAULT NULL COMMENT '销售负责人姓名',
   `office_address` varchar(500) DEFAULT NULL COMMENT '办公地址',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
@@ -430,7 +692,7 @@ CREATE TABLE `pm_customer` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客户信息表';
 
 -- ----------------------------
--- 23、客户联系人表
+-- 3、客户联系人表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_customer_contact`;
 CREATE TABLE `pm_customer_contact` (
@@ -438,7 +700,7 @@ CREATE TABLE `pm_customer_contact` (
   `customer_id` bigint NOT NULL COMMENT '客户ID',
   `contact_name` varchar(100) NOT NULL COMMENT '联系人姓名',
   `contact_phone` varchar(50) NOT NULL COMMENT '联系人电话',
-  `contact_tag` varchar(100) NOT NULL COMMENT '联系人标签(字典表，字典类型contact_tag)',
+  `contact_tag` varchar(100) NOT NULL COMMENT '联系人标签',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -450,9 +712,8 @@ CREATE TABLE `pm_customer_contact` (
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客户联系人表';
 
-
 -- --------------------------
--- 24、款项表
+-- 4、款项表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_payment`;
 CREATE TABLE `pm_payment` (
@@ -483,7 +744,7 @@ CREATE TABLE `pm_payment` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='款项表';
 
 -- ----------------------------
--- 25、款项里程碑表
+-- 5、款项里程碑表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_payment_milestone`;
 CREATE TABLE `pm_payment_milestone` (
@@ -504,7 +765,7 @@ CREATE TABLE `pm_payment_milestone` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='款项里程碑表';
 
 -- ----------------------------
--- 26、项目管理表
+-- 6、项目管理表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_project`;
 CREATE TABLE `pm_project` (
@@ -515,7 +776,7 @@ CREATE TABLE `pm_project` (
   `industry` varchar(50) DEFAULT NULL COMMENT '行业',
   `region` varchar(50) DEFAULT NULL COMMENT '区域',
   `short_name` varchar(50) DEFAULT NULL COMMENT '简称',
-  `year` int DEFAULT NULL COMMENT '年份',
+  `established_year` int DEFAULT NULL COMMENT '立项年份',
   `project_category` varchar(50) DEFAULT NULL COMMENT '项目分类',
   `project_dept` varchar(100) DEFAULT NULL COMMENT '项目部门',
   `project_status` varchar(50) DEFAULT NULL COMMENT '项目状态',
@@ -539,14 +800,13 @@ CREATE TABLE `pm_project` (
   `end_date` date DEFAULT NULL COMMENT '结束日期',
   `production_date` date DEFAULT NULL COMMENT '投产日期',
   `acceptance_date` date DEFAULT NULL COMMENT '验收日期',
-  `implementation_year` varchar(10) DEFAULT NULL COMMENT '实施年度',
   `project_budget` decimal(15,2) DEFAULT NULL COMMENT '项目预算(元)',
   `project_cost` decimal(15,2) DEFAULT NULL COMMENT '项目费用(元)',
-  `cost_budget` decimal(15,2) DEFAULT NULL COMMENT '费用预算(元)',
-  `budget_cost` decimal(15,2) DEFAULT NULL COMMENT '成本预算(元)',
+  `expense_budget` decimal(15,2) DEFAULT NULL COMMENT '费用预算(元)',
+  `cost_budget` decimal(15,2) DEFAULT NULL COMMENT '成本预算(元)',
   `labor_cost` decimal(15,2) DEFAULT NULL COMMENT '人力费用(元)',
   `purchase_cost` decimal(15,2) DEFAULT '0.00' COMMENT '采购成本',
-  `approval_status` varchar(20) DEFAULT NULL COMMENT '审批状态(待审核/已通过/已拒绝)',
+  `approval_status` varchar(20) DEFAULT NULL COMMENT '审批状态(0待审核/1已通过/2已拒绝)',
   `approval_reason` varchar(500) DEFAULT NULL COMMENT '审批意见',
   `industry_code` varchar(50) DEFAULT NULL COMMENT '行业代码',
   `region_code` varchar(50) DEFAULT NULL COMMENT '区域代码(字典:sys_yjqy)',
@@ -566,11 +826,11 @@ CREATE TABLE `pm_project` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `confirm_status` char(1) DEFAULT '0' COMMENT '确认状态（0=未确认 1=已确认）',
-  `confirm_quarter` varchar(20) DEFAULT NULL COMMENT '确认季度',
+  `revenue_confirm_status` char(1) DEFAULT '0' COMMENT '收入确认状态（0=未确认 1=已确认）',
+  `revenue_confirm_year` varchar(20) DEFAULT NULL COMMENT '收入确认年度',
   `confirm_amount` decimal(15,2) DEFAULT NULL COMMENT '确认金额（含税）',
   `after_tax_amount` decimal(15,2) DEFAULT NULL COMMENT '税后金额',
-  `confirm_user_name` varchar(64) DEFAULT NULL COMMENT '确认人姓名',
+  `company_revenue_confirmed_by_name` varchar(64) DEFAULT NULL COMMENT '公司收入确认人姓名',
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `uk_project_code` (`project_code`),
   KEY `idx_approval_status` (`approval_status`),
@@ -579,7 +839,7 @@ CREATE TABLE `pm_project` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目管理表';
 
 -- ----------------------------
--- 27、项目审核表
+-- 7、项目审核表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_project_approval`;
 CREATE TABLE `pm_project_approval` (
@@ -601,9 +861,61 @@ CREATE TABLE `pm_project_approval` (
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目审核表';
 
+-- ----------------------------
+-- 8、项目合同关系表
+-- ----------------------------
+DROP TABLE IF EXISTS `pm_project_contract_rel`;
+CREATE TABLE `pm_project_contract_rel` (
+  `rel_id` bigint NOT NULL AUTO_INCREMENT COMMENT '关系主键ID',
+  `project_id` varchar(50) NOT NULL COMMENT '项目ID',
+  `project_name` varchar(200) DEFAULT NULL COMMENT '项目名称',
+  `contract_id` bigint NOT NULL COMMENT '合同ID',
+  `contract_name` varchar(200) DEFAULT NULL COMMENT '合同名称',
+  `rel_type` varchar(50) DEFAULT '主合同' COMMENT '关联类型(主合同、补充协议、变更合同)',
+  `is_main` char(1) DEFAULT '1' COMMENT '是否主合同(1是 0否)',
+  `rel_status` varchar(50) DEFAULT '有效' COMMENT '关系状态(有效、失效)',
+  `bind_date` date DEFAULT NULL COMMENT '关联日期',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`rel_id`),
+  UNIQUE KEY `uk_project_contract` (`project_id`,`contract_id`,`del_flag`),
+  KEY `idx_project_id` (`project_id`),
+  KEY `idx_contract_id` (`contract_id`),
+  KEY `idx_is_main` (`is_main`),
+  KEY `idx_rel_status` (`rel_status`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目合同关系表';
 
 -- ----------------------------
--- 29、项目人员管理表
+-- 9、项目经理表
+-- ----------------------------
+CREATE TABLE `pm_project_manager_change` (
+  `change_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '变更主键ID',
+  `project_id` bigint(20) NOT NULL COMMENT '项目ID',
+  `old_manager_id` bigint(20) DEFAULT NULL COMMENT '原项目经理ID',
+  `new_manager_id` bigint(20) NOT NULL COMMENT '新项目经理ID',
+
+  -- 通用字段
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+ `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+
+  PRIMARY KEY (`change_id`),
+  KEY `idx_project_id` (`project_id`),
+  KEY `idx_old_manager_id` (`old_manager_id`),
+  KEY `idx_new_manager_id` (`new_manager_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目经理变更表';
+
+-- ----------------------------
+-- 10、项目人员管理表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_project_member`;
 CREATE TABLE `pm_project_member` (
@@ -626,7 +938,7 @@ CREATE TABLE `pm_project_member` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目人员管理表';
 
 -- ----------------------------
--- 30、团队收入确认表
+-- 11、团队收入确认表
 -- ----------------------------
 DROP TABLE IF EXISTS `pm_team_revenue_confirmation`;
 CREATE TABLE `pm_team_revenue_confirmation` (
@@ -648,181 +960,46 @@ CREATE TABLE `pm_team_revenue_confirmation` (
   KEY `idx_confirm_time` (`confirm_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='团队收入确认表';
 
--- ----------------------------
--- 31、Blob类型的触发器表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_blob_triggers`;
-CREATE TABLE `qrtz_blob_triggers` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
-  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
-  `blob_data` blob COMMENT '存放持久化Trigger对象',
-  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
-  CONSTRAINT `qrtz_blob_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Blob类型的触发器表';
-
--- ----------------------------
--- 32、日历信息表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_calendars`;
-CREATE TABLE `qrtz_calendars` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `calendar_name` varchar(200) NOT NULL COMMENT '日历名称',
-  `calendar` blob NOT NULL COMMENT '存放持久化calendar对象',
-  PRIMARY KEY (`sched_name`,`calendar_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='日历信息表';
-
--- ----------------------------
--- 33、Cron类型的触发器表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_cron_triggers`;
-CREATE TABLE `qrtz_cron_triggers` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
-  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
-  `cron_expression` varchar(200) NOT NULL COMMENT 'cron表达式',
-  `time_zone_id` varchar(80) DEFAULT NULL COMMENT '时区',
-  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
-  CONSTRAINT `qrtz_cron_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Cron类型的触发器表';
-
--- ----------------------------
--- 34、已触发的触发器表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_fired_triggers`;
-CREATE TABLE `qrtz_fired_triggers` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `entry_id` varchar(95) NOT NULL COMMENT '调度器实例id',
-  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
-  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
-  `instance_name` varchar(200) NOT NULL COMMENT '调度器实例名',
-  `fired_time` bigint NOT NULL COMMENT '触发的时间',
-  `sched_time` bigint NOT NULL COMMENT '定时器制定的时间',
-  `priority` int NOT NULL COMMENT '优先级',
-  `state` varchar(16) NOT NULL COMMENT '状态',
-  `job_name` varchar(200) DEFAULT NULL COMMENT '任务名称',
-  `job_group` varchar(200) DEFAULT NULL COMMENT '任务组名',
-  `is_nonconcurrent` varchar(1) DEFAULT NULL COMMENT '是否并发',
-  `requests_recovery` varchar(1) DEFAULT NULL COMMENT '是否接受恢复执行',
-  PRIMARY KEY (`sched_name`,`entry_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='已触发的触发器表';
 
 
--- ----------------------------
--- 35、任务详细信息表
--- ----------------------------
-DROP TABLE IF EXISTS `任务详细信息表`;
-CREATE TABLE `qrtz_job_details` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `job_name` varchar(200) NOT NULL COMMENT '任务名称',
-  `job_group` varchar(200) NOT NULL COMMENT '任务组名',
-  `description` varchar(250) DEFAULT NULL COMMENT '相关介绍',
-  `job_class_name` varchar(250) NOT NULL COMMENT '执行任务类名称',
-  `is_durable` varchar(1) NOT NULL COMMENT '是否持久化',
-  `is_nonconcurrent` varchar(1) NOT NULL COMMENT '是否并发',
-  `is_update_data` varchar(1) NOT NULL COMMENT '是否更新数据',
-  `requests_recovery` varchar(1) NOT NULL COMMENT '是否接受恢复执行',
-  `job_data` blob COMMENT '存放持久化job对象',
-  PRIMARY KEY (`sched_name`,`job_name`,`job_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务详细信息表';
+-- =============================================
+-- 中国区域表设计（省、市两级）- V2版本
+-- 日期: 2026-02-03
+-- 说明:
+--   一级区域：使用字典表 sys_dict_data（字典类型：sys_yjqy）- 需手动维护
+--   二级区域：省级（省、直辖市、自治区）- 不包含港澳台
+--   三级区域：市级
+-- 修改内容：
+--   1. 移除一级区域字典数据的自动插入（需在字典管理中手动维护）
+--   2. 北京市使用独立区域值：BJ
+--   3. 其他省份使用区域缩写：HBQY、DBQY、HDQY、HZQY、HNQY、XNQY、XBQY
+--   4. 移除港澳台地区相关数据
+-- =============================================
+-- =============================================
+-- 12. 二级区域表
+-- =============================================
+DROP TABLE IF EXISTS `pm_secondary_region`;
+CREATE TABLE `pm_secondary_region` (
+  `province_id` bigint NOT NULL AUTO_INCREMENT COMMENT '省份ID',
+  `province_code` varchar(10) NOT NULL COMMENT '省份代码（行政区划代码前2位）',
+  `province_name` varchar(50) NOT NULL COMMENT '省份名称',
+  `province_type` varchar(20) DEFAULT '0' COMMENT '省份类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）',
+  `region_dict_value` varchar(50) NOT NULL COMMENT '一级区域字典值（关联sys_dict_data的dict_value）',
+  `sort_order` int DEFAULT 0 COMMENT '排序',
+  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 1删除）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`province_id`),
+  UNIQUE KEY `uk_province_code` (`province_code`),
+  KEY `idx_region_dict_value` (`region_dict_value`),
+  KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='省级区域表';
 
 
--- ----------------------------
--- 36、存储的悲观锁信息表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_locks`;
-CREATE TABLE `qrtz_locks` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `lock_name` varchar(40) NOT NULL COMMENT '悲观锁名称',
-  PRIMARY KEY (`sched_name`,`lock_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='存储的悲观锁信息表';
 
 
--- ----------------------------
--- 37、暂停的触发器表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_paused_trigger_grps`;
-CREATE TABLE `qrtz_paused_trigger_grps` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
-  PRIMARY KEY (`sched_name`,`trigger_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='暂停的触发器表';
 
-
--- ----------------------------
--- 38、调度器状态表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_scheduler_state`;
-CREATE TABLE `qrtz_scheduler_state` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `instance_name` varchar(200) NOT NULL COMMENT '实例名称',
-  `last_checkin_time` bigint NOT NULL COMMENT '上次检查时间',
-  `checkin_interval` bigint NOT NULL COMMENT '检查间隔时间',
-  PRIMARY KEY (`sched_name`,`instance_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='调度器状态表';
-
--- ----------------------------
--- 39、简单触发器的信息表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_simple_triggers`;
-CREATE TABLE `qrtz_simple_triggers` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
-  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
-  `repeat_count` bigint NOT NULL COMMENT '重复的次数统计',
-  `repeat_interval` bigint NOT NULL COMMENT '重复的间隔时间',
-  `times_triggered` bigint NOT NULL COMMENT '已经触发的次数',
-  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
-  CONSTRAINT `qrtz_simple_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='简单触发器的信息表';
-
--- ----------------------------
--- 40、同步机制的行锁表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_simprop_triggers`;
-CREATE TABLE `qrtz_simprop_triggers` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `trigger_name` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_name的外键',
-  `trigger_group` varchar(200) NOT NULL COMMENT 'qrtz_triggers表trigger_group的外键',
-  `str_prop_1` varchar(512) DEFAULT NULL COMMENT 'String类型的trigger的第一个参数',
-  `str_prop_2` varchar(512) DEFAULT NULL COMMENT 'String类型的trigger的第二个参数',
-  `str_prop_3` varchar(512) DEFAULT NULL COMMENT 'String类型的trigger的第三个参数',
-  `int_prop_1` int DEFAULT NULL COMMENT 'int类型的trigger的第一个参数',
-  `int_prop_2` int DEFAULT NULL COMMENT 'int类型的trigger的第二个参数',
-  `long_prop_1` bigint DEFAULT NULL COMMENT 'long类型的trigger的第一个参数',
-  `long_prop_2` bigint DEFAULT NULL COMMENT 'long类型的trigger的第二个参数',
-  `dec_prop_1` decimal(13,4) DEFAULT NULL COMMENT 'decimal类型的trigger的第一个参数',
-  `dec_prop_2` decimal(13,4) DEFAULT NULL COMMENT 'decimal类型的trigger的第二个参数',
-  `bool_prop_1` varchar(1) DEFAULT NULL COMMENT 'Boolean类型的trigger的第一个参数',
-  `bool_prop_2` varchar(1) DEFAULT NULL COMMENT 'Boolean类型的trigger的第二个参数',
-  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
-  CONSTRAINT `qrtz_simprop_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `trigger_name`, `trigger_group`) REFERENCES `qrtz_triggers` (`sched_name`, `trigger_name`, `trigger_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='同步机制的行锁表';
-
--- ----------------------------
--- 41、触发器详细信息表
--- ----------------------------
-DROP TABLE IF EXISTS `qrtz_triggers`;
-CREATE TABLE `qrtz_triggers` (
-  `sched_name` varchar(120) NOT NULL COMMENT '调度名称',
-  `trigger_name` varchar(200) NOT NULL COMMENT '触发器的名字',
-  `trigger_group` varchar(200) NOT NULL COMMENT '触发器所属组的名字',
-  `job_name` varchar(200) NOT NULL COMMENT 'qrtz_job_details表job_name的外键',
-  `job_group` varchar(200) NOT NULL COMMENT 'qrtz_job_details表job_group的外键',
-  `description` varchar(250) DEFAULT NULL COMMENT '相关介绍',
-  `next_fire_time` bigint DEFAULT NULL COMMENT '上一次触发时间（毫秒）',
-  `prev_fire_time` bigint DEFAULT NULL COMMENT '下一次触发时间（默认为-1表示不触发）',
-  `priority` int DEFAULT NULL COMMENT '优先级',
-  `trigger_state` varchar(16) NOT NULL COMMENT '触发器状态',
-  `trigger_type` varchar(8) NOT NULL COMMENT '触发器的类型',
-  `start_time` bigint NOT NULL COMMENT '开始时间',
-  `end_time` bigint DEFAULT NULL COMMENT '结束时间',
-  `calendar_name` varchar(200) DEFAULT NULL COMMENT '日程表名称',
-  `misfire_instr` smallint DEFAULT NULL COMMENT '补偿执行的策略',
-  `job_data` blob COMMENT '存放持久化job对象',
-  PRIMARY KEY (`sched_name`,`trigger_name`,`trigger_group`),
-  KEY `sched_name` (`sched_name`,`job_name`,`job_group`),
-  CONSTRAINT `qrtz_triggers_ibfk_1` FOREIGN KEY (`sched_name`, `job_name`, `job_group`) REFERENCES `qrtz_job_details` (`sched_name`, `job_name`, `job_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='触发器详细信息表';
--- 启用外键检查
-SET FOREIGN_KEY_CHECKS=1;

@@ -42,3 +42,12 @@ export function delCustomer(customerId) {
     method: 'delete'
   })
 }
+
+// 检查客户简称是否唯一
+export function checkCustomerSimpleNameUnique(customerSimpleName, customerId) {
+  return request({
+    url: '/project/customer/checkSimpleNameUnique',
+    method: 'get',
+    params: { customerSimpleName, customerId }
+  })
+}

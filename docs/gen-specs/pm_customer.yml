@@ -3,7 +3,7 @@
 # ============================
 basicInfo:
   tableName: pm_customer
-  tableComment: 客户信息表
+  tableComment: 客户信息
   className: Customer
   functionAuthor: ruoyi
   remark: ""
@@ -14,12 +14,12 @@ basicInfo:
 columns:
   customer_id:
     columnComment: 客户主键ID
-    columnType: bigint
+    columnType: bigint(20)
     javaType: Long
     javaField: customerId
     isInsert: false
     isEdit: false
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -46,13 +46,13 @@ columns:
     isInsert: true
     isEdit: true
     isList: true
-    isQuery: true
+    isQuery: false
     queryType: LIKE
     isRequired: true
     htmlType: input
     dictType: ""
   industry:
-    columnComment: 所属行业(字典表 字典类型industry)
+    columnComment: 所属行业
     columnType: varchar(100)
     javaType: String
     javaField: industry
@@ -65,7 +65,7 @@ columns:
     htmlType: select
     dictType: "industry"
   region:
-    columnComment: 所属区域(字典表 : 字典类型sys_yjqy)
+    columnComment: 所属区域
     columnType: varchar(100)
     javaType: String
     javaField: region
@@ -79,29 +79,16 @@ columns:
     dictType: "sys_yjqy"
   sales_manager_id:
     columnComment: 销售负责人ID
-    columnType: bigint
+    columnType: bigint(20)
     javaType: Long
     javaField: salesManagerId
     isInsert: true
     isEdit: true
-    isList: false
+    isList: true
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
-    dictType: ""
-  sales_manager_name:
-    columnComment: 销售负责人姓名
-    columnType: varchar(100)
-    javaType: String
-    javaField: salesManagerName
-    isInsert: true
-    isEdit: true
-    isList: true
-    isQuery: true
-    queryType: LIKE
-    isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
   office_address:
     columnComment: 办公地址
@@ -110,7 +97,7 @@ columns:
     javaField: officeAddress
     isInsert: true
     isEdit: true
-    isList: false
+    isList: true
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -150,7 +137,7 @@ columns:
     isInsert: false
     isEdit: false
     isList: true
-    isQuery: true
+    isQuery: false
     queryType: EQ
     isRequired: false
     htmlType: datetime
@@ -208,19 +195,21 @@ genInfo:
   parentMenuId: 3
   subTableName: pm_customer_contact
   subTableFkName: customer_id
+  subTableGenerateMenu: false
 
 # ============================
-# 子表字段信息 (pm_customer_contact)
+# 子表字段信息（仅 tplCategory=sub 时需要）
 # ============================
-subColumns:
+subTableColumns:
   contact_id:
     columnComment: 联系人主键ID
-    columnType: bigint
+    columnType: bigint(20)
     javaType: Long
     javaField: contactId
+    isPk: "1"
     isInsert: false
     isEdit: false
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -228,10 +217,11 @@ subColumns:
     dictType: ""
   customer_id:
     columnComment: 客户ID
-    columnType: bigint
+    columnType: bigint(20)
     javaType: Long
     javaField: customerId
-    isInsert: false
+    isPk: "0"
+    isInsert: true
     isEdit: false
     isList: false
     isQuery: false
@@ -244,6 +234,7 @@ subColumns:
     columnType: varchar(100)
     javaType: String
     javaField: contactName
+    isPk: "0"
     isInsert: true
     isEdit: true
     isList: true
@@ -257,19 +248,21 @@ subColumns:
     columnType: varchar(50)
     javaType: String
     javaField: contactPhone
+    isPk: "0"
     isInsert: true
     isEdit: true
     isList: true
     isQuery: true
-    queryType: LIKE
+    queryType: EQ
     isRequired: true
     htmlType: input
     dictType: ""
   contact_tag:
-    columnComment: 联系人标签(字典表，字典类型contact_tag)
+    columnComment: 联系人标签
     columnType: varchar(100)
     javaType: String
     javaField: contactTag
+    isPk: "0"
     isInsert: true
     isEdit: true
     isList: true
@@ -283,6 +276,7 @@ subColumns:
     columnType: char(1)
     javaType: String
     javaField: delFlag
+    isPk: "0"
     isInsert: false
     isEdit: false
     isList: false
@@ -296,6 +290,7 @@ subColumns:
     columnType: varchar(64)
     javaType: String
     javaField: createBy
+    isPk: "0"
     isInsert: false
     isEdit: false
     isList: false
@@ -309,6 +304,7 @@ subColumns:
     columnType: datetime
     javaType: Date
     javaField: createTime
+    isPk: "0"
     isInsert: false
     isEdit: false
     isList: false
@@ -322,6 +318,7 @@ subColumns:
     columnType: varchar(64)
     javaType: String
     javaField: updateBy
+    isPk: "0"
     isInsert: false
     isEdit: false
     isList: false
@@ -335,6 +332,7 @@ subColumns:
     columnType: datetime
     javaType: Date
     javaField: updateTime
+    isPk: "0"
     isInsert: false
     isEdit: false
     isList: false
@@ -348,9 +346,10 @@ subColumns:
     columnType: varchar(500)
     javaType: String
     javaField: remark
+    isPk: "0"
     isInsert: true
     isEdit: true
-    isList: false
+    isList: true
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -358,173 +357,572 @@ subColumns:
     dictType: ""
 
 # ============================
-# 自定义 UI（超出标准9种显示类型的需求）
+# 定制需求（超出标准模板的组件/交互/接口需求）
 # ============================
 customizations:
-  # 查询表单增强
-  queryFormEnhancements:
-    - field: customerSimpleName
-      component: el-autocomplete
-      description: 客户简称使用自动补全组件，支持模糊搜索历史客户简称
-      implementation: |
-        使用 el-autocomplete 替代普通 input
-        fetch-suggestions 绑定到 querySimpleNameSearch 方法
-        从当前客户列表中提取唯一的客户简称作为建议列表
+  customer_contact_layout_optimization:
+    intent: "优化客户联系人表单布局，使各列宽度合理分配，充分利用对话框宽度"
+    component:
+      type: "custom"
+      spec: |
+        客户联系人表单（el-table）列宽优化：
+        - 序号列：70px（从 50px 调整）
+        - 联系人姓名列：160px（保持标签"联系人姓名"，从 150px 调整）
+        - 联系人电话列：260px（保持标签"联系人电话"，从 150px 调整）
+        - 联系人标签列：150px（保持不变）
+        - 备注列：min-width: 120px（新增列，自动占满剩余空间）
+        总宽度：860px+，充分利用对话框的 900px 宽度
+    bindTo: ["contact_name", "contact_phone", "contact_tag", "remark"]
+    service: null
+    notes: "纯前端布局优化，无需后端接口。注意：保持原有列标签'联系人姓名'和'联系人电话'，不改为'联系人'和'联系方式'"
 
-    - field: customerAllName
-      component: el-autocomplete
-      description: 客户全称使用自动补全组件，支持模糊搜索历史客户全称
-      implementation: |
-        使用 el-autocomplete 替代普通 input
-        fetch-suggestions 绑定到 queryAllNameSearch 方法
-        从当前客户列表中提取唯一的客户全称作为建议列表
+  contact_phone_placeholder:
+    intent: "联系方式输入框的 placeholder 优化，提示用户可以同时输入手机号和座机号"
+    component:
+      type: "el-input"
+      props:
+        placeholder: "如：13800138000/010-88888888"
+        maxlength: 50
+    bindTo: "contact_phone"
+    service: null
+    notes: "使用示例格式提示用户可以用斜杠分隔同时输入手机号和座机号"
 
-  # 主子表联动编辑
-  subTableInlineEdit:
-    description: 在客户编辑对话框中内嵌联系人表格，支持动态添加/删除联系人
-    features:
-      - 在表单中使用 el-divider 分隔主表和子表信息
-      - 子表使用 el-table 展示，每行可编辑
-      - 提供"添加联系人"按钮动态增加行
-      - 每行提供"删除"按钮移除联系人
-      - 子表字段直接在表格单元格中使用表单组件（input/select）
-    implementation: |
-      <el-divider content-position="left">联系人信息</el-divider>
-      <el-button @click="handleAddContact">添加联系人</el-button>
-      <el-table :data="form.contactList">
-        <el-table-column label="联系人姓名">
-          <template #default="scope">
-            <el-input v-model="scope.row.contactName" />
-          </template>
-        </el-table-column>
-        <!-- 其他列类似 -->
-      </el-table>
+  contact_phone_validation:
+    intent: "联系人字段添加非空验证"
+    component:
+      type: "custom"
+      spec: |
+        在提交表单时验证联系人的所有必填字段：
+        - 检查 contact.contactName 是否为空，如果为空显示："第X个联系人的联系人姓名不能为空"
+        - 检查 contact.contactPhone 是否为空，如果为空显示："第X个联系人的联系人电话不能为空"
+        - 检查 contact.contactTag 是否为空，如果为空显示："第X个联系人的联系人标签不能为空"
+        - 验证顺序：contactName → contactPhone → contactTag
+    bindTo: ["contact_name", "contact_phone", "contact_tag"]
+    service: null
+    notes: "在 submitForm() 方法中添加验证逻辑，遍历 customerContactList 数组进行验证"
 
-  # 表单验证增强
-  customValidation:
-    - field: contactPhone
-      description: 联系人电话号码自定义验证，支持手机号和座机号两种格式
-      rules:
-        - 手机号格式：1开头的11位数字 (正则：/^1[3-9]\d{9}$/)
-        - 座机号格式：区号-号码 或 号码（支持分机号）(正则：/^(0\d{2,3}-?)?\d{7,8}(-\d{1,6})?$/)
-      implementation: |
-        在 submitForm 中手动验证所有联系人的电话号码
-        遍历 form.contactList，对每个 contact.contactPhone 进行正则校验
-        如果格式不正确，使用 proxy.$modal.msgError 提示用户
+  excel_export_field_mapping:
+    intent: "修复Excel导出字段映射问题，移除重复的@Excel注解"
+    component:
+      type: "custom"
+      spec: |
+        问题：实体类中 industry/region 字段和 industryName/regionName/salesManagerName 字段都有 @Excel 注解，
+        导致导出时前面的列为空（字典值），后面的列才有正确的显示值（字典标签）。
 
-  # 数据展示优化
-  displayEnhancements:
-    - field: createTime
-      description: 创建时间在列表中格式化显示为 YYYY-MM-DD
-      implementation: |
-        使用 parseTime 工具函数格式化
-        <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
+        解决方案：
+        - 移除 industry 字段的 @Excel 注解（保留字段本身，用于数据库存储）
+        - 移除 region 字段的 @Excel 注解（保留字段本身，用于数据库存储）
+        - 保留 industryName 字段的 @Excel(name = "所属行业")（用于导出显示）
+        - 保留 regionName 字段的 @Excel(name = "所属区域")（用于导出显示）
+        - 保留 salesManagerName 字段的 @Excel(name = "销售负责人")（用于导出显示）
+    bindTo: ["industry", "region", "sales_manager_id"]
+    service: null
+    notes: "修改 Customer.java 实体类，移除原始字段的 @Excel 注解，只保留显示字段的注解"
 
-    - field: industry
-      description: 所属行业在列表中使用字典标签组件显示
-      implementation: |
-        <dict-tag :options="industry" :value="scope.row.industry"/>
+  excel_export_column_order:
+    intent: "调整Excel导出列顺序，使其与列表页面的列顺序一致"
+    component:
+      type: "custom"
+      spec: |
+        列表页面的列顺序：
+        1. 客户简称
+        2. 客户全称
+        3. 所属行业
+        4. 所属区域
+        5. 销售负责人
+        6. 办公地址
 
-    - field: region
-      description: 所属区域在列表中使用字典标签组件显示
-      implementation: |
-        <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
+        使用 @Excel 注解的 sort 参数控制导出顺序：
+        - @Excel(name = "客户简称", sort = 1)
+        - @Excel(name = "客户全称", sort = 2)
+        - @Excel(name = "所属行业", sort = 3) → industryName 字段
+        - @Excel(name = "所属区域", sort = 4) → regionName 字段
+        - @Excel(name = "销售负责人", sort = 5) → salesManagerName 字段
+        - @Excel(name = "办公地址", sort = 6)
 
-  # 业务逻辑特性
-  businessLogic:
-    - feature: 主子表级联保存
-      description: 新增/修改客户时，同时保存客户基本信息和联系人列表
-      implementation: |
-        form.contactList 作为客户对象的属性一起提交
-        后端 Service 层使用事务处理主子表的插入/更新/删除
+        注意：联系人列在列表页面中是动态展示的（可展开/折叠），不适合导出到Excel，不添加 @Excel 注解
+    bindTo: ["customer_simple_name", "customer_all_name", "industry", "region", "sales_manager_id", "office_address"]
+    service: null
+    notes: "修改 Customer.java 实体类，为所有 @Excel 注解添加 sort 参数，确保导出列顺序与列表页面一致"
 
-    - feature: 主子表级联删除
-      description: 删除客户时，自动删除该客户下的所有联系人（通过 del_flag 软删除）
-      implementation: |
-        后端 Service 层在删除客户时，同时更新关联联系人的 del_flag
+  sales_manager_query_condition:
+    intent: "添加销售负责人查询条件，支持按销售负责人筛选客户"
+    component:
+      type: "el-select"
+      props:
+        placeholder: "请选择销售负责人"
+        clearable: true
+        filterable: true
+        options: "salesManagerList（从 listUserByPost('xsfzr') 获取）"
+    bindTo: "sales_manager_id"
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=xsfzr"
+      source: "复用 SysUserService，RuoYi 自带"
+      returns: "{ data: [{ userId, nickName }] }"
+      newApi: false
+    notes: |
+      实现步骤：
+      1. 在查询表单中添加销售负责人的 el-select 组件
+      2. 在 onMounted 生命周期钩子中调用 loadSalesManagers() 加载销售负责人列表（而非直接在 script setup 顶层调用）
+      3. 使用 listUserByPost('xsfzr') 接口获取岗位编码为 'xsfzr' 的用户列表
+      4. 查询参数 queryParams.salesManagerId 会自动传递到后端进行筛选
+      5. 需要在 script setup 中 import { listUserByPost } from "@/api/system/user"
+      6. 需要添加 salesManagerList 响应式变量：const salesManagerList = ref([])
 
-    - feature: 主子表级联查询
-      description: 查询客户详情时，自动加载该客户的所有联系人
-      implementation: |
-        Mapper XML 中使用 collection 标签配置一对多关联查询
-        或在 Service 层分别查询客户和联系人后组装
+  query_form_label_width:
+    intent: "统一调整查询条件的 label-width，根据最长 label 的汉字宽度来设置"
+    component:
+      type: "el-form"
+      props:
+        label-width: "90px"
+    bindTo: "queryParams"
+    service: null
+    notes: |
+      计算依据：
+      - 查询条件的 label 列表：
+        * 客户简称（4个汉字）
+        * 所属行业（4个汉字）
+        * 所属区域（4个汉字）
+        * 销售负责人（5个汉字）← 最长
+      - 计算方式：
+        * 最长 label：销售负责人（5个汉字）
+        * 每个汉字约 14px
+        * 5个汉字 = 70px
+        * 加上冒号和间距 ≈ 20px
+        * 总计：90px
+      - 原值：68px → 新值：90px
 
-  # 权限控制
-  permissions:
-    - project:customer:list - 查询客户列表
-    - project:customer:query - 查询客户详情
-    - project:customer:add - 新增客户
-    - project:customer:edit - 修改客户
-    - project:customer:remove - 删除客户
-    - project:customer:export - 导出客户数据
+  charset_collation_fix:
+    intent: "修复字符集排序规则冲突问题，避免 JOIN 系统表时报错"
+    component:
+      type: "custom"
+      spec: |
+        问题：MySQL 8.0 新建表默认使用 utf8mb4_0900_ai_ci 排序规则，
+        而系统表（sys_dict_data、sys_user）使用 utf8mb4_unicode_ci 排序规则。
+        在 JOIN 或 WHERE 条件中比较不同排序规则的字段时，MySQL 会报错：
+        "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_ci,IMPLICIT)"
 
-  # 操作日志
-  operationLog:
-    - action: INSERT
-      title: 客户管理
-      description: 新增客户时记录操作日志
-    - action: UPDATE
-      title: 客户管理
-      description: 修改客户时记录操作日志
-    - action: DELETE
-      title: 客户管理
-      description: 删除客户时记录操作日志
-    - action: EXPORT
-      title: 客户管理
-      description: 导出客户数据时记录操作日志
+        解决方案：
+        在 CustomerMapper.xml 的 selectCustomerList 查询中，所有 JOIN 系统表的条件都显式指定排序规则：
+        - left join sys_dict_data d1 on c.industry COLLATE utf8mb4_unicode_ci = d1.dict_value
+        - left join sys_dict_data d2 on c.region COLLATE utf8mb4_unicode_ci = d2.dict_value
+        - left join sys_user u on c.sales_manager_id = u.user_id（数字类型无需 COLLATE）
 
-  # Excel 导入导出
-  excelSupport:
-    description: 支持客户数据的 Excel 导出功能
-    exportFields:
-      - 客户主键ID (customerId)
-      - 客户简称 (customerSimpleName)
-      - 客户全称 (customerAllName)
-      - 所属行业 (industry)
-      - 所属区域 (region)
-      - 销售负责人姓名 (salesManagerName)
-    implementation: |
-      使用 @Excel 注解标记需要导出的字段
-      Controller 中使用 ExcelUtil 工具类导出
-      导出文件名格式：customer_{timestamp}.xlsx
+        同时在查询中关联字典表和用户表，获取显示名称：
+        - d1.dict_label as industry_name（所属行业名称）
+        - d2.dict_label as region_name（所属区域名称）
+        - u.nick_name as sales_manager_name（销售负责人名称）
+    bindTo: ["industry", "region", "sales_manager_id"]
+    service: null
+    notes: |
+      修改位置：ruoyi-project/src/main/resources/mapper/project/CustomerMapper.xml
+      - 修改 selectCustomerList 查询，添加 LEFT JOIN 关联查询
+      - 在 CustomerResult resultMap 中添加 industryName/regionName/salesManagerName 映射
+      - Customer.java 实体类中已添加对应的字段和 getter/setter 方法
 
-# ============================
-# 原始 DDL
-# ============================
-ddl: |
-  CREATE TABLE `pm_customer` (
-    `customer_id` bigint NOT NULL AUTO_INCREMENT COMMENT '客户主键ID',
-    `customer_simple_name` varchar(200) NOT NULL COMMENT '客户简称',
-    `customer_all_name` varchar(200) NOT NULL COMMENT '客户全称',
-    `industry` varchar(100) DEFAULT NULL COMMENT '所属行业(字典表 字典类型industry)',
-    `region` varchar(100) DEFAULT NULL COMMENT '所属区域(字典表 : 字典类型sys_yjqy)',
-    `sales_manager_id` bigint DEFAULT NULL COMMENT '销售负责人ID',
-    `sales_manager_name` varchar(100) DEFAULT NULL COMMENT '销售负责人姓名',
-    `office_address` varchar(500) DEFAULT NULL COMMENT '办公地址',
-    `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
-    `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
-    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
-    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `remark` varchar(500) DEFAULT NULL COMMENT '备注',
-    PRIMARY KEY (`customer_id`),
-    KEY `idx_sales_manager_id` (`sales_manager_id`),
-    KEY `idx_create_time` (`create_time`)
-  ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客户信息表';
+  customer_form_two_column_layout:
+    intent: "客户信息表单改为2列布局，提升空间利用率和用户体验"
+    component:
+      type: "custom"
+      spec: |
+        将客户信息的新增/编辑对话框表单改为2列布局：
+        - 对话框宽度：从 500px 改为 1100px（容纳联系人表格的操作列）
+        - 表单 label-width：从 80px 改为 100px
+        - 使用 el-row 和 el-col 实现2列布局：
+          * 第1行：客户简称（左）、客户全称（右）
+          * 第2行：所属行业（左）、所属区域（右）
+          * 第3行：办公地址（整行，textarea）
+          * 第4行：备注（整行，textarea）
+        - el-row 使用 :gutter="20" 设置列间距
+        - 每列使用 <el-col :span="12"> 实现等宽2列
+        - 整行字段使用 <el-col :span="24">
+        - el-select 组件添加 style="width: 100%" 确保宽度填满
 
-  CREATE TABLE `pm_customer_contact` (
-    `contact_id` bigint NOT NULL AUTO_INCREMENT COMMENT '联系人主键ID',
-    `customer_id` bigint NOT NULL COMMENT '客户ID',
-    `contact_name` varchar(100) NOT NULL COMMENT '联系人姓名',
-    `contact_phone` varchar(50) NOT NULL COMMENT '联系人电话',
-    `contact_tag` varchar(100) NOT NULL COMMENT '联系人标签(字典表，字典类型contact_tag)',
-    `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
-    `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
-    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
-    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `remark` varchar(500) DEFAULT NULL COMMENT '备注',
-    PRIMARY KEY (`contact_id`),
-    KEY `idx_customer_id` (`customer_id`),
-    KEY `idx_create_time` (`create_time`)
-  ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客户联系人表';
+        联系人表格列宽（总宽度约 1020px）：
+        - 选择框：50px
+        - 序号：70px
+        - 联系人姓名：160px
+        - 联系人电话：260px
+        - 联系人标签：150px
+        - 备注：min-width 120px
+        - 操作：80px
+    bindTo: "form"
+    service: null
+    notes: |
+      修改位置：ruoyi-ui/src/views/project/customer/index.vue
+      - 修改 el-dialog 的 width 属性
+      - 修改 el-form 的 label-width 属性
+      - 使用 el-row 和 el-col 包裹表单项实现2列布局
+      - 客户联系人表格保持在表单下方，不受2列布局影响
+
+  customer_list_columns_with_expand:
+    intent: "优化客户列表展示，添加序号列和联系人折叠展开功能"
+    component:
+      type: "custom"
+      spec: |
+        列表展示字段（按顺序）：
+        1. 选择框（type="selection"）
+        2. 序号（type="index"）
+        3. 客户简称
+        4. 客户全称
+        5. 所属行业（使用 dict-tag 显示字典标签）
+        6. 所属区域（使用 dict-tag 显示字典标签）
+        7. 销售负责人（显示用户昵称，通过 getSalesManagerName() 方法）
+        8. 办公地址（添加 show-overflow-tooltip 属性）
+        9. 创建时间（格式：yyyy-MM-dd）
+        10. 操作列（修改、删除按钮）
+        11. 展开列（type="expand"，显示联系人信息）
+
+        联系人展开功能：
+        - 使用 el-table-column type="expand" 实现折叠展开
+        - 默认折叠状态
+        - 展开后显示该客户的所有联系人信息（嵌套表格）
+        - 联系人表格字段：联系人姓名、联系人电话、联系人标签
+        - 不展示联系人的备注字段
+        - 如果没有联系人，显示"暂无联系人信息"提示
+        - 联系人数据从 customerContactList 属性获取
+
+        销售负责人显示逻辑：
+        - 添加 getSalesManagerName(salesManagerId) 方法
+        - 从 salesManagerList 中根据 userId 查找对应的 nickName
+    bindTo: "customerList"
+    service: null
+    notes: |
+      修改位置：
+      1. 后端：ruoyi-project/src/main/resources/mapper/project/CustomerMapper.xml
+         - 修改 selectCustomerList 的 resultMap 从 CustomerResult 改为 CustomerCustomerContactResult
+         - 这样列表查询会自动关联查询联系人信息
+
+      2. 前端：ruoyi-ui/src/views/project/customer/index.vue
+         - 添加 type="index" 序号列
+         - 添加 type="expand" 展开列（放在最后）
+         - 展开列中嵌套 el-table 显示联系人信息
+         - 添加 getSalesManagerName() 辅助方法
+
+  customer_contact_inline_delete:
+    intent: "联系人表格添加行内删除按钮，支持逻辑删除和批量删除确认"
+    component:
+      type: "custom"
+      spec: |
+        联系人表格操作优化：
+        1. 行内删除按钮：
+           - 在每行末尾添加"删除"按钮（el-button link type="danger"）
+           - 点击弹框确认："是否确认删除该联系人？"
+           - 确认后执行逻辑删除：设置 delFlag = '1'
+           - 从前端列表中移除该行（splice）
+           - 显示"删除成功"提示
+
+        2. 批量删除按钮：
+           - 点击弹框确认："是否确认删除选中的联系人？"
+           - 确认后执行逻辑删除：遍历选中项，设置 delFlag = '1'
+           - 从前端列表中过滤掉已删除的联系人
+           - 显示"删除成功"提示
+
+        3. 逻辑删除说明：
+           - 不直接从数组中删除数据
+           - 标记 delFlag = '1' 表示已删除
+           - 提交表单时，后端会根据 delFlag 判断是否删除
+           - 前端显示时过滤掉 delFlag = '1' 的数据
+
+        4. 表格列宽调整：
+           - 添加"操作"列，宽度 80px
+           - 包含行内删除按钮
+    bindTo: "customerContactList"
+    service: null
+    notes: |
+      修改位置：ruoyi-ui/src/views/project/customer/index.vue
+      - 在联系人表格中添加"操作"列
+      - 修改 handleDeleteCustomerContact() 方法，添加确认弹框和逻辑删除
+      - 新增 handleDeleteSingleContact(index) 方法，处理行内删除
+
+  customer_simple_name_unique_validation:
+    intent: "客户简称添加前后端重复性验证，确保数据唯一性"
+    component:
+      type: "custom"
+      spec: |
+        前端验证：
+        1. 在表单验证规则中添加自定义 validator
+        2. 触发时机：失焦（blur）时自动触发，不需要等到提交
+        3. 验证流程：
+           - 用户输入客户简称
+           - 光标离开输入框（失焦）→ 自动调用后端接口
+           - 立即显示验证结果（重复显示错误，不重复清除错误）
+           - 修改为不重复的值后，光标再次离开 → 再次验证，清除错误提示
+        4. 传递参数：customerSimpleName（客户简称）、customerId（编辑时传入，新增时为null）
+        5. 根据返回结果显示错误提示："客户简称已存在"
+        6. 验证规则配置：
+           - trigger: "blur" （失焦触发）
+           - validator: 自定义异步验证函数
+           - 空值时跳过验证（由 required 规则处理）
+
+        后端验证：
+        1. Controller 添加接口：GET /project/customer/checkSimpleNameUnique
+        2. Service 添加方法：checkCustomerSimpleNameUnique(customerSimpleName, customerId)
+        3. 验证逻辑：
+           - 根据客户简称查询数据库
+           - 新增时：查到数据即为重复
+           - 编辑时：排除自己后判断是否重复
+        4. 在 insertCustomer 和 updateCustomer 方法中调用验证
+        5. 重复时抛出异常："客户简称已存在"
+    bindTo: "customerSimpleName"
+    service:
+      endpoint: "GET /project/customer/checkSimpleNameUnique?customerSimpleName={name}&customerId={id}"
+      source: "新增接口"
+      returns: "{ data: true/false }"
+      newApi: true
+    notes: |
+      修改位置：
+      1. 前端：ruoyi-ui/src/views/project/customer/index.vue
+         - 在 rules.customerSimpleName 中添加自定义 validator
+         - 设置 trigger: "blur" 实现失焦验证
+         - import checkCustomerSimpleNameUnique 方法
+
+      2. 前端：ruoyi-ui/src/api/project/customer.js
+         - 添加 checkCustomerSimpleNameUnique API 方法
+
+      3. 后端：CustomerController.java
+         - 添加 checkSimpleNameUnique 接口方法
+
+      4. 后端：ICustomerService.java
+         - 添加 checkCustomerSimpleNameUnique 接口定义
+
+      5. 后端：CustomerServiceImpl.java
+         - 实现 checkCustomerSimpleNameUnique 方法
+         - 在 insertCustomer 和 updateCustomer 中添加验证
+
+      用户体验：
+      - 输入重复简称 → 失焦 → 立即显示"客户简称已存在"
+      - 修改为不重复简称 → 失焦 → 错误提示消失
+      - 无需等到点击提交按钮，实时反馈验证结果
+
+  customer_simple_name_autocomplete:
+    intent: "查询条件中的客户简称改为 autocomplete，支持输入时自动搜索匹配"
+    component:
+      type: "el-autocomplete"
+      props:
+        fetchSuggestions: "前端过滤"
+        clearable: true
+        placeholder: "请输入客户简称"
+        style: "width: 100%"
+    bindTo: "customerSimpleName"
+    service:
+      endpoint: "GET /project/customer/list?pageNum=1&pageSize=10000"
+      source: "复用 listCustomer 接口，获取所有客户简称"
+      returns: "{ rows: [{ customerSimpleName }] }"
+      newApi: false
+    notes: |
+      实现步骤：
+      1. 查询表单中将 el-input 改为 el-autocomplete
+      2. 添加响应式变量：const customerSimpleNameList = ref([])
+      3. 添加加载方法 loadCustomerSimpleNames()：
+         - 调用 listCustomer({ pageNum: 1, pageSize: 10000 })
+         - 提取 customerSimpleName 存入 customerSimpleNameList
+         - 格式：[{ value: '客户简称1' }, { value: '客户简称2' }]
+      4. 添加搜索方法 querySearchCustomer(queryString, cb)：
+         - 前端过滤，不区分大小写
+         - 支持模糊匹配（包含关系）
+      5. 在 onMounted 中调用 loadCustomerSimpleNames()
+
+      使用效果：
+      - 输入时自动显示匹配的客户简称下拉列表
+      - 支持键盘上下选择和鼠标点击选择
+      - 支持清空按钮和回车搜索
+
+      性能说明：
+      - 适用于客户数量在几百个以内
+      - 数据在页面加载时一次性获取，后续搜索不需要请求后端
+      - 如果客户数量增长到上千个，建议改为远程搜索
+
+  logical_delete_implementation:
+    intent: "所有删除操作改为逻辑删除，不物理删除数据"
+    component:
+      type: "custom"
+      spec: |
+        逻辑删除实现：
+        1. 删除操作：
+           - 客户列表删除按钮（单个/批量）
+           - 联系人批量删除按钮
+           - 联系人行内删除按钮
+           - 所有删除操作都设置 del_flag = '1'，不执行 DELETE 语句
+
+        2. 后端 Mapper.xml 修改：
+           - deleteCustomerByCustomerId：DELETE 改为 UPDATE set del_flag = '1'
+           - deleteCustomerByCustomerIds：DELETE 改为 UPDATE set del_flag = '1'
+           - deleteCustomerContactByCustomerId：DELETE 改为 UPDATE set del_flag = '1'
+           - deleteCustomerContactByCustomerIds：DELETE 改为 UPDATE set del_flag = '1'
+
+        3. 查询过滤：
+           - selectCustomerList：添加 where 条件 c.del_flag = '0'
+           - selectCustomerContactList：添加 where 条件 del_flag = '0'
+           - 只查询未删除的数据
+
+        4. 前端联系人删除：
+           - 批量删除：标记 delFlag = '1'，前端过滤显示
+           - 行内删除：标记 delFlag = '1'，从列表移除
+           - 提交表单时，后端根据 delFlag 判断是否删除
+
+        5. 数据一致性：
+           - 删除客户时，同时逻辑删除其所有联系人
+           - 查询时自动过滤已删除数据
+           - 保留删除记录，便于数据恢复和审计
+    bindTo: ["customer", "customerContact"]
+    service: null
+    notes: |
+      修改位置：
+      1. 后端：CustomerMapper.xml
+         - 将所有 <delete> 标签改为 <update> 标签
+         - DELETE 语句改为 UPDATE set del_flag = '1'
+         - selectCustomerList 添加 c.del_flag = '0' 条件
+         - selectCustomerContactList 添加 del_flag = '0' 条件
+
+      2. 前端：index.vue
+         - handleDeleteCustomerContact：标记 delFlag = '1'
+         - handleDeleteSingleContact：标记 delFlag = '1'
+         - 已在之前的定制中实现
+
+      优点：
+      - 数据可恢复
+      - 保留历史记录
+      - 便于审计追踪
+      - 避免误删除造成的数据丢失
+
+  delete_confirm_message_optimization:
+    intent: "优化删除确认提示信息，使用客户简称代替客户管理编号"
+    component:
+      type: "custom"
+      spec: |
+        删除提示信息优化：
+        1. 单个删除：
+           - 原提示："是否确认删除客户管理编号为"123"的数据项？"
+           - 新提示："是否确认删除客户简称为"XX公司"的数据项？"
+           - 使用 row.customerSimpleName 获取客户简称
+
+        2. 批量删除：
+           - 原提示："是否确认删除客户管理编号为"123,456"的数据项？"
+           - 新提示："是否确认删除客户简称为"XX公司、YY公司"的数据项？"
+           - 从 customerList 中筛选选中的客户
+           - 提取所有客户简称，用顿号（、）连接
+
+        3. 实现逻辑：
+           - 判断是单个删除还是批量删除（row.customerId 是否存在）
+           - 单个删除：直接使用 row.customerSimpleName
+           - 批量删除：filter + map 提取所有选中客户的简称
+           - 使用模板字符串构建确认消息
+
+        4. 用户体验提升：
+           - 客户简称比编号更直观
+           - 批量删除时可以清楚看到要删除哪些客户
+           - 避免误删除
+    bindTo: "handleDelete"
+    service: null
+    notes: |
+      修改位置：ruoyi-ui/src/views/project/customer/index.vue
+      - 修改 handleDelete() 方法
+      - 添加 confirmMessage 变量
+      - 根据删除类型构建不同的提示信息
+      - 批量删除时使用 filter + map + join 处理客户简称列表
+
+  menu_structure_and_permissions:
+    intent: "记录客户信息管理的菜单结构和按钮权限配置"
+    component:
+      type: "custom"
+      spec: |
+        菜单层级结构：
+        
+        一级菜单：市场管理
+        - 菜单名称：市场管理
+        - parent_id: 0（顶级菜单）
+        - order_num: 4
+        - path: market
+        - component: NULL
+        - menu_type: M（目录）
+        - icon: chart
+        - perms: ''
+        - visible: 0（显示）
+        - status: 0（正常）
+        
+        二级菜单：客户信息
+        - 菜单名称：客户信息
+        - parent_id: @marketMenuId（市场管理的ID）
+        - order_num: 1
+        - path: customer
+        - component: project/customer/index
+        - menu_type: C（菜单）
+        - icon: peoples
+        - perms: project:customer:list
+        - visible: 0（显示）
+        - status: 0（正常）
+        
+        按钮权限（6个）：
+        1. 客户信息查询
+           - menu_name: 客户信息查询
+           - parent_id: @customerMenuId
+           - order_num: 1
+           - menu_type: F（按钮）
+           - perms: project:customer:query
+           - 前端：搜索按钮（无需 v-hasPermi，列表查询接口已有权限控制）
+        
+        2. 客户信息新增
+           - menu_name: 客户信息新增
+           - parent_id: @customerMenuId
+           - order_num: 2
+           - menu_type: F（按钮）
+           - perms: project:customer:add
+           - 前端：v-hasPermi="['project:customer:add']"
+        
+        3. 客户信息修改
+           - menu_name: 客户信息修改
+           - parent_id: @customerMenuId
+           - order_num: 3
+           - menu_type: F（按钮）
+           - perms: project:customer:edit
+           - 前端：v-hasPermi="['project:customer:edit']"
+        
+        4. 客户信息删除
+           - menu_name: 客户信息删除
+           - parent_id: @customerMenuId
+           - order_num: 4
+           - menu_type: F（按钮）
+           - perms: project:customer:remove
+           - 前端：v-hasPermi="['project:customer:remove']"
+        
+        5. 客户信息导出
+           - menu_name: 客户信息导出
+           - parent_id: @customerMenuId
+           - order_num: 5
+           - menu_type: F（按钮）
+           - perms: project:customer:export
+           - 前端：v-hasPermi="['project:customer:export']"
+        
+        后端权限控制：
+        - Controller 方法使用 @PreAuthorize 注解
+        - list: @PreAuthorize("@ss.hasPermi('project:customer:list')")
+        - export: @PreAuthorize("@ss.hasPermi('project:customer:export')")
+        - getInfo: @PreAuthorize("@ss.hasPermi('project:customer:query')")
+        - add: @PreAuthorize("@ss.hasPermi('project:customer:add')")
+        - edit: @PreAuthorize("@ss.hasPermi('project:customer:edit')")
+        - remove: @PreAuthorize("@ss.hasPermi('project:customer:remove')")
+    bindTo: "menu"
+    service: null
+    notes: |
+      菜单数据位置：pm-sql/init/02_menu_data.sql
+      
+      菜单类型说明：
+      - M：目录（Directory）
+      - C：菜单（Menu）
+      - F：按钮（Function/Button）
+      
+      权限标识格式：{模块}:{业务}:{操作}
+      - 模块：project
+      - 业务：customer
+      - 操作：list/query/add/edit/remove/export
+      
+      前端权限指令：v-hasPermi
+      - 用于控制按钮的显示/隐藏
+      - 数组格式：['project:customer:add']
+      - 支持多个权限：['project:customer:add', 'project:customer:edit']
+      
+      后端权限注解：@PreAuthorize
+      - 用于控制接口的访问权限
+      - 格式：@PreAuthorize("@ss.hasPermi('project:customer:list')")
+      - 无权限时返回 403 Forbidden

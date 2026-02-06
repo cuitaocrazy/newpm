@@ -18,13 +18,14 @@ import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDept;
+import com.ruoyi.common.core.domain.TreeSelect;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.system.service.ISysDeptService;
 
 /**
  * 部门信息
- * 
+ *
  * @author ruoyi
  */
 @RestController
@@ -54,6 +55,16 @@ public class SysDeptController extends BaseController
     {
         List<SysDept> depts = deptService.selectDeptList(new SysDept());
         depts.removeIf(d -> d.getDeptId().intValue() == deptId || ArrayUtils.contains(StringUtils.split(d.getAncestors(), ","), deptId + ""));
+        return success(depts);
+    }
+
+    /**
+     * 获取部门下拉树列表
+     */
+    @GetMapping("/treeselect")
+    public AjaxResult treeselect(SysDept dept)
+    {
+        List<TreeSelect> depts = deptService.selectDeptTreeList(dept);
         return success(depts);
     }
 

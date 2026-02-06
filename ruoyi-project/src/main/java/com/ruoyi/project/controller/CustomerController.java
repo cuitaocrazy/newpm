@@ -25,7 +25,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * 客户管理Controller
  * 
  * @author ruoyi
- * @date 2026-01-30
+ * @date 2026-02-04
  */
 @RestController
 @RequestMapping("/project/customer")
@@ -70,6 +70,16 @@ public class CustomerController extends BaseController
     }
 
     /**
+     * 检查客户简称是否唯一
+     */
+    @GetMapping("/checkSimpleNameUnique")
+    public AjaxResult checkSimpleNameUnique(String customerSimpleName, Long customerId)
+    {
+        boolean isUnique = customerService.checkCustomerSimpleNameUnique(customerSimpleName, customerId);
+        return success(isUnique);
+    }
+
+    /**
      * 新增客户管理
      */
     @PreAuthorize("@ss.hasPermi('project:customer:add')")
@@ -100,5 +110,23 @@ public class CustomerController extends BaseController
     public AjaxResult remove(@PathVariable Long[] customerIds)
     {
         return toAjax(customerService.deleteCustomerByCustomerIds(customerIds));
+    }
+
+    /**
+     * 根据客户ID查询联系人列表
+     */
+    @GetMapping("/contact/listByCustomer")
+    public AjaxResult listContactByCustomer(Long customerId)
+    {
+        if (customerId == null)
+        {
+            return error("客户ID不能为空");
+        }
+        Customer customer = customerService.selectCustomerByCustomerId(customerId);
+        if (customer == null)
+        {
+            return error("客户不存在");
+        }
+        return success(customer.getCustomerContactList());
     }
 }

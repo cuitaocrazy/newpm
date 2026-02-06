@@ -149,26 +149,8 @@ insert into sys_dict_data values(163,10,'国外地区','GWDQ','sys_yjqy',NULL,'d
 insert into sys_dict_data values(164,5,'5-合同作废','5','sys_htzt',NULL,'default','N','0','qiu.zhang','2026-01-21 13:16:42','',NULL,NULL);
 insert into sys_dict_data values(165,7,'日常内部工作','NBGZ','sys_xmfl',NULL,'default','N','0','qiu.zhang','2026-01-22 10:56:12','qiu.zhang','2026-01-22 10:57:14',NULL);
 insert into sys_dict_data values(166,8,'内部项目类','NBXM','sys_xmfl',NULL,'default','N','0','qiu.zhang','2026-01-22 11:02:46','qiu.zhang','2026-01-22 11:03:00',NULL);
-insert into sys_dict_data values(177,1,'技术负责人','技术负责人','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'技术方面的负责人');
-insert into sys_dict_data values(178,2,'商务负责人','商务负责人','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'商务方面的负责人');
-insert into sys_dict_data values(179,3,'项目经理','项目经理','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'项目经理');
-insert into sys_dict_data values(180,4,'部门经理','部门经理','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'部门经理');
-insert into sys_dict_data values(181,5,'决策人','决策人','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'决策者');
-insert into sys_dict_data values(182,6,'普通联系人','普通联系人','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'一般联系人');
-insert into sys_dict_data values(183,7,'IT负责人','IT负责人','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'IT部门负责人');
-insert into sys_dict_data values(184,8,'采购负责人','采购负责人','contact_tag',NULL,NULL,'N','0','admin','2026-01-26 12:32:58','',NULL,'采购部门负责人');
 insert into sys_dict_data values(185,1,'未验收','0','sys_yszt','','warning','Y','0','admin','2026-01-26 14:14:46','',NULL,'项目未验收');
 insert into sys_dict_data values(186,2,'已验收','1','sys_yszt','','success','N','0','admin','2026-01-26 14:14:46','',NULL,'项目已验收');
-insert into sys_dict_data values(187,1,'中行','ZH','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'中国银行');
-insert into sys_dict_data values(188,2,'农行','NH','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'农业银行');
-insert into sys_dict_data values(189,3,'工行','GH','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'工商银行');
-insert into sys_dict_data values(190,4,'建行','JH','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'建设银行');
-insert into sys_dict_data values(191,5,'邮储','YC','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'邮政储蓄银行');
-insert into sys_dict_data values(192,6,'商行','SH','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'商业银行');
-insert into sys_dict_data values(193,7,'商业','SY','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'商业');
-insert into sys_dict_data values(194,8,'企业','QY','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'企业');
-insert into sys_dict_data values(195,9,'集团','JT','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'集团');
-insert into sys_dict_data values(196,10,'亚大','YD','industry','','','N','0','admin','2026-01-26 14:49:13','',NULL,'亚大');
 insert into sys_dict_data values(197,0,'dsh','待审核','xmzt',NULL,'default','N','0','admin','2026-01-27 14:28:53','',NULL,NULL);
 insert into sys_dict_data values(198,1,'shtg','审核通过','xmzt',NULL,'default','N','0','admin','2026-01-27 14:29:08','',NULL,NULL);
 insert into sys_dict_data values(199,2,'shjj','审核拒绝','xmzt',NULL,'default','N','0','admin','2026-01-27 14:29:25','',NULL,NULL);
@@ -200,8 +182,6 @@ insert into sys_dict_type values(106,'文档类型','sys_wdlx','0','admin','2026
 insert into sys_dict_type values(107,'项目阶段','sys_xmjd','0','admin','2026-01-15 17:28:30','qiu.zhang','2026-01-16 17:23:42','项目阶段列表');
 insert into sys_dict_type values(108,'合同类型','sys_htlx','0','admin','2026-01-15 17:32:13','qiu.zhang','2026-01-16 17:23:51','合同类型列表');
 insert into sys_dict_type values(109,'一级区域管理','sys_yjqy','0','admin','2026-01-16 15:50:08','qiu.zhang','2026-01-16 17:24:45','一级区域列表');
-insert into sys_dict_type values(110,'所属行业','industry','0','admin','2026-01-26 12:32:58','',NULL,'客户所属行业分类');
-insert into sys_dict_type values(111,'联系人标签','contact_tag','0','admin','2026-01-26 12:32:58','',NULL,'客户联系人标签分类');
 insert into sys_dict_type values(113,'验收状态','sys_yszt','0','admin','2026-01-26 14:14:46','',NULL,'项目验收状态列表');
 insert into sys_dict_type values(114,'审核状态','sys_shzt','0','admin','2026-01-27 14:26:51','admin','2026-01-28 13:42:30',NULL);
 
@@ -1572,3 +1552,82 @@ insert into sys_user_role values(248,2);
 insert into sys_user_role values(249,2);
 insert into sys_user_role values(250,100);
 
+
+-- =============================================
+-- 16. 插入省级区域数据（36个省级行政区，不含港澳台）
+-- =============================================
+INSERT INTO pm_secondary_region (province_code, province_name, province_type, region_dict_value, sort_order, create_by, remark) VALUES
+   -- 华北地区
+   ('11', '北京市', '1', 'BJ', 1, 'admin', '首都'),
+   ('12', '天津市', '1', 'HBQY', 2, 'admin', NULL),
+   ('13', '河北省', '0', 'HBQY', 3, 'admin', NULL),
+   ('14', '山西省', '0', 'HBQY', 4, 'admin', NULL),
+   ('15', '内蒙古自治区', '2', 'HBQY', 5, 'admin', NULL),
+
+   -- 东北地区
+   ('21', '辽宁省', '0', 'DBQY', 6, 'admin', NULL),
+   ('2102', '大连市', '4', 'DBQY', 7, 'admin', '计划单列市'),
+   ('22', '吉林省', '0', 'DBQY', 8, 'admin', NULL),
+   ('23', '黑龙江省', '0', 'DBQY', 9, 'admin', NULL),
+
+   -- 华东地区
+   ('31', '上海市', '1', 'HDQY', 10, 'admin', NULL),
+   ('32', '江苏省', '0', 'HDQY', 11, 'admin', NULL),
+   ('33', '浙江省', '0', 'HDQY', 12, 'admin', NULL),
+   ('3302', '宁波市', '4', 'HDQY', 13, 'admin', '计划单列市'),
+   ('34', '安徽省', '0', 'HDQY', 14, 'admin', NULL),
+   ('35', '福建省', '0', 'HDQY', 15, 'admin', NULL),
+   ('3502', '厦门市', '4', 'HDQY', 16, 'admin', '计划单列市'),
+   ('36', '江西省', '0', 'HDQY', 17, 'admin', NULL),
+   ('37', '山东省', '0', 'HDQY', 18, 'admin', NULL),
+   ('3702', '青岛市', '4', 'HDQY', 19, 'admin', '计划单列市'),
+
+   -- 华中地区
+   ('41', '河南省', '0', 'HZQY', 20, 'admin', NULL),
+   ('42', '湖北省', '0', 'HZQY', 21, 'admin', NULL),
+   ('43', '湖南省', '0', 'HZQY', 22, 'admin', NULL),
+
+   -- 华南地区
+   ('44', '广东省', '0', 'HNQY', 23, 'admin', NULL),
+   ('4403', '深圳市', '4', 'HNQY', 24, 'admin', '计划单列市'),
+   ('45', '广西壮族自治区', '2', 'HNQY', 25, 'admin', NULL),
+   ('46', '海南省', '0', 'HNQY', 26, 'admin', NULL),
+
+   -- 西南地区
+   ('50', '重庆市', '1', 'XNQY', 27, 'admin', NULL),
+   ('51', '四川省', '0', 'XNQY', 28, 'admin', NULL),
+   ('52', '贵州省', '0', 'XNQY', 29, 'admin', NULL),
+   ('53', '云南省', '0', 'XNQY', 30, 'admin', NULL),
+   ('54', '西藏自治区', '2', 'XNQY', 31, 'admin', NULL),
+
+   -- 西北地区
+   ('61', '陕西省', '0', 'XBQY', 32, 'admin', NULL),
+   ('62', '甘肃省', '0', 'XBQY', 33, 'admin', NULL),
+   ('63', '青海省', '0', 'XBQY', 34, 'admin', NULL),
+   ('64', '宁夏回族自治区', '2', 'XBQY', 35, 'admin', NULL),
+   ('65', '新疆维吾尔自治区', '2', 'XBQY', 36, 'admin', NULL);
+
+-- =============================================
+-- 说明：
+-- 1. 省份代码使用国家标准行政区划代码的前2位或前4位
+-- 2. 计划单列市使用4位代码（如大连2102、青岛3702等）
+-- 3. 一级区域通过 region_dict_value 关联字典表的 dict_value
+-- 4. 北京市使用独立的区域值：BJ
+-- 5. 其他省份使用区域缩写：HBQY、DBQY、HDQY、HZQY、HNQY、XNQY、XBQY
+-- 6. 共36个省级行政区（31个省/直辖市/自治区 + 5个计划单列市，不含港澳台）
+-- 7. 计划单列市：大连、青岛、宁波、厦门、深圳
+-- 8. 市级数据需要根据实际需求插入（约325个地级市，不含已提升为省级的5个计划单列市）
+-- 9. 一级区域字典数据需要在字典管理中手动维护
+-- =============================================
+
+
+
+-- 省份类型字典
+insert into sys_dict_type values(115,'省份类型','sflx','0','admin',sysdate(),'',NULL,'省份类型列表');
+
+-- 省份类型字典数据
+insert into sys_dict_data values(205,0,'省','0','sflx','','','Y','0','admin',sysdate(),'',NULL,'省');
+insert into sys_dict_data values(206,1,'直辖市','1','sflx','','','N','0','admin',sysdate(),'',NULL,'直辖市');
+insert into sys_dict_data values(207,2,'自治区','2','sflx','','','N','0','admin',sysdate(),'',NULL,'自治区');
+insert into sys_dict_data values(208,3,'特别行政区','3','sflx','','','N','0','admin',sysdate(),'',NULL,'特别行政区');
+insert into sys_dict_data values(209,4,'计划单列市','4','sflx','','','N','0','admin',sysdate(),'',NULL,'计划单列市');

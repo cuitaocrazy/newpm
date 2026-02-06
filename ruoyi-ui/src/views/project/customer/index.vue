@@ -1,28 +1,18 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="90px">
       <el-form-item label="客户简称" prop="customerSimpleName">
         <el-autocomplete
           v-model="queryParams.customerSimpleName"
-          :fetch-suggestions="querySimpleNameSearch"
+          :fetch-suggestions="querySearchCustomer"
           placeholder="请输入客户简称"
           clearable
           @keyup.enter="handleQuery"
           style="width: 100%"
         />
       </el-form-item>
-      <el-form-item label="客户全称" prop="customerAllName">
-        <el-autocomplete
-          v-model="queryParams.customerAllName"
-          :fetch-suggestions="queryAllNameSearch"
-          placeholder="请输入客户全称"
-          clearable
-          @keyup.enter="handleQuery"
-          style="width: 100%"
-        />
-      </el-form-item>
       <el-form-item label="所属行业" prop="industry">
-        <el-select v-model="queryParams.industry" placeholder="请选择所属行业(字典表 字典类型industry)" clearable>
+        <el-select v-model="queryParams.industry" placeholder="请选择所属行业" clearable>
           <el-option
             v-for="dict in industry"
             :key="dict.value"
@@ -32,7 +22,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="所属区域" prop="region">
-        <el-select v-model="queryParams.region" placeholder="请选择所属区域(字典表 : 字典类型sys_yjqy)" clearable>
+        <el-select v-model="queryParams.region" placeholder="请选择所属区域" clearable>
           <el-option
             v-for="dict in sys_yjqy"
             :key="dict.value"
@@ -41,29 +31,15 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="销售负责人ID" prop="salesManagerId">
-        <el-input
-          v-model="queryParams.salesManagerId"
-          placeholder="请输入销售负责人ID"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="销售负责人姓名" prop="salesManagerName">
-        <el-input
-          v-model="queryParams.salesManagerName"
-          placeholder="请输入销售负责人姓名"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="创建时间" prop="createTime">
-        <el-date-picker clearable
-          v-model="queryParams.createTime"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择创建时间">
-        </el-date-picker>
+      <el-form-item label="销售负责人" prop="salesManagerId">
+        <el-select v-model="queryParams.salesManagerId" placeholder="请选择销售负责人" clearable filterable>
+          <el-option
+            v-for="user in salesManagerList"
+            :key="user.userId"
+            :label="user.nickName"
+            :value="user.userId"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -115,7 +91,7 @@
 
     <el-table v-loading="loading" :data="customerList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="客户主键ID" align="center" prop="customerId" />
+      <el-table-column type="index" label="序号" width="55" align="center" />
       <el-table-column label="客户简称" align="center" prop="customerSimpleName" />
       <el-table-column label="客户全称" align="center" prop="customerAllName" />
       <el-table-column label="所属行业" align="center" prop="industry">
@@ -128,7 +104,8 @@
           <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
         </template>
       </el-table-column>
-      <el-table-column label="销售负责人姓名" align="center" prop="salesManagerName" />
+      <el-table-column label="销售负责人" align="center" prop="salesManagerName" />
+      <el-table-column label="办公地址" align="center" prop="officeAddress" show-overflow-tooltip />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
@@ -138,6 +115,22 @@
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:customer:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:customer:remove']">删除</el-button>
+        </template>
+      </el-table-column>
+      <el-table-column type="expand">
+        <template #default="props">
+          <div v-if="props.row.customerContactList && props.row.customerContactList.length > 0" style="padding: 0 50px;">
+            <el-table :data="props.row.customerContactList" border>
+              <el-table-column label="联系人姓名" prop="contactName" />
+              <el-table-column label="联系人电话" prop="contactPhone" />
+              <el-table-column label="联系人标签" prop="contactTag">
+                <template #default="scope">
+                  <dict-tag :options="contact_tag" :value="scope.row.contactTag"/>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div v-else style="padding: 20px 50px; color: #909399;">暂无联系人信息</div>
         </template>
       </el-table-column>
     </el-table>
@@ -151,66 +144,85 @@
     />
 
     <!-- 添加或修改客户管理对话框 -->
-    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
-      <el-form ref="customerRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="客户简称" prop="customerSimpleName">
-          <el-input v-model="form.customerSimpleName" placeholder="请输入客户简称" />
-        </el-form-item>
-        <el-form-item label="客户全称" prop="customerAllName">
-          <el-input v-model="form.customerAllName" placeholder="请输入客户全称" />
-        </el-form-item>
-        <el-form-item label="所属行业" prop="industry">
-          <el-select v-model="form.industry" placeholder="请选择所属行业(字典表 字典类型industry)">
-            <el-option
-              v-for="dict in industry"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="所属区域" prop="region">
-          <el-select v-model="form.region" placeholder="请选择所属区域(字典表 : 字典类型sys_yjqy)">
-            <el-option
-              v-for="dict in sys_yjqy"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="销售负责人ID" prop="salesManagerId">
-          <el-input v-model="form.salesManagerId" placeholder="请输入销售负责人ID" />
-        </el-form-item>
-        <el-form-item label="销售负责人姓名" prop="salesManagerName">
-          <el-input v-model="form.salesManagerName" placeholder="请输入销售负责人姓名" />
-        </el-form-item>
-        <el-form-item label="办公地址" prop="officeAddress">
-          <el-input v-model="form.officeAddress" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-divider content-position="left">联系人信息</el-divider>
-        <el-row :gutter="10" class="mb8">
-          <el-col :span="1.5">
-            <el-button type="primary" icon="Plus" size="small" @click="handleAddContact">添加联系人</el-button>
+    <el-dialog :title="title" v-model="open" width="1100px" append-to-body>
+      <el-form ref="customerRef" :model="form" :rules="rules" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="客户简称" prop="customerSimpleName">
+              <el-input v-model="form.customerSimpleName" placeholder="请输入客户简称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="客户全称" prop="customerAllName">
+              <el-input v-model="form.customerAllName" placeholder="请输入客户全称" />
+            </el-form-item>
           </el-col>
         </el-row>
-        <el-table :data="form.contactList" style="width: 100%" max-height="300">
-          <el-table-column label="联系人姓名" width="120">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="所属行业" prop="industry">
+              <el-select v-model="form.industry" placeholder="请选择所属行业" style="width: 100%">
+                <el-option
+                  v-for="dict in industry"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="所属区域" prop="region">
+              <el-select v-model="form.region" placeholder="请选择所属区域" style="width: 100%">
+                <el-option
+                  v-for="dict in sys_yjqy"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="办公地址" prop="officeAddress">
+              <el-input v-model="form.officeAddress" type="textarea" placeholder="请输入内容" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="备注" prop="remark">
+              <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-divider content-position="center">客户联系人信息</el-divider>
+        <el-row :gutter="10" class="mb8">
+          <el-col :span="1.5">
+            <el-button type="primary" icon="Plus" @click="handleAddCustomerContact">添加</el-button>
+          </el-col>
+          <el-col :span="1.5">
+            <el-button type="danger" icon="Delete" @click="handleDeleteCustomerContact">删除</el-button>
+          </el-col>
+        </el-row>
+        <el-table :data="customerContactList" :row-class-name="rowCustomerContactIndex" @selection-change="handleCustomerContactSelectionChange" ref="customerContact">
+          <el-table-column type="selection" width="50" align="center" />
+          <el-table-column label="序号" align="center" prop="index" width="70"/>
+          <el-table-column label="联系人姓名" prop="contactName" width="160">
             <template #default="scope">
-              <el-input v-model="scope.row.contactName" placeholder="请输入姓名" />
+              <el-input v-model="scope.row.contactName" placeholder="请输入联系人姓名" />
             </template>
           </el-table-column>
-          <el-table-column label="联系人电话" width="150">
+          <el-table-column label="联系人电话" prop="contactPhone" width="260">
             <template #default="scope">
-              <el-input v-model="scope.row.contactPhone" placeholder="请输入电话" />
+              <el-input v-model="scope.row.contactPhone" placeholder="如：13800138000/010-88888888" />
             </template>
           </el-table-column>
-          <el-table-column label="联系人标签" width="150">
+          <el-table-column label="联系人标签" prop="contactTag" width="150">
             <template #default="scope">
-              <el-select v-model="scope.row.contactTag" placeholder="请选择标签">
+              <el-select v-model="scope.row.contactTag" placeholder="请选择联系人标签">
                 <el-option
                   v-for="dict in contact_tag"
                   :key="dict.value"
@@ -220,14 +232,14 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="备注" min-width="120">
+          <el-table-column label="备注" prop="remark" min-width="120">
             <template #default="scope">
-              <el-input v-model="scope.row.remark" placeholder="请输入备注" />
+              <el-input v-model="scope.row.remark" type="textarea" placeholder="请输入备注" />
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="80" align="center">
+          <el-table-column label="操作" align="center" width="80">
             <template #default="scope">
-              <el-button link type="danger" icon="Delete" @click="handleDeleteContact(scope.$index)">删除</el-button>
+              <el-button link type="danger" @click="handleDeleteSingleContact(scope.$index)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -243,34 +255,21 @@
 </template>
 
 <script setup name="Customer">
-import { listCustomer, getCustomer, delCustomer, addCustomer, updateCustomer } from "@/api/project/customer"
+import { listCustomer, getCustomer, delCustomer, addCustomer, updateCustomer, checkCustomerSimpleNameUnique } from "@/api/project/customer"
+import { listUserByPost } from "@/api/system/user"
 
 const { proxy } = getCurrentInstance()
-const { sys_yjqy, industry, contact_tag } = proxy.useDict('sys_yjqy', 'industry', 'contact_tag')
-
-// 电话号码验证函数（手机号或座机号）
-const validatePhone = (rule, value, callback) => {
-  if (!value) {
-    callback()
-    return
-  }
-  // 手机号正则：1开头的11位数字
-  const mobileReg = /^1[3-9]\d{9}$/
-  // 座机号正则：区号-号码 或 号码（支持分机号）
-  const telReg = /^(0\d{2,3}-?)?\d{7,8}(-\d{1,6})?$/
-
-  if (mobileReg.test(value) || telReg.test(value)) {
-    callback()
-  } else {
-    callback(new Error('请输入正确的手机号或座机号'))
-  }
-}
+const { contact_tag, sys_yjqy, industry } = proxy.useDict('contact_tag', 'sys_yjqy', 'industry')
 
 const customerList = ref([])
+const customerContactList = ref([])
+const salesManagerList = ref([])
+const customerSimpleNameList = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
+const checkedCustomerContact = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
@@ -282,19 +281,31 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     customerSimpleName: null,
-    customerAllName: null,
     industry: null,
     region: null,
     salesManagerId: null,
-    salesManagerName: null,
-    createTime: null,
   },
   rules: {
-    customerId: [
-      { required: true, message: "客户主键ID不能为空", trigger: "blur" }
-    ],
     customerSimpleName: [
-      { required: true, message: "客户简称不能为空", trigger: "blur" }
+      { required: true, message: "客户简称不能为空", trigger: "blur" },
+      {
+        trigger: "blur",
+        validator: (rule, value, callback) => {
+          if (!value || value.trim() === '') {
+            callback()
+            return
+          }
+          checkCustomerSimpleNameUnique(value, form.value.customerId).then(response => {
+            if (response.data === false) {
+              callback(new Error("客户简称已存在"))
+            } else {
+              callback()
+            }
+          }).catch(() => {
+            callback()
+          })
+        }
+      }
     ],
     customerAllName: [
       { required: true, message: "客户全称不能为空", trigger: "blur" }
@@ -314,44 +325,6 @@ function getList() {
   })
 }
 
-/** 客户简称自动补全查询 */
-function querySimpleNameSearch(queryString, cb) {
-  // 获取所有客户简称的唯一值
-  const results = queryString
-    ? customerList.value
-        .filter(item => item.customerSimpleName && item.customerSimpleName.toLowerCase().includes(queryString.toLowerCase()))
-        .map(item => ({ value: item.customerSimpleName }))
-        .filter((item, index, self) =>
-          index === self.findIndex(t => t.value === item.value)
-        )
-    : customerList.value
-        .filter(item => item.customerSimpleName)
-        .map(item => ({ value: item.customerSimpleName }))
-        .filter((item, index, self) =>
-          index === self.findIndex(t => t.value === item.value)
-        )
-  cb(results)
-}
-
-/** 客户全称自动补全查询 */
-function queryAllNameSearch(queryString, cb) {
-  // 获取所有客户全称的唯一值
-  const results = queryString
-    ? customerList.value
-        .filter(item => item.customerAllName && item.customerAllName.toLowerCase().includes(queryString.toLowerCase()))
-        .map(item => ({ value: item.customerAllName }))
-        .filter((item, index, self) =>
-          index === self.findIndex(t => t.value === item.value)
-        )
-    : customerList.value
-        .filter(item => item.customerAllName)
-        .map(item => ({ value: item.customerAllName }))
-        .filter((item, index, self) =>
-          index === self.findIndex(t => t.value === item.value)
-        )
-  cb(results)
-}
-
 // 取消按钮
 function cancel() {
   open.value = false
@@ -367,16 +340,15 @@ function reset() {
     industry: null,
     region: null,
     salesManagerId: null,
-    salesManagerName: null,
     officeAddress: null,
     delFlag: null,
     createBy: null,
     createTime: null,
     updateBy: null,
     updateTime: null,
-    remark: null,
-    contactList: []
+    remark: null
   }
+  customerContactList.value = []
   proxy.resetForm("customerRef")
 }
 
@@ -412,10 +384,7 @@ function handleUpdate(row) {
   const _customerId = row.customerId || ids.value
   getCustomer(_customerId).then(response => {
     form.value = response.data
-    // 确保contactList存在
-    if (!form.value.contactList) {
-      form.value.contactList = []
-    }
+    customerContactList.value = response.data.customerContactList
     open.value = true
     title.value = "修改客户管理"
   })
@@ -425,21 +394,24 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["customerRef"].validate(valid => {
     if (valid) {
-      // 验证联系人电话号码
-      if (form.value.contactList && form.value.contactList.length > 0) {
-        for (let i = 0; i < form.value.contactList.length; i++) {
-          const contact = form.value.contactList[i]
-          if (contact.contactPhone) {
-            const mobileReg = /^1[3-9]\d{9}$/
-            const telReg = /^(0\d{2,3}-?)?\d{7,8}(-\d{1,6})?$/
-            if (!mobileReg.test(contact.contactPhone) && !telReg.test(contact.contactPhone)) {
-              proxy.$modal.msgError(`第${i + 1}个联系人的电话号码格式不正确，请输入正确的手机号或座机号`)
-              return
-            }
-          }
+      // 验证联系人必填字段
+      for (let i = 0; i < customerContactList.value.length; i++) {
+        const contact = customerContactList.value[i]
+        if (!contact.contactName || contact.contactName.trim() === '') {
+          proxy.$modal.msgError(`第${i + 1}个联系人的联系人姓名不能为空`)
+          return
+        }
+        if (!contact.contactPhone || contact.contactPhone.trim() === '') {
+          proxy.$modal.msgError(`第${i + 1}个联系人的联系人电话不能为空`)
+          return
+        }
+        if (!contact.contactTag || contact.contactTag.trim() === '') {
+          proxy.$modal.msgError(`第${i + 1}个联系人的联系人标签不能为空`)
+          return
         }
       }
 
+      form.value.customerContactList = customerContactList.value
       if (form.value.customerId != null) {
         updateCustomer(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
@@ -460,12 +432,70 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _customerIds = row.customerId || ids.value
-  proxy.$modal.confirm('是否确认删除客户管理编号为"' + _customerIds + '"的数据项？').then(function() {
+
+  // 构建删除确认消息
+  let confirmMessage = ''
+  if (row.customerId) {
+    // 单个删除：使用客户简称
+    confirmMessage = `是否确认删除客户简称为"${row.customerSimpleName}"的数据项？`
+  } else {
+    // 批量删除：提取所有选中客户的简称
+    const selectedCustomers = customerList.value.filter(item => ids.value.includes(item.customerId))
+    const customerNames = selectedCustomers.map(item => item.customerSimpleName).join('、')
+    confirmMessage = `是否确认删除客户简称为"${customerNames}"的数据项？`
+  }
+
+  proxy.$modal.confirm(confirmMessage).then(function() {
     return delCustomer(_customerIds)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
   }).catch(() => {})
+}
+
+/** 客户联系人序号 */
+function rowCustomerContactIndex({ row, rowIndex }) {
+  row.index = rowIndex + 1
+}
+
+/** 客户联系人添加按钮操作 */
+function handleAddCustomerContact() {
+  let obj = {}
+  obj.contactName = ""
+  obj.contactPhone = ""
+  obj.contactTag = ""
+  obj.remark = ""
+  customerContactList.value.push(obj)
+}
+
+/** 客户联系人删除按钮操作 */
+function handleDeleteCustomerContact() {
+  if (checkedCustomerContact.value.length == 0) {
+    proxy.$modal.msgError("请先选择要删除的客户联系人数据")
+  } else {
+    proxy.$modal.confirm('是否确认删除选中的联系人？').then(() => {
+      const customerContacts = customerContactList.value
+      const checkedCustomerContacts = checkedCustomerContact.value
+      customerContactList.value = customerContacts.filter(function(item) {
+        return checkedCustomerContacts.indexOf(item.index) == -1
+      })
+      proxy.$modal.msgSuccess("删除成功")
+    }).catch(() => {})
+  }
+}
+
+/** 客户联系人行内删除操作 */
+function handleDeleteSingleContact(index) {
+  proxy.$modal.confirm('是否确认删除该联系人？').then(() => {
+    customerContactList.value[index].delFlag = '1'
+    customerContactList.value.splice(index, 1)
+    proxy.$modal.msgSuccess("删除成功")
+  }).catch(() => {})
+}
+
+/** 复选框选中数据 */
+function handleCustomerContactSelectionChange(selection) {
+  checkedCustomerContact.value = selection.map(item => item.index)
 }
 
 /** 导出按钮操作 */
@@ -475,24 +505,36 @@ function handleExport() {
   }, `customer_${new Date().getTime()}.xlsx`)
 }
 
-/** 添加联系人 */
-function handleAddContact() {
-  const newContact = {
-    contactName: '',
-    contactPhone: '',
-    contactTag: '',
-    remark: ''
-  }
-  if (!form.value.contactList) {
-    form.value.contactList = []
-  }
-  form.value.contactList.push(newContact)
+/** 加载销售负责人列表 */
+function loadSalesManagers() {
+  listUserByPost('xsfzr').then(response => {
+    salesManagerList.value = response.data
+  })
 }
 
-/** 删除联系人 */
-function handleDeleteContact(index) {
-  form.value.contactList.splice(index, 1)
+/** 加载客户简称列表 */
+function loadCustomerSimpleNames() {
+  listCustomer({ pageNum: 1, pageSize: 10000 }).then(response => {
+    customerSimpleNameList.value = response.rows.map(item => ({
+      value: item.customerSimpleName
+    }))
+  })
 }
+
+/** 客户简称搜索方法 */
+function querySearchCustomer(queryString, cb) {
+  const results = queryString
+    ? customerSimpleNameList.value.filter(item =>
+        item.value.toLowerCase().includes(queryString.toLowerCase())
+      )
+    : customerSimpleNameList.value
+  cb(results)
+}
+
+onMounted(() => {
+  loadSalesManagers()
+  loadCustomerSimpleNames()
+})
 
 getList()
 </script>

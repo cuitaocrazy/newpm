@@ -9,18 +9,16 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 客户联系人对象 pm_customer_contact
  * 
  * @author ruoyi
- * @date 2026-01-30
+ * @date 2026-02-04
  */
 public class CustomerContact extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
     /** 联系人主键ID */
-    @Excel(name = "联系人主键ID")
     private Long contactId;
 
     /** 客户ID */
-    @Excel(name = "客户ID")
     private Long customerId;
 
     /** 联系人姓名 */
@@ -31,8 +29,8 @@ public class CustomerContact extends BaseEntity
     @Excel(name = "联系人电话")
     private String contactPhone;
 
-    /** 联系人标签(字典表，字典类型contact_tag) */
-    @Excel(name = "联系人标签(字典表，字典类型contact_tag)")
+    /** 联系人标签 */
+    @Excel(name = "联系人标签")
     private String contactTag;
 
     /** 删除标志(0正常 1删除) */
@@ -47,7 +45,6 @@ public class CustomerContact extends BaseEntity
     {
         return contactId;
     }
-
     public void setCustomerId(Long customerId) 
     {
         this.customerId = customerId;
@@ -57,7 +54,6 @@ public class CustomerContact extends BaseEntity
     {
         return customerId;
     }
-
     public void setContactName(String contactName) 
     {
         this.contactName = contactName;
@@ -67,7 +63,6 @@ public class CustomerContact extends BaseEntity
     {
         return contactName;
     }
-
     public void setContactPhone(String contactPhone) 
     {
         this.contactPhone = contactPhone;
@@ -77,7 +72,6 @@ public class CustomerContact extends BaseEntity
     {
         return contactPhone;
     }
-
     public void setContactTag(String contactTag) 
     {
         this.contactTag = contactTag;
@@ -87,7 +81,6 @@ public class CustomerContact extends BaseEntity
     {
         return contactTag;
     }
-
     public void setDelFlag(String delFlag) 
     {
         this.delFlag = delFlag;

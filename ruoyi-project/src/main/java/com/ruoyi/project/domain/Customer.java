@@ -8,49 +8,55 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 客户管理对象 pm_customer
- *
+ * 
  * @author ruoyi
- * @date 2026-01-30
+ * @date 2026-02-04
  */
 public class Customer extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
     /** 客户主键ID */
-    @Excel(name = "客户主键ID")
     private Long customerId;
 
     /** 客户简称 */
-    @Excel(name = "客户简称")
+    @Excel(name = "客户简称", sort = 1)
     private String customerSimpleName;
 
     /** 客户全称 */
-    @Excel(name = "客户全称")
+    @Excel(name = "客户全称", sort = 2)
     private String customerAllName;
 
-    /** 所属行业(字典表 字典类型industry) */
-    @Excel(name = "所属行业(字典表 字典类型industry)")
+    /** 所属行业 */
     private String industry;
 
-    /** 所属区域(字典表 : 字典类型sys_yjqy) */
-    @Excel(name = "所属区域(字典表 : 字典类型sys_yjqy)")
+    /** 所属区域 */
     private String region;
 
     /** 销售负责人ID */
     private Long salesManagerId;
 
-    /** 销售负责人姓名 */
-    @Excel(name = "销售负责人姓名")
-    private String salesManagerName;
-
     /** 办公地址 */
+    @Excel(name = "办公地址", sort = 6)
     private String officeAddress;
 
     /** 删除标志(0正常 1删除) */
     private String delFlag;
 
-    /** 客户联系人列表 */
-    private List<CustomerContact> contactList;
+    /** 所属行业名称（用于导出） */
+    @Excel(name = "所属行业", sort = 3)
+    private String industryName;
+
+    /** 所属区域名称（用于导出） */
+    @Excel(name = "所属区域", sort = 4)
+    private String regionName;
+
+    /** 销售负责人名称（用于导出） */
+    @Excel(name = "销售负责人", sort = 5)
+    private String salesManagerName;
+
+    /** 客户联系人信息 */
+    private List<CustomerContact> customerContactList;
 
     public void setCustomerId(Long customerId) 
     {
@@ -112,16 +118,6 @@ public class Customer extends BaseEntity
         return salesManagerId;
     }
 
-    public void setSalesManagerName(String salesManagerName) 
-    {
-        this.salesManagerName = salesManagerName;
-    }
-
-    public String getSalesManagerName() 
-    {
-        return salesManagerName;
-    }
-
     public void setOfficeAddress(String officeAddress) 
     {
         this.officeAddress = officeAddress;
@@ -137,19 +133,49 @@ public class Customer extends BaseEntity
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag()
+    public String getDelFlag() 
     {
         return delFlag;
     }
 
-    public void setContactList(List<CustomerContact> contactList)
+    public List<CustomerContact> getCustomerContactList()
     {
-        this.contactList = contactList;
+        return customerContactList;
     }
 
-    public List<CustomerContact> getContactList()
+    public void setCustomerContactList(List<CustomerContact> customerContactList)
     {
-        return contactList;
+        this.customerContactList = customerContactList;
+    }
+
+    public String getIndustryName()
+    {
+        return industryName;
+    }
+
+    public void setIndustryName(String industryName)
+    {
+        this.industryName = industryName;
+    }
+
+    public String getRegionName()
+    {
+        return regionName;
+    }
+
+    public void setRegionName(String regionName)
+    {
+        this.regionName = regionName;
+    }
+
+    public String getSalesManagerName()
+    {
+        return salesManagerName;
+    }
+
+    public void setSalesManagerName(String salesManagerName)
+    {
+        this.salesManagerName = salesManagerName;
     }
 
     @Override
@@ -161,7 +187,6 @@ public class Customer extends BaseEntity
             .append("industry", getIndustry())
             .append("region", getRegion())
             .append("salesManagerId", getSalesManagerId())
-            .append("salesManagerName", getSalesManagerName())
             .append("officeAddress", getOfficeAddress())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
@@ -169,6 +194,7 @@ public class Customer extends BaseEntity
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
             .append("remark", getRemark())
+            .append("customerContactList", getCustomerContactList())
             .toString();
     }
 }

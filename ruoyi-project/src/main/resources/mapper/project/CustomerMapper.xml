@@ -11,8 +11,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="industry"    column="industry"    />
         <result property="region"    column="region"    />
         <result property="salesManagerId"    column="sales_manager_id"    />
-        <result property="salesManagerName"    column="sales_manager_name"    />
         <result property="officeAddress"    column="office_address"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+        <result property="industryName"    column="industry_name"    />
+        <result property="regionName"    column="region_name"    />
+        <result property="salesManagerName"    column="sales_manager_name"    />
+    </resultMap>
+
+    <resultMap id="CustomerCustomerContactResult" type="Customer" extends="CustomerResult">
+        <collection property="customerContactList" ofType="CustomerContact" column="customer_id" select="selectCustomerContactList" />
+    </resultMap>
+
+    <resultMap type="CustomerContact" id="CustomerContactResult">
+        <result property="contactId"    column="contact_id"    />
+        <result property="customerId"    column="customer_id"    />
+        <result property="contactName"    column="contact_name"    />
+        <result property="contactPhone"    column="contact_phone"    />
+        <result property="contactTag"    column="contact_tag"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
@@ -22,25 +42,49 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectCustomerVo">
-        select customer_id, customer_simple_name, customer_all_name, industry, region, sales_manager_id, sales_manager_name, office_address, del_flag, create_by, create_time, update_by, update_time, remark from pm_customer
+        select customer_id, customer_simple_name, customer_all_name, industry, region, sales_manager_id, office_address, del_flag, create_by, create_time, update_by, update_time, remark from pm_customer
     </sql>
 
-    <select id="selectCustomerList" parameterType="Customer" resultMap="CustomerResult">
-        <include refid="selectCustomerVo"/>
-        <where>  
-            <if test="customerSimpleName != null  and customerSimpleName != ''"> and customer_simple_name like concat('%', #{customerSimpleName}, '%')</if>
-            <if test="customerAllName != null  and customerAllName != ''"> and customer_all_name like concat('%', #{customerAllName}, '%')</if>
-            <if test="industry != null  and industry != ''"> and industry = #{industry}</if>
-            <if test="region != null  and region != ''"> and region = #{region}</if>
-            <if test="salesManagerId != null "> and sales_manager_id = #{salesManagerId}</if>
-            <if test="salesManagerName != null  and salesManagerName != ''"> and sales_manager_name like concat('%', #{salesManagerName}, '%')</if>
-            <if test="createTime != null "> and create_time = #{createTime}</if>
+    <select id="selectCustomerList" parameterType="Customer" resultMap="CustomerCustomerContactResult">
+        select
+            c.customer_id,
+            c.customer_simple_name,
+            c.customer_all_name,
+            c.industry,
+            c.region,
+            c.sales_manager_id,
+            c.office_address,
+            c.del_flag,
+            c.create_by,
+            c.create_time,
+            c.update_by,
+            c.update_time,
+            c.remark,
+            d1.dict_label as industry_name,
+            d2.dict_label as region_name,
+            u.nick_name as sales_manager_name
+        from pm_customer c
+        left join sys_dict_data d1 on c.industry COLLATE utf8mb4_unicode_ci = d1.dict_value and d1.dict_type = 'industry'
+        left join sys_dict_data d2 on c.region COLLATE utf8mb4_unicode_ci = d2.dict_value and d2.dict_type = 'sys_yjqy'
+        left join sys_user u on c.sales_manager_id = u.user_id
+        <where>
+            <if test="customerSimpleName != null  and customerSimpleName != ''"> and c.customer_simple_name like concat('%', #{customerSimpleName}, '%')</if>
+            <if test="industry != null  and industry != ''"> and c.industry = #{industry}</if>
+            <if test="region != null  and region != ''"> and c.region = #{region}</if>
+            <if test="salesManagerId != null "> and c.sales_manager_id = #{salesManagerId}</if>
         </where>
     </select>
     
-    <select id="selectCustomerByCustomerId" parameterType="Long" resultMap="CustomerResult">
-        <include refid="selectCustomerVo"/>
+    <select id="selectCustomerByCustomerId" parameterType="Long" resultMap="CustomerCustomerContactResult">
+        select customer_id, customer_simple_name, customer_all_name, industry, region, sales_manager_id, office_address, del_flag, create_by, create_time, update_by, update_time, remark
+        from pm_customer
         where customer_id = #{customerId}
+    </select>
+
+    <select id="selectCustomerContactList" resultMap="CustomerContactResult">
+        select contact_id, customer_id, contact_name, contact_phone, contact_tag, del_flag, create_by, create_time, update_by, update_time, remark
+        from pm_customer_contact
+        where customer_id = #{customer_id}
     </select>
 
     <insert id="insertCustomer" parameterType="Customer" useGeneratedKeys="true" keyProperty="customerId">
@@ -51,7 +95,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="industry != null">industry,</if>
             <if test="region != null">region,</if>
             <if test="salesManagerId != null">sales_manager_id,</if>
-            <if test="salesManagerName != null">sales_manager_name,</if>
             <if test="officeAddress != null">office_address,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="createBy != null">create_by,</if>
@@ -66,7 +109,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="industry != null">#{industry},</if>
             <if test="region != null">#{region},</if>
             <if test="salesManagerId != null">#{salesManagerId},</if>
-            <if test="salesManagerName != null">#{salesManagerName},</if>
             <if test="officeAddress != null">#{officeAddress},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="createBy != null">#{createBy},</if>
@@ -85,7 +127,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="industry != null">industry = #{industry},</if>
             <if test="region != null">region = #{region},</if>
             <if test="salesManagerId != null">sales_manager_id = #{salesManagerId},</if>
-            <if test="salesManagerName != null">sales_manager_name = #{salesManagerName},</if>
             <if test="officeAddress != null">office_address = #{officeAddress},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
@@ -107,4 +148,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{customerId}
         </foreach>
     </delete>
+    
+    <delete id="deleteCustomerContactByCustomerIds" parameterType="String">
+        delete from pm_customer_contact where customer_id in 
+        <foreach item="customerId" collection="array" open="(" separator="," close=")">
+            #{customerId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteCustomerContactByCustomerId" parameterType="Long">
+        delete from pm_customer_contact where customer_id = #{customerId}
+    </delete>
+
+    <insert id="batchCustomerContact">
+        insert into pm_customer_contact( contact_id, customer_id, contact_name, contact_phone, contact_tag, del_flag, create_by, create_time, update_by, update_time, remark) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.contactId}, #{item.customerId}, #{item.contactName}, #{item.contactPhone}, #{item.contactTag}, #{item.delFlag}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
+        </foreach>
+    </insert>
 </mapper>

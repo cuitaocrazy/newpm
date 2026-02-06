@@ -216,30 +216,21 @@
         <el-collapse-item name="3" title="三、客户信息">
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="客户名称" prop="customerId">
-                <el-select v-model="form.customerId" placeholder="请选择客户"
-                  filterable clearable>
-                  <el-option v-for="customer in customers" :key="customer.customerId"
-                    :label="customer.customerSimpleName" :value="customer.customerId" />
-                </el-select>
+              <el-form-item label="客户ID" prop="customerId">
+                <el-input v-model="form.customerId" placeholder="请输入客户ID" clearable />
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="客户联系人" prop="customerContactId">
-                <el-select v-model="form.customerContactId" placeholder="请先选择客户" 
-                  filterable clearable :disabled="!form.customerId">
-                  <el-option v-for="contact in customerContacts" :key="contact.contactId" 
-                    :label="contact.contactName" :value="contact.contactId" />
-                </el-select>
+              <el-form-item label="客户联系人ID" prop="customerContactId">
+                <el-input v-model="form.customerContactId" placeholder="请输入客户联系人ID" clearable />
               </el-form-item>
             </el-col>
           </el-row>
-          
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="客户联系方式">
-                <el-input v-model="form.customerPhone" placeholder="选择联系人后自动填充" 
-                  :disabled="true" />
+                <el-input v-model="form.customerPhone" placeholder="请输入客户联系方式" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -248,7 +239,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="商户联系方式">
@@ -376,8 +367,6 @@ import { useRouter } from 'vue-router'
 import { addProject } from '@/api/project/project'
 import { listUser, listUserByPost } from '@/api/system/user'
 import { listDept } from '@/api/system/dept'
-import { listCustomer } from '@/api/project/customer'
-import { listContact } from '@/api/project/contact'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
@@ -454,8 +443,8 @@ const data = reactive({
     ],
     salesManagerId: [{ required: true, message: '请选择销售负责人', trigger: 'change' }],
     salesContact: [{ required: true, message: '请输入销售联系方式', trigger: 'blur' }],
-    customerId: [{ required: true, message: '请选择客户名称', trigger: 'change' }],
-    customerContactId: [{ required: true, message: '请选择客户联系人', trigger: 'change' }],
+    customerId: [{ required: true, message: '请输入客户ID', trigger: 'blur' }],
+    customerContactId: [{ required: true, message: '请输入客户联系人ID', trigger: 'blur' }],
     projectBudget: [
       { required: true, message: '请输入项目预算', trigger: 'blur' },
       { pattern: /^\d+(\.\d+)?$/, message: '请输入有效的数字', trigger: 'blur' }
@@ -473,8 +462,6 @@ const projectManagers = ref([])
 const marketManagers = ref([])
 const salesManagers = ref([])
 const allUsers = ref([])
-const customers = ref([])
-const customerContacts = ref([])
 const selectedParticipants = ref([])
 const participantInput = ref('')
 const participantAutocomplete = ref(null)
@@ -488,26 +475,6 @@ watch([() => form.value.industry, () => form.value.region,
     }
   }
 )
-
-// 客户联系人联动
-watch(() => form.value.customerId, (customerId) => {
-  if (customerId) {
-    form.value.customerContactId = ''
-    form.value.customerPhone = ''
-    loadCustomerContacts(customerId)
-  }
-})
-
-watch(() => form.value.customerContactId, (contactId) => {
-  if (contactId) {
-    const contact = customerContacts.value.find(c => c.contactId === contactId)
-    if (contact) {
-      form.value.customerPhone = contact.contactPhone
-    }
-  } else {
-    form.value.customerPhone = ''
-  }
-})
 
 // 监听销售负责人变化，自动填充手机号
 watch(() => form.value.salesManagerId, (userId) => {
@@ -561,20 +528,6 @@ function loadAllUsers() {
   })
 }
 
-// 加载客户列表
-function loadCustomers() {
-  listCustomer({}).then(response => {
-    customers.value = response.rows || []
-  })
-}
-
-// 加载客户联系人列表
-function loadCustomerContacts(customerId) {
-  listContact({ customerId }).then(response => {
-    customerContacts.value = response.rows || []
-  })
-}
-
 // 参与人员变化时同步更新已选人员列表
 function handleParticipantsChange(userIds) {
   selectedParticipants.value = allUsers.value.filter(user => userIds.includes(user.userId))
@@ -624,7 +577,6 @@ loadProjectManagers()
 loadMarketManagers()
 loadSalesManagers()
 loadAllUsers()
-loadCustomers()
 </script>
 
 <style scoped lang="scss">
