@@ -770,11 +770,12 @@ CREATE TABLE `pm_payment_milestone` (
 DROP TABLE IF EXISTS `pm_project`;
 CREATE TABLE `pm_project` (
   `project_id` bigint NOT NULL AUTO_INCREMENT COMMENT '项目ID',
-  `project_code` varchar(50) NOT NULL COMMENT '项目编号(格式:行业-区域-简称-年份)',
+  `project_code` varchar(50) NOT NULL COMMENT '项目编号(格式:行业-一级区域-二级区域-简称-年份)',
   `project_name` varchar(200) NOT NULL COMMENT '项目名称',
   `project_full_name` varchar(500) DEFAULT NULL COMMENT '项目全称',
   `industry` varchar(50) DEFAULT NULL COMMENT '行业',
-  `region` varchar(50) DEFAULT NULL COMMENT '区域',
+  `region` varchar(50) DEFAULT NULL COMMENT '一级区域',
+  `province_id` bigint DEFAULT NULL COMMENT '二级区域ID（关联pm_province表 ）',
   `short_name` varchar(50) DEFAULT NULL COMMENT '简称',
   `established_year` int DEFAULT NULL COMMENT '立项年份',
   `project_category` varchar(50) DEFAULT NULL COMMENT '项目分类',
