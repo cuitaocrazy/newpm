@@ -37,6 +37,23 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    notes: |
+      项目编号生成规则：
+      格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}
+
+      字段来源：
+      - 行业代码：industry 字段的字典值
+      - 一级区域代码：region 字段的字典值（sys_yjqy）
+      - 二级区域代码：regionCode 字段的值（provinceCode）
+      - 简称：shortName 字段的值
+      - 年份：establishedYear 字段的值
+
+      示例：IT-HBQY-11-北京-2024
+
+      生成时机：
+      - 立项申请页面自动生成（只读字段）
+      - 监听以上5个字段的变化，任一字段变化时重新生成
+      - 所有字段都有值时才生成
 
   project_name:
     columnComment: 项目名称
