@@ -2,9 +2,6 @@
 -- 市场管理模块菜单数据
 -- ========================================
 
--- 先删除可能存在的重复菜单（防止重复添加）
-DELETE FROM sys_menu WHERE menu_name = '市场管理' AND parent_id = 0 AND path IN ('market', 'scgl');
-
 -- 一级菜单：市场管理
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('市场管理', 0, 4, 'market', NULL, 1, 0, 'M', '0', '0', '', 'chart', 'admin', sysdate(), '', NULL, '市场管理目录');
