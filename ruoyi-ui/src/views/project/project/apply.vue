@@ -592,7 +592,7 @@ function handleContactChange(contactId) {
 function generateProjectCode() {
   const { industry, region, regionCode, shortName, establishedYear } = form.value
   if (industry && region && regionCode && shortName && establishedYear) {
-    form.value.projectCode = `${industry}-${region}-${regionCode}${shortName}-${establishedYear}`
+    form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
   }
 }
 

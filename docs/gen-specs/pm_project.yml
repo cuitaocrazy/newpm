@@ -1280,7 +1280,7 @@ customizations:
     notes: "只读显示，不可手动编辑，数据来自客户联系人选择"
 
   project_code_auto:
-    intent: "项目编号自动生成，格式：{行业代码}-{一级区域代码}-{二级区域代码}{简称}-{年份}"
+    intent: "项目编号自动生成，格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}"
     component:
       type: custom
       spec: "监听 industry、region、regionCode、shortName、establishedYear 变化，自动生成项目编号"
@@ -1289,7 +1289,7 @@ customizations:
       endpoint: null
       source: "前端根据规则自动生成"
       newApi: false
-    notes: "只读显示，不可手动编辑，格式示例：IT-HBQY-11北京-2024（注意：二级区域代码和简称之间无分隔符）"
+    notes: "只读显示，不可手动编辑，格式示例：IT-HBQY-11-北京-2024"
 
   region_cascade:
     intent: "二级区域级联选择，根据一级区域动态加载二级区域（省份）"
