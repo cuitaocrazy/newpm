@@ -79,11 +79,11 @@ SELECT @projectRootMenuId := LAST_INSERT_ID();
 
 -- 二级菜单：立项申请
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES ('立项申请', @projectRootMenuId, 1, 'apply', 'project/project/apply', 1, 0, 'C', '0', '0', 'project:project:add', 'edit', 'admin', sysdate(), '', NULL, '项目立项申请菜单');
+VALUES ('立项申请', @projectRootMenuId, 1, 'project/apply', 'project/project/apply', 1, 0, 'C', '0', '0', 'project:project:add', 'edit', 'admin', sysdate(), '', NULL, '项目立项申请菜单');
 
 -- 二级菜单：项目列表
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES ('项目列表', @projectRootMenuId, 2, 'list', 'project/project/index', 1, 0, 'C', '0', '0', 'project:project:list', 'list', 'admin', sysdate(), '', NULL, '项目列表菜单');
+VALUES ('项目列表', @projectRootMenuId, 2, 'project', 'project/project/index', 1, 0, 'C', '0', '0', 'project:project:list', 'list', 'admin', sysdate(), '', NULL, '项目列表菜单');
 
 -- 获取项目管理二级菜单ID
 SELECT @projectMenuId := LAST_INSERT_ID();
