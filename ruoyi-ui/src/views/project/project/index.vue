@@ -266,8 +266,8 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="区域" prop="region">
-          <el-select v-model="form.region" placeholder="请选择区域">
+        <el-form-item label="一级区域" prop="region">
+          <el-select v-model="form.region" placeholder="请选择一级区域">
             <el-option
               v-for="dict in region"
               :key="dict.value"
