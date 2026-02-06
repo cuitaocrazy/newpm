@@ -78,7 +78,7 @@ columns:
     dictType: "industry"
 
   region:
-    columnComment: 区域
+    columnComment: 一级区域
     javaType: String
     javaField: region
     isInsert: true
