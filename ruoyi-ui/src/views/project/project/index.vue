@@ -46,7 +46,7 @@
       <el-form-item label="一级区域" prop="region">
         <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable @change="handleRegionChange" style="width: 200px">
           <el-option
-            v-for="dict in region"
+            v-for="dict in sys_yjqy"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -54,12 +54,12 @@
         </el-select>
       </el-form-item>
       <el-form-item label="二级区域" prop="regionCode">
-        <el-select v-model="queryParams.regionCode" placeholder="请选择二级区域" clearable style="width: 200px">
+        <el-select v-model="queryParams.regionCode" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" style="width: 200px">
           <el-option
             v-for="item in secondaryRegionOptions"
-            :key="item.regionCode"
-            :label="item.regionName"
-            :value="item.regionCode"
+            :key="item.provinceCode"
+            :label="item.provinceName"
+            :value="item.provinceCode"
           />
         </el-select>
       </el-form-item>
@@ -130,15 +130,6 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="Plus"
-          @click="handleAdd"
-          v-hasPermi="['project:project:add']"
-        >新增</el-button>
-      </el-col>
       <el-col :span="1.5">
         <el-button
           type="success"
@@ -266,10 +257,10 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="区域" prop="region">
-          <el-select v-model="form.region" placeholder="请选择区域">
+        <el-form-item label="一级区域" prop="region">
+          <el-select v-model="form.region" placeholder="请选择一级区域">
             <el-option
-              v-for="dict in region"
+              v-for="dict in sys_yjqy"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -541,7 +532,8 @@ import { listProject, getProject, delProject, addProject, updateProject } from "
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_ndgl, region, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'region', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
+const router = useRouter()
+const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
 
 const projectList = ref([])
 const projectApprovalList = ref([])
@@ -830,14 +822,8 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  reset()
   const _projectId = row.projectId || ids.value
-  getProject(_projectId).then(response => {
-    form.value = response.data
-    projectApprovalList.value = response.data.projectApprovalList
-    open.value = true
-    title.value = "修改项目管理"
-  })
+  router.push(`/project/list/edit/${_projectId}`)
 }
 
 /** 提交按钮 */

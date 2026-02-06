@@ -274,3 +274,132 @@ Use the `/ruoyi-gen` skill for interactive CRUD generation:
 5. **Customization**: Applies custom UI requirements from spec file
 
 The skill handles menu generation, SQL file management, and database imports automatically.
+
+## Code Generation Workflow (ruoyi-gen-cli)
+
+This project includes a custom CLI-based code generator that generates CRUD scaffolding from DDL without requiring a running database.
+
+### Key Files
+
+- **CLI JAR**: `ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar`
+- **DDL Source**: `pm-sql/init/00_tables_ddl.sql` (all table DDLs)
+- **Menu SQL**: `pm-sql/init/02_menu_data.sql` (menu permission SQL)
+- **Spec Files**: `docs/gen-specs/<table_name>.yml` (generation config per table)
+- **Default Config**: `ruoyi-generator/src/main/resources/generator.yml`
+
+### Generation Process
+
+1. **Find DDL**: Extract table DDL from `pm-sql/init/00_tables_ddl.sql`
+2. **Generate Spec**: Create YAML config in `docs/gen-specs/` with field mappings, query types, HTML types
+3. **Build CLI** (if needed): `mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true`
+4. **Run CLI**: `java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar --sql=<ddl>.sql --config=<spec>.yml --output=<out>.zip`
+5. **Deploy**: Extract ZIP and copy to:
+   - Java code → `ruoyi-project/src/main/java/com/ruoyi/<module>/`
+   - MyBatis XML → `ruoyi-project/src/main/resources/mapper/<module>/`
+   - Vue pages → `ruoyi-ui/src/views/<module>/<business>/`
+   - API functions → `ruoyi-ui/src/api/<module>/`
+6. **Menu SQL**: Append generated menu SQL to `pm-sql/init/02_menu_data.sql` (deduplicated)
+
+**Important**: All generated Java code goes to `ruoyi-project` module (not `ruoyi-admin`). The CLI uses Velocity templates and supports master-detail tables.
+
+### Master-Detail Table Support
+
+When generating master-detail relationships:
+- Set `tplCategory: sub` in main table config
+- Include `subTableName`, `subTableFkName`, `subTableGenerateMenu` in `genInfo`
+- Both main and sub table DDLs must be in the SQL file
+- Both table configs must be in the YAML file
+- Sub table's `tplCategory` must be `crud` (not `sub`)
+
+### Skill Integration
+
+Use the `ruoyi-gen` skill for interactive code generation. The skill automates the entire workflow with user confirmation at each step.
+
+## SQL Management
+
+### Database Initialization
+
+- `sql/` - Original RuoYi system SQL (legacy)
+- `pm-sql/init/` - Project-specific SQL (active):
+  - `00_tables_ddl.sql` - All table DDL definitions
+  - `01_tables_data.sql` - Initial data (dict, config, etc.)
+  - `02_menu_data.sql` - Menu and permission data
+- `pm-sql/fix_*.sql` - One-off migration scripts
+
+**Pattern**: New tables go to `00_tables_ddl.sql`, menu changes go to `02_menu_data.sql`.
+
+## Development Workflow
+
+### Adding a New Business Module
+
+1. Design table schema and add DDL to `pm-sql/init/00_tables_ddl.sql`
+2. Run DDL in MySQL to create table
+3. Use `ruoyi-gen` skill or manual CLI to generate code
+4. Deploy generated code to `ruoyi-project` and `ruoyi-ui`
+5. Customize generated code as needed (add business logic, UI enhancements)
+6. Add menu SQL to `pm-sql/init/02_menu_data.sql`
+7. Test and commit
+
+### Running Backend Locally
+
+```bash
+# Ensure MySQL and Redis are running
+# Database: ry-vue (init with pm-sql/init/*.sql)
+mvn clean package -Dmaven.test.skip=true
+java -Xms256m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar
+```
+
+### Running Frontend Locally
+
+```bash
+cd ruoyi-ui
+npm install
+npm run dev  # Vite dev server on port 80
+```
+
+Frontend proxies `/dev-api` to `http://localhost:8080` (see `vite.config.ts`).
+
+## Common Pitfalls
+
+### Collation Mismatch Error
+
+**Error**: `Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_ci,IMPLICIT)`
+
+**Cause**: New tables use MySQL 8.0 default collation `utf8mb4_0900_ai_ci`, but system tables use `utf8mb4_unicode_ci`.
+
+**Fix**: In MyBatis XML, explicitly cast when joining system tables:
+
+```xml
+<!-- Wrong -->
+left join sys_dict_data d on t.type = d.dict_value
+
+<!-- Correct -->
+left join sys_dict_data d on t.type COLLATE utf8mb4_unicode_ci = d.dict_value
+```
+
+### Frontend HTTP Request Pattern
+
+**Correct**:
+```typescript
+import request from '@/utils/request'
+request({ url: '/api/path', method: 'get' })
+```
+
+**Wrong**:
+```typescript
+const { proxy } = getCurrentInstance()
+proxy.$http.get(...)  // Does not exist
+```
+
+### Pagination in Controller
+
+Always call `startPage()` before query:
+
+```java
+@GetMapping("/list")
+public TableDataInfo list(Entity entity) {
+    startPage();  // MUST call this first
+    List<Entity> list = service.selectList(entity);
+    return getDataTable(list);
+}
+```
