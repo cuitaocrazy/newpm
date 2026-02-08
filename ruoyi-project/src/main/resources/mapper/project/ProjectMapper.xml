@@ -506,7 +506,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
         LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
         LEFT JOIN sys_user u2 ON p.market_manager_id = u2.user_id
-        LEFT JOIN pm_province pr ON p.province_id = pr.province_id
+        LEFT JOIN pm_secondary_region pr ON p.province_id = pr.province_id
         WHERE p.approval_status = '0' AND p.del_flag = '0'
         ${params.dataScope}
         <if test="projectName != null and projectName != ''">
