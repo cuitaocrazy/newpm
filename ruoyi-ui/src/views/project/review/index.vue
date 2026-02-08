@@ -248,7 +248,7 @@
 import { listReview, getReview, approveProject } from "@/api/project/review"
 import { listSecondaryRegion } from "@/api/project/secondaryRegion"
 import { listUserByPost } from "@/api/system/user"
-import { deptTreeSelect } from "@/api/system/dept"
+import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_shzt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_shzt')
@@ -322,8 +322,11 @@ function handleRegionChange(value) {
 
 /** 查询部门树 */
 function getDeptTree() {
-  deptTreeSelect().then(response => {
-    deptOptions.value = response.data
+  request({
+    url: '/system/dept/treeselect',
+    method: 'get'
+  }).then(response => {
+    deptOptions.value = response.data || []
   })
 }
 
