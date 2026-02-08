@@ -79,9 +79,17 @@ public interface ProjectMapper
 
     /**
      * 通过项目管理主键删除项目审核信息
-     * 
+     *
      * @param projectId 项目管理ID
      * @return 结果
      */
     public int deleteProjectApprovalByProjectId(Long projectId);
+
+    /**
+     * 查询待审核项目列表
+     *
+     * @param project 项目查询条件
+     * @return 待审核项目列表
+     */
+    public List<Project> selectReviewList(Project project);
 }

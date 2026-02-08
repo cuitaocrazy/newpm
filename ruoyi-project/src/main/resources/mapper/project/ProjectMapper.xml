@@ -474,4 +474,65 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ( #{item.approvalId}, #{item.projectId}, #{item.approvalStatus}, #{item.approvalReason}, #{item.approverId}, #{item.approvalTime}, #{item.delFlag}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
         </foreach>
     </insert>
+
+    <!-- 查询待审核项目列表 -->
+    <select id="selectReviewList" parameterType="Project" resultMap="ProjectResult">
+        SELECT
+            p.project_id,
+            p.project_code,
+            p.project_name,
+            p.project_full_name,
+            p.industry,
+            p.region,
+            p.province_id,
+            p.short_name,
+            p.established_year,
+            p.project_category,
+            p.project_dept,
+            p.project_status,
+            p.acceptance_status,
+            p.approval_status,
+            p.approval_reason,
+            p.approval_time,
+            p.approver_id,
+            p.project_manager_id,
+            p.market_manager_id,
+            p.create_time,
+            d.dept_name,
+            u1.nick_name as project_manager_name,
+            u2.nick_name as market_manager_name,
+            pr.province_name
+        FROM pm_project p
+        LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
+        LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
+        LEFT JOIN sys_user u2 ON p.market_manager_id = u2.user_id
+        LEFT JOIN pm_province pr ON p.province_id = pr.province_id
+        WHERE p.approval_status = '0' AND p.del_flag = '0'
+        ${params.dataScope}
+        <if test="projectName != null and projectName != ''">
+            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        <if test="projectDept != null and projectDept != ''">
+            AND p.project_dept = #{projectDept}
+        </if>
+        <if test="projectCategory != null and projectCategory != ''">
+            AND p.project_category = #{projectCategory}
+        </if>
+        <if test="region != null and region != ''">
+            AND p.region = #{region}
+        </if>
+        <if test="provinceId != null">
+            AND p.province_id = #{provinceId}
+        </if>
+        <if test="projectManagerId != null">
+            AND p.project_manager_id = #{projectManagerId}
+        </if>
+        <if test="marketManagerId != null">
+            AND p.market_manager_id = #{marketManagerId}
+        </if>
+        <if test="projectStatus != null and projectStatus != ''">
+            AND p.project_status = #{projectStatus}
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
 </mapper>
