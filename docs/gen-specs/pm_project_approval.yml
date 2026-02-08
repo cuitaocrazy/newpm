@@ -189,27 +189,37 @@ customizations:
   # ============================
 
   review_drawer_style:
-    intent: "立项审核页面使用抽屉样式而非对话框，从右侧滑出，宽度80%，底部按钮固定"
+    intent: "立项审核页面使用抽屉样式而非对话框，从右侧滑出，宽度60%，底部按钮固定"
     component:
       type: el-drawer
       props:
         direction: "rtl"
-        size: "80%"
+        size: "60%"
         closeOnClickModal: true
         closeOnPressEscape: false
         title: "动态显示项目名称"
+        class: "review-drawer"
     bindTo: page
     service: null
     notes: |
       实现位置：ruoyi-ui/src/views/project/review/index.vue
 
       抽屉配置：
-      - 从右侧滑出，占据80%屏幕宽度
+      - 从右侧滑出，占据60%屏幕宽度（优化后）
       - 标题动态显示：'审核项目 - ' + reviewForm.projectName
       - 关闭方式：点击遮罩层、右上角X按钮、取消按钮
+      - 样式类：review-drawer（用于自定义样式）
+
+      样式优化：
+      - 抽屉头和body之间距离缩短：padding-top: 10px
+      - 折叠面板上边距调整：margin-top: -10px
+      - CSS实现：
+        .review-drawer :deep(.el-drawer__body) {
+          padding-top: 10px;
+        }
 
       内容区域：
-      - 7个折叠面板（基本信息、人员信息、预算信息、工作量信息、时间信息、项目描述、客户信息）
+      - 7个折叠面板（基本信息、人员配置、客户信息、时间规划、成本预算、工作量信息、项目描述）
       - 审核意见表单放在折叠面板下方，用 el-divider 分隔
       - 内容区域可滚动
 
@@ -266,50 +276,65 @@ customizations:
       type: el-collapse
       props:
         modelValue: "['1', '2', '3', '4', '5', '6', '7']"
+        style: "margin-top: -10px"
     bindTo: page
     service:
       endpoint: "GET /project/review/{projectId}"
       source: "复用 ProjectReviewService.selectProjectById → ProjectMapper.selectProjectByProjectId"
-      returns: "项目完整信息"
+      returns: "项目完整信息（包含二级区域名称）"
       newApi: false
     notes: |
       实现位置：ruoyi-ui/src/views/project/review/index.vue
 
       折叠面板模块（使用 el-descriptions 展示）：
       1. 基本信息（name="1"）：
-         - 项目名称、项目编码、项目全称、项目部门
-         - 项目分类（字典）、项目阶段（字典）
-         - 一级区域（字典）、二级区域
+         - 项目名称、项目编码、项目部门
+         - 项目分类（字典）、预估工作量、项目阶段（字典）
+         - 验收状态（字典）、一级区域（字典）
+         - 二级区域（provinceName，关联查询）、项目地址
+         - 项目计划、项目描述
 
-      2. 人员信息（name="2"）：
-         - 项目经理、市场经理、销售经理、团队负责人
+      2. 人员配置（name="2"）：
+         - 项目经理、市场经理
+         - 销售负责人（原"销售经理"）、销售联系方式（原"团队负责人"）
          - 参与人员（跨2列显示）
 
-      3. 预算信息（name="3"）：
-         - 项目预算、成本预算
-         - 人工成本、采购成本
+      3. 客户信息（name="3"）：
+         - 客户名称、客户联系人
+         - 客户联系方式（customerContactPhone，新增）
+         - 商户联系人
 
-      4. 工作量信息（name="4"）：
-         - 预估工作量（人天）
-         - 实际工作量（人天）
-
-      5. 时间信息（name="5"）：
+      4. 时间规划（name="4"，原"时间信息"）：
          - 启动日期、结束日期
          - 上线日期、验收日期
          - 日期格式：parseTime(date, '{y}-{m}-{d}')
 
-      6. 项目描述（name="6"）：
+      5. 成本预算（name="5"，原"预算信息"）：
+         - 项目预算、项目费用（projectCost，新增）
+         - 成本预算、人工成本、采购成本
+
+      6. 工作量信息（name="6"）：
+         - 预估工作量（人天）
+         - 实际工作量（人天）
+
+      7. 项目描述（name="7"）：
          - 项目地址、项目计划、项目描述
          - 单列显示（:column="1"）
 
-      7. 客户信息（name="7"）：
-         - 客户名称、客户联系人
-         - 商户联系人、商户电话
+      模块顺序调整：
+      - 原顺序：基本信息 → 人员信息 → 预算信息 → 工作量信息 → 时间信息 → 项目描述 → 客户信息
+      - 新顺序：基本信息 → 人员配置 → 客户信息 → 时间规划 → 成本预算 → 工作量信息 → 项目描述
 
       数据加载：
       - 点击"审核"按钮时调用 getReview(projectId)
       - 数据存储在 reviewForm.value
       - 默认展开所有面板：activeNames.value = ['1', '2', '3', '4', '5', '6', '7']
+
+      后端数据支持：
+      - 二级区域名称：ProjectMapper.xml 关联 pm_secondary_region 表
+      - SQL: LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
+      - 字段映射：sr.province_name AS province_name
+      - Project 实体添加 provinceName 字段及 getter/setter
 
   review_approval_action:
     intent: "审核操作支持通过和拒绝，拒绝时必须填写审核意见，审核后发送邮件通知"
@@ -427,7 +452,7 @@ customizations:
       - 审核抽屉：<el-descriptions-item label="二级区域">{{ reviewForm.provinceName }}</el-descriptions-item>
 
   review_query_conditions:
-    intent: "立项审核查询条件包含8个字段，支持多条件组合查询"
+    intent: "立项审核查询条件包含8个字段，支持多条件组合查询，项目部门使用公共组件"
     component:
       type: el-form
       props:
@@ -449,10 +474,20 @@ customizations:
          - 宽度：200px
 
       2. 项目部门（projectDept）：
-         - 类型：el-tree-select
-         - 数据源：/system/dept/treeselect
+         - 类型：ProjectDeptSelect（公共组件）
+         - 组件路径：@/components/ProjectDeptSelect/index.vue
+         - 数据源：组件内部自动加载 /system/dept/treeselect
          - 查询方式：EQ
          - 宽度：200px
+         - 特性：
+           * 自动加载部门树数据
+           * 自动过滤只显示三级及以下机构
+           * 支持清空和搜索
+           * check-strictly 模式（可选任意级别）
+         - 优化：
+           * 移除了页面内的 deptOptions 变量
+           * 移除了 getDeptTree() 函数
+           * 使用统一的公共组件，代码更简洁
 
       3. 项目分类（projectCategory）：
          - 类型：el-select
@@ -476,10 +511,12 @@ customizations:
 
       6. 项目经理（projectManagerId）：
          - 类型：el-select
-         - 数据源：/system/user/listByPost?postCode=xmjl
+         - 数据源：/system/user/listByPost?postCode=pm
+         - 岗位代码：pm（修正：原错误代码 xmjl）
          - 查询方式：EQ
          - 宽度：200px
          - 可搜索：filterable
+         - 修复：参数传递方式从对象改为字符串 listUserByPost('pm')
 
       7. 市场经理（marketManagerId）：
          - 类型：el-select
@@ -487,6 +524,7 @@ customizations:
          - 查询方式：EQ
          - 宽度：200px
          - 可搜索：filterable
+         - 修复：参数传递方式从对象改为字符串 listUserByPost('scjl')
 
       8. 审核状态（approvalStatus）：
          - 类型：el-select
@@ -498,6 +536,13 @@ customizations:
       操作按钮：
       - 搜索：type="primary"，icon="Search"
       - 重置：icon="Refresh"，重置后保持 approvalStatus='0'
+
+      数据加载优化：
+      - 项目经理和市场经理数据在页面初始化时加载
+      - 岗位代码查询：
+        * 项目经理：post_code = 'pm'（post_id = 2）
+        * 市场经理：post_code = 'scjl'（post_id = 13）
+      - 部门树数据由 ProjectDeptSelect 组件自动加载
 
   review_list_display:
     intent: "立项审核列表展示11个列，包含项目基本信息和操作按钮"

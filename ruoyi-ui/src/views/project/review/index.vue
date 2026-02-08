@@ -11,15 +11,10 @@
         />
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
-        <el-tree-select
+        <ProjectDeptSelect
           v-model="queryParams.projectDept"
-          :data="deptOptions"
-          :props="{ value: 'id', label: 'label', children: 'children' }"
-          value-key="id"
           placeholder="请选择项目部门"
-          check-strictly
-          clearable
-          style="width: 200px"
+          width="200px"
         />
       </el-form-item>
       <el-form-item label="项目分类" prop="projectCategory">
@@ -146,11 +141,12 @@
       v-model="reviewOpen"
       :title="'审核项目 - ' + reviewForm.projectName"
       direction="rtl"
-      size="80%"
+      size="60%"
       :close-on-click-modal="true"
       :close-on-press-escape="false"
+      class="review-drawer"
     >
-      <el-collapse v-model="activeNames">
+      <el-collapse v-model="activeNames" style="margin-top: -10px;">
         <!-- 基本信息 -->
         <el-collapse-item title="基本信息" name="1">
           <el-descriptions :column="2" border>
@@ -177,37 +173,29 @@
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 人员信息 -->
-        <el-collapse-item title="人员信息" name="2">
+        <!-- 人员配置 -->
+        <el-collapse-item title="人员配置" name="2">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="项目经理">{{ reviewForm.projectManagerName }}</el-descriptions-item>
             <el-descriptions-item label="市场经理">{{ reviewForm.marketManagerName }}</el-descriptions-item>
-            <el-descriptions-item label="销售经理">{{ reviewForm.salesManagerName }}</el-descriptions-item>
-            <el-descriptions-item label="团队负责人">{{ reviewForm.teamLeaderName }}</el-descriptions-item>
+            <el-descriptions-item label="销售负责人">{{ reviewForm.salesManagerName }}</el-descriptions-item>
+            <el-descriptions-item label="销售联系方式">{{ reviewForm.teamLeaderName }}</el-descriptions-item>
             <el-descriptions-item label="参与人员" :span="2">{{ reviewForm.participantsNames }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 预算信息 -->
-        <el-collapse-item title="预算信息" name="3">
+        <!-- 客户信息 -->
+        <el-collapse-item title="客户信息" name="3">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget }}</el-descriptions-item>
-            <el-descriptions-item label="成本预算">{{ reviewForm.costBudget }}</el-descriptions-item>
-            <el-descriptions-item label="人工成本">{{ reviewForm.laborCost }}</el-descriptions-item>
-            <el-descriptions-item label="采购成本">{{ reviewForm.purchaseCost }}</el-descriptions-item>
+            <el-descriptions-item label="客户名称">{{ reviewForm.customerName }}</el-descriptions-item>
+            <el-descriptions-item label="客户联系人">{{ reviewForm.customerContactName }}</el-descriptions-item>
+            <el-descriptions-item label="客户联系方式">{{ reviewForm.customerContactPhone }}</el-descriptions-item>
+            <el-descriptions-item label="商户联系人">{{ reviewForm.merchantContact }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 工作量信息 -->
-        <el-collapse-item title="工作量信息" name="4">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload }} 人天</el-descriptions-item>
-            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload }} 人天</el-descriptions-item>
-          </el-descriptions>
-        </el-collapse-item>
-
-        <!-- 时间信息 -->
-        <el-collapse-item title="时间信息" name="5">
+        <!-- 时间规划 -->
+        <el-collapse-item title="时间规划" name="4">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="启动日期">{{ parseTime(reviewForm.startDate, '{y}-{m}-{d}') }}</el-descriptions-item>
             <el-descriptions-item label="结束日期">{{ parseTime(reviewForm.endDate, '{y}-{m}-{d}') }}</el-descriptions-item>
@@ -216,22 +204,31 @@
           </el-descriptions>
         </el-collapse-item>
 
+        <!-- 成本预算 -->
+        <el-collapse-item title="成本预算" name="5">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget }}</el-descriptions-item>
+            <el-descriptions-item label="项目费用">{{ reviewForm.projectCost }}</el-descriptions-item>
+            <el-descriptions-item label="成本预算">{{ reviewForm.costBudget }}</el-descriptions-item>
+            <el-descriptions-item label="人工成本">{{ reviewForm.laborCost }}</el-descriptions-item>
+            <el-descriptions-item label="采购成本">{{ reviewForm.purchaseCost }}</el-descriptions-item>
+          </el-descriptions>
+        </el-collapse-item>
+
+        <!-- 工作量信息 -->
+        <el-collapse-item title="工作量信息" name="6">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload }} 人天</el-descriptions-item>
+            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload }} 人天</el-descriptions-item>
+          </el-descriptions>
+        </el-collapse-item>
+
         <!-- 项目描述 -->
-        <el-collapse-item title="项目描述" name="6">
+        <el-collapse-item title="项目描述" name="7">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="项目地址">{{ reviewForm.projectAddress }}</el-descriptions-item>
             <el-descriptions-item label="项目计划">{{ reviewForm.projectPlan }}</el-descriptions-item>
             <el-descriptions-item label="项目描述">{{ reviewForm.projectDescription }}</el-descriptions-item>
-          </el-descriptions>
-        </el-collapse-item>
-
-        <!-- 客户信息 -->
-        <el-collapse-item title="客户信息" name="7">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="客户名称">{{ reviewForm.customerName }}</el-descriptions-item>
-            <el-descriptions-item label="客户联系人">{{ reviewForm.customerContactName }}</el-descriptions-item>
-            <el-descriptions-item label="商户联系人">{{ reviewForm.merchantContact }}</el-descriptions-item>
-            <el-descriptions-item label="商户电话">{{ reviewForm.merchantPhone }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
       </el-collapse>
@@ -262,6 +259,7 @@ import { listReview, getReview, approveProject } from "@/api/project/review"
 import { listSecondaryRegion } from "@/api/project/secondaryRegion"
 import { listUserByPost } from "@/api/system/user"
 import request from '@/utils/request'
+import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
 
 const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt')
@@ -270,7 +268,6 @@ const reviewList = ref([])
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
-const deptOptions = ref([])
 const secondaryRegionOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
@@ -334,24 +331,14 @@ function handleRegionChange(value) {
   }
 }
 
-/** 查询部门树 */
-function getDeptTree() {
-  request({
-    url: '/system/dept/treeselect',
-    method: 'get'
-  }).then(response => {
-    deptOptions.value = response.data || []
-  })
-}
-
 /** 查询用户列表 */
 function getUserOptions() {
-  // 查询项目经理（岗位代码：xmjl）
-  listUserByPost({ postCode: 'xmjl' }).then(response => {
+  // 查询项目经理（岗位代码：pm）
+  listUserByPost('pm').then(response => {
     projectManagerOptions.value = response.data || []
   })
   // 查询市场经理（岗位代码：scjl）
-  listUserByPost({ postCode: 'scjl' }).then(response => {
+  listUserByPost('scjl').then(response => {
     marketManagerOptions.value = response.data || []
   })
 }
@@ -407,7 +394,12 @@ function submitApprove(approvalStatus) {
 }
 
 // 初始化
-getDeptTree()
 getUserOptions()
 getList()
 </script>
+
+<style scoped>
+.review-drawer :deep(.el-drawer__body) {
+  padding-top: 10px;
+}
+</style>

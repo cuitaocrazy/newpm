@@ -145,6 +145,69 @@ columns:
 
       重要：edit.vue 中的 watch 必须监听 establishedYear，不是 year
 
+      ========================================
+      数据类型转换（2026-02-08）
+      ========================================
+
+      问题：字典值为字符串，后端字段为 Integer
+      - 字典 sys_ndgl 的 dict_value 可能是字符串（如 "2025q"）
+      - 后端 Project.establishedYear 字段类型为 Integer
+      - 直接提交会导致 JSON 反序列化失败
+
+      解决方案：提交前转换为整数
+
+      apply.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          const submitData = {
+            ...form.value,
+            regionCode: form.value.provinceCode,
+            establishedYear: parseInt(form.value.establishedYear)  // 转换为整数
+          }
+          delete submitData.provinceCode
+
+          addProject(submitData).then(response => {
+            proxy.$modal.msgSuccess("提交成功")
+            router.push('/project/list')
+          })
+        })
+      }
+      ```
+
+      edit.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          proxy.$modal.confirm('确认保存项目信息？').then(() => {
+            const submitData = { ...form.value }
+            // ... 其他处理
+            // 转换 establishedYear 为整数
+            if (submitData.establishedYear) {
+              submitData.establishedYear = parseInt(submitData.establishedYear)
+            }
+
+            updateProject(submitData).then(response => {
+              proxy.$modal.msgSuccess('保存成功')
+              router.push('/project/list')
+            })
+          })
+        })
+      }
+      ```
+
+      错误示例：
+      ```
+      JSON parse error: Cannot deserialize value of type `java.lang.Integer`
+      from String "2025q": not a valid `java.lang.Integer` value
+      ```
+
+      最佳实践：
+      1. 字典数据的 dict_value 应该只包含纯数字（如 "2025"）
+      2. 前端提交前统一进行类型转换
+      3. 使用 parseInt() 确保转换为整数
+      4. 对于可能为空的字段，先判断再转换
+
   project_category:
     columnComment: 项目分类
     javaType: String
@@ -1106,6 +1169,238 @@ subTableColumns:
 # ============================
 customizations:
   # ========================================
+  # 公共组件说明（2026-02-08）
+  # ========================================
+  common_components:
+    intent: "项目管理模块使用的公共组件列表"
+    component:
+      type: custom
+      spec: "封装常用功能为公共组件，提高代码复用性和维护性"
+    bindTo: null
+    service:
+      endpoint: null
+      source: "前端公共组件"
+      newApi: false
+    notes: |
+      ========================================
+      公共组件列表
+      ========================================
+
+      1. ProjectDeptSelect - 项目部门选择器
+         位置: ruoyi-ui/src/components/ProjectDeptSelect/index.vue
+         注册: main.ts 全局注册
+         用途: 项目部门树形选择，自动过滤前两级部门
+         使用: <project-dept-select v-model="form.projectDept" />
+         文档: docs/components/ProjectDeptSelect.md
+
+         特性:
+         - 自动加载部门树数据
+         - 自动过滤前两级，只显示三级及以下机构
+         - 支持任意层级选择（checkStrictly）
+         - 支持清空、禁用、过滤等功能
+         - 封装了 filterDeptTree 过滤逻辑
+
+         应用页面:
+         - index.vue: 项目列表查询条件
+         - apply.vue: 立项申请表单
+         - edit.vue: 编辑项目表单
+
+      ========================================
+      公共组件开发规范
+      ========================================
+
+      1. 组件命名: 使用 PascalCase，如 ProjectDeptSelect
+      2. 文件位置: ruoyi-ui/src/components/{ComponentName}/index.vue
+      3. 全局注册: 在 main.ts 中注册，方便全局使用
+      4. 文档编写: 在 docs/components/ 目录下创建对应的 .md 文档
+      5. Props 设计: 提供合理的默认值，支持常用配置
+      6. 事件支持: 支持 v-model 双向绑定和常用事件（change, blur 等）
+      7. 方法暴露: 使用 defineExpose 暴露必要的方法供外部调用
+
+      ========================================
+      组件提取原则
+      ========================================
+
+      满足以下条件之一的功能应考虑提取为公共组件:
+      1. 在 3 个及以上页面中重复使用
+      2. 包含复杂的业务逻辑（如数据过滤、格式化）
+      3. 需要统一维护和更新
+      4. 有明确的输入输出接口
+      5. 功能相对独立，不依赖特定页面上下文
+
+  # ========================================
+  # 页面布局规范（2026-02-08）
+  # ========================================
+  page_layout_standards:
+    intent: "项目管理模块页面布局统一规范"
+    component:
+      type: custom
+      spec: "统一的页面结构和样式规范"
+    bindTo: ["apply.vue", "edit.vue", "detail.vue"]
+    service:
+      endpoint: null
+      source: "前端布局规范"
+      newApi: false
+    notes: |
+      ========================================
+      底部按钮布局规范
+      ========================================
+
+      所有表单页面（立项申请、编辑、详情）统一使用固定底部按钮布局。
+
+      HTML 结构：
+      ```vue
+      <!-- 底部操作按钮 -->
+      <div class="form-footer">
+        <el-button type="primary" size="large" @click="submitForm">提交/保存</el-button>
+        <el-button size="large" @click="cancel">取消/返回</el-button>
+      </div>
+      ```
+
+      样式规范：
+      ```scss
+      .app-container {
+        padding-bottom: 80px;  // 避免内容被按钮遮挡
+      }
+
+      .form-footer {
+        position: sticky;      // 滚动时固定在底部
+        bottom: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #dcdfe6;
+        text-align: center;    // 按钮居中
+        z-index: 10;          // 确保在最上层
+
+        .el-button {
+          min-width: 120px;   // 按钮最小宽度
+          margin: 0 10px;     // 按钮间距
+        }
+      }
+      ```
+
+      ========================================
+      各页面按钮配置
+      ========================================
+
+      1. 立项申请页面（apply.vue）
+         按钮：提交、重置、取消
+         ```vue
+         <el-button type="primary" size="large" @click="submitForm">提交</el-button>
+         <el-button size="large" @click="resetForm">重置</el-button>
+         <el-button size="large" @click="cancel">取消</el-button>
+         ```
+
+      2. 编辑页面（edit.vue）
+         按钮：保存、取消
+         ```vue
+         <el-button type="primary" size="large" @click="submitForm" :loading="submitLoading">
+           保存
+         </el-button>
+         <el-button size="large" @click="cancel">取消</el-button>
+         ```
+
+      3. 详情页面（detail.vue）
+         按钮：返回
+         ```vue
+         <el-button size="large" @click="handleBack">返回</el-button>
+         ```
+
+      ========================================
+      布局特性
+      ========================================
+
+      1. 固定定位
+         - 使用 position: sticky
+         - 滚动时始终固定在底部
+         - 不遮挡页面内容
+
+      2. 居中对齐
+         - text-align: center
+         - 按钮水平居中显示
+
+      3. 统一样式
+         - 白色背景
+         - 顶部边框分隔
+         - 按钮最小宽度 120px
+         - 按钮间距 10px
+
+      4. 响应式
+         - 按钮 size="large"
+         - 适配不同屏幕尺寸
+
+      ========================================
+      实现要点
+      ========================================
+
+      1. 页面容器底部内边距
+         - 设置 padding-bottom: 80px
+         - 避免内容被固定按钮遮挡
+
+      2. z-index 层级
+         - 设置 z-index: 10
+         - 确保按钮在最上层
+
+      3. 按钮状态
+         - 主按钮使用 type="primary"
+         - 提交/保存按钮支持 :loading 状态
+         - 所有按钮使用 size="large"
+
+      4. 事件处理
+         - 提交/保存：表单验证 + 数据提交
+         - 重置：清空表单数据
+         - 取消/返回：确认提示 + 路由跳转
+
+      ========================================
+      最佳实践
+      ========================================
+
+      1. 统一使用 .form-footer 类名
+      2. 按钮顺序：主操作在左，次要操作在右
+      3. 危险操作（删除）需要二次确认
+      4. 提交按钮显示 loading 状态
+      5. 取消操作提示未保存数据将丢失
+
+      ========================================
+      常见问题与解决方案
+      ========================================
+
+      问题1：按钮没有居中显示
+      原因：样式选择器类名与 HTML 类名不匹配
+      解决：确保 CSS 选择器与 HTML 的 class 属性一致
+
+      示例：
+      ```vue
+      <!-- HTML -->
+      <div class="project-edit">
+        <div class="form-footer">...</div>
+      </div>
+
+      <!-- CSS（必须匹配） -->
+      <style scoped lang="scss">
+      .project-edit {  // ✅ 与 HTML 类名一致
+        .form-footer {
+          text-align: center;
+        }
+      }
+      </style>
+      ```
+
+      问题2：样式不生效
+      原因：scoped 样式作用域问题
+      解决：检查样式嵌套层级，确保选择器正确
+
+      问题3：按钮被内容遮挡
+      原因：页面容器没有设置底部内边距
+      解决：添加 padding-bottom: 80px
+
+      调试技巧：
+      1. 使用浏览器开发者工具检查元素
+      2. 查看 Computed 样式是否生效
+      3. 检查是否有其他样式覆盖
+      4. 清除浏览器缓存
+
+  # ========================================
   # 查询条件精简与数据源配置（2026-02-05）
   # ========================================
   query_conditions_config:
@@ -1131,11 +1426,12 @@ customizations:
          - 实现方式: 页面加载时获取所有项目名称，前端过滤匹配
 
       2. 项目部门 (project_dept)
-         - 组件类型: el-tree-select（树形选择）
+         - 组件类型: project-dept-select（公共组件）
          - 数据源: 部门表 sys_dept，多级树形结构
          - 接口: GET /system/dept/treeselect
          - 返回字段: { id, label, children }
-         - 说明: 支持任意层级选择，checkStrictly=true
+         - 说明: 使用 ProjectDeptSelect 公共组件，自动过滤前两级部门
+         - 使用: <project-dept-select v-model="queryParams.projectDept" style="width: 200px" />
 
       3. 收入确认年度 (revenue_confirm_year)
          - 组件类型: el-select（下拉选择）
@@ -1287,20 +1583,93 @@ customizations:
     notes: "提交值为 userId，显示值为 nickName"
 
   project_dept_tree:
-    intent: "项目部门选择，树形结构，任意层级可选"
+    intent: "项目部门选择，树形结构，任意层级可选，使用公共组件 ProjectDeptSelect"
     component:
-      type: el-tree-select
+      type: project-dept-select
       props:
-        data: "部门树数据"
         checkStrictly: true
-        valueKey: "id"
-        renderAfterExpand: false
+        clearable: true
+        filterable: false
+        autoLoad: true
     bindTo: project_dept
     service:
       endpoint: "GET /system/dept/treeselect"
       source: "复用 SysDeptService，RuoYi 自带"
       newApi: false
-    notes: "提交值为 deptId，显示值为 deptName"
+    notes: |
+      提交值为 deptId，显示值为 deptName
+
+      ========================================
+      公共组件说明（2026-02-08）
+      ========================================
+
+      组件名称: ProjectDeptSelect
+      组件位置: ruoyi-ui/src/components/ProjectDeptSelect/index.vue
+      全局注册: main.ts 中已全局注册，无需手动导入
+
+      功能特性:
+      - 自动加载部门树数据
+      - 自动过滤前两级部门，只显示三级及以下机构
+      - 支持任意层级选择（checkStrictly: true）
+      - 支持清空、禁用、过滤等常用功能
+      - 封装了 filterDeptTree 过滤逻辑
+
+      使用方式:
+      ```vue
+      <!-- 基础用法 -->
+      <project-dept-select v-model="form.projectDept" />
+
+      <!-- 查询条件（index.vue） -->
+      <el-form-item label="项目部门" prop="projectDept">
+        <project-dept-select
+          v-model="queryParams.projectDept"
+          style="width: 200px"
+        />
+      </el-form-item>
+
+      <!-- 立项申请/编辑（apply.vue, edit.vue） -->
+      <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
+        <project-dept-select
+          v-model="form.projectDept"
+          @blur="validateOnBlur('projectDept')"
+        />
+      </el-form-item>
+      ```
+
+      Props:
+      - modelValue: 绑定值（String/Number）
+      - placeholder: 占位文本（默认：请选择项目部门）
+      - checkStrictly: 父子节点不互相关联（默认：true）
+      - clearable: 是否可清空（默认：true）
+      - disabled: 是否禁用（默认：false）
+      - filterable: 是否可搜索（默认：false）
+      - width: 组件宽度（默认：100%）
+      - autoLoad: 是否自动加载数据（默认：true）
+
+      Events:
+      - update:modelValue: 绑定值变化时触发
+      - change: 选中值发生变化时触发
+      - blur: 失去焦点时触发
+
+      Methods:
+      - loadDeptTree(): 手动加载部门树数据
+
+      过滤逻辑:
+      - 跳过第1、2级部门节点
+      - 从第3级开始保留节点及其所有子节点
+      - 保持树形结构的层级关系
+      - 格式化显示：二部-分行业务组（项目四组）
+
+      已应用页面:
+      - index.vue: 项目列表查询条件
+      - apply.vue: 立项申请表单
+      - edit.vue: 编辑项目表单
+
+      迁移说明:
+      旧代码需要手动管理 deptOptions、filterDeptTree、getDeptTree
+      新代码直接使用 <project-dept-select> 组件，无需额外代码
+
+      详细文档: docs/components/ProjectDeptSelect.md
 
   participants_tags:
     intent: "参与人员多选，标签形式展示，支持添加和删除"
@@ -1782,6 +2151,186 @@ customizations:
         pointer-events: none;
       }
       ```
+
+  apply_page_footer_buttons:
+    intent: "立项申请页面底部操作按钮，固定在底部中间位置"
+    component:
+      type: custom
+      spec: "使用 sticky 定位的底部按钮区域"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端实现"
+      newApi: false
+    notes: |
+      ========================================
+      按钮布局（2026-02-08）
+      ========================================
+
+      HTML 结构：
+      ```vue
+      <!-- 底部操作按钮 -->
+      <div class="form-footer">
+        <el-button type="primary" size="large" @click="submitForm">提交</el-button>
+        <el-button size="large" @click="resetForm">重置</el-button>
+        <el-button size="large" @click="cancel">取消</el-button>
+      </div>
+      ```
+
+      样式实现：
+      ```scss
+      .app-container {
+        padding-bottom: 80px;  // 避免内容被按钮遮挡
+      }
+
+      .form-footer {
+        position: sticky;      // 滚动时固定在底部
+        bottom: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #dcdfe6;
+        text-align: center;    // 按钮居中
+        z-index: 10;          // 确保在最上层
+
+        .el-button {
+          min-width: 120px;   // 按钮最小宽度
+          margin: 0 10px;     // 按钮间距
+        }
+      }
+      ```
+
+      按钮配置：
+      - 提交按钮：type="primary", size="large"
+      - 重置按钮：size="large"
+      - 取消按钮：size="large"
+
+      特性：
+      - 居中对齐
+      - 固定在底部（sticky 定位）
+      - 滚动时始终可见
+      - 白色背景 + 顶部边框
+      - 按钮间距均匀（10px）
+      - 按钮最小宽度 120px
+
+  # ========================================
+  # 编辑页面特殊字段（2026-02-06）
+  # ========================================
+  edit_page_footer_buttons:
+    intent: "编辑页面底部操作按钮，固定在底部中间位置"
+    component:
+      type: custom
+      spec: "使用 sticky 定位的底部按钮区域"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端实现"
+      newApi: false
+    notes: |
+      ========================================
+      按钮布局（2026-02-08）
+      ========================================
+
+      HTML 结构：
+      ```vue
+      <!-- 底部操作按钮 -->
+      <div class="form-footer">
+        <el-button type="primary" size="large" @click="submitForm" :loading="submitLoading">
+          保存
+        </el-button>
+        <el-button size="large" @click="cancel">取消</el-button>
+      </div>
+      ```
+
+      样式实现：
+      ```scss
+      .project-edit {
+        .form-footer {
+          position: sticky;      // 滚动时固定在底部
+          bottom: 0;
+          padding: 20px;
+          background-color: #fff;
+          border-top: 1px solid #dcdfe6;
+          text-align: center;    // 按钮居中
+          z-index: 10;          // 确保在最上层
+
+          .el-button {
+            min-width: 120px;   // 按钮最小宽度
+            margin: 0 10px;     // 按钮间距
+          }
+        }
+      }
+      ```
+
+      按钮配置：
+      - 保存按钮：type="primary", size="large", :loading="submitLoading"
+      - 取消按钮：size="large"
+
+      特性：
+      - 居中对齐
+      - 固定在底部（sticky 定位）
+      - 滚动时始终可见
+      - 白色背景 + 顶部边框
+      - 按钮间距均匀（10px）
+      - 按钮最小宽度 120px
+      - 保存按钮支持 loading 状态
+
+      与立项申请页面的区别：
+      - 编辑页面只有"保存"和"取消"两个按钮
+      - 保存按钮有 loading 状态
+      - 立项申请页面有"提交"、"重置"、"取消"三个按钮
+
+      ========================================
+      常见问题（2026-02-08）
+      ========================================
+
+      问题：按钮没有居中显示
+      原因：样式选择器类名与 HTML 类名不匹配
+
+      错误示例：
+      ```vue
+      <!-- HTML -->
+      <div class="app-container project-edit">
+        <div class="form-footer">...</div>
+      </div>
+
+      <!-- CSS（错误：类名不匹配） -->
+      <style scoped lang="scss">
+      .project-apply {  // ❌ HTML 是 project-edit，CSS 写成 project-apply
+        .form-footer {
+          text-align: center;
+        }
+      }
+      </style>
+      ```
+
+      正确示例：
+      ```vue
+      <!-- HTML -->
+      <div class="app-container project-edit">
+        <div class="form-footer">...</div>
+      </div>
+
+      <!-- CSS（正确：类名匹配） -->
+      <style scoped lang="scss">
+      .project-edit {  // ✅ 与 HTML 类名一致
+        .form-footer {
+          text-align: center;
+        }
+      }
+      </style>
+      ```
+
+      调试步骤：
+      1. 检查 HTML 元素的 class 属性
+      2. 检查 CSS 选择器是否与 HTML 类名匹配
+      3. 使用浏览器开发者工具查看样式是否生效
+      4. 检查 scoped 样式的作用域
+      5. 清除浏览器缓存后重新加载
+
+      常见错误：
+      - 复制粘贴代码时忘记修改类名
+      - HTML 和 CSS 在不同文件中，修改了一处忘记修改另一处
+      - scoped 样式作用域问题
 
   # ========================================
   # 编辑页面特殊字段（2026-02-06）
@@ -2536,7 +3085,31 @@ customizations:
       - 使用 el-card 包裹每个信息模块
       - 使用 el-descriptions 组件展示数据（替代表单控件）
       - 6个信息卡片，每个卡片一个主题
-      - 底部只有"返回"按钮
+      - 底部只有"返回"按钮，居中显示
+
+      底部按钮布局（2026-02-08）：
+      ```vue
+      <div class="form-footer">
+        <el-button size="large" @click="handleBack">返回</el-button>
+      </div>
+      ```
+
+      样式：
+      ```scss
+      .form-footer {
+        position: sticky;
+        bottom: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #dcdfe6;
+        text-align: center;
+        z-index: 10;
+
+        .el-button {
+          min-width: 120px;
+        }
+      }
+      ```
 
   detail_page_card1_basic_info:
     intent: "详情页卡片1：项目基本信息，使用 el-descriptions 3列布局"
@@ -2888,11 +3461,209 @@ customizations:
       - 选择框：合计行不可选择（:selectable="checkSelectable"）
       - 项目名称列：显示"合计"文字（加粗）
       - 金额列：合计值加粗显示
+      - 操作列：合计行不显示操作按钮（v-if="!scope.row.isSummary"）
       - 其他列：显示空白
 
       样式：
       - 背景色：#f5f7fa（浅灰色）
       - 字体：加粗（font-weight: bold）
       - CSS：:deep(.el-table__body tr:first-child)
+
+      操作列实现：
+      ```vue
+      <el-table-column label="操作" align="center" width="200" fixed="right">
+        <template #default="scope">
+          <template v-if="!scope.row.isSummary">
+            <el-button link type="primary" icon="View" @click="handleDetail(scope.row)">详情</el-button>
+            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)">修改</el-button>
+            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
+          </template>
+        </template>
+      </el-table-column>
+      ```
+
+  # ========================================
+  # 数据类型转换规范（2026-02-08）
+  # ========================================
+  data_type_conversion:
+    intent: "前后端数据类型转换规范，确保数据类型匹配"
+    component:
+      type: custom
+      spec: "前端提交数据前进行类型转换"
+    bindTo: ["apply.vue", "edit.vue"]
+    service:
+      endpoint: null
+      source: "前端数据处理"
+      newApi: false
+    notes: |
+      ========================================
+      问题背景
+      ========================================
+
+      前端表单绑定的数据通常是字符串类型（特别是字典值），但后端实体类的字段可能是其他类型（Integer、Long、BigDecimal 等）。
+      直接提交会导致 JSON 反序列化失败。
+
+      常见错误：
+      ```
+      JSON parse error: Cannot deserialize value of type `java.lang.Integer`
+      from String "2025q": not a valid `java.lang.Integer` value
+      ```
+
+      ========================================
+      需要转换的字段
+      ========================================
+
+      1. establishedYear (立项年份)
+         - 前端类型: String (字典值，如 "2025q")
+         - 后端类型: Integer
+         - 转换方法: parseInt(value)
+
+      2. projectDept (项目部门)
+         - 前端类型: String (部门ID)
+         - 后端类型: String
+         - 无需转换
+
+      3. 数值类型字段
+         - projectBudget, estimatedWorkload, actualWorkload 等
+         - 前端类型: String (输入框值)
+         - 后端类型: BigDecimal
+         - 转换方法: parseFloat(value) 或后端自动转换
+
+      ========================================
+      转换实现
+      ========================================
+
+      apply.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          const submitData = {
+            ...form.value,
+            regionCode: form.value.provinceCode,  // 字段映射
+            establishedYear: parseInt(form.value.establishedYear)  // 类型转换
+          }
+          delete submitData.provinceCode  // 删除前端字段
+
+          addProject(submitData).then(response => {
+            proxy.$modal.msgSuccess("提交成功")
+            router.push('/project/list')
+          })
+        })
+      }
+      ```
+
+      edit.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          proxy.$modal.confirm('确认保存项目信息？').then(() => {
+            const submitData = { ...form.value }
+
+            // 参与人员数组转字符串
+            if (Array.isArray(submitData.participants)) {
+              submitData.participants = submitData.participants.join(',')
+            }
+
+            // 字段映射
+            submitData.regionCode = submitData.provinceCode
+            delete submitData.provinceCode
+
+            // 类型转换
+            if (submitData.establishedYear) {
+              submitData.establishedYear = parseInt(submitData.establishedYear)
+            }
+
+            updateProject(submitData).then(response => {
+              proxy.$modal.msgSuccess('保存成功')
+              router.push('/project/list')
+            })
+          })
+        })
+      }
+      ```
+
+      ========================================
+      转换规范
+      ========================================
+
+      1. 整数类型转换
+         - 使用 parseInt(value)
+         - 对于可能为空的字段，先判断再转换
+         - 示例：if (value) { data.field = parseInt(value) }
+
+      2. 浮点数类型转换
+         - 使用 parseFloat(value)
+         - 保留小数位数：parseFloat(value).toFixed(2)
+
+      3. 布尔类型转换
+         - 使用 Boolean(value) 或 !!value
+         - 字符串 "true"/"false" 需要特殊处理
+
+      4. 日期类型转换
+         - Element Plus 日期选择器返回的是 Date 对象或字符串
+         - 后端通常接收 "yyyy-MM-dd" 格式字符串
+         - 使用 value-format="YYYY-MM-DD" 自动格式化
+
+      5. 数组类型转换
+         - 后端接收逗号分隔字符串
+         - 使用 array.join(',')
+         - 示例：participants.join(',')
+
+      ========================================
+      字典数据规范
+      ========================================
+
+      为避免类型转换问题，字典数据应遵循以下规范：
+
+      1. 数值类型字典
+         - dict_value 应该只包含纯数字
+         - 正确：dict_value = "2025"
+         - 错误：dict_value = "2025q" 或 "2025年"
+
+      2. 字典标签
+         - dict_label 可以包含任意文本
+         - 示例：dict_label = "2025年"
+
+      3. 字典排序
+         - dict_sort 用于控制显示顺序
+         - 不影响 dict_value 的值
+
+      ========================================
+      调试技巧
+      ========================================
+
+      1. 查看提交数据
+         ```javascript
+         console.log('提交数据:', submitData)
+         console.log('establishedYear 类型:', typeof submitData.establishedYear)
+         ```
+
+      2. 后端错误日志
+         - 查看 JSON 反序列化错误信息
+         - 确认字段名称和类型
+
+      3. 网络请求
+         - 浏览器开发者工具 → Network → Payload
+         - 查看实际发送的 JSON 数据
+
+      ========================================
+      最佳实践
+      ========================================
+
+      1. 统一处理
+         - 在提交函数中统一进行类型转换
+         - 避免在多个地方重复转换逻辑
+
+      2. 类型安全
+         - 使用 TypeScript 定义接口类型
+         - 编译时检查类型错误
+
+      3. 防御性编程
+         - 对可能为空的字段进行判断
+         - 使用默认值避免 undefined
+
+      4. 文档记录
+         - 在字段 notes 中说明类型转换要求
+         - 记录常见错误和解决方案
 
 

@@ -12,14 +12,8 @@
         />
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
-        <el-tree-select
+        <project-dept-select
           v-model="queryParams.projectDept"
-          :data="deptOptions"
-          :props="{ value: 'id', label: 'label', children: 'children' }"
-          value-key="id"
-          placeholder="请选择项目部门"
-          check-strictly
-          clearable
           style="width: 200px"
         />
       </el-form-item>
@@ -262,9 +256,11 @@
       </el-table-column>
       <el-table-column label="操作" align="center" width="200" fixed="right" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
+          <template v-if="!scope.row.isSummary">
+            <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
+            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
+            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -588,7 +584,6 @@ const total = ref(0)
 const title = ref("")
 
 // 数据源选项
-const deptOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
 const secondaryRegionOptions = ref([])
@@ -681,43 +676,6 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
-
-/** 过滤部门树，只保留三级及以下机构 */
-function filterDeptTree(depts, level = 1) {
-  if (!depts || depts.length === 0) return []
-
-  // 如果当前是第1或第2级，继续递归子节点
-  if (level < 3) {
-    let result = []
-    depts.forEach(dept => {
-      if (dept.children && dept.children.length > 0) {
-        const filtered = filterDeptTree(dept.children, level + 1)
-        result = result.concat(filtered)
-      }
-    })
-    return result
-  }
-
-  // 第3级及以下，保留当前节点及其子节点
-  return depts.map(dept => ({
-    ...dept,
-    children: dept.children && dept.children.length > 0
-      ? filterDeptTree(dept.children, level + 1)
-      : undefined
-  }))
-}
-
-/** 加载部门树 */
-function getDeptTree() {
-  request({
-    url: '/system/dept/treeselect',
-    method: 'get'
-  }).then(response => {
-    const allDepts = response.data || []
-    // 过滤掉前两级，只显示三级及以下机构
-    deptOptions.value = filterDeptTree(allDepts)
-  })
-}
 
 /** 加载项目经理列表 */
 function getProjectManagers() {
@@ -1070,7 +1028,6 @@ function checkSelectable(row) {
 }
 
 // 初始化数据
-getDeptTree()
 getProjectManagers()
 getMarketManagers()
 getList()

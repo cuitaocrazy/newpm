@@ -109,13 +109,8 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
-            <el-tree-select
+            <project-dept-select
               v-model="form.projectDept"
-              :data="deptOptions"
-              :props="{ value: 'id', label: 'label', children: 'children' }"
-              value-key="id"
-              placeholder="请选择项目部门"
-              check-strictly
               @blur="validateOnBlur('projectDept')"
             />
           </el-form-item>
@@ -443,23 +438,41 @@
       </el-row>
         </div>
       </el-card>
-
-      <!-- 按钮 -->
-      <el-row>
-        <el-col :span="24" style="text-align: center; margin-top: 20px; margin-bottom: 60px;">
-          <el-button type="primary" @click="submitForm">提交</el-button>
-          <el-button @click="resetForm">重置</el-button>
-          <el-button @click="cancel">取消</el-button>
-        </el-col>
-      </el-row>
     </el-form>
+
+    <!-- 底部操作按钮 -->
+    <div class="form-footer">
+      <el-button type="primary" size="large" @click="submitForm">提交</el-button>
+      <el-button size="large" @click="resetForm">重置</el-button>
+      <el-button size="large" @click="cancel">取消</el-button>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.app-container {
+  padding-bottom: 80px;
+}
+
 /* 禁用 label 点击触发表单控件的默认行为 */
 :deep(.el-form-item__label) {
   pointer-events: none;
+}
+
+/* 底部按钮 */
+.form-footer {
+  position: sticky;
+  bottom: 0;
+  padding: 20px;
+  background-color: #fff;
+  border-top: 1px solid #dcdfe6;
+  text-align: center;
+  z-index: 10;
+}
+
+.form-footer .el-button {
+  min-width: 120px;
+  margin: 0 10px;
 }
 </style>
 
@@ -545,7 +558,6 @@ const rules = ref({
 })
 
 const secondaryRegionOptions = ref([])
-const deptOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
 const salesManagerOptions = ref([])
@@ -561,42 +573,6 @@ watch(participantIds, (newVal) => {
 })
 
 /** 过滤部门树，只保留三级及以下机构 */
-function filterDeptTree(depts, level = 1) {
-  if (!depts || depts.length === 0) return []
-
-  // 如果当前是第1或第2级，继续递归子节点
-  if (level < 3) {
-    let result = []
-    depts.forEach(dept => {
-      if (dept.children && dept.children.length > 0) {
-        const filtered = filterDeptTree(dept.children, level + 1)
-        result = result.concat(filtered)
-      }
-    })
-    return result
-  }
-
-  // 第3级及以下，保留当前节点及其子节点
-  return depts.map(dept => ({
-    ...dept,
-    children: dept.children && dept.children.length > 0
-      ? filterDeptTree(dept.children, level + 1)
-      : undefined
-  }))
-}
-
-/** 获取部门树 */
-function getDeptTree() {
-  request({
-    url: '/system/dept/treeselect',
-    method: 'get'
-  }).then(response => {
-    const allDepts = response.data || []
-    // 过滤掉前两级，只显示三级及以下机构
-    deptOptions.value = filterDeptTree(allDepts)
-  })
-}
-
 /** 获取项目经理列表 */
 function getProjectManagers() {
   request({
@@ -750,7 +726,8 @@ function submitForm() {
     // 验证通过后的提交逻辑
     const submitData = {
       ...form.value,
-      regionCode: form.value.provinceCode  // 映射到后端字段
+      regionCode: form.value.provinceCode,  // 映射到后端字段
+      establishedYear: parseInt(form.value.establishedYear)  // 转换为整数
     }
     delete submitData.provinceCode  // 删除前端字段
 
@@ -797,7 +774,6 @@ function togglePanel(name) {
 
 // 初始化数据
 onMounted(() => {
-  getDeptTree()
   getProjectManagers()
   getMarketManagers()
   getSalesManagers()

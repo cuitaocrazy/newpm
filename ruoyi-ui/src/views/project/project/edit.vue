@@ -109,10 +109,10 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
-                <el-tree-select v-model="form.projectDept" :data="deptOptions"
-                  :props="{ value: 'id', label: 'label', children: 'children' }"
-                  value-key="id" placeholder="请选择项目部门" check-strictly clearable
-                  @blur="validateOnBlur('projectDept')" />
+                <project-dept-select
+                  v-model="form.projectDept"
+                  @blur="validateOnBlur('projectDept')"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -519,7 +519,6 @@ const { form, rules } = toRefs(data)
 // 其他数据
 const submitLoading = ref(false)
 const contractInfo = ref({})
-const deptOptions = ref([])
 const secondaryRegionOptions = ref([])
 const yearOptions = ref([])
 const projectManagers = ref([])
@@ -567,44 +566,6 @@ watch(() => form.value.region, (newRegion) => {
 })
 
 /** 过滤部门树，只保留三级及以下机构 */
-function filterDeptTree(depts, level = 1) {
-  if (!depts || depts.length === 0) return []
-
-  // 如果当前是第1或第2级，继续递归子节点
-  if (level < 3) {
-    let result = []
-    depts.forEach(dept => {
-      if (dept.children && dept.children.length > 0) {
-        const filtered = filterDeptTree(dept.children, level + 1)
-        result = result.concat(filtered)
-      }
-    })
-    return result
-  }
-
-  // 第3级及以下，保留当前节点及其子节点
-  return depts.map(dept => ({
-    ...dept,
-    children: dept.children && dept.children.length > 0
-      ? filterDeptTree(dept.children, level + 1)
-      : undefined
-  }))
-}
-
-// 加载部门树
-function getDeptTree() {
-  listDept().then(response => {
-    const deptData = response.data.map(dept => ({
-      ...dept,
-      id: dept.deptId,
-      label: dept.deptName
-    }))
-    const allDepts = proxy.handleTree(deptData, "id")
-    // 过滤掉前两级，只显示三级及以下机构
-    deptOptions.value = filterDeptTree(allDepts)
-  })
-}
-
 // 加载项目经理列表
 function loadProjectManagers() {
   listUserByPost('pm').then(response => {
@@ -707,6 +668,10 @@ function submitForm() {
       // 前端 provinceCode 映射到后端 regionCode
       submitData.regionCode = submitData.provinceCode
       delete submitData.provinceCode
+      // 转换 establishedYear 为整数
+      if (submitData.establishedYear) {
+        submitData.establishedYear = parseInt(submitData.establishedYear)
+      }
 
       updateProject(submitData).then(response => {
         proxy.$modal.msgSuccess('保存成功')
@@ -830,7 +795,6 @@ function loadProjectData() {
 // 页面加载时初始化
 onMounted(() => {
   initYearOptions()
-  getDeptTree()
   loadProjectManagers()
   loadMarketManagers()
   loadSalesManagers()
@@ -846,17 +810,17 @@ onMounted(() => {
   pointer-events: none;
 }
 
-.project-apply {
+.project-edit {
   .page-header {
     margin-bottom: 20px;
-    
+
     .header-content {
       h2 {
         margin: 0 0 8px 0;
         font-size: 20px;
         color: #303133;
       }
-      
+
       .tips {
         margin: 0;
         font-size: 14px;
@@ -864,10 +828,10 @@ onMounted(() => {
       }
     }
   }
-  
+
   .apply-collapse {
     margin-bottom: 20px;
-    
+
     :deep(.el-collapse-item__header) {
       font-size: 16px;
       font-weight: 600;
@@ -875,64 +839,64 @@ onMounted(() => {
       padding-left: 10px;
       border-left: 3px solid #409eff;
     }
-    
+
     :deep(.el-collapse-item__content) {
       padding: 20px 15px;
     }
   }
-  
+
   .form-tip {
     display: block;
     margin-top: 5px;
     font-size: 12px;
     color: #909399;
   }
-  
+
   // 只读信息区域
   .readonly-section {
     padding: 15px;
     background-color: #f5f7fa;
     border-radius: 4px;
     margin-bottom: 15px;
-    
+
     .info-item {
       line-height: 32px;
-      
+
       .label {
         color: #606266;
         font-weight: 500;
       }
-      
+
       .value {
         color: #303133;
       }
     }
   }
-  
+
   // 参与人员标签
   .selected-participants {
     margin-bottom: 10px;
-    
+
     .participant-tag {
       margin-right: 8px;
       margin-bottom: 8px;
     }
   }
-  
+
   .autocomplete-item {
     display: flex;
     justify-content: space-between;
-    
+
     .name {
       font-weight: 500;
     }
-    
+
     .username {
       color: #909399;
       font-size: 12px;
     }
   }
-  
+
   // 底部按钮
   .form-footer {
     position: sticky;
@@ -942,9 +906,10 @@ onMounted(() => {
     border-top: 1px solid #dcdfe6;
     text-align: center;
     z-index: 10;
-    
+
     .el-button {
       min-width: 120px;
+      margin: 0 10px;
     }
   }
 }

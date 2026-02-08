@@ -43,6 +43,8 @@ import ImageUpload from "@/components/ImageUpload/index.vue"
 import ImagePreview from "@/components/ImagePreview/index.vue"
 // 字典标签组件
 import DictTag from '@/components/DictTag/index.vue'
+// 项目部门选择组件
+import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
 
 const app = createApp(App)
 
@@ -65,6 +67,7 @@ app.component('ImageUpload', ImageUpload)
 app.component('ImagePreview', ImagePreview)
 app.component('RightToolbar', RightToolbar)
 app.component('Editor', Editor)
+app.component('ProjectDeptSelect', ProjectDeptSelect)
 
 app.use(router)
 app.use(store)
