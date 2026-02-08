@@ -68,7 +68,7 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
         project.setProjectId(projectId);
         project.setApprovalStatus(approvalStatus);
         project.setApprovalReason(approvalReason);
-        project.setApproverId(SecurityUtils.getUserId());
+        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
         project.setApprovalTime(DateUtils.getNowDate());
         project.setUpdateBy(SecurityUtils.getUsername());
         project.setUpdateTime(DateUtils.getNowDate());

@@ -3,16 +3,13 @@ package com.ruoyi.project.service.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.mapper.ProjectMapper;
 import com.ruoyi.project.service.IProjectEmailService;
-import com.ruoyi.system.domain.SysUser;
 import com.ruoyi.system.mapper.SysUserMapper;
 
 /**
@@ -26,17 +23,11 @@ public class ProjectEmailServiceImpl implements IProjectEmailService
 {
     private static final Logger log = LoggerFactory.getLogger(ProjectEmailServiceImpl.class);
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
-
     @Autowired
     private ProjectMapper projectMapper;
 
     @Autowired
     private SysUserMapper userMapper;
-
-    @Value("${spring.mail.username:}")
-    private String fromEmail;
 
     /**
      * 发送审核结果通知邮件（异步）
@@ -51,13 +42,6 @@ public class ProjectEmailServiceImpl implements IProjectEmailService
     {
         try
         {
-            // 检查邮件服务是否配置
-            if (mailSender == null || StringUtils.isEmpty(fromEmail))
-            {
-                log.warn("邮件服务未配置，跳过发送审核通知邮件");
-                return;
-            }
-
             // 查询项目信息
             Project project = projectMapper.selectProjectByProjectId(projectId);
             if (project == null)
@@ -94,15 +78,10 @@ public class ProjectEmailServiceImpl implements IProjectEmailService
             content.append("\n请登录系统查看详情。\n\n");
             content.append("此邮件由系统自动发送，请勿回复。");
 
-            // 发送邮件
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(creator.getEmail());
-            message.setSubject(subject);
-            message.setText(content.toString());
-
-            mailSender.send(message);
-            log.info("审核通知邮件发送成功，projectId: {}, to: {}", projectId, creator.getEmail());
+            // TODO: 集成邮件发送功能
+            // 当前仅记录日志，实际部署时需要配置 spring.mail 并注入 JavaMailSender
+            log.info("审核通知邮件待发送 - projectId: {}, to: {}, subject: {}, content: {}",
+                projectId, creator.getEmail(), subject, content.toString());
         }
         catch (Exception e)
         {
