@@ -146,6 +146,15 @@
       :close-on-press-escape="false"
       class="review-drawer"
     >
+      <template #header>
+        <div class="drawer-header">
+          <span class="drawer-title">审核项目 - {{ reviewForm.projectName }}</span>
+          <el-link type="primary" :underline="false" @click="toggleAllCollapse">
+            {{ isAllExpanded ? '全部收起' : '全部展开' }}
+          </el-link>
+        </div>
+      </template>
+
       <el-collapse v-model="activeNames" style="margin-top: -10px;">
         <!-- 基本信息 -->
         <el-collapse-item title="基本信息" name="1">
@@ -157,6 +166,7 @@
               <dict-tag :options="sys_xmfl" :value="reviewForm.projectCategory"/>
             </el-descriptions-item>
             <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload }} 人天</el-descriptions-item>
+            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload }} 人天</el-descriptions-item>
             <el-descriptions-item label="项目阶段">
               <dict-tag :options="sys_xmjd" :value="reviewForm.projectStatus"/>
             </el-descriptions-item>
@@ -169,7 +179,6 @@
             <el-descriptions-item label="二级区域">{{ reviewForm.provinceName }}</el-descriptions-item>
             <el-descriptions-item label="项目地址" :span="2">{{ reviewForm.projectAddress }}</el-descriptions-item>
             <el-descriptions-item label="项目计划" :span="2">{{ reviewForm.projectPlan }}</el-descriptions-item>
-            <el-descriptions-item label="项目描述" :span="2">{{ reviewForm.projectDescription }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
 
@@ -214,23 +223,6 @@
             <el-descriptions-item label="采购成本">{{ reviewForm.purchaseCost }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
-
-        <!-- 工作量信息 -->
-        <el-collapse-item title="工作量信息" name="6">
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload }} 人天</el-descriptions-item>
-            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload }} 人天</el-descriptions-item>
-          </el-descriptions>
-        </el-collapse-item>
-
-        <!-- 项目描述 -->
-        <el-collapse-item title="项目描述" name="7">
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="项目地址">{{ reviewForm.projectAddress }}</el-descriptions-item>
-            <el-descriptions-item label="项目计划">{{ reviewForm.projectPlan }}</el-descriptions-item>
-            <el-descriptions-item label="项目描述">{{ reviewForm.projectDescription }}</el-descriptions-item>
-          </el-descriptions>
-        </el-collapse-item>
       </el-collapse>
 
       <!-- 审核表单 -->
@@ -272,7 +264,8 @@ const secondaryRegionOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
 const reviewOpen = ref(false)
-const activeNames = ref(['1', '2', '3', '4', '5', '6', '7'])
+const activeNames = ref(['1'])
+const isAllExpanded = ref(false)
 
 const data = reactive({
   queryParams: {
@@ -350,9 +343,23 @@ function handleReview(row) {
   getReview(projectId).then(response => {
     reviewForm.value = response.data
     reviewForm.value.approvalReason = null
-    // 默认展开所有折叠面板
-    activeNames.value = ['1', '2', '3', '4', '5', '6', '7']
+    // 默认只展开基本信息
+    activeNames.value = ['1']
+    isAllExpanded.value = false
   })
+}
+
+/** 切换全部折叠/展开 */
+function toggleAllCollapse() {
+  if (isAllExpanded.value) {
+    // 收起所有
+    activeNames.value = ['1']
+    isAllExpanded.value = false
+  } else {
+    // 展开所有
+    activeNames.value = ['1', '2', '3', '4', '5']
+    isAllExpanded.value = true
+  }
 }
 
 /** 取消审核 */
@@ -401,5 +408,17 @@ getList()
 <style scoped>
 .review-drawer :deep(.el-drawer__body) {
   padding-top: 10px;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.drawer-title {
+  font-size: 16px;
+  font-weight: 500;
 }
 </style>

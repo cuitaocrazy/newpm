@@ -200,6 +200,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             pm.nick_name AS project_manager_name,
             mm.nick_name AS market_manager_name,
             sm.nick_name AS sales_manager_name,
+            (
+                SELECT GROUP_CONCAT(u.nick_name ORDER BY FIND_IN_SET(u.user_id, p.participants) SEPARATOR ',')
+                FROM sys_user u
+                WHERE FIND_IN_SET(u.user_id, p.participants) > 0
+            ) AS participants_names,
             c.customer_simple_name AS customer_name,
             cc.contact_name AS customer_contact_name,
             sr.province_name AS province_name,
