@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.project.mapper.ProjectMapper;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.service.IProjectReviewService;
+import com.ruoyi.project.service.IProjectEmailService;
 
 /**
  * 项目审核Service业务层处理
@@ -22,6 +23,9 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
 {
     @Autowired
     private ProjectMapper projectMapper;
+
+    @Autowired
+    private IProjectEmailService projectEmailService;
 
     /**
      * 查询待审核项目列表
@@ -69,6 +73,14 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
         project.setUpdateBy(SecurityUtils.getUsername());
         project.setUpdateTime(DateUtils.getNowDate());
 
-        return projectMapper.updateProject(project);
+        int result = projectMapper.updateProject(project);
+
+        // 异步发送邮件通知
+        if (result > 0)
+        {
+            projectEmailService.sendApprovalNotification(projectId, approvalStatus, approvalReason);
+        }
+
+        return result;
     }
 }
