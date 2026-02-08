@@ -189,7 +189,7 @@ customizations:
   # ============================
 
   review_drawer_style:
-    intent: "立项审核页面使用抽屉样式而非对话框，从右侧滑出，宽度60%，底部按钮固定，支持全部展开/收起"
+    intent: "立项审核页面使用抽屉样式而非对话框，从右侧滑出，宽度60%，底部按钮固定，支持全部展开/收起，拒绝时输入框下方提示"
     component:
       type: el-drawer
       props:
@@ -217,11 +217,25 @@ customizations:
       - 样式：flex 布局，space-between 对齐
 
       折叠/展开功能：
-      - 默认状态：只展开基本信息面板（activeNames: ['1']）
-      - 全部展开：展开所有5个面板（activeNames: ['1', '2', '3', '4', '5']）
+      - 默认状态：全部展开（activeNames: ['1', '2', '3', '4', '5']）
+      - 全部展开：展开所有5个面板
       - 全部收起：只保留基本信息展开（activeNames: ['1']）
       - 状态跟踪：isAllExpanded 变量控制按钮文字切换
       - 实现函数：toggleAllCollapse()
+
+      审核意见输入：
+      - 位置：折叠面板下方，用 el-divider 分隔
+      - 输入框：textarea，3行，placeholder 提示"拒绝时必填"
+      - 拒绝验证：点击拒绝按钮时，如果审核意见为空：
+        * 输入框下方显示红色错误提示（带警告图标）
+        * 输入框边框变红（.is-error 样式）
+        * 自动滚动到输入框位置
+        * 开始输入后自动清除错误状态
+      - 错误提示样式：
+        * 红色文字 + 警告图标
+        * 带淡入淡出动画效果
+        * 位置在输入框正下方，与抽屉风格统一
+      - 优点：不使用弹框，避免抽屉在侧边、弹框在中间的不协调感
 
       样式优化：
       - 抽屉头和body之间距离缩短：padding-top: 10px
@@ -232,6 +246,15 @@ customizations:
           align-items: center;
           justify-content: space-between;
           width: 100%;
+        }
+      - 错误提示样式：
+        .error-tip {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: #f56c6c;
+          font-size: 12px;
+          margin-top: 5px;
         }
       - CSS实现：
         .review-drawer :deep(.el-drawer__body) {
@@ -250,8 +273,9 @@ customizations:
 
       交互行为：
       - 审核成功后自动关闭抽屉并刷新列表
-      - 拒绝时必须填写审核意见（前端校验）
-      - 打开抽屉时默认只展开基本信息，提升加载体验
+      - 拒绝时必须填写审核意见（前端校验，输入框下方提示）
+      - 打开抽屉时默认全部展开，方便查看所有信息
+      - 关闭抽屉时清除错误提示状态
 
       设计文档：docs/plans/2026-02-08-review-drawer-design.md
 
@@ -292,17 +316,17 @@ customizations:
       - 可以查看审核历史和统计
 
   review_project_detail_collapse:
-    intent: "审核抽屉中展示完整项目信息，使用折叠面板分5个模块展示，默认只展开基本信息"
+    intent: "审核抽屉中展示完整项目信息，使用折叠面板分5个模块展示，默认全部展开"
     component:
       type: el-collapse
       props:
-        modelValue: "['1']"
+        modelValue: "['1', '2', '3', '4', '5']"
         style: "margin-top: -10px"
     bindTo: page
     service:
       endpoint: "GET /project/review/{projectId}"
       source: "复用 ProjectReviewService.selectProjectById → ProjectMapper.selectProjectByProjectId"
-      returns: "项目完整信息（包含二级区域名称、参与人员姓名）"
+      returns: "项目完整信息（包含二级区域名称、参与人员姓名、销售联系方式、客户联系方式）"
       newApi: false
     notes: |
       实现位置：ruoyi-ui/src/views/project/review/index.vue
@@ -319,13 +343,14 @@ customizations:
 
       2. 人员配置（name="2"）：
          - 项目经理、市场经理
-         - 销售负责人（原"销售经理"）、销售联系方式（显示 teamLeaderName，但不查询）
-         - 参与人员（跨2列显示，participantsNames，关联查询）
+         - 销售负责人（salesManagerName）
+         - 销售联系方式（salesContact，关联查询销售负责人的手机号）
+         - 参与人员（participantsNames，跨2列显示，关联查询）
 
       3. 客户信息（name="3"）：
          - 客户名称、客户联系人
-         - 客户联系方式（customerContactPhone）
-         - 商户联系人
+         - 客户联系方式（customerContactPhone，关联查询客户联系人表）
+         - 商户联系人、商户联系方式（merchantPhone）
 
       4. 时间规划（name="4"，原"时间信息"）：
          - 启动日期、结束日期
@@ -346,29 +371,44 @@ customizations:
       数据加载：
       - 点击"审核"按钮时调用 getReview(projectId)
       - 数据存储在 reviewForm.value
-      - 默认只展开基本信息：activeNames.value = ['1']
-      - 全部展开时：activeNames.value = ['1', '2', '3', '4', '5']
+      - 默认展开所有面板：activeNames.value = ['1', '2', '3', '4', '5']
+      - 全部收起时：activeNames.value = ['1']（只保留基本信息）
 
       后端数据支持：
       - 二级区域名称：ProjectMapper.xml 关联 pm_secondary_region 表
         * SQL: LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
         * 字段映射：sr.province_name AS province_name
+
       - 参与人员姓名：ProjectMapper.xml 子查询
         * SQL: SELECT GROUP_CONCAT(u.nick_name ORDER BY FIND_IN_SET(u.user_id, p.participants) SEPARATOR ',')
         * 字段映射：participants_names
         * 说明：将多个用户姓名拼接成逗号分隔的字符串，按 participants 字段顺序排列
+
+      - 销售联系方式：ProjectMapper.xml 关联查询
+        * SQL: sm.phonenumber AS sales_contact
+        * 字段映射：sales_contact
+        * 说明：从销售负责人（sales_manager_id）关联的用户表中获取手机号
+
+      - 客户联系方式：ProjectMapper.xml 关联查询
+        * SQL: cc.contact_phone AS customer_contact_phone
+        * 字段映射：customer_contact_phone
+        * 说明：从客户联系人表（pm_customer_contact）中获取联系人电话
+
       - Project 实体添加字段：
         * provinceName（二级区域名称）
         * participantsNames（参与人员姓名列表）
+        * salesContact（销售联系方式）
+        * customerContactPhone（客户联系方式）
         * 包含对应的 getter/setter 方法
 
       优化说明：
       - 简化了模块结构，从7个模块减少到5个模块
       - 工作量信息整合到基本信息中，避免重复
       - 移除了独立的项目描述模块，相关字段已在基本信息中展示
-      - 默认只展开基本信息，减少初始加载内容，提升用户体验
-      - 支持一键全部展开/收起，方便快速查看所有信息
+      - 默认全部展开，方便审核人员快速查看所有信息
+      - 支持一键全部展开/收起，灵活控制显示内容
       - 页面更简洁，信息更集中
+      - 所有关联数据都能正确回显
 
   review_approval_action:
     intent: "审核操作支持通过和拒绝，拒绝时必须填写审核意见，审核后发送邮件通知"

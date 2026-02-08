@@ -188,7 +188,7 @@
             <el-descriptions-item label="项目经理">{{ reviewForm.projectManagerName }}</el-descriptions-item>
             <el-descriptions-item label="市场经理">{{ reviewForm.marketManagerName }}</el-descriptions-item>
             <el-descriptions-item label="销售负责人">{{ reviewForm.salesManagerName }}</el-descriptions-item>
-            <el-descriptions-item label="销售联系方式">{{ reviewForm.teamLeaderName }}</el-descriptions-item>
+            <el-descriptions-item label="销售联系方式">{{ reviewForm.salesContact }}</el-descriptions-item>
             <el-descriptions-item label="参与人员" :span="2">{{ reviewForm.participantsNames }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
@@ -200,6 +200,7 @@
             <el-descriptions-item label="客户联系人">{{ reviewForm.customerContactName }}</el-descriptions-item>
             <el-descriptions-item label="客户联系方式">{{ reviewForm.customerContactPhone }}</el-descriptions-item>
             <el-descriptions-item label="商户联系人">{{ reviewForm.merchantContact }}</el-descriptions-item>
+            <el-descriptions-item label="商户联系方式">{{ reviewForm.merchantPhone }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
 
@@ -229,7 +230,20 @@
       <el-divider />
       <el-form ref="reviewFormRef" :model="reviewForm" :rules="reviewRules" label-width="100px">
         <el-form-item label="审核意见" prop="approvalReason">
-          <el-input v-model="reviewForm.approvalReason" type="textarea" :rows="3" placeholder="请输入审核意见（拒绝时必填）" />
+          <el-input
+            v-model="reviewForm.approvalReason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入审核意见（拒绝时必填）"
+            :class="{ 'is-error': showReasonError }"
+            @input="showReasonError = false"
+          />
+          <transition name="fade">
+            <div v-if="showReasonError" class="error-tip">
+              <el-icon><WarningFilled /></el-icon>
+              <span>拒绝审核时必须填写审核意见</span>
+            </div>
+          </transition>
         </el-form-item>
       </el-form>
 
@@ -252,6 +266,7 @@ import { listSecondaryRegion } from "@/api/project/secondaryRegion"
 import { listUserByPost } from "@/api/system/user"
 import request from '@/utils/request'
 import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
+import { WarningFilled } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt')
@@ -264,8 +279,9 @@ const secondaryRegionOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
 const reviewOpen = ref(false)
-const activeNames = ref(['1'])
-const isAllExpanded = ref(false)
+const activeNames = ref(['1', '2', '3', '4', '5'])
+const isAllExpanded = ref(true)
+const showReasonError = ref(false)
 
 const data = reactive({
   queryParams: {
@@ -343,9 +359,9 @@ function handleReview(row) {
   getReview(projectId).then(response => {
     reviewForm.value = response.data
     reviewForm.value.approvalReason = null
-    // 默认只展开基本信息
-    activeNames.value = ['1']
-    isAllExpanded.value = false
+    // 默认展开所有折叠面板
+    activeNames.value = ['1', '2', '3', '4', '5']
+    isAllExpanded.value = true
   })
 }
 
@@ -365,6 +381,7 @@ function toggleAllCollapse() {
 /** 取消审核 */
 function cancelReview() {
   reviewOpen.value = false
+  showReasonError.value = false
   reset()
 }
 
@@ -381,7 +398,15 @@ function reset() {
 function submitApprove(approvalStatus) {
   // 拒绝时必须填写审核意见
   if (approvalStatus === '2' && (!reviewForm.value.approvalReason || reviewForm.value.approvalReason.trim() === '')) {
-    proxy.$modal.msgError("拒绝审核时必须填写审核意见")
+    // 显示输入框下方的错误提示
+    showReasonError.value = true
+    // 滚动到审核意见输入框位置
+    nextTick(() => {
+      const formElement = document.querySelector('.review-drawer .el-form')
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    })
     return
   }
 
@@ -397,6 +422,7 @@ function submitApprove(approvalStatus) {
     getList()
     proxy.$modal.msgSuccess("审核" + statusText + "成功")
     reviewOpen.value = false
+    showReasonError.value = false
   }).catch(() => {})
 }
 
@@ -420,5 +446,30 @@ getList()
 .drawer-title {
   font-size: 16px;
   font-weight: 500;
+}
+
+.error-tip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #f56c6c;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.error-tip .el-icon {
+  font-size: 14px;
+}
+
+.is-error :deep(.el-textarea__inner) {
+  border-color: #f56c6c;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

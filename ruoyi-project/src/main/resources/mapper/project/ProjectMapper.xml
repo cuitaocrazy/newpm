@@ -73,10 +73,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="projectManagerName"    column="project_manager_name"    />
         <result property="marketManagerName"    column="market_manager_name"    />
         <result property="salesManagerName"    column="sales_manager_name"    />
+        <result property="salesContact"    column="sales_contact"    />
         <result property="participantsNames"    column="participants_names"    />
         <result property="deptName"    column="dept_name"    />
         <result property="customerName"    column="customer_name"    />
         <result property="customerContactName"    column="customer_contact_name"    />
+        <result property="customerContactPhone"    column="customer_contact_phone"    />
         <result property="provinceName"    column="province_name"    />
     </resultMap>
 
@@ -200,6 +202,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             pm.nick_name AS project_manager_name,
             mm.nick_name AS market_manager_name,
             sm.nick_name AS sales_manager_name,
+            sm.phonenumber AS sales_contact,
             (
                 SELECT GROUP_CONCAT(u.nick_name ORDER BY FIND_IN_SET(u.user_id, p.participants) SEPARATOR ',')
                 FROM sys_user u
@@ -207,6 +210,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ) AS participants_names,
             c.customer_simple_name AS customer_name,
             cc.contact_name AS customer_contact_name,
+            cc.contact_phone AS customer_contact_phone,
             sr.province_name AS province_name,
             (
                 WITH RECURSIVE dept_path AS (

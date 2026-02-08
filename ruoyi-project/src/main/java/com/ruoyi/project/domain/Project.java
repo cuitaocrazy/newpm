@@ -254,6 +254,9 @@ public class Project extends BaseEntity
     /** 客户联系人姓名 */
     private String customerContactName;
 
+    /** 客户联系人电话 */
+    private String customerContactPhone;
+
     /** 二级区域名称 */
     private String provinceName;
 
@@ -935,6 +938,16 @@ public class Project extends BaseEntity
     public void setCustomerContactName(String customerContactName)
     {
         this.customerContactName = customerContactName;
+    }
+
+    public String getCustomerContactPhone()
+    {
+        return customerContactPhone;
+    }
+
+    public void setCustomerContactPhone(String customerContactPhone)
+    {
+        this.customerContactPhone = customerContactPhone;
     }
 
     public String getProvinceName()
