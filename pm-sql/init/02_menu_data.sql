@@ -121,3 +121,25 @@ VALUES ('编辑项目', @projectRootMenuId, 10, 'list/edit/:projectId(\\d+)', 'p
 -- 隐藏菜单：项目详情（挂在项目管理根目录下）
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
 VALUES ('项目详情', @projectRootMenuId, 11, 'list/detail/:projectId(\\d+)', 'project/project/detail', 1, 0, 'C', '1', '0', 'project:project:query', '#', 'admin', sysdate(), '', NULL, '项目详情页面', 'ProjectDetail', '/project/list');
+
+-- ========================================
+-- 立项审核菜单数据
+-- ========================================
+
+-- 先删除可能存在的重复菜单（防止重复添加）
+DELETE FROM sys_menu WHERE menu_name = '立项审核' AND parent_id = @projectRootMenuId AND path = 'review';
+
+-- 二级菜单：立项审核（挂在项目管理根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('立项审核', @projectRootMenuId, 3, 'review', 'project/review/index', 1, 0, 'C', '0', '0', 'project:review:list', 'edit', 'admin', sysdate(), '', NULL, '立项审核菜单', 'ProjectReview');
+
+-- 获取立项审核菜单ID
+SELECT @reviewMenuId := LAST_INSERT_ID();
+
+-- 按钮权限：查询
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目审核查询', @reviewMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:review:query', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：审核操作
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目审核操作', @reviewMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:review:approve', '#', 'admin', sysdate(), '', NULL, '');
