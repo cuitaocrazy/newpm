@@ -156,18 +156,24 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="项目名称">{{ reviewForm.projectName }}</el-descriptions-item>
             <el-descriptions-item label="项目编码">{{ reviewForm.projectCode }}</el-descriptions-item>
-            <el-descriptions-item label="项目全称">{{ reviewForm.projectFullName }}</el-descriptions-item>
             <el-descriptions-item label="项目部门">{{ reviewForm.deptName }}</el-descriptions-item>
             <el-descriptions-item label="项目分类">
               <dict-tag :options="sys_xmfl" :value="reviewForm.projectCategory"/>
             </el-descriptions-item>
+            <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload }} 人天</el-descriptions-item>
             <el-descriptions-item label="项目阶段">
               <dict-tag :options="sys_xmjd" :value="reviewForm.projectStatus"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="验收状态">
+              <dict-tag :options="sys_yszt" :value="reviewForm.acceptanceStatus"/>
             </el-descriptions-item>
             <el-descriptions-item label="一级区域">
               <dict-tag :options="sys_yjqy" :value="reviewForm.region"/>
             </el-descriptions-item>
             <el-descriptions-item label="二级区域">{{ reviewForm.provinceName }}</el-descriptions-item>
+            <el-descriptions-item label="项目地址" :span="2">{{ reviewForm.projectAddress }}</el-descriptions-item>
+            <el-descriptions-item label="项目计划" :span="2">{{ reviewForm.projectPlan }}</el-descriptions-item>
+            <el-descriptions-item label="项目描述" :span="2">{{ reviewForm.projectDescription }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
 
@@ -258,7 +264,7 @@ import { listUserByPost } from "@/api/system/user"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt')
+const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt')
 
 const reviewList = ref([])
 const loading = ref(true)
