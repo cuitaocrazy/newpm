@@ -141,8 +141,15 @@
       @pagination="getList"
     />
 
-    <!-- 审核对话框 -->
-    <el-dialog :title="'审核项目 - ' + reviewForm.projectName" v-model="reviewOpen" width="900px" append-to-body>
+    <!-- 审核抽屉 -->
+    <el-drawer
+      v-model="reviewOpen"
+      :title="'审核项目 - ' + reviewForm.projectName"
+      direction="rtl"
+      size="80%"
+      :close-on-click-modal="true"
+      :close-on-press-escape="false"
+    >
       <el-collapse v-model="activeNames">
         <!-- 基本信息 -->
         <el-collapse-item title="基本信息" name="1">
@@ -232,13 +239,13 @@
       </el-form>
 
       <template #footer>
-        <div class="dialog-footer">
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <el-button type="success" @click="submitApprove('1')">通过</el-button>
           <el-button type="danger" @click="submitApprove('2')">拒绝</el-button>
           <el-button @click="cancelReview">取消</el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-drawer>
 
     <!-- 列表和对话框将在后续步骤添加 -->
   </div>
