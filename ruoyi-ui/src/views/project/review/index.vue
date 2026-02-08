@@ -88,6 +88,59 @@
       </el-form-item>
     </el-form>
 
+    <el-row :gutter="10" class="mb8">
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+    </el-row>
+
+    <el-table v-loading="loading" :data="reviewList">
+      <el-table-column label="序号" type="index" width="55" align="center" />
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目编码" align="center" prop="projectCode" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目部门" align="center" prop="deptName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
+      <el-table-column label="市场经理" align="center" prop="marketManagerName" min-width="100" />
+      <el-table-column label="项目分类" align="center" prop="projectCategory" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="一级区域" align="center" prop="region" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="二级区域" align="center" prop="provinceName" width="100" />
+      <el-table-column label="项目阶段" align="center" prop="projectStatus" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_xmjd" :value="scope.row.projectStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120" fixed="right">
+        <template #default="scope">
+          <el-button
+            link
+            type="primary"
+            icon="Edit"
+            @click="handleReview(scope.row)"
+            v-hasPermi="['project:review:approve']"
+          >审核</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <pagination
+      v-show="total>0"
+      :total="total"
+      v-model:page="queryParams.pageNum"
+      v-model:limit="queryParams.pageSize"
+      @pagination="getList"
+    />
+
     <!-- 列表和对话框将在后续步骤添加 -->
   </div>
 </template>
@@ -177,6 +230,12 @@ function getUserOptions() {
   listUserByPost({ postCode: 'scjl' }).then(response => {
     marketManagerOptions.value = response.data || []
   })
+}
+
+/** 审核按钮操作 */
+function handleReview(row) {
+  // 将在 Task 10 中实现
+  console.log('审核项目:', row)
 }
 
 // 初始化
