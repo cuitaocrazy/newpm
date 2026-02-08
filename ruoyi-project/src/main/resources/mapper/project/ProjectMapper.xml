@@ -46,6 +46,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="approvalReason"    column="approval_reason"    />
         <result property="industryCode"    column="industry_code"    />
         <result property="regionCode"    column="region_code"    />
+        <result property="provinceId"    column="province_id"    />
         <result property="approvalTime"    column="approval_time"    />
         <result property="approverId"    column="approver_id"    />
         <result property="remark"    column="remark"    />
@@ -71,8 +72,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="contractStatus"    column="contract_status"    />
         <result property="projectManagerName"    column="project_manager_name"    />
         <result property="marketManagerName"    column="market_manager_name"    />
+        <result property="salesManagerName"    column="sales_manager_name"    />
         <result property="participantsNames"    column="participants_names"    />
         <result property="deptName"    column="dept_name"    />
+        <result property="customerName"    column="customer_name"    />
+        <result property="customerContactName"    column="customer_contact_name"    />
     </resultMap>
 
     <resultMap id="ProjectProjectApprovalResult" type="Project" extends="ProjectResult">
@@ -95,7 +99,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectVo">
-        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by_name from pm_project
+        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, province_id, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, IFNULL(update_by, create_by) as update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by_name from pm_project
     </sql>
 
     <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
@@ -107,23 +111,59 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact,
             p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget,
             p.project_cost, p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status,
-            p.approval_reason, p.industry_code, p.region_code, p.approval_time, p.approver_id, p.remark,
+            p.approval_reason, p.industry_code, p.region_code, p.province_id, p.approval_time, p.approver_id, p.remark,
             p.tax_rate, p.confirm_user_id, p.confirm_time, p.reserved_field1, p.reserved_field2, p.reserved_field3,
-            p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
+            p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time,
+            COALESCE(updater.nick_name, creator.nick_name, p.update_by, p.create_by) AS update_by,
+            p.update_time,
             p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
             p.company_revenue_confirmed_by_name,
             c.contract_amount,
             c.contract_status,
             pm.nick_name AS project_manager_name,
             mm.nick_name AS market_manager_name,
-            d.dept_name
+            (
+                SELECT GROUP_CONCAT(u.nick_name ORDER BY FIND_IN_SET(u.user_id, p.participants) SEPARATOR ',')
+                FROM sys_user u
+                WHERE FIND_IN_SET(u.user_id, p.participants) > 0
+            ) AS participants_names,
+            (
+                WITH RECURSIVE dept_path AS (
+                    -- 起点：当前部门
+                    SELECT dept_id, dept_name, parent_id, 1 AS level, CAST(dept_name AS CHAR(500)) AS path
+                    FROM sys_dept
+                    WHERE dept_id = CAST(p.project_dept AS UNSIGNED)
+
+                    UNION ALL
+
+                    -- 递归：向上查找父部门
+                    SELECT d.dept_id, d.dept_name, d.parent_id, dp.level + 1, CONCAT(d.dept_name, '-', dp.path)
+                    FROM sys_dept d
+                    INNER JOIN dept_path dp ON d.dept_id = dp.parent_id
+                )
+                SELECT
+                    CASE
+                        WHEN MAX(level) >= 3 THEN
+                            -- 从第三级开始截取路径
+                            SUBSTRING_INDEX(
+                                (SELECT path FROM dept_path WHERE level = (SELECT MAX(level) FROM dept_path)),
+                                '-',
+                                -(MAX(level) - 2)
+                            )
+                        ELSE
+                            -- 如果不足三级，显示全部
+                            (SELECT path FROM dept_path WHERE level = (SELECT MAX(level) FROM dept_path))
+                    END AS formatted_path
+                FROM dept_path
+            ) AS dept_name
         FROM pm_project p
         LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id COLLATE utf8mb4_unicode_ci
             AND pcr.is_main = '1' AND pcr.del_flag = '0'
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
         LEFT JOIN sys_user pm ON p.project_manager_id = pm.user_id
         LEFT JOIN sys_user mm ON p.market_manager_id = mm.user_id
-        LEFT JOIN sys_dept d ON p.project_dept = CAST(d.dept_id AS CHAR) COLLATE utf8mb4_unicode_ci
+        LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+        LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
         <where>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
@@ -136,15 +176,67 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="marketManagerId != null "> and p.market_manager_id = #{marketManagerId}</if>
             <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
             <if test="regionCode != null  and regionCode != ''"> and p.region_code = #{regionCode}</if>
+            <if test="provinceId != null"> and p.province_id = #{provinceId}</if>
             <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
             <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
         </where>
     </select>
     
     <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectProjectApprovalResult">
-        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by_name
-        from pm_project
-        where project_id = #{projectId}
+        SELECT
+            p.project_id, p.project_code, p.project_name, p.project_full_name, p.industry, p.region,
+            p.short_name, p.established_year, p.project_category, p.project_dept, p.project_status,
+            p.acceptance_status, p.estimated_workload, p.actual_workload, p.project_address, p.project_plan,
+            p.project_description, p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id,
+            p.sales_contact, p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact,
+            p.merchant_phone, p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget,
+            p.project_cost, p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status,
+            p.approval_reason, p.industry_code, p.region_code, p.province_id, p.approval_time, p.approver_id, p.remark,
+            p.tax_rate, p.confirm_user_id, p.confirm_time, p.reserved_field1, p.reserved_field2, p.reserved_field3,
+            p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
+            p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
+            p.company_revenue_confirmed_by_name,
+            pm.nick_name AS project_manager_name,
+            mm.nick_name AS market_manager_name,
+            sm.nick_name AS sales_manager_name,
+            c.customer_simple_name AS customer_name,
+            cc.contact_name AS customer_contact_name,
+            (
+                WITH RECURSIVE dept_path AS (
+                    -- 起点：当前部门
+                    SELECT dept_id, dept_name, parent_id, 1 AS level, CAST(dept_name AS CHAR(500)) AS path
+                    FROM sys_dept
+                    WHERE dept_id = CAST(p.project_dept AS UNSIGNED)
+
+                    UNION ALL
+
+                    -- 递归：向上查找父部门
+                    SELECT d.dept_id, d.dept_name, d.parent_id, dp.level + 1, CONCAT(d.dept_name, '-', dp.path)
+                    FROM sys_dept d
+                    INNER JOIN dept_path dp ON d.dept_id = dp.parent_id
+                )
+                SELECT
+                    CASE
+                        WHEN MAX(level) >= 3 THEN
+                            -- 从第三级开始截取路径
+                            SUBSTRING_INDEX(
+                                (SELECT path FROM dept_path WHERE level = (SELECT MAX(level) FROM dept_path)),
+                                '-',
+                                -(MAX(level) - 2)
+                            )
+                        ELSE
+                            -- 如果不足三级，显示全部
+                            (SELECT path FROM dept_path WHERE level = (SELECT MAX(level) FROM dept_path))
+                    END AS formatted_path
+                FROM dept_path
+            ) AS dept_name
+        FROM pm_project p
+        LEFT JOIN sys_user pm ON p.project_manager_id = pm.user_id
+        LEFT JOIN sys_user mm ON p.market_manager_id = mm.user_id
+        LEFT JOIN sys_user sm ON p.sales_manager_id = sm.user_id
+        LEFT JOIN pm_customer c ON p.customer_id = c.customer_id
+        LEFT JOIN pm_customer_contact cc ON p.customer_contact_id = cc.contact_id
+        WHERE p.project_id = #{projectId}
     </select>
 
     <select id="selectProjectApprovalList" resultMap="ProjectApprovalResult">
@@ -196,6 +288,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approvalReason != null">approval_reason,</if>
             <if test="industryCode != null">industry_code,</if>
             <if test="regionCode != null">region_code,</if>
+            <if test="provinceId != null">province_id,</if>
             <if test="approvalTime != null">approval_time,</if>
             <if test="approverId != null">approver_id,</if>
             <if test="remark != null">remark,</if>
@@ -259,6 +352,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approvalReason != null">#{approvalReason},</if>
             <if test="industryCode != null">#{industryCode},</if>
             <if test="regionCode != null">#{regionCode},</if>
+            <if test="provinceId != null">#{provinceId},</if>
             <if test="approvalTime != null">#{approvalTime},</if>
             <if test="approverId != null">#{approverId},</if>
             <if test="remark != null">#{remark},</if>
@@ -326,6 +420,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="approvalReason != null">approval_reason = #{approvalReason},</if>
             <if test="industryCode != null">industry_code = #{industryCode},</if>
             <if test="regionCode != null">region_code = #{regionCode},</if>
+            <if test="provinceId != null">province_id = #{provinceId},</if>
             <if test="approvalTime != null">approval_time = #{approvalTime},</if>
             <if test="approverId != null">approver_id = #{approverId},</if>
             <if test="remark != null">remark = #{remark},</if>

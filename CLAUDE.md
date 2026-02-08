@@ -27,6 +27,18 @@ npm run build:prod       # Production build → dist/
 npm run build:stage      # Staging build
 ```
 
+### E2E Testing (from project root)
+
+```bash
+npx playwright install                    # Install browsers (first time only)
+npx playwright test                       # Run all E2E tests
+npx playwright test --ui                  # Run tests in UI mode
+npx playwright test --headed              # Run tests in headed mode
+npx playwright show-report                # View test report
+```
+
+**Test Configuration**: `playwright.config.js` - Playwright E2E tests for project management features. Tests are in `tests/` directory.
+
 ### Prerequisites
 
 - Java 17, Maven
@@ -238,12 +250,26 @@ Registered in `main.ts`: DictTag, Pagination, FileUpload, ImageUpload, ImagePrev
 
 All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>`, `BaseEntity`, `PageDomain`
 
-## Ports
+## Configuration Files
 
-- Backend: 8080
-- Frontend dev: 80
-- Druid monitor: http://localhost:8080/druid (ruoyi/123456)
-- Swagger UI: http://localhost:8080/swagger-ui.html
+### Backend
+- `ruoyi-admin/src/main/resources/application.yml` - Main config (server port, logging, file upload path)
+- `ruoyi-admin/src/main/resources/application-druid.yml` - Database connection pool config
+- Database connection, Redis, JWT settings are in `application.yml`
+
+### Frontend
+- `ruoyi-ui/.env.development` - Dev environment variables (`VITE_APP_BASE_API`)
+- `ruoyi-ui/.env.production` - Production environment variables
+- `ruoyi-ui/vite.config.ts` - Vite build config and dev server proxy
+
+## Ports & Monitoring
+
+- **Backend**: 8080
+- **Frontend dev**: 80 (proxies `/dev-api` → `http://localhost:8080`)
+- **Druid monitor**: http://localhost:8080/druid (credentials: `ruoyi/123456`)
+- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **MySQL**: 3306 (database: `ry-vue`)
+- **Redis**: 6379
 
 ## Code Generation Workflow (ruoyi-gen-cli)
 

@@ -4,6 +4,7 @@ ruoyi-ui/dist/
 
 # Frontend dependencies
 ruoyi-ui/node_modules/
+node_modules/
 
 # Frontend build output copied to backend
 ruoyi-admin/src/main/resources/static/
@@ -21,6 +22,8 @@ logs/
 
 # Playwright
 .playwright-mcp/
+test-results/
+playwright-report/
 
 # OS
 .DS_Store

@@ -2,6 +2,7 @@ package com.ruoyi.project.service.impl;
 
 import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
@@ -58,6 +59,7 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public int insertProject(Project project)
     {
+        project.setCreateBy(SecurityUtils.getUsername());
         project.setCreateTime(DateUtils.getNowDate());
         int rows = projectMapper.insertProject(project);
         insertProjectApproval(project);
@@ -74,6 +76,7 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public int updateProject(Project project)
     {
+        project.setUpdateBy(SecurityUtils.getUsername());
         project.setUpdateTime(DateUtils.getNowDate());
         projectMapper.deleteProjectApprovalByProjectId(project.getProjectId());
         insertProjectApproval(project);

@@ -807,7 +807,7 @@ CREATE TABLE `pm_project` (
   `cost_budget` decimal(15,2) DEFAULT NULL COMMENT '成本预算(元)',
   `labor_cost` decimal(15,2) DEFAULT NULL COMMENT '人力费用(元)',
   `purchase_cost` decimal(15,2) DEFAULT '0.00' COMMENT '采购成本',
-  `approval_status` varchar(20) DEFAULT NULL COMMENT '审批状态(0待审核/1已通过/2已拒绝)',
+  `approval_status` varchar(20) DEFAULT '0' COMMENT '审批状态(0待审核/1已通过/2已拒绝)',
   `approval_reason` varchar(500) DEFAULT NULL COMMENT '审批意见',
   `industry_code` varchar(50) DEFAULT NULL COMMENT '行业代码',
   `region_code` varchar(50) DEFAULT NULL COMMENT '区域代码(字典:sys_yjqy)',
@@ -981,10 +981,10 @@ CREATE TABLE `pm_team_revenue_confirmation` (
 -- =============================================
 DROP TABLE IF EXISTS `pm_secondary_region`;
 CREATE TABLE `pm_secondary_region` (
-  `province_id` bigint NOT NULL AUTO_INCREMENT COMMENT '省份ID',
-  `province_code` varchar(10) NOT NULL COMMENT '省份代码（行政区划代码前2位）',
-  `province_name` varchar(50) NOT NULL COMMENT '省份名称',
-  `province_type` varchar(20) DEFAULT '0' COMMENT '省份类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）',
+  `province_id` bigint NOT NULL AUTO_INCREMENT COMMENT '二级区域ID',
+  `province_code` varchar(10) NOT NULL COMMENT '二级区域代码（行政区划代码前2位）',
+  `province_name` varchar(50) NOT NULL COMMENT '二级区域名称',
+  `province_type` varchar(20) DEFAULT '0' COMMENT '二级区域类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）',
   `region_dict_value` varchar(50) NOT NULL COMMENT '一级区域字典值（关联sys_dict_data的dict_value）',
   `sort_order` int DEFAULT 0 COMMENT '排序',
   `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
@@ -998,7 +998,7 @@ CREATE TABLE `pm_secondary_region` (
   UNIQUE KEY `uk_province_code` (`province_code`),
   KEY `idx_region_dict_value` (`region_dict_value`),
   KEY `idx_sort_order` (`sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='省级区域表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='二级区域表';
 
 
 

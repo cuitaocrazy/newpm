@@ -11,7 +11,7 @@
       </div>
 
       <!-- 一、项目基本信息 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
+      <el-card shadow="hover" style="margin-bottom: 15px;" data-panel="1">
         <template #header>
           <div style="display: flex; align-items: center;">
             <div @click="togglePanel('1')" style="cursor: pointer; user-select: none; flex: 1;">
@@ -24,8 +24,8 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="行业" prop="industry">
-            <el-select v-model="form.industry" placeholder="请选择行业" @change="generateProjectCode">
+          <el-form-item label="行业" prop="industry" data-prop="industry">
+            <el-select v-model="form.industry" placeholder="请选择行业" @change="generateProjectCode" @blur="validateOnBlur('industry')">
               <el-option
                 v-for="dict in industry"
                 :key="dict.value"
@@ -36,8 +36,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="一级区域" prop="region">
-            <el-select v-model="form.region" placeholder="请选择一级区域" @change="handleRegionChange">
+          <el-form-item label="一级区域" prop="region" data-prop="region">
+            <el-select v-model="form.region" placeholder="请选择一级区域" @change="handleRegionChange" @blur="validateOnBlur('region')">
               <el-option
                 v-for="dict in sys_yjqy"
                 :key="dict.value"
@@ -48,8 +48,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="二级区域" prop="regionCode">
-            <el-select v-model="form.regionCode" placeholder="请选择二级区域" :disabled="!form.region" @change="generateProjectCode">
+          <el-form-item label="二级区域" prop="provinceCode" data-prop="provinceCode">
+            <el-select v-model="form.provinceCode" placeholder="请选择二级区域" :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('provinceCode')">
               <el-option
                 v-for="item in secondaryRegionOptions"
                 :key="item.provinceCode"
@@ -63,13 +63,13 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="简称" prop="shortName">
-            <el-input v-model="form.shortName" placeholder="请输入简称" @input="generateProjectCode" />
+          <el-form-item label="简称" prop="shortName" data-prop="shortName">
+            <el-input v-model="form.shortName" placeholder="请输入简称" @input="generateProjectCode" @blur="validateOnBlur('shortName')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="立项年度" prop="establishedYear">
-            <el-select v-model="form.establishedYear" placeholder="请选择立项年度" @change="generateProjectCode">
+          <el-form-item label="立项年度" prop="establishedYear" data-prop="establishedYear">
+            <el-select v-model="form.establishedYear" placeholder="请选择立项年度" @change="generateProjectCode" @blur="validateOnBlur('establishedYear')">
               <el-option
                 v-for="dict in sys_ndgl"
                 :key="dict.value"
@@ -80,7 +80,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="项目编号" prop="projectCode">
+          <el-form-item label="项目编号" prop="projectCode" data-prop="projectCode">
             <el-input v-model="form.projectCode" placeholder="自动生成" readonly />
             <div style="color: #909399; font-size: 12px; margin-top: 5px;">
               格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}
@@ -91,13 +91,13 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="项目名称" prop="projectName">
-            <el-input v-model="form.projectName" placeholder="请输入项目名称" />
+          <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
+            <el-input v-model="form.projectName" placeholder="请输入项目名称" @blur="validateOnBlur('projectName')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="项目分类" prop="projectCategory">
-            <el-select v-model="form.projectCategory" placeholder="请选择项目分类">
+          <el-form-item label="项目分类" prop="projectCategory" data-prop="projectCategory">
+            <el-select v-model="form.projectCategory" placeholder="请选择项目分类" @blur="validateOnBlur('projectCategory')">
               <el-option
                 v-for="dict in sys_xmfl"
                 :key="dict.value"
@@ -108,7 +108,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="项目部门" prop="projectDept">
+          <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
             <el-tree-select
               v-model="form.projectDept"
               :data="deptOptions"
@@ -116,6 +116,7 @@
               value-key="id"
               placeholder="请选择项目部门"
               check-strictly
+              @blur="validateOnBlur('projectDept')"
             />
           </el-form-item>
         </el-col>
@@ -123,8 +124,8 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="项目状态" prop="projectStatus">
-            <el-select v-model="form.projectStatus" placeholder="请选择项目状态">
+          <el-form-item label="项目状态" prop="projectStatus" data-prop="projectStatus">
+            <el-select v-model="form.projectStatus" placeholder="请选择项目状态" @blur="validateOnBlur('projectStatus')">
               <el-option
                 v-for="dict in sys_xmjd"
                 :key="dict.value"
@@ -135,8 +136,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="验收状态" prop="acceptanceStatus">
-            <el-select v-model="form.acceptanceStatus" placeholder="请选择验收状态">
+          <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
+            <el-select v-model="form.acceptanceStatus" placeholder="请选择验收状态" @blur="validateOnBlur('acceptanceStatus')">
               <el-option
                 v-for="dict in sys_yszt"
                 :key="dict.value"
@@ -147,42 +148,42 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="预估工作量(人天)" prop="estimatedWorkload">
-            <el-input-number v-model="form.estimatedWorkload" :min="0" :precision="2" placeholder="请输入预估工作量" style="width: 100%" />
+          <el-form-item label="预估工作量(人天)" prop="estimatedWorkload" data-prop="estimatedWorkload">
+            <el-input-number v-model="form.estimatedWorkload" :min="0" :precision="2" placeholder="请输入预估工作量" style="width: 100%" @blur="validateOnBlur('estimatedWorkload')" />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="实际工作量(人天)" prop="actualWorkload">
-            <el-input-number v-model="form.actualWorkload" :min="0" :precision="2" placeholder="请输入实际工作量" style="width: 100%" />
+          <el-form-item label="实际工作量(人天)" prop="actualWorkload" data-prop="actualWorkload">
+            <el-input-number v-model="form.actualWorkload" :min="0" :precision="2" placeholder="请输入实际工作量" style="width: 100%" @blur="validateOnBlur('actualWorkload')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="项目预算(元)" prop="projectBudget">
-            <el-input-number v-model="form.projectBudget" :min="0" :precision="2" placeholder="请输入项目预算" style="width: 100%" />
+          <el-form-item label="项目预算(元)" prop="projectBudget" data-prop="projectBudget">
+            <el-input-number v-model="form.projectBudget" :min="0" :precision="2" placeholder="请输入项目预算" style="width: 100%" @blur="validateOnBlur('projectBudget')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="项目地址" prop="projectAddress">
-            <el-input v-model="form.projectAddress" placeholder="请输入项目地址" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <el-form-item label="项目计划" prop="projectPlan">
-            <el-input v-model="form.projectPlan" type="textarea" :rows="3" placeholder="请输入项目计划" />
+          <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
+            <el-input v-model="form.projectAddress" placeholder="请输入项目地址" @blur="validateOnBlur('projectAddress')" />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="24">
-          <el-form-item label="项目描述" prop="projectDescription">
-            <el-input v-model="form.projectDescription" type="textarea" :rows="3" placeholder="请输入项目描述（用于项目状态为服务类别，在此添加巡检相关信息）" />
+          <el-form-item label="项目计划" prop="projectPlan" data-prop="projectPlan">
+            <el-input v-model="form.projectPlan" type="textarea" :rows="3" placeholder="请输入项目计划" @blur="validateOnBlur('projectPlan')" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="24">
+          <el-form-item label="项目描述" prop="projectDescription" data-prop="projectDescription">
+            <el-input v-model="form.projectDescription" type="textarea" :rows="3" placeholder="请输入项目描述（用于项目状态为服务类别，在此添加巡检相关信息）" @blur="validateOnBlur('projectDescription')" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -190,7 +191,7 @@
       </el-card>
 
       <!-- 二、人员配置 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
+      <el-card shadow="hover" style="margin-bottom: 15px;" data-panel="3">
         <template #header>
           <div @click="togglePanel('3')" style="cursor: pointer; user-select: none;">
             <i :class="activeNames.includes('3') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
@@ -201,8 +202,8 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="项目经理" prop="projectManagerId">
-            <el-select v-model="form.projectManagerId" placeholder="请选择项目经理" filterable>
+          <el-form-item label="项目经理" prop="projectManagerId" data-prop="projectManagerId">
+            <el-select v-model="form.projectManagerId" placeholder="请选择项目经理" filterable @blur="validateOnBlur('projectManagerId')">
               <el-option
                 v-for="user in projectManagerOptions"
                 :key="user.userId"
@@ -213,8 +214,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="市场经理" prop="marketManagerId">
-            <el-select v-model="form.marketManagerId" placeholder="请选择市场经理" filterable>
+          <el-form-item label="市场经理" prop="marketManagerId" data-prop="marketManagerId">
+            <el-select v-model="form.marketManagerId" placeholder="请选择市场经理" filterable @blur="validateOnBlur('marketManagerId')">
               <el-option
                 v-for="user in marketManagerOptions"
                 :key="user.userId"
@@ -225,10 +226,10 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="销售负责人" prop="salesManagerId">
-            <el-select v-model="form.salesManagerId" placeholder="请选择销售负责人" filterable @change="handleSalesManagerChange">
+          <el-form-item label="销售负责人" prop="salesManagerId" data-prop="salesManagerId">
+            <el-select v-model="form.salesManagerId" placeholder="请选择销售负责人" filterable @change="handleSalesManagerChange" @blur="validateOnBlur('salesManagerId')">
               <el-option
-                v-for="user in allUserOptions"
+                v-for="user in salesManagerOptions"
                 :key="user.userId"
                 :label="user.nickName"
                 :value="user.userId"
@@ -240,13 +241,13 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="销售联系方式" prop="salesContact">
+          <el-form-item label="销售联系方式" prop="salesContact" data-prop="salesContact">
             <el-input v-model="form.salesContact" placeholder="自动带出" readonly />
           </el-form-item>
         </el-col>
         <el-col :span="16">
-          <el-form-item label="参与人员" prop="participants">
-            <el-select v-model="participantIds" placeholder="请选择参与人员" multiple filterable style="width: 100%">
+          <el-form-item label="参与人员" prop="participants" data-prop="participants">
+            <el-select v-model="participantIds" placeholder="请选择参与人员" multiple filterable style="width: 100%" @blur="validateOnBlur('participants')">
               <el-option
                 v-for="user in allUserOptions"
                 :key="user.userId"
@@ -261,7 +262,7 @@
       </el-card>
 
       <!-- 三、客户信息 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
+      <el-card shadow="hover" style="margin-bottom: 15px;" data-panel="4">
         <template #header>
           <div @click="togglePanel('4')" style="cursor: pointer; user-select: none;">
             <i :class="activeNames.includes('4') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
@@ -272,8 +273,8 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="客户名称" prop="customerId">
-            <el-select v-model="form.customerId" placeholder="请选择客户" filterable @change="handleCustomerChange">
+          <el-form-item label="客户名称" prop="customerId" data-prop="customerId">
+            <el-select v-model="form.customerId" placeholder="请选择客户" filterable @change="handleCustomerChange" @blur="validateOnBlur('customerId')">
               <el-option
                 v-for="customer in customerOptions"
                 :key="customer.customerId"
@@ -284,8 +285,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="客户联系人" prop="customerContactId">
-            <el-select v-model="form.customerContactId" placeholder="请选择客户联系人" :disabled="!form.customerId" @change="handleContactChange">
+          <el-form-item label="客户联系人" prop="customerContactId" data-prop="customerContactId">
+            <el-select v-model="form.customerContactId" placeholder="请选择客户联系人" :disabled="!form.customerId" @change="handleContactChange" @blur="validateOnBlur('customerContactId')">
               <el-option
                 v-for="contact in contactOptions"
                 :key="contact.contactId"
@@ -304,8 +305,8 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="商户联系人" prop="merchantContact">
-            <el-input v-model="form.merchantContact" placeholder="请输入商户联系人" />
+          <el-form-item label="商户联系人" prop="merchantContact" data-prop="merchantContact">
+            <el-input v-model="form.merchantContact" placeholder="请输入商户联系人" @blur="validateOnBlur('merchantContact')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
@@ -318,7 +319,7 @@
       </el-card>
 
       <!-- 四、时间规划 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
+      <el-card shadow="hover" style="margin-bottom: 15px;" data-panel="5">
         <template #header>
           <div @click="togglePanel('5')" style="cursor: pointer; user-select: none;">
             <i :class="activeNames.includes('5') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
@@ -329,46 +330,50 @@
 
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-form-item label="启动日期" prop="startDate">
+          <el-form-item label="启动日期" prop="startDate" data-prop="startDate">
             <el-date-picker
               v-model="form.startDate"
               type="date"
               placeholder="选择启动日期"
               value-format="YYYY-MM-DD"
               style="width: 100%"
+              @blur="validateOnBlur('startDate')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="结束日期" prop="endDate">
+          <el-form-item label="结束日期" prop="endDate" data-prop="endDate">
             <el-date-picker
               v-model="form.endDate"
               type="date"
               placeholder="选择结束日期"
               value-format="YYYY-MM-DD"
               style="width: 100%"
+              @blur="validateOnBlur('endDate')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="投产日期" prop="productionDate">
+          <el-form-item label="投产日期" prop="productionDate" data-prop="productionDate">
             <el-date-picker
               v-model="form.productionDate"
               type="date"
               placeholder="选择投产日期"
               value-format="YYYY-MM-DD"
               style="width: 100%"
+              @blur="validateOnBlur('productionDate')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="验收日期" prop="acceptanceDate">
+          <el-form-item label="验收日期" prop="acceptanceDate" data-prop="acceptanceDate">
             <el-date-picker
               v-model="form.acceptanceDate"
               type="date"
               placeholder="选择验收日期"
               value-format="YYYY-MM-DD"
               style="width: 100%"
+              @blur="validateOnBlur('acceptanceDate')"
             />
           </el-form-item>
         </el-col>
@@ -377,7 +382,7 @@
       </el-card>
 
       <!-- 五、成本预算 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
+      <el-card shadow="hover" style="margin-bottom: 15px;" data-panel="6">
         <template #header>
           <div @click="togglePanel('6')" style="cursor: pointer; user-select: none;">
             <i :class="activeNames.includes('6') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
@@ -388,31 +393,31 @@
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="项目费用(元)" prop="projectCost">
-            <el-input-number v-model="form.projectCost" :min="0" :precision="2" placeholder="请输入项目费用" style="width: 100%" />
+          <el-form-item label="项目费用(元)" prop="projectCost" data-prop="projectCost">
+            <el-input-number v-model="form.projectCost" :min="0" :precision="2" placeholder="请输入项目费用" style="width: 100%" @blur="validateOnBlur('projectCost')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="费用预算(元)" prop="expenseBudget">
-            <el-input-number v-model="form.expenseBudget" :min="0" :precision="2" placeholder="请输入费用预算" style="width: 100%" />
+          <el-form-item label="费用预算(元)" prop="expenseBudget" data-prop="expenseBudget">
+            <el-input-number v-model="form.expenseBudget" :min="0" :precision="2" placeholder="请输入费用预算" style="width: 100%" @blur="validateOnBlur('expenseBudget')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="成本预算(元)" prop="costBudget">
-            <el-input-number v-model="form.costBudget" :min="0" :precision="2" placeholder="请输入成本预算" style="width: 100%" />
+          <el-form-item label="成本预算(元)" prop="costBudget" data-prop="costBudget">
+            <el-input-number v-model="form.costBudget" :min="0" :precision="2" placeholder="请输入成本预算" style="width: 100%" @blur="validateOnBlur('costBudget')" />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="人力费用(元)" prop="laborCost">
-            <el-input-number v-model="form.laborCost" :min="0" :precision="2" placeholder="请输入人力费用" style="width: 100%" />
+          <el-form-item label="人力费用(元)" prop="laborCost" data-prop="laborCost">
+            <el-input-number v-model="form.laborCost" :min="0" :precision="2" placeholder="请输入人力费用" style="width: 100%" @blur="validateOnBlur('laborCost')" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="采购成本(元)" prop="purchaseCost">
-            <el-input-number v-model="form.purchaseCost" :min="0" :precision="2" placeholder="请输入采购成本" style="width: 100%" />
+          <el-form-item label="采购成本(元)" prop="purchaseCost" data-prop="purchaseCost">
+            <el-input-number v-model="form.purchaseCost" :min="0" :precision="2" placeholder="请输入采购成本" style="width: 100%" @blur="validateOnBlur('purchaseCost')" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -420,7 +425,7 @@
       </el-card>
 
       <!-- 六、备注 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
+      <el-card shadow="hover" style="margin-bottom: 15px;" data-panel="7">
         <template #header>
           <div @click="togglePanel('7')" style="cursor: pointer; user-select: none;">
             <i :class="activeNames.includes('7') ? 'el-icon-arrow-down' : 'el-icon-arrow-right'" style="margin-right: 5px;"></i>
@@ -431,8 +436,8 @@
 
       <el-row :gutter="20">
         <el-col :span="24">
-          <el-form-item label="备注" prop="remark">
-            <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />
+          <el-form-item label="备注" prop="remark" data-prop="remark">
+            <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" @blur="validateOnBlur('remark')" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -458,9 +463,12 @@
 }
 </style>
 
+<style scoped src="@/assets/styles/form-validation.scss"></style>
+
 <script setup name="ProjectApply">
 import { addProject } from "@/api/project/project"
 import request from '@/utils/request'
+import { useFormValidation } from '@/composables/useFormValidation'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -469,10 +477,14 @@ const { industry, sys_xmfl, sys_ndgl, sys_yjqy, sys_xmjd, sys_yszt } = proxy.use
 const formRef = ref()
 const activeNames = ref(['1', '3', '4', '5', '6', '7']) // 默认展开所有折叠面板
 const allPanelNames = ['1', '3', '4', '5', '6', '7'] // 所有面板的name
+
+// 使用表单验证增强
+const { validateOnBlur, validateAndScroll } = useFormValidation(formRef, activeNames)
 const form = ref({
   industry: null,
   region: null,
-  regionCode: null,
+  provinceCode: null,
+  provinceId: null,
   shortName: null,
   establishedYear: null,
   projectCode: null,
@@ -511,7 +523,7 @@ const form = ref({
 const rules = ref({
   industry: [{ required: true, message: "行业不能为空", trigger: "change" }],
   region: [{ required: true, message: "一级区域不能为空", trigger: "change" }],
-  regionCode: [{ required: true, message: "二级区域不能为空", trigger: "change" }],
+  provinceCode: [{ required: true, message: "二级区域不能为空", trigger: "change" }],
   establishedYear: [{ required: true, message: "立项年度不能为空", trigger: "change" }],
   projectName: [{ required: true, message: "项目名称不能为空", trigger: "blur" }],
   projectCategory: [{ required: true, message: "项目分类不能为空", trigger: "change" }],
@@ -536,6 +548,7 @@ const secondaryRegionOptions = ref([])
 const deptOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
+const salesManagerOptions = ref([])
 const allUserOptions = ref([])
 const customerOptions = ref([])
 const contactOptions = ref([])
@@ -547,13 +560,40 @@ watch(participantIds, (newVal) => {
   form.value.participants = newVal.join(',')
 })
 
+/** 过滤部门树，只保留三级及以下机构 */
+function filterDeptTree(depts, level = 1) {
+  if (!depts || depts.length === 0) return []
+
+  // 如果当前是第1或第2级，继续递归子节点
+  if (level < 3) {
+    let result = []
+    depts.forEach(dept => {
+      if (dept.children && dept.children.length > 0) {
+        const filtered = filterDeptTree(dept.children, level + 1)
+        result = result.concat(filtered)
+      }
+    })
+    return result
+  }
+
+  // 第3级及以下，保留当前节点及其子节点
+  return depts.map(dept => ({
+    ...dept,
+    children: dept.children && dept.children.length > 0
+      ? filterDeptTree(dept.children, level + 1)
+      : undefined
+  }))
+}
+
 /** 获取部门树 */
 function getDeptTree() {
   request({
     url: '/system/dept/treeselect',
     method: 'get'
   }).then(response => {
-    deptOptions.value = response.data || []
+    const allDepts = response.data || []
+    // 过滤掉前两级，只显示三级及以下机构
+    deptOptions.value = filterDeptTree(allDepts)
   })
 }
 
@@ -576,6 +616,17 @@ function getMarketManagers() {
     params: { postCode: 'scjl' }
   }).then(response => {
     marketManagerOptions.value = response.data || []
+  })
+}
+
+/** 获取销售负责人列表 */
+function getSalesManagers() {
+  request({
+    url: '/system/user/listByPost',
+    method: 'get',
+    params: { postCode: 'xsfzr' }
+  }).then(response => {
+    salesManagerOptions.value = response.data || []
   })
 }
 
@@ -618,8 +669,24 @@ function getSecondaryRegions(regionDictValue) {
 
 /** 一级区域变化处理 */
 function handleRegionChange(value) {
-  form.value.regionCode = null
+  form.value.provinceCode = null
+  form.value.provinceId = null
   getSecondaryRegions(value)
+  generateProjectCode()
+}
+
+/** 二级区域变化处理 */
+function handleSecondaryRegionChange(provinceCode) {
+  if (!provinceCode) {
+    form.value.provinceId = null
+    generateProjectCode()
+    return
+  }
+  // 根据选中的provinceCode找到对应的provinceId
+  const selectedRegion = secondaryRegionOptions.value.find(item => item.provinceCode === provinceCode)
+  if (selectedRegion) {
+    form.value.provinceId = selectedRegion.provinceId
+  }
   generateProjectCode()
 }
 
@@ -629,9 +696,13 @@ function handleSalesManagerChange(userId) {
     form.value.salesContact = null
     return
   }
-  const user = allUserOptions.value.find(u => u.userId === userId)
+  const user = salesManagerOptions.value.find(u => u.userId === userId)
   if (user) {
     form.value.salesContact = user.phonenumber || ''
+    // 自动填充后立即触发验证，清除错误提示
+    nextTick(() => {
+      validateOnBlur('salesContact')
+    })
   }
 }
 
@@ -661,26 +732,32 @@ function handleContactChange(contactId) {
   const contact = contactOptions.value.find(c => c.contactId === contactId)
   if (contact) {
     customerContactPhone.value = contact.contactPhone || ''
+    // 注意：customerContactPhone 不是表单字段，不需要验证
   }
 }
 
 /** 生成项目编号 */
 function generateProjectCode() {
-  const { industry, region, regionCode, shortName, establishedYear } = form.value
-  if (industry && region && regionCode && shortName && establishedYear) {
-    form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+  const { industry, region, provinceCode, shortName, establishedYear } = form.value
+  if (industry && region && provinceCode && shortName && establishedYear) {
+    form.value.projectCode = `${industry}-${region}-${provinceCode}-${shortName}-${establishedYear}`
   }
 }
 
 /** 提交表单 */
 function submitForm() {
-  formRef.value.validate(valid => {
-    if (valid) {
-      addProject(form.value).then(response => {
-        proxy.$modal.msgSuccess("提交成功")
-        router.push('/project/list')
-      })
+  validateAndScroll(() => {
+    // 验证通过后的提交逻辑
+    const submitData = {
+      ...form.value,
+      regionCode: form.value.provinceCode  // 映射到后端字段
     }
+    delete submitData.provinceCode  // 删除前端字段
+
+    addProject(submitData).then(response => {
+      proxy.$modal.msgSuccess("提交成功")
+      router.push('/project/list')
+    })
   })
 }
 
@@ -723,6 +800,7 @@ onMounted(() => {
   getDeptTree()
   getProjectManagers()
   getMarketManagers()
+  getSalesManagers()
   getAllUsers()
   getCustomers()
 })

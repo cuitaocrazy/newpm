@@ -44,7 +44,7 @@ columns:
       字段来源：
       - 行业代码：industry 字段的字典值
       - 一级区域代码：region 字段的字典值（sys_yjqy）
-      - 二级区域代码：regionCode 字段的值（provinceCode）
+      - 二级区域代码：provinceCode（前端字段，映射到后端 regionCode）
       - 简称：shortName 字段的值
       - 年份：establishedYear 字段的值
 
@@ -132,6 +132,18 @@ columns:
     isRequired: true
     htmlType: select
     dictType: "sys_ndgl"
+    notes: |
+      立项年份，如 2024、2025
+
+      数据来源：sys_dict_data (sys_ndgl)
+      用途：项目编号生成的第五部分（最后一部分）
+
+      前端实现：
+      - apply.vue: 使用 el-select 选择立项年度
+      - edit.vue: 使用 el-select 选择立项年份
+      - 项目编号格式：{industry}-{region}-{provinceCode}-{shortName}-{establishedYear}
+
+      重要：edit.vue 中的 watch 必须监听 establishedYear，不是 year
 
   project_category:
     columnComment: 项目分类
@@ -550,7 +562,7 @@ columns:
     dictType: ""
 
   region_code:
-    columnComment: 区域代码
+    columnComment: 二级区域代码
     javaType: String
     javaField: regionCode
     isInsert: true
@@ -558,9 +570,49 @@ columns:
     isList: false
     isQuery: true
     queryType: EQ
-    isRequired: false
+    isRequired: true
     htmlType: select
-    dictType: "sys_yjqy"
+    dictType: ""
+    notes: |
+      存储二级区域代码（province_code），如"BJ"、"SH"
+
+      数据来源：pm_secondary_region.province_code
+      前端字段：provinceCode（v-model="form.provinceCode"）
+      后端字段：regionCode（对应数据库 region_code）
+      用途：项目编号生成的第三部分
+
+      前后端映射：提交/查询时 provinceCode 映射到 regionCode
+
+      级联逻辑：
+      - 依赖一级区域（region）
+      - 一级区域变化时清空并重新加载
+      - 选择时自动设置 province_id
+
+  province_id:
+    columnComment: 二级区域ID
+    javaType: Long
+    javaField: provinceId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      关联 pm_secondary_region.province_id（主键）
+
+      用途：关联查询二级区域详细信息
+      前端逻辑：选择 regionCode 时自动设置此字段
+
+      实现：
+      const selectedRegion = secondaryRegionOptions.value.find(
+        item => item.provinceCode === provinceCode
+      )
+      if (selectedRegion) {
+        form.value.provinceId = selectedRegion.provinceId
+      }
 
   approval_time:
     columnComment: 审批时间
@@ -743,6 +795,45 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    notes: |
+      显示更新人的用户昵称（nick_name），如果为空则显示创建人昵称
+
+      自动填充逻辑（ProjectServiceImpl.java）：
+      ```java
+      // 新增时自动设置创建人
+      project.setCreateBy(SecurityUtils.getUsername());
+      project.setCreateTime(DateUtils.getNowDate());
+
+      // 修改时自动设置更新人
+      project.setUpdateBy(SecurityUtils.getUsername());
+      project.setUpdateTime(DateUtils.getNowDate());
+      ```
+
+      SQL 实现（ProjectMapper.xml）：
+      ```sql
+      LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+      LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
+      SELECT COALESCE(updater.nick_name, creator.nick_name, p.update_by, p.create_by) AS update_by
+      ```
+
+      显示优先级：
+      1. 更新人昵称（updater.nick_name）
+      2. 创建人昵称（creator.nick_name）
+      3. 更新人用户名（p.update_by）
+      4. 创建人用户名（p.create_by）
+
+      说明：
+      - update_by 字段存储的是用户名（user_name）
+      - 通过关联 sys_user 表获取用户昵称（nick_name）
+      - 如果 update_by 为空，则显示 create_by 的昵称
+      - 使用 COALESCE 函数实现回退逻辑
+      - 列表显示：用户昵称（如"张三"）
+      - 数据库存储：用户名（如"admin"）
+
+      重要：
+      - 新增和修改操作会自动填充 createBy 和 updateBy
+      - 无需前端传递这些字段
+      - 后端 Service 层自动处理
 
   update_time:
     columnComment: 更新时间
@@ -1225,7 +1316,7 @@ customizations:
     notes: "participants 字段存储逗号分隔的 userId 列表"
 
   sales_manager_select:
-    intent: "销售负责人选择，从所有用户中选择"
+    intent: "销售负责人选择，从岗位编码为xsfzr的用户中选择"
     component:
       type: el-select
       props:
@@ -1233,44 +1324,96 @@ customizations:
         clearable: true
     bindTo: sales_manager_id
     service:
-      endpoint: "GET /system/user/list"
-      source: "复用 SysUserService，RuoYi 自带"
+      endpoint: "GET /system/user/listByPost?postCode=xsfzr"
+      source: "复用 SysUserService，接口已存在"
       returns: "[{ userId, nickName }]"
       newApi: false
-    notes: "提交值为 userId，显示值为 nickName"
+    notes: |
+      提交值为 userId，显示值为 nickName，岗位编码：xsfzr（销售负责人）
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：新建项目，选择销售负责人
+      - edit.vue（编辑）：编辑项目，可修改销售负责人
+      - detail.vue（详情）：只读显示，disabled
 
   sales_contact_auto:
     intent: "销售联系方式自动带出，选择销售负责人后自动填充"
     component:
-      type: custom
-      spec: "监听 sales_manager_id 变化，自动查询并填充 sales_contact"
+      type: el-input
+      props:
+        readonly: true
+        placeholder: "自动带出"
     bindTo: sales_contact
     service:
-      endpoint: "GET /system/user/{userId}"
-      source: "复用 SysUserService，RuoYi 自带"
-      returns: "{ phonenumber }"
+      endpoint: null
+      source: "从 salesManagerOptions 中获取 phonenumber"
       newApi: false
-    notes: "只读显示，不可手动编辑"
+    notes: |
+      只读显示，不可手动编辑
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：选择销售负责人后自动填充
+      - edit.vue（编辑）：选择销售负责人后自动填充
+      - detail.vue（详情）：只读显示，disabled
 
   customer_select:
-    intent: "客户选择，下拉选择或搜索"
+    intent: "客户选择，根据项目区域过滤客户"
     component:
       type: el-select
       props:
         filterable: true
         clearable: true
-        remote: true
-        remoteMethod: "远程搜索客户"
     bindTo: customer_id
     service:
-      endpoint: "GET /project/customer/list"
+      endpoint: "GET /project/customer/list?region={region}"
       source: "复用 PmCustomerService，已存在"
       returns: "[{ customerId, customerSimpleName }]"
       newApi: false
-    notes: "提交值为 customerId，显示值为 customerSimpleName"
+    notes: |
+      Label: "客户名称"（不显示ID）
+      显示值: customerSimpleName
+      提交值: customerId
+      过滤规则: 根据项目的一级区域（region）过滤客户列表
+      联动: 区域变化时重新加载客户列表
+      触发: 选择客户时触发 handleCustomerChange() 加载联系人
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：新建项目，选择客户
+      - edit.vue（编辑）：回显已保存的客户，支持修改
+      - detail.vue（详情）：回显已保存的客户，disabled 只读
+      1. Label显示"客户名称"（不是"客户ID"）
+      2. 根据项目的一级区域过滤客户列表
+      3. 监听 region 变化，自动重新加载客户列表
+      4. 页面加载时调用 loadCustomers() 加载客户列表
+      5. 选择客户时触发 handleCustomerChange() 加载联系人
+
+      前端实现：
+      ```javascript
+      // 加载客户列表（根据区域过滤）
+      function loadCustomers() {
+        const params = {}
+        if (form.value.region) {
+          params.region = form.value.region
+        }
+        request({
+          url: '/project/customer/list',
+          method: 'get',
+          params: params
+        }).then(response => {
+          customerOptions.value = response.rows || []
+        })
+      }
+
+      // 监听区域变化
+      watch(() => form.value.region, (newRegion) => {
+        if (newRegion) {
+          loadCustomers()
+        }
+      })
+      ```
 
   customer_contact_cascade:
-    intent: "客户联系人级联选择，根据选择的客户动态加载联系人"
+    intent: "客户联系人级联选择，根据客户动态加载"
     component:
       type: el-select
       props:
@@ -1284,16 +1427,54 @@ customizations:
       returns: "[{ contactId, contactName, contactPhone }]"
       newApi: false
     notes: |
-      监听 customer_id 变化，动态加载联系人列表
+      Label: "客户联系人"（不显示ID）
+      显示值: contactName
+      提交值: contactId
+      禁用条件: 未选择客户时禁用
+      级联逻辑: 选择客户后清空联系人，加载该客户的联系人列表
 
-      实现要点：
-      1. 选择客户后，清空客户联系人和客户联系方式
-      2. 调用接口加载该客户的联系人列表
-      3. 选择联系人后，自动填充客户联系方式（只读）
-      4. 前端使用 response.data 获取数据（不是 response.rows）
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：新建项目，选择联系人
+      - edit.vue（编辑）：回显已保存的联系人，支持修改，加载项目数据后自动加载联系人列表
+      - detail.vue（详情）：回显已保存的联系人，disabled 只读
+
+      编辑模式回显逻辑：
+      ```javascript
+      // edit.vue - 加载项目数据后
+      if (data.customerId) {
+        handleCustomerChange(data.customerId)  // 加载联系人列表
+      }
+
+      // detail.vue - 加载项目数据后
+      if (data.customerId) {
+        loadCustomerContacts(data.customerId)  // 加载联系人列表并填充联系方式
+      }
+      ```
+      7. 编辑项目时，如果有客户ID，自动加载联系人列表
+
+      前端实现：
+      ```javascript
+      // 客户变化时加载联系人
+      function handleCustomerChange(customerId) {
+        // 清空联系人和联系方式
+        form.value.customerContactId = null
+        customerContactPhone.value = ''
+        contactOptions.value = []
+
+        if (!customerId) return
+
+        // 加载该客户的联系人列表
+        request({
+          url: '/project/customer/contact/listByCustomer',
+          method: 'get',
+          params: { customerId: customerId }
+        }).then(response => {
+          contactOptions.value = response.data || []
+        })
+      }
 
   customer_contact_phone_auto:
-    intent: "客户联系方式自动带出，选择客户联系人后自动填充，只读显示"
+    intent: "客户联系方式自动回显，只读显示"
     component:
       type: el-input
       props:
@@ -1302,16 +1483,17 @@ customizations:
     bindTo: customerContactPhone
     service:
       endpoint: null
-      source: "从 customer_contact_cascade 返回的数据中获取 contactPhone"
+      source: "从联系人列表中获取 contactPhone"
       newApi: false
     notes: |
-      只读显示，不可手动编辑，数据来自客户联系人选择
+      临时变量: customerContactPhone（不保存到数据库）
+      自动填充: 选择联系人后从 contactOptions 中获取 contactPhone
+      只读: 不可手动编辑
 
-      实现逻辑：
-      1. 使用临时变量 customerContactPhone（不保存到数据库）
-      2. 监听 customer_contact_id 变化
-      3. 从 contactOptions 中找到对应的联系人
-      4. 自动填充 customerContactPhone.value = contact.contactPhone
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：选择联系人后自动填充
+      - edit.vue（编辑）：选择联系人后自动填充，或加载项目数据后自动填充
+      - detail.vue（详情）：加载项目数据后自动填充，disabled 只读
 
   merchant_contact_manual:
     intent: "商户联系人手动输入，独立字段，不关联客户联系人"
@@ -1344,7 +1526,15 @@ customizations:
       - customerContactPhone：临时变量，显示客户联系人的电话（只读，不保存）
       - merchantPhone：数据库字段，保存商户联系方式（可编辑，保存到数据库）
 
-      布局结构：
+      布局结构（2026-02-06更新）：
+      第一行（3列）：
+      - 客户名称（el-select，8列）
+      - 客户联系人（el-select，8列，级联）
+      - 客户联系方式（el-input readonly，8列，自动回显）
+
+      第二行（2列）：
+      - 商户联系人（el-input，12列）
+      - 商户联系方式（el-input，12列）
       第一行：客户名称 | 客户联系人 | 客户联系方式（只读，临时变量）
       第二行：商户联系人 | 商户联系方式（可编辑，保存到数据库）
 
@@ -1415,13 +1605,43 @@ customizations:
     intent: "项目部门格式化显示，只显示三级及以下机构，用'-'隔开"
     component:
       type: custom
-      spec: "格式化部门层级显示"
+      spec: "格式化部门层级显示，从三级机构开始"
     bindTo: project_dept
     service:
       endpoint: null
-      source: "后端查询时关联部门表，格式化部门路径"
+      source: "后端查询时使用递归 CTE 构建部门路径，前端部门树选择器过滤前两级"
       newApi: false
-    notes: "例：技术部-研发一部-前端组"
+    notes: |
+      后端实现（ProjectMapper.xml）：
+      - 使用 MySQL 递归 CTE (WITH RECURSIVE) 构建完整部门路径
+      - 从当前部门向上递归查找所有父部门
+      - 计算部门层级，从第三级开始截取路径
+      - 使用 SUBSTRING_INDEX 函数提取三级及以下部门名称
+      - 格式：二部-分行业务组（项目四组）
+
+      前端实现（apply.vue, edit.vue, index.vue, detail.vue）：
+      - 添加 filterDeptTree() 函数过滤部门树
+      - 递归遍历部门树，跳过前两级
+      - 只保留三级及以下机构供用户选择
+      - 保持树形结构的层级关系
+
+      SQL 示例：
+      ```sql
+      WITH RECURSIVE dept_path AS (
+          SELECT dept_id, dept_name, parent_id, 1 AS level,
+                 CAST(dept_name AS CHAR(500)) AS path
+          FROM sys_dept
+          WHERE dept_id = CAST(p.project_dept AS UNSIGNED)
+          UNION ALL
+          SELECT d.dept_id, d.dept_name, d.parent_id, dp.level + 1,
+                 CONCAT(d.dept_name, '-', dp.path)
+          FROM sys_dept d
+          INNER JOIN dept_path dp ON d.dept_id = dp.parent_id
+      )
+      SELECT SUBSTRING_INDEX(path, '-', -(MAX(level) - 2))
+      FROM dept_path
+      WHERE MAX(level) >= 3
+      ```
 
   list_participants_format:
     intent: "参与人员格式化显示，显示用户昵称列表"
@@ -1791,6 +2011,14 @@ customizations:
       4. 跳转到项目详情页面:
          router.push(`/project/list/detail/${projectId}`)
 
+      5. 保存成功后返回列表:
+         router.push('/project/list')
+
+      注意事项:
+      - 所有保存成功后的跳转统一使用 router.push('/project/list')
+      - 不要使用 router.push('/project/project')（旧路径）
+      - 适用页面: apply.vue, edit.vue, detail.vue
+
       ========================================
       常见问题与解决方案
       ========================================
@@ -1823,4 +2051,806 @@ customizations:
       - 检查数据库中的 path 和 component 字段
       - 确保组件文件存在于 ruoyi-ui/src/views/ 对应路径
       - 子路由的 path 使用相对路径（不以 / 开头）
+
+  # ========================================
+  # 表单验证增强（2026-02-08）
+  # ========================================
+  form_validation_enhancement:
+    intent: "立项申请和项目编辑页面的表单验证增强，实现实时验证和错误定位"
+    component:
+      type: custom
+      spec: "使用 Composable 模式实现表单验证增强功能"
+    bindTo: ["apply.vue", "edit.vue"]
+    service:
+      endpoint: null
+      source: "前端 Composable 实现"
+      newApi: false
+    notes: |
+      ========================================
+      功能概述
+      ========================================
+
+      1. 实时验证（blur 触发）
+         - 用户填写完字段后，光标离开时立即验证
+         - 立即显示错误提示，无需等待提交
+         - 提升用户体验，减少提交失败
+
+      2. 提交时错误定位
+         - 点击提交按钮时，如果有验证错误
+         - 自动展开包含错误的折叠面板
+         - 平滑滚动到第一个错误字段
+         - 错误字段抖动高亮，吸引注意力
+
+      3. 自动填充字段验证
+         - 销售联系方式：选择销售负责人后自动填充并验证
+         - 客户联系方式：选择客户联系人后自动填充
+         - 只读字段自动触发验证，清除错误提示
+
+      4. 禁用 label 点击
+         - 点击 form-item 的 label 不会触发控件
+         - 避免误触发日期选择器等组件
+
+      ========================================
+      核心文件
+      ========================================
+
+      1. Composable 文件
+         位置: ruoyi-ui/src/composables/useFormValidation.ts
+
+         功能:
+         - validateOnBlur(prop): 单字段实时验证
+         - validateAndScroll(callback): 提交验证 + 自动滚动
+         - scrollToError(prop): 滚动到指定错误字段
+         - clearValidate(): 清空所有验证错误
+         - resetFields(): 重置表单
+
+         导出:
+         - errorFields: 错误字段映射
+         - errorCount: 错误数量
+
+      2. 样式文件
+         位置: ruoyi-ui/src/assets/styles/form-validation.scss
+
+         功能:
+         - 抖动动画 (@keyframes shake)
+         - 错误边框高亮 (.shake-error)
+         - 验证成功视觉反馈（可选）
+
+      ========================================
+      使用方法
+      ========================================
+
+      1. 引入 Composable
+         ```typescript
+         import { useFormValidation } from '@/composables/useFormValidation'
+
+         const formRef = ref()
+         const activeNames = ref(['1', '2', '3', '4', '5', '6'])
+         const { validateOnBlur, validateAndScroll } = useFormValidation(formRef, activeNames)
+         ```
+
+      2. 添加 data 属性
+         所有 el-card 添加 data-panel 属性:
+         ```vue
+         <el-card data-panel="1">
+         ```
+
+         所有 el-form-item 添加 data-prop 属性:
+         ```vue
+         <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
+         ```
+
+      3. 添加 blur 事件
+         所有表单控件添加 @blur 事件:
+         ```vue
+         <el-input v-model="form.projectName" @blur="validateOnBlur('projectName')" />
+         <el-select v-model="form.industry" @blur="validateOnBlur('industry')">
+         <el-date-picker v-model="form.startDate" @blur="validateOnBlur('startDate')" />
+         ```
+
+      4. 修改提交函数
+         ```typescript
+         function submitForm() {
+           validateAndScroll(() => {
+             // 验证通过后的提交逻辑
+             addProject(form.value).then(res => {
+               proxy.$modal.msgSuccess('提交成功')
+               router.push('/project/list')
+             })
+           })
+         }
+         ```
+
+      5. 自动填充字段验证
+         ```typescript
+         function handleSalesManagerChange(userId) {
+           if (!userId) {
+             form.value.salesContact = null
+             return
+           }
+           const user = salesManagerOptions.value.find(u => u.userId === userId)
+           if (user) {
+             form.value.salesContact = user.phonenumber || ''
+             // 自动填充后立即触发验证，清除错误提示
+             nextTick(() => {
+               validateOnBlur('salesContact')
+             })
+           }
+         }
+         ```
+
+      6. 禁用 label 点击
+         ```scss
+         /* 禁用 label 点击触发表单控件的默认行为 */
+         :deep(.el-form-item__label) {
+           pointer-events: none;
+         }
+         ```
+
+      7. 引入样式文件
+         ```vue
+         <style scoped src="@/assets/styles/form-validation.scss"></style>
+         ```
+
+      ========================================
+      apply.vue 实现细节
+      ========================================
+
+      1. 面板结构
+         - 使用 el-card 实现折叠面板（不是 el-collapse）
+         - 6个面板：data-panel="1", "3", "4", "5", "6", "7"
+         - 默认全部展开：activeNames = ['1', '3', '4', '5', '6', '7']
+
+      2. 表单字段
+         - 共 35 个字段
+         - 所有字段都添加了 data-prop 属性
+         - 所有字段都添加了 @blur 验证事件
+
+      3. 自动填充字段
+         - salesContact: 选择销售负责人后自动填充并验证
+
+      4. 工具栏
+         - 全部展开/全部折叠按钮
+         - 右对齐，使用 el-link
+
+      ========================================
+      edit.vue 实现细节
+      ========================================
+
+      1. 面板结构
+         - 使用 el-collapse 实现折叠面板（不是 el-card）
+         - 6个面板：name="1", "2", "3", "4", "5", "6"
+         - 默认全部展开：activeNames = ['1', '2', '3', '4', '5', '6']
+
+      2. 表单字段
+         - 共 24 个字段
+         - 所有字段都添加了 data-prop 属性
+         - 所有字段都添加了 @blur 验证事件
+
+      3. 自动填充字段
+         - salesContact: 选择销售负责人后自动填充并验证
+
+      4. 数据回显修复
+         - 客户联系人和联系方式回显问题已修复
+         - 加载项目数据时，先保存 customerContactId
+         - 加载联系人列表后，恢复 customerContactId 并触发联系方式显示
+
+      ========================================
+      技术细节
+      ========================================
+
+      1. 字段定位机制
+         通过 data-prop 属性定位字段:
+         ```javascript
+         const element = document.querySelector(`[data-prop="${prop}"]`)
+         ```
+
+      2. 面板展开机制
+         apply.vue (el-card):
+         ```javascript
+         const panel = element.closest('[data-panel]')
+         const panelIndex = panel?.getAttribute('data-panel')
+         if (!activeNames.value.includes(panelIndex)) {
+           activeNames.value.push(panelIndex)
+         }
+         ```
+
+         edit.vue (el-collapse):
+         ```javascript
+         const panel = element.closest('.el-collapse-item')
+         const panelName = panel?.getAttribute('name')
+         if (!activeNames.value.includes(panelName)) {
+           activeNames.value.push(panelName)
+         }
+         ```
+
+      3. 滚动时机
+         ```javascript
+         setTimeout(() => {
+           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+         }, 300) // 等待面板展开动画完成
+         ```
+
+      4. 抖动动画
+         ```scss
+         @keyframes shake {
+           0%, 100% { transform: translateX(0); }
+           25% { transform: translateX(-10px); }
+           75% { transform: translateX(10px); }
+         }
+
+         .shake-error {
+           animation: shake 0.6s;
+           border: 2px solid var(--el-color-danger) !important;
+           border-radius: 4px;
+           padding: 10px;
+           background-color: rgba(245, 108, 108, 0.05);
+         }
+         ```
+
+      ========================================
+      已知问题和解决方案
+      ========================================
+
+      1. 只读字段验证错误不消失
+         问题: 只读字段无法触发 blur 事件
+         解决: 在自动填充后手动调用 validateOnBlur()
+
+      2. el-select 的 blur 事件可能不触发
+         问题: Element Plus 的 select 组件 blur 行为不一致
+         解决: 如果遇到问题，可以改用 @change 事件
+
+      3. 客户联系人不回显
+         问题: handleCustomerChange() 会清空 customerContactId
+         解决: 加载数据时先保存值，加载完成后恢复
+
+      ========================================
+      测试清单
+      ========================================
+
+      apply.vue:
+      - [x] 实时验证：光标离开后立即显示错误
+      - [x] 提交验证：点击提交按钮滚动到第一个错误
+      - [x] 面板展开：自动展开包含错误的面板
+      - [x] 抖动动画：错误字段抖动高亮
+      - [x] 自动填充：销售联系方式自动验证
+
+      edit.vue:
+      - [x] 页面加载：无编译错误
+      - [x] 数据回显：客户联系人和联系方式正确显示
+      - [x] 实时验证：光标离开后立即显示错误
+      - [x] 提交验证：点击提交按钮滚动到第一个错误
+      - [x] 面板展开：自动展开包含错误的面板
+      - [x] 抖动动画：错误字段抖动高亮
+      - [x] 自动填充：销售联系方式自动验证
+      - [x] 禁用 label 点击：点击 label 不触发控件
+
+      ========================================
+      相关文档
+      ========================================
+
+      - docs/pm/form-validation-implementation.md - 实现文档
+      - docs/pm/form-validation-completion.md - 完成总结
+      - docs/pm/form-validation-final-fix.md - 最终修复
+      - docs/pm/form-validation-complete-report.md - 完成报告
+
+  # ========================================
+  # 审计字段自动填充（2026-02-08）
+  # ========================================
+  audit_fields_auto_fill:
+    intent: "自动填充创建人、创建时间、更新人、更新时间字段"
+    component:
+      type: backend
+      spec: "Service 层自动设置审计字段"
+    bindTo: ["create_by", "create_time", "update_by", "update_time"]
+    service:
+      endpoint: null
+      source: "ProjectServiceImpl.java"
+      newApi: false
+    notes: |
+      ========================================
+      功能概述
+      ========================================
+
+      自动填充审计字段，无需前端传递，后端 Service 层自动处理。
+
+      ========================================
+      实现位置
+      ========================================
+
+      文件: ruoyi-project/src/main/java/com/ruoyi/project/service/impl/ProjectServiceImpl.java
+
+      ========================================
+      新增操作
+      ========================================
+
+      ```java
+      @Transactional
+      @Override
+      public int insertProject(Project project)
+      {
+          // 自动设置创建人和创建时间
+          project.setCreateBy(SecurityUtils.getUsername());
+          project.setCreateTime(DateUtils.getNowDate());
+
+          int rows = projectMapper.insertProject(project);
+          insertProjectApproval(project);
+          return rows;
+      }
+      ```
+
+      说明:
+      - SecurityUtils.getUsername(): 获取当前登录用户的用户名
+      - DateUtils.getNowDate(): 获取当前时间
+      - 自动填充 create_by 和 create_time 字段
+
+      ========================================
+      修改操作
+      ========================================
+
+      ```java
+      @Transactional
+      @Override
+      public int updateProject(Project project)
+      {
+          // 自动设置更新人和更新时间
+          project.setUpdateBy(SecurityUtils.getUsername());
+          project.setUpdateTime(DateUtils.getNowDate());
+
+          projectMapper.deleteProjectApprovalByProjectId(project.getProjectId());
+          insertProjectApproval(project);
+          return projectMapper.updateProject(project);
+      }
+      ```
+
+      说明:
+      - 每次修改时自动更新 update_by 和 update_time 字段
+      - 记录最后一次修改的用户和时间
+
+      ========================================
+      查询显示逻辑
+      ========================================
+
+      文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+      update_by 字段显示逻辑:
+      ```sql
+      -- 关联创建人和更新人用户表
+      LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+      LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
+
+      -- 显示逻辑：优先显示更新人昵称，如果为空则显示创建人昵称
+      SELECT COALESCE(updater.nick_name, creator.nick_name, p.update_by, p.create_by) AS update_by
+      ```
+
+      显示优先级:
+      1. 更新人昵称（updater.nick_name）- 如果有更新记录且能关联到用户
+      2. 创建人昵称（creator.nick_name）- 如果没有更新记录但能关联到创建人
+      3. 更新人用户名（p.update_by）- 如果有更新记录但关联不到用户表
+      4. 创建人用户名（p.create_by）- 如果都关联不到，显示创建人用户名
+
+      业务场景:
+      - 新建项目：update_by 为空，显示创建人昵称
+      - 修改项目：update_by 有值，显示更新人昵称
+      - 用户被删除：关联不到用户表，显示用户名字符串
+
+      ========================================
+      字符集处理
+      ========================================
+
+      问题: MySQL 8.0 默认字符集 utf8mb4_0900_ai_ci 与系统表 utf8mb4_unicode_ci 不一致
+
+      解决方案: 在 JOIN 时显式指定字符集
+      ```sql
+      LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+      LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
+      ```
+
+      ========================================
+      前端处理
+      ========================================
+
+      前端无需特殊处理:
+      - 新增/修改时不传递 createBy、createTime、updateBy、updateTime
+      - 后端自动填充这些字段
+      - 列表查询时直接显示返回的昵称
+
+      ========================================
+      依赖说明
+      ========================================
+
+      1. SecurityUtils 工具类
+         - 位置: ruoyi-common/src/main/java/com/ruoyi/common/utils/SecurityUtils.java
+         - 方法: getUsername() - 获取当前登录用户名
+         - 依赖: Spring Security 上下文
+
+      2. DateUtils 工具类
+         - 位置: ruoyi-common/src/main/java/com/ruoyi/common/utils/DateUtils.java
+         - 方法: getNowDate() - 获取当前时间
+         - 返回: java.util.Date
+
+      3. sys_user 系统表
+         - 字段: user_name (用户名), nick_name (昵称)
+         - 用途: 关联查询用户昵称
+
+      ========================================
+      测试验证
+      ========================================
+
+      1. 新增项目测试
+         - 创建新项目
+         - 验证 create_by 是否为当前登录用户
+         - 验证 create_time 是否为当前时间
+         - 验证 update_by 是否为空
+
+      2. 修改项目测试
+         - 修改已有项目
+         - 验证 update_by 是否为当前登录用户
+         - 验证 update_time 是否为当前时间
+         - 验证 create_by 和 create_time 是否保持不变
+
+      3. 列表显示测试
+         - 新建项目：update_by 列显示创建人昵称
+         - 修改项目：update_by 列显示更新人昵称
+         - 用户被删除：显示用户名字符串
+
+      ========================================
+      注意事项
+      ========================================
+
+      1. 必须在登录状态下操作
+         - SecurityUtils.getUsername() 依赖 Spring Security 上下文
+         - 未登录状态会抛出异常
+
+      2. 字符集一致性
+         - 新建表时使用 utf8mb4_unicode_ci 字符集
+         - 或在 JOIN 时显式指定 COLLATE
+
+      3. MyBatis 动态 SQL
+         - insert 语句使用 <if test="createBy != null">
+         - 必须先设置字段值，才会插入到数据库
+
+      4. 事务处理
+         - insertProject 和 updateProject 都使用 @Transactional
+         - 确保审计字段和业务数据一致性
+
+  # ========================================
+  # 详情页面布局配置（2026-02-08）
+  # ========================================
+  detail_page_layout:
+    intent: "项目详情页面使用 el-descriptions 组件展示，清晰美观的只读信息展示"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        shadow: "never"
+        column: 3
+        border: true
+    bindTo: "detail.vue"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "复用 ProjectService.selectProjectById"
+      newApi: false
+    notes: |
+      页面特性：
+      - 页面标题："项目详情"，提示："查看项目完整信息"
+      - 使用 el-card 包裹每个信息模块
+      - 使用 el-descriptions 组件展示数据（替代表单控件）
+      - 6个信息卡片，每个卡片一个主题
+      - 底部只有"返回"按钮
+
+  detail_page_card1_basic_info:
+    intent: "详情页卡片1：项目基本信息，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 项目基本信息"
+    service: null
+    notes: |
+      卡片标题：项目基本信息
+
+      字段列表（按显示顺序）：
+      1. 行业 - dict-tag 显示，字典 industry
+      2. 区域 - dict-tag 显示，字典 sys_yjqy
+      3. 简称 - 文本显示
+      4. 年份 - 文本显示，后缀"年"
+      5. 项目编号 - 文本显示，:span="2"（占2列）
+      6. 项目名称 - 文本显示，:span="3"（占3列）
+      7. 项目分类 - dict-tag 显示，字典 sys_xmfl
+      8. 项目部门 - 文本显示（deptName）
+      9. 预估工作量 - 文本显示，后缀"人天"
+      10. 项目状态 - dict-tag 显示，字典 sys_xmjd
+      11. 验收状态 - dict-tag 显示，字典 sys_yszt
+      12. 审核状态 - dict-tag 显示，字典 sys_spzt
+      13. 项目地址 - 文本显示，:span="3"
+      14. 项目计划 - 文本显示，:span="3"，使用 text-content 类
+      15. 项目描述 - 文本显示，:span="3"，使用 text-content 类
+      16. 审核意见 - 文本显示，:span="3"
+
+      注意：不显示审核时间字段
+
+  detail_page_card2_personnel:
+    intent: "详情页卡片2：人员配置，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 人员配置"
+    service: null
+    notes: |
+      卡片标题：人员配置
+
+      字段列表：
+      1. 项目经理 - 文本显示（projectManagerName）
+      2. 市场经理 - 文本显示（marketManagerName）
+      3. 销售负责人 - 文本显示（salesManagerName）
+      4. 销售联系方式 - 文本显示，:span="3"
+      5. 参与人员 - el-tag 标签展示，:span="3"
+         - 使用 v-for 遍历 selectedParticipants
+         - 标签类型：type="info"
+         - 标签样式：margin-right: 8px; margin-bottom: 8px;
+         - 空状态：显示"暂无参与人员"
+
+  detail_page_card3_customer:
+    intent: "详情页卡片3：客户信息，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 客户信息"
+    service: null
+    notes: |
+      卡片标题：客户信息
+
+      字段列表：
+      1. 客户名称 - 文本显示（customerName）
+      2. 客户联系人 - 文本显示（customerContactName）
+      3. 客户联系方式 - 文本显示（customerContactPhone）
+      4. 商户联系人 - 文本显示
+      5. 商户联系方式 - 文本显示，:span="2"
+
+  detail_page_card4_timeline:
+    intent: "详情页卡片4：时间规划，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 时间规划"
+    service: null
+    notes: |
+      卡片标题：时间规划
+
+      字段列表：
+      1. 启动日期 - 文本显示（startDate）
+      2. 结束日期 - 文本显示（endDate）
+      3. 投产日期 - 文本显示（productionDate）
+      4. 验收日期 - 文本显示，:span="3"（acceptanceDate）
+
+  detail_page_card5_budget:
+    intent: "详情页卡片5：成本预算，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 成本预算"
+    service: null
+    notes: |
+      卡片标题：成本预算
+
+      字段列表：
+      1. 项目预算 - 文本显示，后缀"元"
+      2. 项目费用 - 文本显示，后缀"元"
+      3. 费用预算 - 文本显示，后缀"元"
+      4. 成本预算 - 文本显示，后缀"元"
+      5. 人力费用 - 文本显示，后缀"元"
+      6. 采购成本 - 文本显示，后缀"元"
+
+  detail_page_card6_remark:
+    intent: "详情页卡片6：备注，使用 el-descriptions 1列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 1
+        border: true
+    bindTo: "detail.vue - 备注"
+    service: null
+    notes: |
+      卡片标题：备注
+
+      字段列表：
+      1. 备注 - 文本显示，使用 text-content 类
+
+  detail_page_descriptions_usage:
+    intent: "el-descriptions 组件使用规范"
+    component:
+      type: "el-descriptions + el-descriptions-item"
+      props:
+        column: 3  # 默认3列布局
+        border: true  # 显示边框
+    bindTo: "detail.vue - 所有卡片"
+    service: null
+    notes: |
+      el-descriptions 组件配置：
+      - :column="3" - 默认3列布局
+      - border - 显示边框，更清晰
+
+      el-descriptions-item 配置：
+      - label - 字段标签
+      - :span="n" - 跨列显示（1-3）
+        - 默认占1列
+        - 长文本字段（项目名称、地址、计划、描述）占3列
+        - 项目编号占2列
+
+      数据显示规则：
+      - 字典值：使用 <dict-tag :options="xxx" :value="form.xxx" />
+      - 文本值：使用 {{ form.xxx || '-' }}
+      - 带单位：{{ form.xxx || 0 }} 单位
+      - 长文本：<div class="text-content">{{ form.xxx || '-' }}</div>
+      - 标签列表：<el-tag v-for="..." :key="...">...</el-tag>
+
+  detail_page_data_loading:
+    intent: "详情页数据加载逻辑"
+    component: null
+    bindTo: "detail.vue - script"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectService.selectProjectById"
+      newApi: false
+    notes: |
+      数据加载流程：
+      1. 从路由参数获取 projectId
+      2. 调用 getProject(projectId) 获取项目数据
+      3. 数据映射：
+         - regionCode → provinceCode
+         - participants 字符串 → 数组
+      4. 填充 form 对象
+      5. 加载客户联系人电话（如果有 customerContactId）
+      6. 加载所有用户列表（用于参与人员显示）
+      7. 筛选参与人员：从 allUsers 中筛选 participants 对应的用户
+
+      关键函数：
+      - loadProjectData() - 加载项目数据
+      - loadAllUsers() - 加载所有用户
+      - loadCustomerContactPhone(contactId) - 加载客户联系人电话
+
+  detail_page_styles:
+    intent: "详情页样式配置"
+    component: null
+    bindTo: "detail.vue - style"
+    service: null
+    notes: |
+      样式类：
+      1. .project-detail - 页面容器
+      2. .page-header - 页面标题卡片
+         - margin-bottom: 20px
+      3. .detail-card - 信息卡片
+         - margin-bottom: 20px
+         - shadow="never"
+      4. .card-title - 卡片标题
+         - font-size: 16px
+         - font-weight: 600
+         - color: #303133
+      5. .text-content - 长文本内容
+         - white-space: pre-wrap
+         - word-break: break-all
+         - line-height: 1.6
+      6. .selected-participants - 参与人员容器
+      7. .participant-tag - 参与人员标签
+         - margin-right: 8px
+         - margin-bottom: 8px
+      8. .form-footer - 底部按钮区域
+         - position: sticky
+         - bottom: 0
+         - padding: 20px
+         - background-color: #fff
+         - border-top: 1px solid #dcdfe6
+         - text-align: center
+         - z-index: 10
+
+  detail_page_vs_form_layout:
+    intent: "el-descriptions 布局与表单布局的对比"
+    component: null
+    bindTo: "detail.vue"
+    service: null
+    notes: |
+      el-descriptions 布局优势：
+      1. 专为只读信息展示设计
+      2. 自动处理标签和内容的对齐
+      3. 内置边框和分隔线，视觉更清晰
+      4. 响应式布局，自动适配不同屏幕
+      5. 代码更简洁，无需 el-row + el-col
+      6. 无需 disabled 属性，天然只读
+
+      表单布局（apply.vue, edit.vue）：
+      - 使用 el-form + el-row + el-col
+      - 需要表单验证
+      - 字段可编辑
+      - 需要 disabled 属性控制只读
+
+      详情布局（detail.vue）：
+      - 使用 el-card + el-descriptions
+      - 无需表单验证
+      - 天然只读展示
+      - 更适合信息查看
+
+      适用场景：
+      - 详情页、查看页 → el-descriptions
+      - 编辑页、新增页 → el-form
+
+  # ========================================
+  # 详情页面数据加载修复（2026-02-08）
+  # ========================================
+  detail_page_field_mapping_fix:
+    intent: "详情页面字段映射修复，立项年份字段从 year 改为 establishedYear"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "立项年份"
+    bindTo: "establishedYear"
+    service:
+      endpoint: null
+      source: "前端字段映射修正"
+      newApi: false
+    notes: "前端 form.year 改为 form.establishedYear，与后端实体类字段名一致。显示格式：{{ form.establishedYear || '-' }} 年"
+
+  detail_page_personnel_names_display:
+    intent: "详情页面人员姓名显示，通过关联 sys_user 表获取昵称"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "项目经理/市场经理/销售负责人"
+    bindTo: ["projectManagerName", "marketManagerName", "salesManagerName"]
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectMapper.xml - selectProjectByProjectId 添加 LEFT JOIN sys_user"
+      returns: "{ projectManagerName, marketManagerName, salesManagerName }"
+      newApi: false
+    notes: "后端 SQL 添加三个 LEFT JOIN sys_user，分别关联项目经理、市场经理、销售负责人，返回 nick_name 字段。前端实体类添加对应的 String 字段和 getter/setter。"
+
+  detail_page_customer_info_display:
+    intent: "详情页面客户信息显示，通过关联 pm_customer 和 pm_customer_contact 表获取"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "客户名称/客户联系人"
+    bindTo: ["customerName", "customerContactName"]
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectMapper.xml - selectProjectByProjectId 添加 LEFT JOIN pm_customer 和 pm_customer_contact"
+      returns: "{ customerName, customerContactName }"
+      newApi: false
+    notes: "后端 SQL 添加 LEFT JOIN pm_customer c 和 LEFT JOIN pm_customer_contact cc，使用 customer_simple_name AS customer_name 和 contact_name AS customer_contact_name。注意客户表字段是 customer_simple_name 不是 customer_name。"
+
+  detail_page_production_date_format:
+    intent: "投产日期格式化，添加 @JsonFormat 注解确保返回 yyyy-MM-dd 格式"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "投产日期"
+    bindTo: "productionDate"
+    service:
+      endpoint: null
+      source: "Project.java 实体类添加 @JsonFormat 注解"
+      newApi: false
+    notes: "在 productionDate 字段上添加 @JsonFormat(pattern = \"yyyy-MM-dd\") 注解，与其他日期字段保持一致。"
+
+  detail_page_dept_hierarchy_display:
+    intent: "项目部门显示第三级及以下层级，使用递归 CTE 构建部门路径"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "项目部门"
+    bindTo: "deptName"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectMapper.xml - selectProjectByProjectId 使用 WITH RECURSIVE 递归查询"
+      returns: "格式化的部门路径，如：二部-分行业务组（项目四组）"
+      newApi: false
+    notes: "使用 MySQL 递归 CTE 从当前部门向上查找所有父部门，构建完整路径。如果层级 >= 3，使用 SUBSTRING_INDEX 截取第三级及以下；如果层级 < 3，显示全部。分隔符为'-'。"
+
 

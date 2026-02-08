@@ -128,6 +128,8 @@ public class Project extends BaseEntity
     private Date endDate;
 
     /** 投产日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "投产日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date productionDate;
 
     /** 验收日期 */
@@ -167,6 +169,9 @@ public class Project extends BaseEntity
 
     /** 区域代码 */
     private String regionCode;
+
+    /** 二级区域ID */
+    private Long provinceId;
 
     /** 审批时间 */
     private Date approvalTime;
@@ -234,11 +239,20 @@ public class Project extends BaseEntity
     /** 市场经理姓名 */
     private String marketManagerName;
 
+    /** 销售负责人姓名 */
+    private String salesManagerName;
+
     /** 参与人员姓名列表 */
     private String participantsNames;
 
     /** 部门名称 */
     private String deptName;
+
+    /** 客户名称 */
+    private String customerName;
+
+    /** 客户联系人姓名 */
+    private String customerContactName;
 
     public void setProjectId(Long projectId) 
     {
@@ -645,9 +659,19 @@ public class Project extends BaseEntity
         this.regionCode = regionCode;
     }
 
-    public String getRegionCode() 
+    public String getRegionCode()
     {
         return regionCode;
+    }
+
+    public void setProvinceId(Long provinceId)
+    {
+        this.provinceId = provinceId;
+    }
+
+    public Long getProvinceId()
+    {
+        return provinceId;
     }
 
     public void setApprovalTime(Date approvalTime) 
@@ -880,6 +904,36 @@ public class Project extends BaseEntity
         this.deptName = deptName;
     }
 
+    public String getSalesManagerName()
+    {
+        return salesManagerName;
+    }
+
+    public void setSalesManagerName(String salesManagerName)
+    {
+        this.salesManagerName = salesManagerName;
+    }
+
+    public String getCustomerName()
+    {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName)
+    {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerContactName()
+    {
+        return customerContactName;
+    }
+
+    public void setCustomerContactName(String customerContactName)
+    {
+        this.customerContactName = customerContactName;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -924,6 +978,7 @@ public class Project extends BaseEntity
             .append("approvalReason", getApprovalReason())
             .append("industryCode", getIndustryCode())
             .append("regionCode", getRegionCode())
+            .append("provinceId", getProvinceId())
             .append("approvalTime", getApprovalTime())
             .append("approverId", getApproverId())
             .append("remark", getRemark())

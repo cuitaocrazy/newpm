@@ -1,0 +1,38 @@
+/* 表单验证错误抖动动画 */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.shake-error {
+  animation: shake 0.6s;
+  border: 2px solid var(--el-color-danger) !important;
+  border-radius: 4px;
+  padding: 10px;
+  background-color: rgba(245, 108, 108, 0.05);
+}
+
+/* 表单验证错误提示增强 */
+.el-form-item.is-error .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+}
+
+.el-form-item.is-error .el-select .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+}
+
+.el-form-item.is-error .el-input-number .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset !important;
+}
+
+/* 验证成功的视觉反馈（可选） */
+.el-form-item.is-success .el-input__wrapper {
+  box-shadow: 0 0 0 1px var(--el-color-success) inset !important;
+}
