@@ -2853,4 +2853,46 @@ customizations:
       newApi: false
     notes: "使用 MySQL 递归 CTE 从当前部门向上查找所有父部门，构建完整路径。如果层级 >= 3，使用 SUBSTRING_INDEX 截取第三级及以下；如果层级 < 3，显示全部。分隔符为'-'。"
 
+  # ========================================
+  # 列表合计行功能（2026-02-08）
+  # ========================================
+  list_summary_row_between_header_and_data:
+    intent: "在表头和第一行数据之间显示合计行，自动计算金额字段的合计"
+    component:
+      type: "el-table"
+      props:
+        data: "projectListWithSummary"
+    bindTo: ["projectBudget", "estimatedWorkload", "actualWorkload", "contractAmount", "confirmAmount"]
+    service:
+      endpoint: null
+      source: "前端计算当前页数据的合计"
+      newApi: false
+    notes: |
+      实现方式：在数据数组的第一个位置插入合计行对象
+
+      合计字段（5个）：
+      - projectBudget: 项目预算
+      - estimatedWorkload: 预估工作量
+      - actualWorkload: 实际人天
+      - contractAmount: 合同金额
+      - confirmAmount: 确认金额
+
+      前端实现：
+      1. 数据源：projectListWithSummary = [summaryRow, ...projectList]
+      2. 合计行标识：summaryRow.isSummary = true
+      3. 计算方法：calculateSummary() 遍历 projectList 累加金额
+      4. 数字格式：保留两位小数 toFixed(2)
+
+      显示优化：
+      - 序号列：合计行不显示序号
+      - 选择框：合计行不可选择（:selectable="checkSelectable"）
+      - 项目名称列：显示"合计"文字（加粗）
+      - 金额列：合计值加粗显示
+      - 其他列：显示空白
+
+      样式：
+      - 背景色：#f5f7fa（浅灰色）
+      - 字体：加粗（font-weight: bold）
+      - CSS：:deep(.el-table__body tr:first-child)
+
 
