@@ -72,10 +72,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="项目阶段" prop="projectStatus">
-        <el-select v-model="queryParams.projectStatus" placeholder="请选择项目阶段" clearable style="width: 200px">
+      <el-form-item label="审核状态" prop="approvalStatus">
+        <el-select v-model="queryParams.approvalStatus" placeholder="请选择审核状态" clearable style="width: 200px">
           <el-option
-            v-for="dict in sys_xmjd"
+            v-for="dict in sys_spzt"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -251,7 +251,7 @@ import { listUserByPost } from "@/api/system/user"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_yjqy, sys_xmjd, sys_shzt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_shzt')
+const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt')
 
 const reviewList = ref([])
 const loading = ref(true)
@@ -275,7 +275,7 @@ const data = reactive({
     provinceId: null,
     projectManagerId: null,
     marketManagerId: null,
-    projectStatus: null
+    approvalStatus: '0'  // 默认查询待审核
   },
   reviewForm: {},
   reviewRules: {
@@ -306,6 +306,7 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+  queryParams.value.approvalStatus = '0'  // 重置后仍然默认查询待审核
   handleQuery()
 }
 
