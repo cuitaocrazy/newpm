@@ -90,6 +90,14 @@ public interface ProjectMapper
     public int deleteProjectApprovalByProjectId(Long projectId);
 
     /**
+     * 查询待审核项目列表
+     *
+     * @param project 项目查询条件
+     * @return 待审核项目列表
+     */
+    public List<Project> selectReviewList(Project project);
+
+    /**
      * 根据合同ID查询关联的项目列表
      *
      * @param contractId 合同ID

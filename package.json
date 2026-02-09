@@ -1,4 +1,7 @@
 {
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  },
   "name": "ruoyi-vue-project",
   "version": "3.9.1",
   "description": "RuoYi-Vue 项目管理系统",

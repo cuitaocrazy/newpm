@@ -1,0 +1,1411 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_project
+  tableComment: 项目管理
+  className: Project
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  project_id:
+    columnComment: 项目ID
+    javaType: Long
+    javaField: projectId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_code:
+    columnComment: 项目编号
+    javaType: String
+    javaField: projectCode
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_name:
+    columnComment: 项目名称
+    javaType: String
+    javaField: projectName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_full_name:
+    columnComment: 项目全称
+    javaType: String
+    javaField: projectFullName
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  industry:
+    columnComment: 行业
+    javaType: String
+    javaField: industry
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "industry"
+
+  region:
+    columnComment: 区域
+    javaType: String
+    javaField: region
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "region"
+
+  short_name:
+    columnComment: 简称
+    javaType: String
+    javaField: shortName
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  established_year:
+    columnComment: 立项年份
+    javaType: Integer
+    javaField: establishedYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_ndgl"
+
+  project_category:
+    columnComment: 项目分类
+    javaType: String
+    javaField: projectCategory
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_xmfl"
+
+  project_dept:
+    columnComment: 项目部门
+    javaType: String
+    javaField: projectDept
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  project_status:
+    columnComment: 项目状态
+    javaType: String
+    javaField: projectStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_xmzt"
+
+  acceptance_status:
+    columnComment: 验收状态
+    javaType: String
+    javaField: acceptanceStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_yszt"
+
+  estimated_workload:
+    columnComment: 预估工作量(人天)
+    javaType: BigDecimal
+    javaField: estimatedWorkload
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  actual_workload:
+    columnComment: 实际工作量(人天)
+    javaType: BigDecimal
+    javaField: actualWorkload
+    isInsert: false
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_address:
+    columnComment: 项目地址
+    javaType: String
+    javaField: projectAddress
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+
+  project_plan:
+    columnComment: 项目计划
+    javaType: String
+    javaField: projectPlan
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+
+  project_description:
+    columnComment: 项目描述
+    javaType: String
+    javaField: projectDescription
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+
+  project_manager_id:
+    columnComment: 项目经理ID
+    javaType: Long
+    javaField: projectManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  market_manager_id:
+    columnComment: 市场经理ID
+    javaType: Long
+    javaField: marketManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  participants:
+    columnComment: 参与人员ID列表
+    javaType: String
+    javaField: participants
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  sales_manager_id:
+    columnComment: 销售负责人ID
+    javaType: Long
+    javaField: salesManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  sales_contact:
+    columnComment: 销售联系方式
+    javaType: String
+    javaField: salesContact
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  team_leader_id:
+    columnComment: 团队负责人ID
+    javaType: Long
+    javaField: teamLeaderId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  customer_id:
+    columnComment: 客户ID
+    javaType: Long
+    javaField: customerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  customer_contact_id:
+    columnComment: 客户联系人ID
+    javaType: Long
+    javaField: customerContactId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  merchant_contact:
+    columnComment: 商户联系人
+    javaType: String
+    javaField: merchantContact
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  merchant_phone:
+    columnComment: 商户联系方式
+    javaType: String
+    javaField: merchantPhone
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  start_date:
+    columnComment: 启动日期
+    javaType: Date
+    javaField: startDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  end_date:
+    columnComment: 结束日期
+    javaType: Date
+    javaField: endDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  production_date:
+    columnComment: 投产日期
+    javaType: Date
+    javaField: productionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  acceptance_date:
+    columnComment: 验收日期
+    javaType: Date
+    javaField: acceptanceDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  project_budget:
+    columnComment: 项目预算(元)
+    javaType: BigDecimal
+    javaField: projectBudget
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_cost:
+    columnComment: 项目费用(元)
+    javaType: BigDecimal
+    javaField: projectCost
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  expense_budget:
+    columnComment: 费用预算(元)
+    javaType: BigDecimal
+    javaField: expenseBudget
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  cost_budget:
+    columnComment: 成本预算(元)
+    javaType: BigDecimal
+    javaField: costBudget
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  labor_cost:
+    columnComment: 人力费用(元)
+    javaType: BigDecimal
+    javaField: laborCost
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  purchase_cost:
+    columnComment: 采购成本
+    javaType: BigDecimal
+    javaField: purchaseCost
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  approval_status:
+    columnComment: 审批状态
+    javaType: String
+    javaField: approvalStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_spzt"
+
+  approval_reason:
+    columnComment: 审批意见
+    javaType: String
+    javaField: approvalReason
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  industry_code:
+    columnComment: 行业代码
+    javaType: String
+    javaField: industryCode
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  region_code:
+    columnComment: 区域代码
+    javaType: String
+    javaField: regionCode
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_yjqy"
+
+  approval_time:
+    columnComment: 审批时间
+    javaType: Date
+    javaField: approvalTime
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  approver_id:
+    columnComment: 审批人
+    javaType: String
+    javaField: approverId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  tax_rate:
+    columnComment: 税率(%)
+    javaType: BigDecimal
+    javaField: taxRate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_user_id:
+    columnComment: 确认人ID
+    javaType: Long
+    javaField: confirmUserId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_time:
+    columnComment: 确认时间
+    javaType: Date
+    javaField: confirmTime
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  reserved_field1:
+    columnComment: 备用域1
+    javaType: String
+    javaField: reservedField1
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field2:
+    columnComment: 备用域2
+    javaType: String
+    javaField: reservedField2
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field3:
+    columnComment: 备用域3
+    javaType: String
+    javaField: reservedField3
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field4:
+    columnComment: 备用域4
+    javaType: String
+    javaField: reservedField4
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field5:
+    columnComment: 备用域5
+    javaType: String
+    javaField: reservedField5
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  revenue_confirm_status:
+    columnComment: 收入确认状态
+    javaType: String
+    javaField: revenueConfirmStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  revenue_confirm_year:
+    columnComment: 收入确认年度
+    javaType: String
+    javaField: revenueConfirmYear
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_ndgl"
+
+  confirm_amount:
+    columnComment: 确认金额(含税)
+    javaType: BigDecimal
+    javaField: confirmAmount
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  after_tax_amount:
+    columnComment: 税后金额
+    javaType: BigDecimal
+    javaField: afterTaxAmount
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  company_revenue_confirmed_by_name:
+    columnComment: 公司收入确认人姓名
+    javaType: String
+    javaField: companyRevenueConfirmedByName
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: sub
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: project
+  functionName: 项目管理
+  parentMenuId: 3
+  subTableName: pm_project_approval
+  subTableFkName: project_id
+  subTableGenerateMenu: true
+
+# ============================
+# 子表字段信息
+# ============================
+subTableColumns:
+  approval_id:
+    columnComment: 审核主键ID
+    javaType: Long
+    javaField: approvalId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 项目ID
+    javaType: Long
+    javaField: projectId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  approval_status:
+    columnComment: 审核状态
+    javaType: String
+    javaField: approvalStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_spzt"
+
+  approval_reason:
+    columnComment: 审核原因/意见
+    javaType: String
+    javaField: approvalReason
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: editor
+    dictType: ""
+
+  approver_id:
+    columnComment: 审核人ID
+    javaType: Long
+    javaField: approverId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  approval_time:
+    columnComment: 审核时间
+    javaType: Date
+    javaField: approvalTime
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# 定制需求
+# ============================
+customizations:
+  # ========================================
+  # 查询条件精简与数据源配置（2026-02-05）
+  # ========================================
+  query_conditions_config:
+    intent: "查询条件精简为12个常用字段，并配置各字段的数据源"
+    component:
+      type: custom
+      spec: "精简查询表单，配置数据源和组件类型"
+    bindTo: queryParams
+    service:
+      endpoint: null
+      source: "前端实现，各字段数据源见下方详细说明"
+      newApi: false
+    notes: |
+      ========================================
+      查询条件列表（共12个）
+      ========================================
+
+      1. 项目名称 (project_name)
+         - 组件类型: el-autocomplete（自动补全）
+         - 数据源: 项目表 pm_project，获取所有项目名称
+         - 接口: GET /project/project/list?pageNum=1&pageSize=1000
+         - 返回字段: projectName
+         - 实现方式: 页面加载时获取所有项目名称，前端过滤匹配
+
+      2. 项目部门 (project_dept)
+         - 组件类型: el-tree-select（树形选择）
+         - 数据源: 部门表 sys_dept，多级树形结构
+         - 接口: GET /system/dept/treeselect
+         - 返回字段: { id, label, children }
+         - 说明: 支持任意层级选择，checkStrictly=true
+
+      3. 收入确认年度 (revenue_confirm_year)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_ndgl（年度管理）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_ndgl') 获取
+
+      4. 项目分类 (project_category)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_xmfl（项目分类）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_xmfl') 获取
+
+      5. 一级区域 (region)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: region（一级区域）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('region') 获取，变化时触发二级区域加载
+
+      6. 二级区域 (region_code)
+         - 组件类型: el-select（下拉选择，级联）
+         - 数据源: 省级区域表 pm_secondary_region
+         - 接口: GET /project/secondaryRegion/listByRegion?regionDictValue={region}
+         - 返回字段: { provinceCode, provinceName }
+         - 说明: 根据一级区域动态加载，支持过滤搜索
+
+      7. 项目经理 (project_manager_id)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 用户表 sys_user，通过岗位表 sys_post 关联
+         - 岗位编码: pm（项目经理）
+         - 接口: GET /system/user/listByPost?postCode=pm
+         - 返回字段: { userId, nickName }
+         - 说明: 显示用户昵称，提交用户ID，支持过滤搜索
+
+      8. 市场经理 (market_manager_id)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 用户表 sys_user，通过岗位表 sys_post 关联
+         - 岗位编码: scjl（市场经理）
+         - 接口: GET /system/user/listByPost?postCode=scjl
+         - 返回字段: { userId, nickName }
+         - 说明: 显示用户昵称，提交用户ID，支持过滤搜索
+
+      9. 立项年度 (established_year)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_ndgl（年度管理）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_ndgl') 获取
+
+      10. 项目阶段 (project_status)
+          - 组件类型: el-select（下拉选择）
+          - 数据源: 字典表 sys_dict_data
+          - 字典类型: sys_xmjd（项目阶段）
+          - 返回字段: { value, label }
+          - 说明: 通过 useDict('sys_xmjd') 获取
+
+      11. 审核状态 (approval_status)
+          - 组件类型: el-select（下拉选择）
+          - 数据源: 字典表 sys_dict_data
+          - 字典类型: sys_spzt（审批状态）
+          - 返回字段: { value, label }
+          - 说明: 通过 useDict('sys_spzt') 获取
+
+      12. 验收状态 (acceptance_status)
+          - 组件类型: el-select（下拉选择）
+          - 数据源: 字典表 sys_dict_data
+          - 字典类型: sys_yszt（验收状态）
+          - 返回字段: { value, label }
+          - 说明: 通过 useDict('sys_yszt') 获取
+
+      ========================================
+      前端实现要点
+      ========================================
+
+      1. 字典数据加载:
+         const { sys_xmfl, sys_ndgl, sys_yjqy, region, sys_spzt, sys_xmjd, sys_yszt } =
+           proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'region', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
+
+      2. 页面加载时初始化:
+         - loadProjectManagers()    // 加载项目经理列表
+         - loadMarketManagers()      // 加载市场经理列表
+         - loadDeptTree()            // 加载部门树
+         - loadProjectNames()        // 加载项目名称列表（用于自动补全）
+
+      3. 级联选择处理:
+         - handleRegionChange(value) // 一级区域变化时加载二级区域
+
+      4. 自动补全处理:
+         - queryProjectNames(queryString, cb) // 项目名称自动补全查询
+
+      ========================================
+      依赖的字典类型
+      ========================================
+
+      需要在系统管理 → 字典管理中配置以下字典类型：
+      - sys_ndgl: 年度管理（如：2024, 2025, 2026）
+      - sys_xmfl: 项目分类（如：软件开发、系统集成、技术服务）
+      - sys_yjqy: 一级区域（已废弃，使用 region 代替）
+      - region: 一级区域（如：华北、华东、华南）
+      - sys_xmjd: 项目阶段（如：立项、实施、验收、结项）
+      - sys_spzt: 审批状态（如：待审核、已通过、已驳回）
+      - sys_yszt: 验收状态（如：未验收、已验收、验收不通过）
+
+      ========================================
+      依赖的岗位编码
+      ========================================
+
+      需要在系统管理 → 岗位管理中配置以下岗位：
+      - pm: 项目经理
+      - scjl: 市场经理
+
+  # ========================================
+  # 查询条件定制
+  # ========================================
+  project_manager_select:
+    intent: "项目经理选择，从岗位编码为pm的用户中选择"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: project_manager_id
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=pm"
+      source: "复用 SysUserService，接口已存在"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "提交值为 userId，显示值为 nickName"
+
+  market_manager_select:
+    intent: "市场经理选择，从岗位编码为scjl的用户中选择"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: market_manager_id
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=scjl"
+      source: "复用 SysUserService，接口已存在"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "提交值为 userId，显示值为 nickName"
+
+  project_dept_tree:
+    intent: "项目部门选择，树形结构，任意层级可选"
+    component:
+      type: el-tree-select
+      props:
+        data: "部门树数据"
+        checkStrictly: true
+        valueKey: "id"
+        renderAfterExpand: false
+    bindTo: project_dept
+    service:
+      endpoint: "GET /system/dept/treeselect"
+      source: "复用 SysDeptService，RuoYi 自带"
+      newApi: false
+    notes: "提交值为 deptId，显示值为 deptName"
+
+  participants_tags:
+    intent: "参与人员多选，标签形式展示，支持添加和删除"
+    component:
+      type: custom
+      spec: "多选标签组件，显示已选人员昵称，支持点击删除，支持弹窗多选添加"
+    bindTo: participants
+    service:
+      endpoint: "GET /system/user/list"
+      source: "复用 SysUserService，RuoYi 自带"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "participants 字段存储逗号分隔的 userId 列表"
+
+  sales_manager_select:
+    intent: "销售负责人选择，从所有用户中选择"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: sales_manager_id
+    service:
+      endpoint: "GET /system/user/list"
+      source: "复用 SysUserService，RuoYi 自带"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "提交值为 userId，显示值为 nickName"
+
+  sales_contact_auto:
+    intent: "销售联系方式自动带出，选择销售负责人后自动填充"
+    component:
+      type: custom
+      spec: "监听 sales_manager_id 变化，自动查询并填充 sales_contact"
+    bindTo: sales_contact
+    service:
+      endpoint: "GET /system/user/{userId}"
+      source: "复用 SysUserService，RuoYi 自带"
+      returns: "{ phonenumber }"
+      newApi: false
+    notes: "只读显示，不可手动编辑"
+
+  customer_select:
+    intent: "客户选择，下拉选择或搜索"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+        remote: true
+        remoteMethod: "远程搜索客户"
+    bindTo: customer_id
+    service:
+      endpoint: "GET /project/customer/list"
+      source: "复用 PmCustomerService，已存在"
+      returns: "[{ customerId, customerSimpleName }]"
+      newApi: false
+    notes: "提交值为 customerId，显示值为 customerSimpleName"
+
+  customer_contact_cascade:
+    intent: "客户联系人级联选择，根据选择的客户动态加载联系人"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: customer_contact_id
+    service:
+      endpoint: "GET /project/customer/contact/listByCustomer?customerId={customerId}"
+      source: "复用 CustomerService，需新增接口"
+      returns: "[{ contactId, contactName, contactPhone }]"
+      newApi: true
+    notes: "监听 customer_id 变化，动态加载联系人列表"
+
+  merchant_phone_auto:
+    intent: "商户联系方式自动带出，选择客户联系人后自动填充"
+    component:
+      type: custom
+      spec: "监听 customer_contact_id 变化，自动填充 merchant_phone"
+    bindTo: merchant_phone
+    service:
+      endpoint: null
+      source: "从 customer_contact_cascade 返回的数据中获取 contactPhone"
+      newApi: false
+    notes: "只读显示，不可手动编辑，数据来自客户联系人选择"
+
+  project_code_auto:
+    intent: "项目编号自动生成，格式：{行业代码}-{区域代码}-{简称}-{年份}"
+    component:
+      type: custom
+      spec: "监听 industry、region、short_name、established_year 变化，自动生成项目编号"
+    bindTo: project_code
+    service:
+      endpoint: null
+      source: "前端根据规则自动生成"
+      newApi: false
+    notes: "只读显示，不可手动编辑，格式示例：IT-BJ-CRM-2024"
+
+  region_cascade:
+    intent: "二级区域级联选择，根据一级区域动态加载二级区域（省份）"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: region_code
+    service:
+      endpoint: "GET /project/secondaryRegion/listByRegion?regionDictValue={regionDictValue}"
+      source: "复用 SecondaryRegionService，需新增接口"
+      returns: "[{ provinceCode, provinceName }]"
+      newApi: true
+    notes: "监听 region 变化，动态加载省份列表"
+
+  # ========================================
+  # 列表字段定制
+  # ========================================
+  list_contract_info:
+    intent: "列表显示合同金额和合同状态，一个合同对应多个项目"
+    component:
+      type: custom
+      spec: "通过 pm_project_contract_rel 关联表查询主合同信息"
+    bindTo: ["contract_amount", "contract_status"]
+    service:
+      endpoint: null
+      source: "后端查询时 LEFT JOIN pm_project_contract_rel 和 pm_contract"
+      newApi: false
+    notes: "显示主合同（is_main=1）的金额和状态"
+
+  list_dept_format:
+    intent: "项目部门格式化显示，只显示三级及以下机构，用'-'隔开"
+    component:
+      type: custom
+      spec: "格式化部门层级显示"
+    bindTo: project_dept
+    service:
+      endpoint: null
+      source: "后端查询时关联部门表，格式化部门路径"
+      newApi: false
+    notes: "例：技术部-研发一部-前端组"
+
+  list_participants_format:
+    intent: "参与人员格式化显示，显示用户昵称列表"
+    component:
+      type: custom
+      spec: "将逗号分隔的 userId 转换为昵称显示"
+    bindTo: participants
+    service:
+      endpoint: null
+      source: "后端查询时关联用户表，转换为昵称"
+      newApi: false
+    notes: "例：张三,李四,王五"
+
+  list_summary_row:
+    intent: "列表汇总行，显示项目预算、预估工作量、实际人天、合同金额、确认金额的合计"
+    component:
+      type: custom
+      spec: "在表头下方显示合计行"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端计算当前页数据的合计"
+      newApi: false
+    notes: "合计字段：project_budget, estimated_workload, actual_workload, contract_amount, confirm_amount"
+
+  # ========================================
+  # 操作按钮定制
+  # ========================================
+  action_buttons:
+    intent: "列表操作按钮：查看详情、编辑、收入确认、附件、删除、打印立项申请单"
+    component:
+      type: custom
+      spec: "6个操作按钮"
+    bindTo: toolbar
+    service:
+      endpoint: null
+      source: "前端实现各按钮功能"
+      newApi: false
+    notes: "查看详情（只读）、编辑、收入确认（弹窗）、附件管理、删除、打印"
+
+  # ========================================
+  # 收入确认功能
+  # ========================================
+  revenue_confirm_dialog:
+    intent: "收入确认弹窗，左侧项目信息，右侧收入确认信息"
+    component:
+      type: custom
+      spec: "弹窗布局：左侧项目信息（不含备注和备用字段），右侧收入确认表单"
+    bindTo: dialog
+    service:
+      endpoint: "PUT /project/project/confirmRevenue"
+      source: "新增收入确认接口"
+      newApi: true
+    notes: "收入确认字段：tax_rate, confirm_amount, after_tax_amount, revenue_confirm_year, revenue_confirm_status, company_revenue_confirmed_by_name, confirm_time"
+
+  revenue_tax_rate:
+    intent: "税率选择，6%软件开发类，13%硬件类"
+    component:
+      type: el-select
+      props:
+        options: [{value: 6, label: '6% (软件开发类)'}, {value: 13, label: '13% (硬件类)'}]
+    bindTo: tax_rate
+    service:
+      endpoint: null
+      source: "前端固定选项"
+      newApi: false
+    notes: "选择后自动计算不含税金额和税后金额"
+
+  revenue_amount_calc:
+    intent: "不含税金额和税后金额自动计算"
+    component:
+      type: custom
+      spec: "监听 tax_rate 和 confirm_amount 变化，自动计算"
+    bindTo: after_tax_amount
+    service:
+      endpoint: null
+      source: "前端计算：合同金额/(1+税率)，确认金额/(1+税率)"
+      newApi: false
+    notes: "公式：金额 / (1 + 税率/100)"
+

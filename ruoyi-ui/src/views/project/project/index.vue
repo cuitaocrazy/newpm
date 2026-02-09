@@ -12,14 +12,8 @@
         />
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
-        <el-tree-select
+        <project-dept-select
           v-model="queryParams.projectDept"
-          :data="deptOptions"
-          :props="{ value: 'id', label: 'label', children: 'children' }"
-          value-key="id"
-          placeholder="请选择项目部门"
-          check-strictly
-          clearable
           style="width: 200px"
         />
       </el-form-item>
@@ -53,8 +47,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="二级区域" prop="regionCode">
-        <el-select v-model="queryParams.regionCode" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" style="width: 200px">
+      <el-form-item label="二级区域" prop="provinceCode">
+        <el-select v-model="queryParams.provinceCode" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" style="width: 200px">
           <el-option
             v-for="item in secondaryRegionOptions"
             :key="item.provinceCode"
@@ -162,29 +156,67 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="projectList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="序号" type="index" width="55" align="center" />
-      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
-      <el-table-column label="项目部门" align="center" prop="projectDeptName" min-width="120" show-overflow-tooltip />
+    <el-table v-loading="loading" :data="projectListWithSummary" @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" align="center" :selectable="checkSelectable" />
+      <el-table-column label="序号" type="index" width="55" align="center">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ scope.$index }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
+          <span v-else>{{ scope.row.projectName }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目部门" align="center" prop="deptName" min-width="120" show-overflow-tooltip />
       <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
       <el-table-column label="项目分类" align="center" prop="projectCategory" width="100">
         <template #default="scope">
           <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算" align="center" prop="projectBudget" width="120" />
-      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" width="100" />
-      <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100" />
-      <el-table-column label="合同金额" align="center" prop="contractAmount" width="120" />
+      <el-table-column label="项目预算" align="center" prop="projectBudget" width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
+          <span v-else>{{ scope.row.projectBudget }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" width="100">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.estimatedWorkload }}</span>
+          <span v-else>{{ scope.row.estimatedWorkload }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
+          <span v-else>{{ scope.row.actualWorkload }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="合同金额" align="center" prop="contractAmount" width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
+          <span v-else>{{ scope.row.contractAmount }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
         <template #default="scope">
           <dict-tag :options="sys_ndgl" :value="scope.row.revenueConfirmYear"/>
         </template>
       </el-table-column>
       <el-table-column label="合同状态" align="center" prop="contractStatus" width="100" />
-      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" width="120" />
-      <el-table-column label="确认金额" align="center" prop="confirmAmount" width="120" />
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" width="120">
+        <template #default="scope">
+          <dict-tag :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="确认金额" align="center" prop="confirmAmount" width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
+          <span v-else>{{ scope.row.confirmAmount }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="参与人员" align="center" prop="participantsNames" min-width="150" show-overflow-tooltip />
       <el-table-column label="启动日期" align="center" prop="startDate" width="110">
         <template #default="scope">
@@ -222,10 +254,13 @@
           <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="150" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="200" fixed="right" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
+          <template v-if="!scope.row.isSummary">
+            <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
+            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
+            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -258,7 +293,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="一级区域" prop="region">
-          <el-select v-model="form.region" placeholder="请选择一级区域">
+          <el-select v-model="form.region" placeholder="请选择一级区域" @change="handleDialogRegionChange">
             <el-option
               v-for="dict in sys_yjqy"
               :key="dict.value"
@@ -394,13 +429,13 @@
         <el-form-item label="行业代码" prop="industryCode">
           <el-input v-model="form.industryCode" placeholder="请输入行业代码" />
         </el-form-item>
-        <el-form-item label="区域代码" prop="regionCode">
-          <el-select v-model="form.regionCode" placeholder="请选择区域代码">
+        <el-form-item label="二级区域" prop="provinceCode">
+          <el-select v-model="form.provinceCode" placeholder="请选择二级区域" :disabled="!form.region" @change="handleDialogSecondaryRegionChange">
             <el-option
-              v-for="dict in sys_yjqy"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
+              v-for="item in dialogSecondaryRegionOptions"
+              :key="item.provinceCode"
+              :label="item.provinceName"
+              :value="item.provinceCode"
             ></el-option>
           </el-select>
         </el-form-item>
@@ -533,9 +568,10 @@ import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
-const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
+const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt, sys_srqrzt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt', 'sys_srqrzt')
 
 const projectList = ref([])
+const projectListWithSummary = ref([])
 const projectApprovalList = ref([])
 const open = ref(false)
 const loading = ref(true)
@@ -548,10 +584,10 @@ const total = ref(0)
 const title = ref("")
 
 // 数据源选项
-const deptOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
 const secondaryRegionOptions = ref([])
+const dialogSecondaryRegionOptions = ref([])
 const projectNameList = ref([])
 
 const data = reactive({
@@ -564,7 +600,7 @@ const data = reactive({
     revenueConfirmYear: null,
     projectCategory: null,
     region: null,
-    regionCode: null,
+    provinceCode: null,
     projectManagerId: null,
     marketManagerId: null,
     establishedYear: null,
@@ -641,16 +677,6 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
-/** 加载部门树 */
-function getDeptTree() {
-  request({
-    url: '/system/dept/treeselect',
-    method: 'get'
-  }).then(response => {
-    deptOptions.value = response.data
-  })
-}
-
 /** 加载项目经理列表 */
 function getProjectManagers() {
   request({
@@ -690,8 +716,42 @@ function getSecondaryRegions(regionDictValue) {
 
 /** 一级区域变化处理 */
 function handleRegionChange(value) {
-  queryParams.value.regionCode = null
+  queryParams.value.provinceCode = null
   getSecondaryRegions(value)
+}
+
+/** 对话框一级区域变化处理 */
+function handleDialogRegionChange(value) {
+  form.value.provinceCode = null
+  form.value.provinceId = null
+  getDialogSecondaryRegions(value)
+}
+
+/** 对话框二级区域变化处理 */
+function handleDialogSecondaryRegionChange(provinceCode) {
+  if (!provinceCode) {
+    form.value.provinceId = null
+    return
+  }
+  const selectedRegion = dialogSecondaryRegionOptions.value.find(item => item.provinceCode === provinceCode)
+  if (selectedRegion) {
+    form.value.provinceId = selectedRegion.provinceId
+  }
+}
+
+/** 获取对话框二级区域列表 */
+function getDialogSecondaryRegions(regionDictValue) {
+  if (!regionDictValue) {
+    dialogSecondaryRegionOptions.value = []
+    return
+  }
+  request({
+    url: '/project/secondaryRegion/listByRegion',
+    method: 'get',
+    params: { regionDictValue: regionDictValue }
+  }).then(response => {
+    dialogSecondaryRegionOptions.value = response.data || []
+  })
 }
 
 /** 项目名称自动补全查询 */
@@ -705,10 +765,21 @@ function queryProjectNames(queryString, cb) {
 /** 查询项目管理列表 */
 function getList() {
   loading.value = true
-  listProject(queryParams.value).then(response => {
+  const queryData = {
+    ...queryParams.value,
+    regionCode: queryParams.value.provinceCode  // 映射到后端字段
+  }
+  if (queryData.provinceCode !== undefined) {
+    delete queryData.provinceCode  // 删除前端字段
+  }
+
+  listProject(queryData).then(response => {
     projectList.value = response.rows
     total.value = response.total
     loading.value = false
+
+    // 计算合计行
+    calculateSummary()
 
     // 提取项目名称用于自动补全
     const names = response.rows.map(item => ({ value: item.projectName }))
@@ -765,7 +836,7 @@ function reset() {
     approvalStatus: null,
     approvalReason: null,
     industryCode: null,
-    regionCode: null,
+    provinceCode: null,
     approvalTime: null,
     approverId: null,
     remark: null,
@@ -801,7 +872,7 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
-  queryParams.value.regionCode = null
+  queryParams.value.provinceCode = null
   secondaryRegionOptions.value = []
   handleQuery()
 }
@@ -818,6 +889,8 @@ function handleAdd() {
   reset()
   open.value = true
   title.value = "添加项目管理"
+  // 清空对话框的二级区域选项
+  dialogSecondaryRegionOptions.value = []
 }
 
 /** 修改按钮操作 */
@@ -826,19 +899,31 @@ function handleUpdate(row) {
   router.push(`/project/list/edit/${_projectId}`)
 }
 
+/** 详情按钮操作 */
+function handleDetail(row) {
+  const _projectId = row.projectId || ids.value
+  router.push(`/project/list/detail/${_projectId}`)
+}
+
 /** 提交按钮 */
 function submitForm() {
   proxy.$refs["projectRef"].validate(valid => {
     if (valid) {
-      form.value.projectApprovalList = projectApprovalList.value
-      if (form.value.projectId != null) {
-        updateProject(form.value).then(response => {
+      const submitData = {
+        ...form.value,
+        regionCode: form.value.provinceCode  // 映射到后端字段
+      }
+      delete submitData.provinceCode  // 删除前端字段
+
+      submitData.projectApprovalList = projectApprovalList.value
+      if (submitData.projectId != null) {
+        updateProject(submitData).then(response => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        addProject(form.value).then(response => {
+        addProject(submitData).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
@@ -900,9 +985,59 @@ function handleExport() {
   }, `project_${new Date().getTime()}.xlsx`)
 }
 
+// 计算合计行
+function calculateSummary() {
+  if (projectList.value.length === 0) {
+    projectListWithSummary.value = []
+    return
+  }
+
+  // 计算合计
+  const summary = {
+    isSummary: true,
+    projectName: '合计',
+    projectBudget: 0,
+    estimatedWorkload: 0,
+    actualWorkload: 0,
+    contractAmount: 0,
+    confirmAmount: 0
+  }
+
+  projectList.value.forEach(item => {
+    summary.projectBudget += Number(item.projectBudget) || 0
+    summary.estimatedWorkload += Number(item.estimatedWorkload) || 0
+    summary.actualWorkload += Number(item.actualWorkload) || 0
+    summary.contractAmount += Number(item.contractAmount) || 0
+    summary.confirmAmount += Number(item.confirmAmount) || 0
+  })
+
+  // 格式化为两位小数
+  summary.projectBudget = summary.projectBudget.toFixed(2)
+  summary.estimatedWorkload = summary.estimatedWorkload.toFixed(2)
+  summary.actualWorkload = summary.actualWorkload.toFixed(2)
+  summary.contractAmount = summary.contractAmount.toFixed(2)
+  summary.confirmAmount = summary.confirmAmount.toFixed(2)
+
+  // 将合计行插入到第一行
+  projectListWithSummary.value = [summary, ...projectList.value]
+}
+
+// 禁用合计行的选择框
+function checkSelectable(row) {
+  return !row.isSummary
+}
+
 // 初始化数据
-getDeptTree()
 getProjectManagers()
 getMarketManagers()
 getList()
 </script>
+
+<style scoped>
+/* 合计行样式 */
+:deep(.el-table__body tr:first-child) {
+  background-color: #f5f7fa;
+  font-weight: bold;
+}
+</style>
+
