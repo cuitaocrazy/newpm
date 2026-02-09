@@ -783,6 +783,7 @@ CREATE TABLE `pm_project` (
   `confirm_amount` decimal(15,2) DEFAULT NULL COMMENT '确认金额（含税）',
   `after_tax_amount` decimal(15,2) DEFAULT NULL COMMENT '税后金额',
   `company_revenue_confirmed_by` varchar(64) DEFAULT NULL COMMENT '公司收入确认人ID',
+  `company_revenue_confirmed_time` datetime DEFAULT NULL COMMENT '公司收入确认时间',
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `uk_project_code` (`project_code`),
   KEY `idx_approval_status` (`approval_status`),
