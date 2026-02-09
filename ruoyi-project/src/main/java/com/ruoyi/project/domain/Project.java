@@ -224,6 +224,11 @@ public class Project extends BaseEntity
     /** 公司收入确认人ID */
     private Long companyRevenueConfirmedBy;
 
+    /** 公司收入确认时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "公司收入确认时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
+    private Date companyRevenueConfirmedTime;
+
     /** 项目审核信息 */
     private List<ProjectApproval> projectApprovalList;
 
@@ -840,6 +845,16 @@ public class Project extends BaseEntity
         return companyRevenueConfirmedBy;
     }
 
+    public void setCompanyRevenueConfirmedTime(Date companyRevenueConfirmedTime)
+    {
+        this.companyRevenueConfirmedTime = companyRevenueConfirmedTime;
+    }
+
+    public Date getCompanyRevenueConfirmedTime()
+    {
+        return companyRevenueConfirmedTime;
+    }
+
     public List<ProjectApproval> getProjectApprovalList()
     {
         return projectApprovalList;
@@ -1026,6 +1041,7 @@ public class Project extends BaseEntity
             .append("confirmAmount", getConfirmAmount())
             .append("afterTaxAmount", getAfterTaxAmount())
             .append("companyRevenueConfirmedBy", getCompanyRevenueConfirmedBy())
+            .append("companyRevenueConfirmedTime", getCompanyRevenueConfirmedTime())
             .append("projectApprovalList", getProjectApprovalList())
             .toString();
     }
