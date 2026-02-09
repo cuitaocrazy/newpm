@@ -254,12 +254,29 @@
           <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="200" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="280" fixed="right" class-name="small-padding fixed-width">
         <template #default="scope">
           <template v-if="!scope.row.isSummary">
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
             <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">修改</el-button>
-            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
+            <!-- 收入确认按钮：根据状态显示不同按钮 -->
+            <el-button
+              v-if="scope.row.revenueConfirmStatus === '0'"
+              link
+              type="primary"
+              icon="Money"
+              @click="handleRevenueConfirm(scope.row)"
+              v-hasPermi="['revenue:company:edit']"
+            >收入确认</el-button>
+            <el-button
+              v-if="scope.row.revenueConfirmStatus === '1'"
+              link
+              type="success"
+              icon="View"
+              @click="handleRevenueView(scope.row)"
+              v-hasPermi="['revenue:company:view']"
+            >查看确认</el-button>
+            <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
           </template>
         </template>
       </el-table-column>
@@ -569,17 +586,25 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 收入确认抽屉 -->
+    <RevenueConfirmDrawer
+      ref="revenueDrawerRef"
+      @success="handleRevenueSuccess"
+    />
   </div>
 </template>
 
 <script setup name="Project">
 import { listProject, getProject, delProject, addProject, updateProject } from "@/api/project/project"
+import RevenueConfirmDrawer from "./components/RevenueConfirmDrawer.vue"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt, sys_srqrzt } = proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt', 'sys_srqrzt')
 
+const revenueDrawerRef = ref(null)
 const projectList = ref([])
 const projectListWithSummary = ref([])
 const projectApprovalList = ref([])
@@ -1035,6 +1060,21 @@ function calculateSummary() {
 // 禁用合计行的选择框
 function checkSelectable(row) {
   return !row.isSummary
+}
+
+/** 收入确认按钮操作 */
+function handleRevenueConfirm(row) {
+  revenueDrawerRef.value.open(row.projectId, 'edit')
+}
+
+/** 查看确认按钮操作 */
+function handleRevenueView(row) {
+  revenueDrawerRef.value.open(row.projectId, 'view')
+}
+
+/** 收入确认成功回调 */
+function handleRevenueSuccess() {
+  getList()
 }
 
 // 初始化数据
