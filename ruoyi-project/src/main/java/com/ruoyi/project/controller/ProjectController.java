@@ -1,5 +1,8 @@
 package com.ruoyi.project.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Date;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +19,7 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -145,5 +149,76 @@ public class ProjectController extends BaseController
     public AjaxResult summary(Project project)
     {
         return success(projectService.selectProjectSummary(project));
+    }
+
+    // ========================================
+    // 公司收入确认相关接口
+    // ========================================
+
+    /**
+     * 查询公司收入确认列表
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:query')")
+    @GetMapping("/revenueList")
+    public TableDataInfo revenueList(Project project)
+    {
+        startPage();
+        List<Project> list = projectService.selectProjectList(project);
+        return getDataTable(list);
+    }
+
+    /**
+     * 获取公司收入确认详情
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:view')")
+    @GetMapping("/revenue/{projectId}")
+    public AjaxResult getRevenueInfo(@PathVariable("projectId") Long projectId)
+    {
+        return success(projectService.selectProjectByProjectId(projectId));
+    }
+
+    /**
+     * 更新公司收入确认信息
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:edit')")
+    @Log(title = "公司收入确认", businessType = BusinessType.UPDATE)
+    @PutMapping("/revenueConfirm")
+    public AjaxResult updateRevenueConfirm(@RequestBody Project project)
+    {
+        // 自动设置收入确认状态为已确认
+        project.setRevenueConfirmStatus("1");
+
+        // 自动设置确认人为当前登录用户
+        project.setCompanyRevenueConfirmedBy(getUserId());
+
+        // 自动设置确认时间为当前时间
+        project.setCompanyRevenueConfirmedTime(new Date());
+
+        // 自动计算税后金额：税后金额 = 确认金额 / (1 + 税率/100)
+        if (project.getConfirmAmount() != null && project.getTaxRate() != null) {
+            BigDecimal confirmAmount = project.getConfirmAmount();
+            BigDecimal taxRate = project.getTaxRate();
+            BigDecimal afterTaxAmount = confirmAmount.divide(
+                BigDecimal.ONE.add(taxRate.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP)),
+                2,
+                RoundingMode.HALF_UP
+            );
+            project.setAfterTaxAmount(afterTaxAmount);
+        }
+
+        return toAjax(projectService.updateProject(project));
+    }
+
+    /**
+     * 导出公司收入确认列表
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:export')")
+    @Log(title = "公司收入确认", businessType = BusinessType.EXPORT)
+    @PostMapping("/revenueExport")
+    public void revenueExport(HttpServletResponse response, Project project)
+    {
+        List<Project> list = projectService.selectProjectList(project);
+        ExcelUtil<Project> util = new ExcelUtil<Project>(Project.class);
+        util.exportExcel(response, list, "公司收入确认数据");
     }
 }
