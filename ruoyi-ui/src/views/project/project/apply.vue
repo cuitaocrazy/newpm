@@ -23,7 +23,7 @@
         <div v-show="activeNames.includes('1')">
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="行业" prop="industry" data-prop="industry">
             <el-select v-model="form.industry" placeholder="请选择行业" @change="generateProjectCode" @blur="validateOnBlur('industry')">
               <el-option
@@ -35,7 +35,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="一级区域" prop="region" data-prop="region">
             <el-select v-model="form.region" placeholder="请选择一级区域" @change="handleRegionChange" @blur="validateOnBlur('region')">
               <el-option
@@ -47,7 +47,10 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="二级区域" prop="provinceCode" data-prop="provinceCode">
             <el-select v-model="form.provinceCode" placeholder="请选择二级区域" :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('provinceCode')">
               <el-option
@@ -59,15 +62,15 @@
             </el-select>
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="简称" prop="shortName" data-prop="shortName">
             <el-input v-model="form.shortName" placeholder="请输入简称" @input="generateProjectCode" @blur="validateOnBlur('shortName')" />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="立项年度" prop="establishedYear" data-prop="establishedYear">
             <el-select v-model="form.establishedYear" placeholder="请选择立项年度" @change="generateProjectCode" @blur="validateOnBlur('establishedYear')">
               <el-option
@@ -79,23 +82,20 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
-          <el-form-item label="项目编号" prop="projectCode" data-prop="projectCode">
-            <el-input v-model="form.projectCode" placeholder="自动生成" readonly />
-            <div style="color: #909399; font-size: 12px; margin-top: 5px;">
-              格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}
-            </div>
+        <el-col :span="12">
+          <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
+            <el-input v-model="form.projectName" placeholder="请输入项目名称" @blur="validateOnBlur('projectName')" />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
-        <el-col :span="8">
-          <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
-            <el-input v-model="form.projectName" placeholder="请输入项目名称" @blur="validateOnBlur('projectName')" />
+        <el-col :span="12">
+          <el-form-item label="项目编号" prop="projectCode" data-prop="projectCode">
+            <el-input v-model="form.projectCode" placeholder="自动生成" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="项目分类" prop="projectCategory" data-prop="projectCategory">
             <el-select v-model="form.projectCategory" placeholder="请选择项目分类" @blur="validateOnBlur('projectCategory')">
               <el-option
@@ -107,7 +107,10 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
             <project-dept-select
               v-model="form.projectDept"
@@ -115,10 +118,7 @@
             />
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="项目状态" prop="projectStatus" data-prop="projectStatus">
             <el-select v-model="form.projectStatus" placeholder="请选择项目状态" @blur="validateOnBlur('projectStatus')">
               <el-option
@@ -130,7 +130,10 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
             <el-select v-model="form.acceptanceStatus" placeholder="请选择验收状态" @blur="validateOnBlur('acceptanceStatus')">
               <el-option
@@ -142,7 +145,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="预估工作量(人天)" prop="estimatedWorkload" data-prop="estimatedWorkload">
             <el-input-number v-model="form.estimatedWorkload" :min="0" :precision="2" placeholder="请输入预估工作量" style="width: 100%" @blur="validateOnBlur('estimatedWorkload')" />
           </el-form-item>
@@ -150,17 +153,15 @@
       </el-row>
 
       <el-row :gutter="20">
-        <el-col :span="8">
-          <el-form-item label="实际工作量(人天)" prop="actualWorkload" data-prop="actualWorkload">
-            <el-input-number v-model="form.actualWorkload" :min="0" :precision="2" placeholder="请输入实际工作量" style="width: 100%" @blur="validateOnBlur('actualWorkload')" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="项目预算(元)" prop="projectBudget" data-prop="projectBudget">
             <el-input-number v-model="form.projectBudget" :min="0" :precision="2" placeholder="请输入项目预算" style="width: 100%" @blur="validateOnBlur('projectBudget')" />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="24">
           <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
             <el-input v-model="form.projectAddress" placeholder="请输入项目地址" @blur="validateOnBlur('projectAddress')" />
           </el-form-item>
@@ -196,7 +197,7 @@
         <div v-show="activeNames.includes('3')">
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="项目经理" prop="projectManagerId" data-prop="projectManagerId">
             <el-select v-model="form.projectManagerId" placeholder="请选择项目经理" filterable @blur="validateOnBlur('projectManagerId')">
               <el-option
@@ -208,7 +209,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="市场经理" prop="marketManagerId" data-prop="marketManagerId">
             <el-select v-model="form.marketManagerId" placeholder="请选择市场经理" filterable @blur="validateOnBlur('marketManagerId')">
               <el-option
@@ -220,7 +221,10 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="销售负责人" prop="salesManagerId" data-prop="salesManagerId">
             <el-select v-model="form.salesManagerId" placeholder="请选择销售负责人" filterable @change="handleSalesManagerChange" @blur="validateOnBlur('salesManagerId')">
               <el-option
@@ -232,15 +236,15 @@
             </el-select>
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="销售联系方式" prop="salesContact" data-prop="salesContact">
             <el-input v-model="form.salesContact" placeholder="自动带出" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="16">
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="24">
           <el-form-item label="参与人员" prop="participants" data-prop="participants">
             <el-select v-model="participantIds" placeholder="请选择参与人员" multiple filterable style="width: 100%" @blur="validateOnBlur('participants')">
               <el-option
@@ -267,7 +271,7 @@
         <div v-show="activeNames.includes('4')">
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="客户名称" prop="customerId" data-prop="customerId">
             <el-select v-model="form.customerId" placeholder="请选择客户" filterable @change="handleCustomerChange" @blur="validateOnBlur('customerId')">
               <el-option
@@ -279,7 +283,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="客户联系人" prop="customerContactId" data-prop="customerContactId">
             <el-select v-model="form.customerContactId" placeholder="请选择客户联系人" :disabled="!form.customerId" @change="handleContactChange" @blur="validateOnBlur('customerContactId')">
               <el-option
@@ -291,7 +295,7 @@
             </el-select>
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="客户联系方式">
             <el-input v-model="customerContactPhone" placeholder="自动带出" readonly />
           </el-form-item>
@@ -299,12 +303,12 @@
       </el-row>
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="商户联系人" prop="merchantContact" data-prop="merchantContact">
             <el-input v-model="form.merchantContact" placeholder="请输入商户联系人" @blur="validateOnBlur('merchantContact')" />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="商户联系方式">
             <el-input v-model="form.merchantPhone" placeholder="请输入商户联系方式" />
           </el-form-item>
@@ -324,7 +328,7 @@
         <div v-show="activeNames.includes('5')">
 
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :span="12">
           <el-form-item label="启动日期" prop="startDate" data-prop="startDate">
             <el-date-picker
               v-model="form.startDate"
@@ -336,7 +340,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="12">
           <el-form-item label="结束日期" prop="endDate" data-prop="endDate">
             <el-date-picker
               v-model="form.endDate"
@@ -348,7 +352,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="12">
           <el-form-item label="投产日期" prop="productionDate" data-prop="productionDate">
             <el-date-picker
               v-model="form.productionDate"
@@ -360,7 +364,7 @@
             />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="12">
           <el-form-item label="验收日期" prop="acceptanceDate" data-prop="acceptanceDate">
             <el-date-picker
               v-model="form.acceptanceDate"
@@ -387,17 +391,17 @@
         <div v-show="activeNames.includes('6')">
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="项目费用(元)" prop="projectCost" data-prop="projectCost">
             <el-input-number v-model="form.projectCost" :min="0" :precision="2" placeholder="请输入项目费用" style="width: 100%" @blur="validateOnBlur('projectCost')" />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="费用预算(元)" prop="expenseBudget" data-prop="expenseBudget">
             <el-input-number v-model="form.expenseBudget" :min="0" :precision="2" placeholder="请输入费用预算" style="width: 100%" @blur="validateOnBlur('expenseBudget')" />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="成本预算(元)" prop="costBudget" data-prop="costBudget">
             <el-input-number v-model="form.costBudget" :min="0" :precision="2" placeholder="请输入成本预算" style="width: 100%" @blur="validateOnBlur('costBudget')" />
           </el-form-item>
@@ -405,12 +409,12 @@
       </el-row>
 
       <el-row :gutter="20">
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="人力费用(元)" prop="laborCost" data-prop="laborCost">
             <el-input-number v-model="form.laborCost" :min="0" :precision="2" placeholder="请输入人力费用" style="width: 100%" @blur="validateOnBlur('laborCost')" />
           </el-form-item>
         </el-col>
-        <el-col :span="8">
+        <el-col :span="12">
           <el-form-item label="采购成本(元)" prop="purchaseCost" data-prop="purchaseCost">
             <el-input-number v-model="form.purchaseCost" :min="0" :precision="2" placeholder="请输入采购成本" style="width: 100%" @blur="validateOnBlur('purchaseCost')" />
           </el-form-item>

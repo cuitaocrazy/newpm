@@ -348,6 +348,9 @@
         <el-form-item label="预估工作量(人天)" prop="estimatedWorkload">
           <el-input v-model="form.estimatedWorkload" placeholder="请输入预估工作量(人天)" />
         </el-form-item>
+        <el-form-item label="实际工作量(人天)" prop="actualWorkload">
+          <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量(人天)" />
+        </el-form-item>
         <el-form-item label="项目地址" prop="projectAddress">
           <el-input v-model="form.projectAddress" type="textarea" placeholder="请输入内容" />
         </el-form-item>
@@ -498,8 +501,15 @@
         <el-form-item label="税后金额" prop="afterTaxAmount">
           <el-input v-model="form.afterTaxAmount" placeholder="请输入税后金额" />
         </el-form-item>
-        <el-form-item label="公司收入确认人姓名" prop="companyRevenueConfirmedByName">
-          <el-input v-model="form.companyRevenueConfirmedByName" placeholder="请输入公司收入确认人姓名" />
+        <el-form-item label="公司收入确认人" prop="companyRevenueConfirmedBy">
+          <el-select v-model="form.companyRevenueConfirmedBy" placeholder="请选择公司收入确认人" clearable filterable>
+            <el-option
+              v-for="user in userOptions"
+              :key="user.userId"
+              :label="user.nickName"
+              :value="user.userId"
+            />
+          </el-select>
         </el-form-item>
         <el-divider content-position="center">项目审核信息</el-divider>
         <el-row :gutter="10" class="mb8">
@@ -857,7 +867,7 @@ function reset() {
     revenueConfirmYear: null,
     confirmAmount: null,
     afterTaxAmount: null,
-    companyRevenueConfirmedByName: null
+    companyRevenueConfirmedBy: null
   }
   projectApprovalList.value = []
   proxy.resetForm("projectRef")

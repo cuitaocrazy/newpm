@@ -221,8 +221,8 @@ public class Project extends BaseEntity
     /** 税后金额 */
     private BigDecimal afterTaxAmount;
 
-    /** 公司收入确认人姓名 */
-    private String companyRevenueConfirmedByName;
+    /** 公司收入确认人ID */
+    private Long companyRevenueConfirmedBy;
 
     /** 项目审核信息 */
     private List<ProjectApproval> projectApprovalList;
@@ -830,14 +830,14 @@ public class Project extends BaseEntity
         return afterTaxAmount;
     }
 
-    public void setCompanyRevenueConfirmedByName(String companyRevenueConfirmedByName) 
+    public void setCompanyRevenueConfirmedBy(Long companyRevenueConfirmedBy)
     {
-        this.companyRevenueConfirmedByName = companyRevenueConfirmedByName;
+        this.companyRevenueConfirmedBy = companyRevenueConfirmedBy;
     }
 
-    public String getCompanyRevenueConfirmedByName() 
+    public Long getCompanyRevenueConfirmedBy()
     {
-        return companyRevenueConfirmedByName;
+        return companyRevenueConfirmedBy;
     }
 
     public List<ProjectApproval> getProjectApprovalList()
@@ -1025,7 +1025,7 @@ public class Project extends BaseEntity
             .append("revenueConfirmYear", getRevenueConfirmYear())
             .append("confirmAmount", getConfirmAmount())
             .append("afterTaxAmount", getAfterTaxAmount())
-            .append("companyRevenueConfirmedByName", getCompanyRevenueConfirmedByName())
+            .append("companyRevenueConfirmedBy", getCompanyRevenueConfirmedBy())
             .append("projectApprovalList", getProjectApprovalList())
             .toString();
     }

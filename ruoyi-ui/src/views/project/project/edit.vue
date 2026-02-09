@@ -145,6 +145,16 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
+              <el-form-item label="实际工作量" prop="actualWorkload" data-prop="actualWorkload">
+                <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
+                  <template #append>人天</template>
+                </el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
               <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
                 <el-input v-model="form.projectAddress" placeholder="请输入项目地址"  @blur="validateOnBlur('projectAddress')" />
               </el-form-item>

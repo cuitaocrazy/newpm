@@ -185,7 +185,7 @@ columns:
     columnComment: 实际工作量(人天)
     javaType: BigDecimal
     javaField: actualWorkload
-    isInsert: false
+    isInsert: true
     isEdit: true
     isList: true
     isQuery: false
@@ -193,6 +193,13 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    notes: |
+      实际工作量字段说明：
+      - 在编辑页面（edit.vue）中显示在"预估工作量"字段右侧
+      - 格式与预估工作量统一，使用 el-input 组件，带"人天"后缀
+      - 布局：两列布局（el-col :span="12"），与预估工作量并排显示
+      - 验证：支持 validateOnBlur 验证
+      - 位置：项目基本信息模块，预估工作量字段之后
 
   project_address:
     columnComment: 项目地址
@@ -792,17 +799,17 @@ columns:
     htmlType: input
     dictType: ""
 
-  company_revenue_confirmed_by_name:
-    columnComment: 公司收入确认人姓名
-    javaType: String
-    javaField: companyRevenueConfirmedByName
+  company_revenue_confirmed_by:
+    columnComment: 公司收入确认人ID
+    javaType: Long
+    javaField: companyRevenueConfirmedBy
     isInsert: true
     isEdit: true
     isList: false
-    isQuery: true
-    queryType: LIKE
+    isQuery: false
+    queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
 
   remark:
@@ -1382,7 +1389,7 @@ customizations:
       endpoint: "PUT /project/project/confirmRevenue"
       source: "新增收入确认接口"
       newApi: true
-    notes: "收入确认字段：tax_rate, confirm_amount, after_tax_amount, revenue_confirm_year, revenue_confirm_status, company_revenue_confirmed_by_name, confirm_time"
+    notes: "收入确认字段：tax_rate, confirm_amount, after_tax_amount, revenue_confirm_year, revenue_confirm_status, company_revenue_confirmed_by, confirm_time"
 
   revenue_tax_rate:
     intent: "税率选择，6%软件开发类，13%硬件类"

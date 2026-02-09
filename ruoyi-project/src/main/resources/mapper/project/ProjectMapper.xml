@@ -67,7 +67,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="revenueConfirmYear"    column="revenue_confirm_year"    />
         <result property="confirmAmount"    column="confirm_amount"    />
         <result property="afterTaxAmount"    column="after_tax_amount"    />
-        <result property="companyRevenueConfirmedByName"    column="company_revenue_confirmed_by_name"    />
+        <result property="companyRevenueConfirmedBy"    column="company_revenue_confirmed_by"    />
         <result property="contractAmount"    column="contract_amount"    />
         <result property="contractStatus"    column="contract_status"    />
         <result property="projectManagerName"    column="project_manager_name"    />
@@ -102,7 +102,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectVo">
-        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, province_id, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, IFNULL(update_by, create_by) as update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by_name from pm_project
+        select project_id, project_code, project_name, project_full_name, industry, region, short_name, established_year, project_category, project_dept, project_status, acceptance_status, estimated_workload, actual_workload, project_address, project_plan, project_description, project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact, team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone, start_date, end_date, production_date, acceptance_date, project_budget, project_cost, expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason, industry_code, region_code, province_id, approval_time, approver_id, remark, tax_rate, confirm_user_id, confirm_time, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5, del_flag, create_by, create_time, IFNULL(update_by, create_by) as update_by, update_time, revenue_confirm_status, revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by from pm_project
     </sql>
 
     <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
@@ -120,7 +120,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             COALESCE(updater.nick_name, creator.nick_name, p.update_by, p.create_by) AS update_by,
             p.update_time,
             p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
-            p.company_revenue_confirmed_by_name,
+            p.company_revenue_confirmed_by,
             c.contract_amount,
             c.contract_status,
             pm.nick_name AS project_manager_name,
@@ -198,7 +198,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.tax_rate, p.confirm_user_id, p.confirm_time, p.reserved_field1, p.reserved_field2, p.reserved_field3,
             p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
             p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
-            p.company_revenue_confirmed_by_name,
+            p.company_revenue_confirmed_by,
             pm.nick_name AS project_manager_name,
             mm.nick_name AS market_manager_name,
             sm.nick_name AS sales_manager_name,
@@ -321,7 +321,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="revenueConfirmYear != null">revenue_confirm_year,</if>
             <if test="confirmAmount != null">confirm_amount,</if>
             <if test="afterTaxAmount != null">after_tax_amount,</if>
-            <if test="companyRevenueConfirmedByName != null">company_revenue_confirmed_by_name,</if>
+            <if test="companyRevenueConfirmedBy != null">company_revenue_confirmed_by,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="projectCode != null and projectCode != ''">#{projectCode},</if>
@@ -385,7 +385,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="revenueConfirmYear != null">#{revenueConfirmYear},</if>
             <if test="confirmAmount != null">#{confirmAmount},</if>
             <if test="afterTaxAmount != null">#{afterTaxAmount},</if>
-            <if test="companyRevenueConfirmedByName != null">#{companyRevenueConfirmedByName},</if>
+            <if test="companyRevenueConfirmedBy != null">#{companyRevenueConfirmedBy},</if>
          </trim>
     </insert>
 
@@ -453,7 +453,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="revenueConfirmYear != null">revenue_confirm_year = #{revenueConfirmYear},</if>
             <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
             <if test="afterTaxAmount != null">after_tax_amount = #{afterTaxAmount},</if>
-            <if test="companyRevenueConfirmedByName != null">company_revenue_confirmed_by_name = #{companyRevenueConfirmedByName},</if>
+            <if test="companyRevenueConfirmedBy != null">company_revenue_confirmed_by = #{companyRevenueConfirmedBy},</if>
         </trim>
         where project_id = #{projectId}
     </update>

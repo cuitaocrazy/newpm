@@ -782,7 +782,7 @@ CREATE TABLE `pm_project` (
   `revenue_confirm_year` varchar(20) DEFAULT NULL COMMENT '收入确认年度',
   `confirm_amount` decimal(15,2) DEFAULT NULL COMMENT '确认金额（含税）',
   `after_tax_amount` decimal(15,2) DEFAULT NULL COMMENT '税后金额',
-  `company_revenue_confirmed_by_name` varchar(64) DEFAULT NULL COMMENT '公司收入确认人姓名',
+  `company_revenue_confirmed_by` varchar(64) DEFAULT NULL COMMENT '公司收入确认人ID',
   PRIMARY KEY (`project_id`),
   UNIQUE KEY `uk_project_code` (`project_code`),
   KEY `idx_approval_status` (`approval_status`),
