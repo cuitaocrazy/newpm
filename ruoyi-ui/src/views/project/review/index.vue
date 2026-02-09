@@ -217,11 +217,11 @@
         <!-- 成本预算 -->
         <el-collapse-item title="成本预算" name="5">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget }}</el-descriptions-item>
-            <el-descriptions-item label="项目费用">{{ reviewForm.projectCost }}</el-descriptions-item>
-            <el-descriptions-item label="成本预算">{{ reviewForm.costBudget }}</el-descriptions-item>
-            <el-descriptions-item label="人工成本">{{ reviewForm.laborCost }}</el-descriptions-item>
-            <el-descriptions-item label="采购成本">{{ reviewForm.purchaseCost }}</el-descriptions-item>
+            <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget }} 元</el-descriptions-item>
+            <el-descriptions-item label="项目费用">{{ reviewForm.projectCost }} 元</el-descriptions-item>
+            <el-descriptions-item label="成本预算">{{ reviewForm.costBudget }} 元</el-descriptions-item>
+            <el-descriptions-item label="人工成本">{{ reviewForm.laborCost }} 元</el-descriptions-item>
+            <el-descriptions-item label="采购成本">{{ reviewForm.purchaseCost }} 元</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
       </el-collapse>
