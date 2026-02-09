@@ -143,3 +143,30 @@ VALUES ('项目审核查询', @reviewMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'p
 -- 按钮权限：审核操作
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('项目审核操作', @reviewMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:review:approve', '#', 'admin', sysdate(), '', NULL, '');
+
+-- ============================
+-- 管理模块菜单数据
+-- ============================
+
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('合同管理', '2010', '1', 'contract', 'project/contract/index', 1, 0, 'C', '0', '0', 'project:contract:list', '#', 'admin', sysdate(), '', null, '合同管理菜单');
+
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('合同管理查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:query',        '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('合同管理新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:add',          '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('合同管理修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:edit',         '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('合同管理删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:remove',       '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('合同管理导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:export',       '#', 'admin', sysdate(), '', null, '');

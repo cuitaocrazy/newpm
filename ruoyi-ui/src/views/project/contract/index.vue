@@ -140,16 +140,22 @@
       </el-table-column>
       <el-table-column label="合同名称" align="center" prop="contractName" min-width="180" show-overflow-tooltip fixed="left">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.contractName }}</span>
+          <el-link
+            v-if="!scope.row.isSummary"
+            type="primary"
+            @click="handleView(scope.row)"
+            @contextmenu.prevent="handleContextMenu($event, scope.row)">
+            {{ scope.row.contractName }}
+          </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="关联项目" align="center" prop="projectList" min-width="160" show-overflow-tooltip>
+      <el-table-column label="关联项目" align="left" prop="projectList" min-width="160">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
             <template v-if="scope.row.projectList && scope.row.projectList.length > 0">
-              <span v-for="(project, index) in scope.row.projectList" :key="project.projectId">
-                {{ project.projectName }}<span v-if="index < scope.row.projectList.length - 1">、</span>
-              </span>
+              <div v-for="(project, index) in scope.row.projectList" :key="project.projectId">
+                {{ index + 1 }}、{{ project.projectName }}
+              </div>
             </template>
             <span v-else>-</span>
           </span>
@@ -557,6 +563,13 @@ function handleView(row) {
   router.push({ path: `/project/contract/detail/${row.contractId}` })
 }
 
+/** 右键菜单 - 在新标签页打开 */
+function handleContextMenu(event, row) {
+  event.preventDefault()
+  const url = router.resolve({ path: `/project/contract/detail/${row.contractId}` }).href
+  window.open(url, '_blank')
+}
+
 /** 修改按钮操作 */
 function handleUpdate(row) {
   router.push({ path: `/project/contract/edit/${row.contractId}` })
@@ -580,20 +593,15 @@ function handleDelete(row) {
 
 /** 导出按钮操作 */
 function handleExport() {
+  const timestamp = proxy.parseTime(new Date(), '{y}{m}{d}{h}{i}{s}')
   proxy.download('project/contract/export', {
     ...queryParams.value
-  }, `contract_${new Date().getTime()}.xlsx`)
+  }, `合同管理_${timestamp}.xlsx`)
 }
 
 /** 附件按钮操作 */
 function handleAttachment(row) {
-  currentContractId.value = row.contractId
-  uploadData.value = {
-    businessType: 'contract',
-    businessId: row.contractId
-  }
-  getAttachmentList()
-  attachmentOpen.value = true
+  router.push({ path: `/project/contract/attachment/${row.contractId}` })
 }
 
 /** 查询附件列表 */

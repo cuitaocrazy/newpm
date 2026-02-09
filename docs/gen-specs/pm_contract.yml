@@ -128,7 +128,6 @@ columns:
       - 前端组件：<dict-tag> 自动根据 list_class 显示对应颜色
       - SQL脚本：pm-sql/fix_contract_status_color.sql
 
-      优化日期：2026-02-06
   contract_sign_date:
     columnComment: 合同签订日期
     columnType: date
@@ -461,7 +460,65 @@ customizations:
       spec: "保留查询、重置、新增、导出按钮"
     bindTo: toolbar
     service: null
-    notes: "纯前端修改"
+    notes: |
+      纯前端修改
+
+      导出功能优化（2026-02-09）：
+      1. 导出文件名格式：合同管理_yyyyMMddhhmmss.xlsx
+         - 示例：合同管理_20260209153045.xlsx
+         - 使用中文名称，便于识别
+         - 时间戳格式：年月日时分秒
+
+      2. 导出字段优化：
+         - 客户ID改为客户名称（导出 customerName 字段）
+         - 部门ID改为部门名称（导出 deptName 字段）
+         - 合同类型展示字典标签（使用 dictType = "sys_htlx"）
+         - 合同状态展示字典标签（使用 dictType = "sys_htzt"）
+         - 去掉备用域1-5字段（不再导出）
+
+      3. 导出列顺序（2026-02-09调整）：
+         1. 合同编号
+         2. 合同名称
+         3. 部门名称（紧跟合同名称）
+         4. 客户名称（紧跟部门名称）
+         5. 合同类型
+         6. 合同状态
+         7. 合同签订日期
+         8. 合同周期(月)
+         9. 合同金额(含税)
+         10. 税率(%)
+         11. 不含税金额
+         12. 税金
+         13. 合同确认金额
+         14. 确认年份
+         15. 免维期(月)
+
+         说明：部门名称和客户名称放在合同名称之后、合同类型之前，
+         更符合业务逻辑（先看合同基本信息，再看合同属性）
+
+      4. 后端实体类修改（Contract.java）：
+         - customerId：删除 @Excel 注解
+         - deptId：删除 @Excel 注解
+         - customerName：添加 @Excel(name = "客户名称")，移动到合同名称之后
+         - deptName：添加 @Excel(name = "部门名称")，移动到合同名称之后
+         - contractType：修改为 @Excel(name = "合同类型", dictType = "sys_htlx")
+         - contractStatus：修改为 @Excel(name = "合同状态", dictType = "sys_htzt")
+         - reservedField1~5：删除 @Excel 注解
+
+      5. 前端导出方法修改（index.vue:595-600）：
+         ```javascript
+         const timestamp = proxy.parseTime(new Date(), '{y}{m}{d}{h}{i}{s}')
+         proxy.download('project/contract/export', {
+           ...queryParams.value
+         }, `合同管理_${timestamp}.xlsx`)
+         ```
+
+      6. 导出效果：
+         - Excel 文件包含可读的名称字段，不再是ID
+         - 字典字段显示标签名，不再是字典值
+         - 文件名清晰易识别
+         - 去除无用的备用域字段
+         - 列顺序符合业务逻辑，便于阅读
 
   list_operation_buttons:
     intent: "操作列包含编辑、删除、详情、附件按钮"
@@ -588,44 +645,33 @@ customizations:
       - 创建日期和最后更新日期显示格式：yyyy-MM-dd HH:mm:ss
       - 创建人和最后更新人显示用户姓名（createByName/updateByName），如果姓名为空则显示用户名（createBy/updateBy）
 
-      关联项目分行展示优化（2026-02-06）：
-      - 一个合同关联多个项目时，每个项目占一行
-      - 合同信息列（除"关联项目"列外）进行单元格合并
-      - 序号只在合并单元格的第一行显示
-      - 关联项目列显示当前行的项目名称（currentProject.projectName）
-      - 无关联项目的合同正常显示，不分行
+      合同名称列交互优化（2026-02-09）：
+      - 合同名称显示为蓝色链接（el-link 组件）
+      - 左键点击：在当前页面跳转到合同详情页
+      - 右键点击：浏览器显示"在新标签页打开"选项，可在新标签页打开详情页
+      - 实现方式：
+        * 使用 @click 事件处理左键点击
+        * 使用 @contextmenu.prevent 事件处理右键点击
+        * 右键点击调用 window.open(url, '_blank') 在新标签页打开
+      - 优化原因：提升用户体验，提供更灵活的导航方式
+      - 修改文件：ruoyi-ui/src/views/project/contract/index.vue:141-151
 
-      后端实现（ContractServiceImpl.selectContractList）：
-      - 查询合同列表后，将合同-项目关系展开为多行
-      - 每个合同的每个项目生成一行数据
-      - 设置 isFirstRow 标记（用于前端合并单元格判断）
-      - 设置 rowSpan 值（合并行数 = 项目数量）
-      - 设置 currentProject 字段（当前行的项目信息）
+      关联项目列显示优化（2026-02-09）：
+      - 多个项目时每个项目占一行显示（使用 div 标签换行）
+      - 项目名称左对齐（align="left"）
+      - 每个项目前添加序号标识（格式：1、项目名称）
+      - 显示效果示例：
+        ```
+        1、项目A
+        2、项目B
+        3、项目C
+        ```
+      - 优化原因：
+        * 左对齐更符合阅读习惯
+        * 序号标识清晰区分多个项目
+        * 换行显示避免项目名称过长时显示不全
+      - 修改文件：ruoyi-ui/src/views/project/contract/index.vue:152-163
 
-      前端实现（index.vue）：
-      - 使用 el-table 的 span-method 属性实现单元格合并
-      - arraySpanMethod 方法：
-        * 合计行不合并
-        * "关联项目"列不合并（每行显示一个项目）
-        * 其他列：第一行显示并合并 rowSpan 行，其他行隐藏
-      - 序号计算优化：只在合并单元格的第一行显示序号
-      - 关联项目列显示：scope.row.currentProject.projectName
-
-      数据结构（Contract 实体类新增字段）：
-      - currentProject: Project - 当前行的项目信息
-      - isFirstRow: Boolean - 是否为第一行（用于合并判断）
-      - rowSpan: Integer - 行合并数量（项目数量）
-
-      展示效果示例：
-      ```
-      序号 | 合同名称    | 关联项目   | 客户名称 | ...
-      -----+------------+-----------+---------+-----
-      1    | 测试合同A  | 项目1     | 客户A   | ...
-           |            | 项目2     |         | ...
-           |            | 项目3     |         | ...
-      2    | 测试合同B  | 项目4     | 客户B   | ...
-      3    | 测试合同C  | -         | 客户C   | ...
-      ```
 
   list_display_names:
     intent: "列表中部门、客户、合同类型、关联项目、创建人、更新人展示名称而非ID"
@@ -1579,14 +1625,39 @@ customizations:
       type: custom
       spec: |
         路由: /project/contract/detail/:contractId
+
+        页面布局：
         第一部分：合同基本信息（只读）
-        - 关联项目列表（表格形式，项目名称可点击跳转）
+        - 合同名称（单独一行，:span="2"）
+        - 合同编号、部门
+        - 关联客户、合同类型
+        - 合同状态（单独一行，:span="2"）
+
         第二部分：合同时间与周期（只读）
+        - 合同签订日期、合同周期
+        - 免维期、（空白）
+
         第三部分：合同金额（只读）
+        - 合同金额（含税）、税率
+        - 不含税金额、税金
+
         第四部分：付款里程碑信息（表格形式，首行合计）
+        - 序号、里程碑名称、付款金额（元）、付款状态
+        - 预计回款季度、实际回款季度、实际回款日期
+        - 确认年份、是否违约扣款、扣款金额（元）、备注
+
         第五部分：合同附件列表（表格形式，下载按钮）
-        第六部分：备注（只读）
-        第七部分：审计信息（只读）
+        - 序号、文档类型、文件名称、文件说明
+        - 上传人员、上传时间、操作（下载）
+
+        第六部分：关联项目列表（表格形式，项目名称可点击跳转）
+        - 序号、项目名称、预算金额（元）
+        - 预估工作量（人天）、实际人天
+
+        第七部分：备注与审计信息（只读）
+        - 备注（单独一行，:span="2"）
+        - 创建人、创建时间
+        - 更新人、更新时间
     bindTo: page
     service:
       endpoint: "GET /project/contract/:contractId"
@@ -1600,6 +1671,35 @@ customizations:
       - 金额保留2位小数
       - 项目名称可点击跳转到 /project/project/detail/:projectId
       - 创建人和更新人显示姓名（createByName/updateByName），如果姓名为空则显示用户名（createBy/updateBy）
+
+      UI优化：
+      1. 去掉底部编辑按钮：
+         - 删除了操作按钮卡片（包含编辑和返回按钮）
+         - 只在页面头部保留返回按钮
+         - 简化页面操作，避免重复按钮
+
+      2. 模块顺序调整：
+         - 按业务逻辑重新组织展示顺序
+         - 基本信息 → 时间周期 → 金额 → 付款里程碑 → 附件 → 关联项目 → 备注审计
+         - 将付款里程碑和附件信息前置，更符合查看习惯
+
+      3. 字段布局优化：
+         - 合同名称单独占一行（:span="2"），突出显示
+         - 合同状态单独占一行（:span="2"），便于查看
+         - 免维期与合同签订日期在同一行，保持左右列对齐
+         - 所有字段采用2列布局，左右对齐
+         - 右列字段对齐：部门、合同类型、合同周期、税率、税金
+
+      4. 标签格式统一：
+         - 所有单位放在数值后面，与数值之间有空格
+         - 金额单位：数值 + 空格 + "元"（如：1000.00 元）
+         - 周期单位：数值 + 空格 + "月"（如：12 月）
+         - 税率单位：数值 + 空格 + "%"（如：13 %）
+         - 标签中不包含单位，单位显示在内容中
+         - 示例：
+           * 标签："合同周期"，内容："12 月"
+           * 标签："税率"，内容："13 %"
+           * 标签："合同金额（含税）"，内容："100000.00 元"
 
       审计信息显示：
       - 后端查询时关联 sys_user 表获取用户姓名（nick_name）
@@ -1671,9 +1771,27 @@ customizations:
       returns: "[{ milestoneName, paymentAmount, paymentStatus, ... }]"
       newApi: true
     notes: |
-      表格列：序号、里程碑名称、付款金额、付款状态、预计回款季度、实际回款季度、
-      实际回款日期、确认年份、是否违约扣款、扣款金额、备注
-      首行合计：付款金额总计、扣款金额总计
+      表格列：
+      - 序号
+      - 里程碑名称（原"付款方式名称"）
+      - 付款金额（元）
+      - 付款状态
+      - 预计回款季度
+      - 实际回款季度
+      - 实际回款日期
+      - 确认年份
+      - 是否违约扣款
+      - 扣款金额（元）
+      - 备注
+
+      首行合计：
+      - 付款金额总计
+      - 扣款金额总计
+
+      标签格式统一：
+      - 所有单位使用中文括号：（元）
+      - 列名从"付款方式名称"改为"里程碑名称"，更准确反映业务含义
+
 
   detail_attachment_list:
     intent: "合同附件列表表格"
@@ -1687,7 +1805,18 @@ customizations:
       source: "查询 pm_attachment 表"
       returns: "[{ attachmentId, documentType, fileName, fileDescription, createBy, createTime }]"
       newApi: true
-    notes: "表格列：序号、文档类型、文件名称、文件说明、上传人员、上传时间、操作（下载）"
+    notes: |
+      表格列：序号、文档类型、文件名称、文件说明、上传人员、上传时间、操作（下载）
+
+      交互优化（2026-02-09）：
+      - 文件名称列改为可点击链接
+      - 点击文件名称即可下载附件
+      - 使用 el-link 组件，显示为蓝色链接样式
+      - 提供两种下载方式：
+        * 点击文件名称下载
+        * 点击操作列的"下载"按钮
+      - 优化原因：提升用户体验，符合常见文件列表交互习惯
+      - 修改文件：ruoyi-ui/src/views/project/contract/detail.vue:157-163
 
   detail_project_list:
     intent: "关联项目列表表格，项目名称可点击"
@@ -1701,7 +1830,18 @@ customizations:
       source: "查询 pm_project_contract_rel + pm_project"
       returns: "[{ projectId, projectName, projectBudget, estimatedWorkload, actualWorkload }]"
       newApi: false
-    notes: "表格列：序号、项目名称（超链接）、预算金额、预估工作量、实际人天"
+    notes: |
+      表格列：
+      - 序号
+      - 项目名称（超链接，可点击跳转到项目详情）
+      - 预算金额（元）
+      - 预估工作量（人天）
+      - 实际人天
+
+      标签格式统一：
+      - 所有单位使用中文括号：（元）、（人天）
+      - 提升视觉一致性
+
 
   # ==================
   # 附件管理页面
@@ -1716,18 +1856,20 @@ customizations:
         页面布局：
         - 删除页面顶部的标题和描述信息（无需显示"合同附件管理"标题和"管理合同相关附件文档"描述）
 
-        第一部分：合同信息（只读，2列布局）
+        第一部分：合同基本信息（只读，2列布局）
         - 第1行：合同名称（占满整行）
-        - 第2行：合同编号、客户名称
-        - 第3行：合同类型、合同金额（元）
-        - 第4行：合同签订日期、所属部门
+        - 第2行：所属部门、合同编号
+        - 第3行：客户名称、合同类型
+        - 第4行：合同金额（元）、合同签订日期
 
         第二部分：附件上传表单
-        - 文档类型（必填，字典sys_wdlx）
-        - 上传附件（单文件，格式限制，30MB）
-        - 文档说明（文本域）
+        - 文档类型（下拉必填，字典sys_wdlx）
+        - 选择文件（支持doc、docx、xls、xlsx、pdf、csv、png、jpg、gif、txt、7z、zip、gz格式，单个文件不超过30MB，每次只能选择一个文件上传）
+        - 文件说明（文本域，选填）
+        - 按钮：上传、重置、日志
 
         第三部分：附件列表（表格形式）
+        - 序号、文档类型、文件名称、文件大小、文件说明、上传时间、操作（下载、删除）
     bindTo: page
     service:
       endpoint: "POST /project/attachment"
@@ -1740,9 +1882,58 @@ customizations:
       - pm_attachment_log：附件操作日志表，记录上传、删除、下载操作
       - 表结构定义：pm-sql/init/00_tables_ddl.sql
 
-      UI优化：
-      1. 删除了页面顶部的"合同附件管理"标题和"管理合同相关附件文档"描述
-      2. 页面直接从"合同基本信息"卡片开始显示，更加简洁
+      路由配置（2026-02-09新增）：
+      - 路由路径：/project/contract/attachment/:contractId
+      - 组件文件：ruoyi-ui/src/views/project/contract/attachment.vue
+      - 路由名称：ContractAttachment
+      - 页面标题：合同附件
+      - 激活菜单：/htkx/contract
+      - 配置文件：ruoyi-ui/src/router/index.ts
+
+      路由配置代码：
+      ```typescript
+      {
+        path: 'attachment/:contractId(\\d+)',
+        component: () => import('@/views/project/contract/attachment.vue'),
+        name: 'ContractAttachment',
+        meta: { title: '合同附件', activeMenu: '/htkx/contract' }
+      }
+      ```
+
+      访问方式变更（2026-02-09）：
+      - 原方式：合同列表点击"附件"按钮 → 打开对话框（Dialog）
+      - 新方式：合同列表点击"附件"按钮 → 跳转到独立页面
+      - 跳转代码：router.push({ path: `/project/contract/attachment/${contractId}` })
+      - 优化原因：
+        * 独立页面提供更大的操作空间
+        * 避免对话框层级过深的问题
+        * 提升用户体验和操作便利性
+        * 与详情页面、编辑页面保持一致的交互方式
+
+      UI优化（2026-02-09）：
+      1. 第一部分字段顺序调整：
+         - 原顺序：合同名称 → 合同编号、客户名称 → 合同类型、合同金额 → 合同签订日期、所属部门
+         - 新顺序：合同名称 → 所属部门、合同编号 → 客户名称、合同类型 → 合同金额、合同签订日期
+         - 优化原因：将所属部门前置，与其他页面保持一致
+
+      2. 第二部分按钮调整：
+         - 原按钮：上传附件、重置
+         - 新按钮：上传、重置、日志
+         - 优化原因：
+           * 简化按钮文字（"上传附件"改为"上传"）
+           * 将"日志"按钮从列表头部移到上传表单，统一操作区域
+           * 提升用户操作便利性
+
+      3. 第三部分列表字段调整：
+         - 新增字段：
+           * 文件类型：显示文件扩展名（如 PDF、DOCX、XLS），通过 getFileExtension 函数提取
+           * 文件大小：格式化显示文件大小（如 1.25 MB、256.50 KB），通过 formatFileSize 函数格式化
+         - 删除字段：
+           * 上传人员：移除该列，简化列表展示
+         - 列顺序：序号 → 文档类型 → 文件类型 → 文件名称 → 文件大小 → 文件说明 → 上传时间 → 操作
+         - 优化原因：
+           * 文件类型和文件大小是用户关注的重要信息
+           * 上传人员信息可通过操作日志查看，列表中不必展示
 
       文件格式：doc、docx、xls、xlsx、pdf、csv、png、jpg、gif、txt、7z、zip、gz
       文件大小：单个不超过30MB
@@ -1750,6 +1941,7 @@ customizations:
 
       文件格式更新记录：
       - 2026-02-04：新增 gif 格式支持（图片类型）
+
 
   attachment_upload:
     intent: "附件上传功能"
@@ -1771,10 +1963,24 @@ customizations:
       - 配置文件位置：ruoyi-admin/src/main/resources/application.yml
       - 修改后需要重启后端服务生效
 
+      配置修改记录（2026-02-09）：
+      - 问题：文件超过10MB上传失败，报错 "The field file exceeds its maximum permitted size of 10485760 bytes"
+      - 原因：Spring Boot默认配置限制为10MB，与业务需求（30MB）不符
+      - 修改前配置：
+        * max-file-size: 10MB
+        * max-request-size: 20MB
+      - 修改后配置：
+        * max-file-size: 30MB
+        * max-request-size: 30MB
+      - 修复文件：ruoyi-admin/src/main/resources/application.yml:60-62
+      - 影响范围：所有文件上传功能（合同附件、款项附件等）
+      - 修复后：可以上传最大30MB的文件
+
       后端文件格式校验：
       - AttachmentServiceImpl.ALLOWED_EXTENSIONS 常量定义允许的文件扩展名
       - 支持格式：.doc, .docx, .xls, .xlsx, .pdf, .csv, .png, .jpg, .gif, .txt, .7z, .zip, .gz
       - 文件大小限制：30MB（MAX_FILE_SIZE = 30 * 1024 * 1024）
+      - 校验位置：AttachmentServiceImpl.uploadAttachment:111-114
 
       上传成功后：
       1. 保存文件到服务器
@@ -1855,8 +2061,4 @@ customizations:
       - documentTypeName: 文档类型字典标签（如 "1-合同扫描件"）
       - operationTime: 操作时间
       - createTime: 前端兼容字段，映射到 operationTime
-
-      优化记录：
-      - 2026-02-04：添加字典翻译，文档类型显示字典标签而非字典值
-      - 2026-02-04：添加 createTime 字段映射，解决前端调整时间不显示问题
 

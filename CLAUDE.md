@@ -85,12 +85,17 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `ProjectApproval` | `pm_project_approval` | 项目审核 - Project approval workflow (pending/approved/rejected) |
 | `Customer` | `pm_customer` | 客户管理 - Customer information with industry and region classification |
 | `CustomerContact` | `pm_customer_contact` | 客户联系人 - Customer contact persons |
+| `Contract` | `pm_contract` | 合同管理 - Contract management with amount tracking and project associations |
+| `ProjectContractRel` | `pm_project_contract_rel` | 项目合同关联 - Many-to-many relationship between projects and contracts |
+| `Payment` | `pm_payment` | 款项管理 - Payment management with installment tracking and penalty handling |
+| `Attachment` | `pm_attachment` | 附件管理 - File attachment management for projects, contracts, and payments |
+| `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations (upload/download/delete)
 
 **Key Features:**
 
 - **Project Management:** Full project lifecycle tracking including:
   - Project coding: `{industry}-{region}-{shortName}-{year}` format
-  - Budget management: project budget, cost budget, labor cost, purchase cost
+  - Budget management: project budget, cost budget (万元), labor cost (万元), purchase cost (万元)
   - Workload tracking: estimated vs actual workload (in person-days)
   - Timeline: start/end/production/acceptance dates
   - Team assignment: project manager, market manager, sales manager, team leader, participants
@@ -101,6 +106,30 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
   - Region classification (字典: sys_yjqy)
   - Sales manager assignment
   - Multiple contact persons per customer
+
+- **Contract Management:** Contract lifecycle tracking including:
+  - Contract coding and naming
+  - Contract type and status (字典: sys_htlx, sys_htzt)
+  - Amount tracking: contract amount, received amount, remaining amount
+  - Signing and effective dates
+  - Project associations via `pm_project_contract_rel` (many-to-many)
+  - Attachment support for contract documents
+
+- **Payment Management:** Payment tracking with:
+  - Payment method and installment tracking
+  - Amount management: payment amount, penalty amount
+  - Payment status (字典: sys_fkzt)
+  - Expected vs actual payment dates
+  - Quarterly tracking for expected payments
+  - Penalty handling for contract violations
+  - Attachment support for payment documents
+
+- **Attachment Management:** Unified file management system:
+  - Business type: project/contract/payment
+  - Document type classification (字典: sys_wdlx)
+  - File metadata: name, path, size, type
+  - Upload/download/delete operations with audit logging
+  - Version control support
 
 - **Approval Workflow:** Project approval process with:
   - Approval status: 0=pending, 1=approved, 2=rejected
@@ -114,6 +143,10 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `sys_xmfl` - 项目分类
 - `sys_xmjd` - 项目阶段
 - `sys_yszt` - 验收状态
+- `sys_htlx` - 合同类型
+- `sys_htzt` - 合同状态
+- `sys_fkzt` - 付款状态
+- `sys_wdlx` - 文档类型
 
 **Controllers:**
 
@@ -121,11 +154,16 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `ProjectApprovalController` - `/project/approval/**` - Approval workflow management
 - `CustomerController` - `/project/customer/**` - Customer management
 - `CustomerContactController` - `/project/contact/**` - Contact management
+- `ContractController` - `/project/contract/**` - Contract CRUD with amount summary
+- `PaymentController` - `/project/payment/**` - Payment management
+- `AttachmentController` - `/project/attachment/**` - File upload/download/delete with audit logging
 
 **Frontend Routes:**
 
 - `/project/project` - 项目列表 (Project list with approval actions)
 - `/project/apply` - 项目立项申请 (Project initiation application)
+- `/project/contract` - 合同列表 (Contract list with amount tracking)
+- `/project/payment` - 款项列表 (Payment list with installment tracking)
 - Customer and contact management pages
 
 ## Backend Patterns
@@ -185,6 +223,36 @@ public AjaxResult add(@Validated @RequestBody Entity entity) {
 - Packages: `com.ruoyi.{module}.controller|service|domain|mapper`
 - Service methods: `select*List()`, `select*ById()`, `insert*()`, `update*()`, `delete*ByIds()`
 - Permission strings: `{module}:{business}:{action}` (e.g. `system:user:list`)
+
+### Master-Detail Pattern
+
+The project uses master-detail (主子表) pattern for one-to-many relationships:
+
+- **Project-Contract:** Projects can have multiple contracts via `pm_project_contract_rel` junction table
+- **Contract-Payment:** Contracts can have multiple payment installments
+- **Business-Attachment:** Projects, contracts, and payments can have multiple attachments
+
+**Implementation pattern:**
+```java
+// Master entity includes detail list
+public class Contract extends BaseEntity {
+    private List<Payment> paymentList;  // Detail records
+}
+
+// Service handles cascading operations
+public int insertContract(Contract contract) {
+    int rows = contractMapper.insertContract(contract);
+    insertPayment(contract);  // Insert detail records
+    return rows;
+}
+```
+
+**MyBatis XML uses collection mapping:**
+```xml
+<resultMap id="ContractPaymentResult" type="Contract">
+    <collection property="paymentList" ofType="Payment" column="contract_id" select="selectPaymentList"/>
+</resultMap>
+```
 
 ### Spring Boot 3 Specifics
 
@@ -260,6 +328,31 @@ Registered in `main.ts`: DictTag, Pagination, FileUpload, ImageUpload, ImagePrev
 
 All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>`, `BaseEntity`, `PageDomain`
 
+### File Upload Pattern
+
+The project uses a unified attachment management system:
+
+**Backend:**
+- `AttachmentController` handles file operations with audit logging
+- Files stored with metadata in `pm_attachment` table
+- Operations logged in `pm_attachment_log` for compliance
+- Business type discriminator: `project`, `contract`, `payment`
+
+**Frontend:**
+- `FileUpload` component for single/multiple file uploads
+- `ImageUpload` component for image-specific uploads
+- `ImagePreview` component for image viewing
+- API functions in `src/api/project/attachment.js`
+
+**Usage example:**
+```vue
+<file-upload
+  v-model="form.attachmentIds"
+  :business-type="'contract'"
+  :business-id="form.contractId"
+/>
+```
+
 ## Configuration Files
 
 ### Backend
@@ -300,6 +393,54 @@ Use the `/ruoyi-gen` skill for interactive CRUD generation:
 5. **Customization**: Applies custom UI requirements from spec file
 
 The skill handles menu generation, SQL file management, and database imports automatically.
+
+### Configuration File Maintenance
+
+**IMPORTANT**: When making changes to contract-related features, always check and confirm whether the configuration file needs to be updated:
+
+- **File**: `docs/gen-specs/pm_contract.yml`
+- **Purpose**: This file documents all customizations, business rules, and implementation details for the contract module
+- **Workflow**:
+  1. After any contract feature optimization or adjustment, review the changes
+  2. Analyze which changes need to be documented in pm_contract.yml:
+     - **NEED to update**: Field configurations, business rules, UI customizations, API endpoints, database schema changes, bug fixes with implementation details
+     - **NO NEED to update**: Minor code refactoring without behavior changes, code comments, variable renaming, performance optimizations without logic changes
+  3. Present a detailed recommendation to the user with two sections:
+     - **Changes that NEED pm_contract.yml update**: List specific changes with reasons
+     - **Changes that DO NOT NEED pm_contract.yml update**: List changes that are implementation details only
+  4. Wait for user confirmation before updating the file
+  5. If confirmed, update the relevant sections in the YAML file with clear notes and timestamps
+
+**What to document**:
+- ✅ Field configuration changes (validation rules, default values, display settings)
+- ✅ Business logic modifications (calculation formulas, workflow rules)
+- ✅ UI customizations (component changes, layout adjustments, interaction patterns)
+- ✅ API endpoint changes (new endpoints, parameter modifications)
+- ✅ Database schema updates (new fields, constraint changes)
+- ✅ Bug fixes with root cause and solution details
+- ❌ Code refactoring without behavior changes
+- ❌ Internal implementation details (variable names, code structure)
+- ❌ Performance optimizations without logic changes
+- ❌ Code comments or documentation updates
+
+**Example interaction**:
+```
+After optimization, I will present:
+
+"Should we update pm_contract.yml to document these changes?
+
+✅ NEED to update:
+1. [Change description] - Reason: Affects field display/business logic/user interaction
+2. [Change description] - Reason: New feature/bug fix that should be documented
+
+❌ NO NEED to update:
+1. [Change description] - Reason: Internal refactoring only
+2. [Change description] - Reason: Code optimization without behavior change
+
+Please confirm if you want me to update the configuration file."
+```
+
+This ensures the configuration file stays synchronized with the actual implementation and serves as accurate documentation for future code generation.
 
 ## Code Generation Workflow (ruoyi-gen-cli)
 

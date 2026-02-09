@@ -30,20 +30,26 @@ public class Contract extends BaseEntity
     @Excel(name = "合同名称")
     private String contractName;
 
+    /** 部门名称（扩展字段，用于列表展示和导出） */
+    @Excel(name = "部门名称")
+    private String deptName;
+
+    /** 客户名称（扩展字段，用于列表展示和导出） */
+    @Excel(name = "客户名称")
+    private String customerName;
+
     /** 关联客户ID */
-    @Excel(name = "关联客户ID")
     private Long customerId;
 
     /** 部门ID */
-    @Excel(name = "部门ID")
     private Long deptId;
 
     /** 合同类型 */
-    @Excel(name = "合同类型")
+    @Excel(name = "合同类型", dictType = "sys_htlx")
     private String contractType;
 
     /** 合同状态 */
-    @Excel(name = "合同状态")
+    @Excel(name = "合同状态", dictType = "sys_htzt")
     private String contractStatus;
 
     /** 合同签订日期 */
@@ -87,30 +93,19 @@ public class Contract extends BaseEntity
     private String delFlag;
 
     /** 备用域1 */
-    @Excel(name = "备用域1")
     private String reservedField1;
 
     /** 备用域2 */
-    @Excel(name = "备用域2")
     private String reservedField2;
 
     /** 备用域3 */
-    @Excel(name = "备用域3")
     private String reservedField3;
 
     /** 备用域4 */
-    @Excel(name = "备用域4")
     private String reservedField4;
 
     /** 备用域5 */
-    @Excel(name = "备用域5")
     private String reservedField5;
-
-    /** 部门名称（扩展字段，用于列表展示） */
-    private String deptName;
-
-    /** 客户名称（扩展字段，用于列表展示） */
-    private String customerName;
 
     /** 合同类型名称（扩展字段，用于列表展示） */
     private String contractTypeName;
