@@ -41,6 +41,9 @@
         <el-descriptions-item label="预估工作量">
           {{ form.estimatedWorkload || 0 }} 人天
         </el-descriptions-item>
+        <el-descriptions-item label="实际工作量">
+          {{ form.actualWorkload || 0 }} 人天
+        </el-descriptions-item>
         <el-descriptions-item label="项目状态">
           <dict-tag :options="sys_xmjd" :value="form.projectStatus" />
         </el-descriptions-item>

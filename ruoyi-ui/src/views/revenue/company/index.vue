@@ -3,22 +3,21 @@
     <!-- 查询表单 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.projectName"
+          :fetch-suggestions="queryProjectNameSuggestions"
           placeholder="请输入项目名称"
           clearable
           @keyup.enter="handleQuery"
+          @select="handleQuery"
+          style="width: 200px"
         />
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
-        <el-tree-select
+        <ProjectDeptSelect
           v-model="queryParams.projectDept"
-          :data="deptOptions"
-          :props="{ value: 'id', label: 'label', children: 'children' }"
-          value-key="id"
-          placeholder="请选择项目部门"
-          check-strictly
-          clearable
+          :filterable="true"
+          width="200px"
         />
       </el-form-item>
       <el-form-item label="收入确认年度" prop="revenueConfirmYear">
@@ -52,7 +51,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="一级区域" prop="region">
-        <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable>
+        <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable @change="handleRegionChange">
           <el-option
             v-for="dict in sys_yjqy"
             :key="dict.value"
@@ -61,13 +60,73 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="二级区域" prop="provinceId">
+        <el-select v-model="queryParams.provinceId" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" filterable>
+          <el-option
+            v-for="item in secondaryRegionOptions"
+            :key="item.provinceId"
+            :label="item.provinceName"
+            :value="item.provinceId"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="项目经理" prop="projectManagerId">
         <el-select v-model="queryParams.projectManagerId" placeholder="请选择项目经理" clearable filterable>
           <el-option
-            v-for="user in userList"
+            v-for="user in projectManagerList"
             :key="user.userId"
             :label="user.nickName"
             :value="user.userId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="市场经理" prop="marketManagerId">
+        <el-select v-model="queryParams.marketManagerId" placeholder="请选择市场经理" clearable filterable>
+          <el-option
+            v-for="user in marketManagerList"
+            :key="user.userId"
+            :label="user.nickName"
+            :value="user.userId"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="立项年度" prop="establishedYear">
+        <el-select v-model="queryParams.establishedYear" placeholder="请选择立项年度" clearable>
+          <el-option
+            v-for="dict in sys_ndgl"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="审核状态" prop="approvalStatus">
+        <el-select v-model="queryParams.approvalStatus" placeholder="请选择审核状态" clearable>
+          <el-option
+            v-for="dict in sys_spzt"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="验收状态" prop="acceptanceStatus">
+        <el-select v-model="queryParams.acceptanceStatus" placeholder="请选择验收状态" clearable>
+          <el-option
+            v-for="dict in sys_yszt"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="合同状态" prop="contractStatus">
+        <el-select v-model="queryParams.contractStatus" placeholder="请选择合同状态" clearable>
+          <el-option
+            v-for="dict in sys_htzt"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
           />
         </el-select>
       </el-form-item>
@@ -103,10 +162,20 @@
           <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算" align="center" prop="projectBudget" width="120" />
-      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" width="100" />
+      <el-table-column label="二级区域" align="center" prop="provinceName" width="100" show-overflow-tooltip />
+      <el-table-column label="项目预算（元）" align="center" prop="projectBudget" width="120">
+        <template #default="scope">
+          <span>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="预估工作量（人天）" align="center" prop="estimatedWorkload" width="140" />
       <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100" />
-      <el-table-column label="合同金额" align="center" prop="contractAmount" width="120" />
+      <el-table-column label="合同名称" align="center" prop="contractName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="合同金额（元）" align="center" prop="contractAmount" width="130">
+        <template #default="scope">
+          <span>{{ scope.row.contractAmount ? parseFloat(scope.row.contractAmount).toLocaleString() : '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
         <template #default="scope">
           <dict-tag :options="sys_ndgl" :value="scope.row.revenueConfirmYear"/>
@@ -118,7 +187,11 @@
           <dict-tag :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="确认金额" align="center" prop="confirmAmount" width="120" />
+      <el-table-column label="确认金额（元）" align="center" prop="confirmAmount" width="130">
+        <template #default="scope">
+          <span>{{ scope.row.confirmAmount ? parseFloat(scope.row.confirmAmount).toLocaleString() : '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="参与人员" align="center" prop="participantsNames" min-width="150" show-overflow-tooltip />
       <el-table-column label="启动日期" align="center" prop="startDate" width="110">
         <template #default="scope">
@@ -199,21 +272,25 @@
 
 <script setup name="RevenueCompany">
 import { listRevenueCompany, exportRevenueCompany } from "@/api/revenue/company";
-import { listUser, deptTreeSelect } from "@/api/system/user";
+import { listUser, listUserByPost } from "@/api/system/user";
+import { listSecondaryRegion } from "@/api/project/secondaryRegion";
 import RevenueConfirmDrawer from './components/RevenueConfirmDrawer.vue';
+import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue';
 
 const { proxy } = getCurrentInstance();
-const { sys_srqrzt, sys_ndgl, sys_xmfl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'sys_xmfl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt');
+const { sys_srqrzt, sys_ndgl, sys_xmfl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt, sys_htzt } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'sys_xmfl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt', 'sys_htzt');
 
 const revenueList = ref([]);
 const loading = ref(true);
 const showSearch = ref(true);
 const ids = ref([]);
 const total = ref(0);
-const deptOptions = ref([]);
 const userList = ref([]);
 const userMap = ref({});
 const drawerRef = ref(null);
+const secondaryRegionOptions = ref([]);
+const projectManagerList = ref([]);
+const marketManagerList = ref([]);
 
 const data = reactive({
   queryParams: {
@@ -225,7 +302,13 @@ const data = reactive({
     revenueConfirmStatus: null,
     projectCategory: null,
     region: null,
-    projectManagerId: null
+    provinceId: null,
+    projectManagerId: null,
+    marketManagerId: null,
+    establishedYear: null,
+    approvalStatus: null,
+    acceptanceStatus: null,
+    contractStatus: null
   }
 });
 
@@ -241,13 +324,6 @@ function getList() {
   });
 }
 
-/** 查询部门下拉树结构 */
-function getDeptTree() {
-  deptTreeSelect().then(response => {
-    deptOptions.value = response.data;
-  });
-}
-
 /** 查询用户列表 */
 function getUserList() {
   listUser().then(response => {
@@ -257,11 +333,55 @@ function getUserList() {
       userMap.value[user.userId] = user.nickName;
     });
   });
+
+  // 查询项目经理列表（岗位代码：pm）
+  listUserByPost('pm').then(response => {
+    projectManagerList.value = response.data || [];
+  });
+
+  // 查询市场经理列表（岗位代码：scjl）
+  listUserByPost('scjl').then(response => {
+    marketManagerList.value = response.data || [];
+  });
 }
 
 /** 根据用户ID获取用户名 */
 function getUserName(userId) {
   return userMap.value[userId] || userId;
+}
+
+/** 一级区域变化时加载二级区域 */
+function handleRegionChange(value) {
+  queryParams.value.provinceId = null;
+  secondaryRegionOptions.value = [];
+  if (value) {
+    listSecondaryRegion({ regionDictValue: value }).then(response => {
+      secondaryRegionOptions.value = response.rows || [];
+    });
+  }
+}
+
+/** 项目名称自动补全 */
+function queryProjectNameSuggestions(queryString, cb) {
+  // 如果输入为空，不显示建议
+  if (!queryString) {
+    cb([]);
+    return;
+  }
+
+  // 从当前列表数据中提取项目名称作为建议
+  const suggestions = revenueList.value
+    .filter(item => item.projectName && item.projectName.toLowerCase().includes(queryString.toLowerCase()))
+    .map(item => ({
+      value: item.projectName
+    }));
+
+  // 去重
+  const uniqueSuggestions = Array.from(
+    new Map(suggestions.map(item => [item.value, item])).values()
+  );
+
+  cb(uniqueSuggestions);
 }
 
 /** 搜索按钮操作 */
@@ -273,6 +393,7 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef");
+  secondaryRegionOptions.value = [];
   handleQuery();
 }
 
@@ -300,7 +421,6 @@ function handleExport() {
 
 onMounted(() => {
   getList();
-  getDeptTree();
   getUserList();
 });
 </script>

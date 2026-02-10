@@ -33,6 +33,7 @@
               </el-descriptions-item>
               <el-descriptions-item label="项目部门">{{ projectData.deptName || '-' }}</el-descriptions-item>
               <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+              <el-descriptions-item label="实际工作量">{{ projectData.actualWorkload || 0 }} 人天</el-descriptions-item>
               <el-descriptions-item label="项目状态">
                 <dict-tag :options="sys_xmjd" :value="projectData.projectStatus" />
               </el-descriptions-item>

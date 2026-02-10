@@ -69,6 +69,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="afterTaxAmount"    column="after_tax_amount"    />
         <result property="companyRevenueConfirmedBy"    column="company_revenue_confirmed_by"    />
         <result property="companyRevenueConfirmedTime"    column="company_revenue_confirmed_time"    />
+        <result property="contractName"    column="contract_name"    />
         <result property="contractAmount"    column="contract_amount"    />
         <result property="contractStatus"    column="contract_status"    />
         <result property="projectManagerName"    column="project_manager_name"    />
@@ -122,6 +123,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.update_time,
             p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
             p.company_revenue_confirmed_by, p.company_revenue_confirmed_time,
+            c.contract_name,
             c.contract_amount,
             c.contract_status,
             pm.nick_name AS project_manager_name,
@@ -159,11 +161,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                             (SELECT path FROM dept_path WHERE level = (SELECT MAX(level) FROM dept_path))
                     END AS formatted_path
                 FROM dept_path
-            ) AS dept_name
+            ) AS dept_name,
+            sr.province_name AS province_name
         FROM pm_project p
         LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id COLLATE utf8mb4_unicode_ci
             AND pcr.is_main = '1' AND pcr.del_flag = '0'
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
+        LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
         LEFT JOIN sys_user pm ON p.project_manager_id = pm.user_id
         LEFT JOIN sys_user mm ON p.market_manager_id = mm.user_id
         LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
@@ -183,6 +187,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="provinceId != null"> and p.province_id = #{provinceId}</if>
             <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
             <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
+            <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
         </where>
     </select>
     
@@ -199,7 +204,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.tax_rate, p.confirm_user_id, p.confirm_time, p.reserved_field1, p.reserved_field2, p.reserved_field3,
             p.reserved_field4, p.reserved_field5, p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
             p.revenue_confirm_status, p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount,
-            p.company_revenue_confirmed_by,
+            p.company_revenue_confirmed_by, p.company_revenue_confirmed_time,
             pm.nick_name AS project_manager_name,
             mm.nick_name AS market_manager_name,
             sm.nick_name AS sales_manager_name,

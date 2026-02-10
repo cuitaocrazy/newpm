@@ -78,13 +78,13 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli.jar --sql=<ddl>.sql --config=<confi
 
 The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use the `/ruoyi-gen` skill for interactive code generation.
 
-### E2E Testing (from project root) - 🚧 Planned
+### E2E Testing (from project root)
 
-**Note:** E2E testing infrastructure is configured but test cases are not yet implemented.
+**Note:** E2E testing infrastructure is configured. Test cases are being developed.
 
 ```bash
 npx playwright install                    # Install browsers (first time only)
-npx playwright test                       # Run all E2E tests (when implemented)
+npx playwright test                       # Run all E2E tests
 npx playwright test tests/project.spec.ts # Run specific test file
 npx playwright test --ui                  # Run tests in UI mode
 npx playwright test --headed              # Run tests in headed mode
@@ -92,21 +92,42 @@ npx playwright test --debug               # Run tests in debug mode
 npx playwright show-report                # View test report
 ```
 
-**Test Configuration**: `playwright.config.js` - Playwright E2E test configuration is ready.
+**Test Configuration**: `playwright.config.js` - Playwright E2E test configuration
 
-**Planned Test Coverage:**
+**Test Coverage:**
 - Project creation and approval workflow
 - Customer and contact management
 - Contract and payment tracking
-- Daily report submission and statistics
 - Revenue recognition workflow
+
+### Unit Testing (Backend)
+
+```bash
+# Run all tests
+mvn test
+
+# Run tests for specific module
+mvn test -pl ruoyi-project
+
+# Run specific test class
+mvn test -Dtest=ProjectServiceTest
+
+# Skip tests during build
+mvn clean package -Dmaven.test.skip=true
+```
 
 ### Prerequisites
 
-- Java 17, Maven
-- MySQL 8.x (database: `ry-vue`, init scripts in `pm-sql/init/`)
-- Redis (localhost:6379)
-- Node.js with npm
+- **Java 17** - Required for Spring Boot 3.x
+- **Maven 3.6+** - Build tool
+- **MySQL 8.x** - Database (charset: `utf8mb4`, collation: `utf8mb4_unicode_ci`)
+  - Database name: `ry_vue`
+  - Default port: 3306
+  - Init scripts: `pm-sql/init/00_tables_ddl.sql`, `01_tables_data.sql`, `02_menu_data.sql`
+- **Redis 6.x+** - Cache and session storage
+  - Default port: 6379
+  - No password required for local development
+- **Node.js 18+** with npm - Frontend development
 
 ## Module Architecture
 
@@ -142,7 +163,9 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `ProjectContractRel` | `pm_project_contract_rel` | 项目合同关联 - Many-to-many relationship between projects and contracts |
 | `Payment` | `pm_payment` | 款项管理 - Payment management with installment tracking and penalty handling |
 | `Attachment` | `pm_attachment` | 附件管理 - File attachment management for projects, contracts, and payments |
-| `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations (upload/download/delete)
+| `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations (upload/download/delete) |
+| `SecondaryRegion` | `pm_secondary_region` | 二级区域 - Secondary region management for hierarchical region classification |
+| `ProjectReview` | (view-based) | 公司收入确认 - Revenue recognition view with comprehensive project and contract data |
 
 **Key Features:**
 
@@ -215,9 +238,15 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
    - Statistics: project person-day aggregation, team reports
 
 5. **Revenue Recognition (收入确认):**
-   - Confirm project revenue by year
+   - Comprehensive revenue confirmation view with multi-dimensional filtering
+   - Query conditions: project name, department, confirmation year, project category, primary/secondary region, project manager, market manager, initiation year, approval status, acceptance status, contract status, confirmation status
    - Track confirmation status: 未确认, 待确认, 已确认, 无法确认
    - Link to contract payments and project completion
+   - Support batch revenue confirmation operations
+
+6. **Secondary Region Management (二级区域管理):**
+   - Hierarchical region classification (primary region → secondary region)
+   - Used for detailed geographical organization of projects and customers
 
 **Dictionary Dependencies:**
 
@@ -237,19 +266,24 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 
 - `ProjectController` - `/project/project/**` - Project CRUD and approval operations
 - `ProjectApprovalController` - `/project/approval/**` - Approval workflow management
+- `ProjectReviewController` - `/project/review/**` - Revenue recognition and comprehensive project review
 - `CustomerController` - `/project/customer/**` - Customer management
 - `CustomerContactController` - `/project/contact/**` - Contact management
 - `ContractController` - `/project/contract/**` - Contract CRUD with amount summary
 - `PaymentController` - `/project/payment/**` - Payment management
 - `AttachmentController` - `/project/attachment/**` - File upload/download/delete with audit logging
+- `SecondaryRegionController` - `/project/secondaryRegion/**` - Secondary region management
 
 **Frontend Routes:**
 
 - `/project/project` - 项目列表 (Project list with approval actions)
 - `/project/apply` - 项目立项申请 (Project initiation application)
+- `/project/approval` - 项目审核 (Project approval workflow)
+- `/project/review` - 公司收入确认 (Revenue recognition with comprehensive filtering)
 - `/project/contract` - 合同列表 (Contract list with amount tracking)
 - `/project/payment` - 款项列表 (Payment list with installment tracking)
-- Customer and contact management pages
+- `/project/customer` - 客户管理 (Customer management)
+- `/project/secondaryRegion` - 二级区域管理 (Secondary region management)
 
 ## Backend Patterns
 
@@ -711,14 +745,64 @@ public TableDataInfo list(Entity entity) {
 }
 ```
 
+## Deployment
+
+### Docker Deployment
+
+```bash
+# Build Docker image
+docker build -t ruoyi-pm:latest .
+
+# Run with docker-compose
+docker-compose up -d
+```
+
+**Configuration files:**
+- `Dockerfile` - Backend container configuration
+- `docker-compose.yml` - Multi-container orchestration (backend + MySQL + Redis)
+
+### Kubernetes Deployment
+
+```bash
+# Apply K8s configurations
+kubectl apply -f k8s/
+
+# Check deployment status
+kubectl get pods -n ruoyi
+```
+
+**Configuration files in `k8s/`:**
+- Deployment manifests for backend and frontend
+- Service definitions
+- ConfigMaps and Secrets
+- Ingress rules
+
 ## Troubleshooting
 
 ### Backend Won't Start
 
-1. **Check MySQL connection**: Ensure MySQL is running on port 3306 with database `ry-vue`
+1. **Check MySQL connection**: Ensure MySQL is running on port 3306 with database `ry_vue`
+   ```bash
+   mysql -u root -p -e "SHOW DATABASES LIKE 'ry_vue';"
+   ```
 2. **Check Redis connection**: Ensure Redis is running on port 6379
+   ```bash
+   redis-cli ping  # Should return PONG
+   ```
 3. **Port conflict**: If port 8080 is in use, change `server.port` in `application.yml`
+   ```bash
+   lsof -i :8080  # Check what's using port 8080
+   ```
 4. **Database not initialized**: Run SQL scripts in `pm-sql/init/` in order (00, 01, 02)
+   ```bash
+   mysql -u root -p ry_vue < pm-sql/init/00_tables_ddl.sql
+   mysql -u root -p ry_vue < pm-sql/init/01_tables_data.sql
+   mysql -u root -p ry_vue < pm-sql/init/02_menu_data.sql
+   ```
+5. **Java version mismatch**: Ensure Java 17 is installed
+   ```bash
+   java -version  # Should show version 17.x.x
+   ```
 
 ### Frontend Build Errors
 

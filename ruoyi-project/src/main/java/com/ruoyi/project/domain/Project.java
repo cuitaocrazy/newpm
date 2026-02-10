@@ -232,6 +232,9 @@ public class Project extends BaseEntity
     /** 项目审核信息 */
     private List<ProjectApproval> projectApprovalList;
 
+    /** 合同名称 */
+    private String contractName;
+
     /** 合同金额 */
     private BigDecimal contractAmount;
 
@@ -873,6 +876,16 @@ public class Project extends BaseEntity
     public void setContractAmount(BigDecimal contractAmount)
     {
         this.contractAmount = contractAmount;
+    }
+
+    public String getContractName()
+    {
+        return contractName;
+    }
+
+    public void setContractName(String contractName)
+    {
+        this.contractName = contractName;
     }
 
     public String getContractStatus()

@@ -4171,3 +4171,699 @@ customizations:
       - 不同的前端页面和路由
       - 不同的菜单和权限标识
       - 专注于收入确认相关字段的操作
+
+# ============================
+# 公司收入确认功能优化记录
+# 日期: 2026-02-10
+# ============================
+
+公司收入确认查询条件优化:
+  优化日期: 2026-02-10
+  优化内容: 完善查询条件，支持 13 个筛选维度
+
+  查询条件列表:
+    1. 项目名称 (projectName):
+        类型: 模糊查询
+        前端组件: el-input
+        后端条件: LIKE '%#{projectName}%'
+
+    2. 项目部门 (projectDept):
+        类型: 精确查询
+        前端组件: el-tree-select（部门树）
+        后端条件: = #{projectDept}
+
+    3. 收入确认年度 (revenueConfirmYear):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_ndgl
+        后端条件: = #{revenueConfirmYear}
+
+    4. 项目分类 (projectCategory):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_xmfl
+        后端条件: = #{projectCategory}
+
+    5. 一级区域 (region):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_yjqy
+        后端条件: = #{region}
+        级联: 选择后自动加载二级区域
+
+    6. 二级区域 (provinceId):
+        类型: 精确查询
+        前端组件: el-select（级联）
+        数据源: pm_secondary_region 表
+        后端条件: = #{provinceId}
+        依赖: 必须先选择一级区域
+        禁用条件: !queryParams.region
+
+    7. 项目经理 (projectManagerId):
+        类型: 精确查询
+        前端组件: el-select（可搜索）
+        数据源: 岗位代码 'pm' 的用户列表
+        API: listUserByPost('pm')
+        后端条件: = #{projectManagerId}
+
+    8. 市场经理 (marketManagerId):
+        类型: 精确查询
+        前端组件: el-select（可搜索）
+        数据源: 岗位代码 'scjl' 的用户列表
+        API: listUserByPost('scjl')
+        后端条件: = #{marketManagerId}
+
+    9. 立项年度 (establishedYear):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_ndgl
+        后端条件: = #{establishedYear}
+
+    10. 审核状态 (approvalStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_spzt
+        后端条件: = #{approvalStatus}
+
+    11. 验收状态 (acceptanceStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_yszt
+        后端条件: = #{acceptanceStatus}
+
+    12. 合同状态 (contractStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_htzt
+        后端条件: c.contract_status = #{contractStatus}
+        说明: 通过关联 pm_contract 表查询
+
+    13. 收入确认状态 (revenueConfirmStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_srqrzt
+        后端条件: = #{revenueConfirmStatus}
+
+  前端实现:
+    文件: ruoyi-ui/src/views/revenue/company/index.vue
+
+    新增导入:
+      - import { listUserByPost } from "@/api/system/user"
+      - import { listSecondaryRegion } from "@/api/project/secondaryRegion"
+
+    新增字典:
+      - sys_htzt: 合同状态字典
+
+    新增数据:
+      - secondaryRegionOptions: 二级区域选项列表
+      - projectManagerList: 项目经理列表（岗位 pm）
+      - marketManagerList: 市场经理列表（岗位 scjl）
+
+    新增方法:
+      - handleRegionChange(value): 一级区域变化时加载二级区域
+      - getUserList(): 加载项目经理和市场经理列表
+
+    查询参数:
+      queryParams:
+        - projectName: null
+        - projectDept: null
+        - revenueConfirmYear: null
+        - revenueConfirmStatus: null
+        - projectCategory: null
+        - region: null
+        - provinceId: null
+        - projectManagerId: null
+        - marketManagerId: null
+        - establishedYear: null
+        - approvalStatus: null
+        - acceptanceStatus: null
+        - contractStatus: null
+
+  后端实现:
+    文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+    selectProjectList 查询优化:
+      新增 WHERE 条件:
+        - <if test="contractStatus != null and contractStatus != ''">
+            and c.contract_status = #{contractStatus}
+          </if>
+
+      新增表关联:
+        - LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
+
+      新增查询字段:
+        - sr.province_name AS province_name
+
+    已支持的 WHERE 条件:
+      - projectName: LIKE 模糊查询
+      - region: 精确查询
+      - establishedYear: 精确查询
+      - projectCategory: 精确查询
+      - projectDept: 精确查询
+      - projectStatus: 精确查询
+      - acceptanceStatus: 精确查询
+      - projectManagerId: 精确查询
+      - marketManagerId: 精确查询
+      - approvalStatus: 精确查询
+      - regionCode: 精确查询
+      - provinceId: 精确查询
+      - revenueConfirmStatus: 精确查询
+      - revenueConfirmYear: 精确查询
+      - contractStatus: 精确查询（新增）
+
+公司收入确认列表字段优化:
+  优化日期: 2026-02-10
+  优化内容: 完善列表显示字段，新增缺失字段，优化金额格式化
+
+  列表字段（24个）:
+    1. 序号: type="index"
+    2. 项目名称: projectName（min-width: 150px, show-overflow-tooltip）
+    3. 项目部门: deptName（min-width: 120px, show-overflow-tooltip）
+    4. 项目经理: projectManagerName（min-width: 100px）
+    5. 项目分类: projectCategory（width: 100px, 字典标签）
+    6. 二级区域: provinceName（width: 100px, show-overflow-tooltip）【新增】
+    7. 项目预算（元）: projectBudget（width: 120px, 千分位格式化）【优化】
+    8. 预估工作量（人天）: estimatedWorkload（width: 140px）
+    9. 实际人天: actualWorkload（width: 100px）
+    10. 合同名称: contractName（min-width: 150px, show-overflow-tooltip）【新增】
+    11. 合同金额（元）: contractAmount（width: 130px, 千分位格式化）【优化】
+    12. 合同状态: contractStatus（width: 100px）
+    13. 收入确认年度: revenueConfirmYear（width: 120px, 字典标签）
+    14. 收入确认状态: revenueConfirmStatus（width: 120px, 字典标签）
+    15. 确认金额（元）: confirmAmount（width: 130px, 千分位格式化）【优化】
+    16. 参与人员: participantsNames（min-width: 150px, show-overflow-tooltip）
+    17. 启动日期: startDate（width: 110px, 日期格式化）
+    18. 结束日期: endDate（width: 110px, 日期格式化）
+    19. 验收日期: acceptanceDate（width: 110px, 日期格式化）
+    20. 审核状态: approvalStatus（width: 100px, 字典标签）
+    21. 项目状态: projectStatus（width: 100px, 字典标签）
+    22. 验收状态: acceptanceStatus（width: 100px, 字典标签）
+    23. 更新人: updateBy（width: 100px）
+    24. 更新时间: updateTime（width: 110px, 日期格式化）
+
+  前端优化:
+    文件: ruoyi-ui/src/views/revenue/company/index.vue
+
+    新增字段:
+      - 二级区域 (provinceName):
+          <el-table-column label="二级区域" align="center" prop="provinceName" width="100" show-overflow-tooltip />
+
+      - 合同名称 (contractName):
+          <el-table-column label="合同名称" align="center" prop="contractName" min-width="150" show-overflow-tooltip />
+
+    金额格式化:
+      模板:
+        <template #default="scope">
+          <span>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+        </template>
+
+      应用字段:
+        - 项目预算（元）: projectBudget
+        - 合同金额（元）: contractAmount
+        - 确认金额（元）: confirmAmount
+
+      效果:
+        - 1000000 → 1,000,000
+        - null → -
+
+    列宽调整:
+      - 预估工作量（人天）: 100px → 140px
+      - 合同金额（元）: 120px → 130px
+      - 确认金额（元）: 120px → 130px
+
+  后端优化:
+    文件: ruoyi-project/src/main/java/com/ruoyi/project/domain/Project.java
+
+    新增字段:
+      - private String contractName; // 合同名称
+      - public String getContractName() { return contractName; }
+      - public void setContractName(String contractName) { this.contractName = contractName; }
+
+    文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+    resultMap 新增映射:
+      - <result property="contractName" column="contract_name" />
+
+    selectProjectList 查询新增字段:
+      - c.contract_name（合同名称）
+      - sr.province_name AS province_name（二级区域名称）
+
+    selectProjectList 新增表关联:
+      - LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
+
+公司收入确认时间显示问题修复:
+  修复日期: 2026-02-10
+  问题描述: 查看收入确认时，确认时间显示为 "-"
+
+  问题根因:
+    文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+    查询: selectProjectByProjectId
+
+    问题:
+      - 查询中只包含 p.company_revenue_confirmed_by（确认人ID）
+      - 缺少 p.company_revenue_confirmed_time（确认时间）
+      - 导致前端接收到的 companyRevenueConfirmedTime 为 null
+      - 前端显示逻辑：null ? parseTime(null) : '-' → 显示 '-'
+
+  修复方案:
+    在 selectProjectByProjectId 查询中添加缺失字段
+
+    修改前:
+      p.company_revenue_confirmed_by,
+      pm.nick_name AS project_manager_name,
+
+    修改后:
+      p.company_revenue_confirmed_by, p.company_revenue_confirmed_time,
+      pm.nick_name AS project_manager_name,
+
+  影响范围:
+    受影响功能:
+      - 查看收入确认（查看模式）
+      - 编辑收入确认（编辑模式）
+
+    不受影响功能:
+      - 收入确认列表（使用 selectProjectList 查询，已包含该字段）
+      - 新增收入确认（新增时该字段为空）
+
+  测试验证:
+    前端调试:
+      文件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+      位置: 第 300-303 行
+
+      console.log('项目数据:', projectData.value);
+      console.log('确认时间:', projectData.value.companyRevenueConfirmedTime);
+      console.log('确认人ID:', projectData.value.companyRevenueConfirmedBy);
+      console.log('确认状态:', projectData.value.revenueConfirmStatus);
+
+    预期结果:
+      - 确认时间显示为实际时间: YYYY-MM-DD HH:mm:ss
+      - 确认人显示为用户昵称
+      - 仅在 revenueConfirmStatus === '1' 时显示
+
+公司收入确认功能完整性总结:
+  最后更新: 2026-02-10
+
+  功能模块:
+    1. 查询条件: 13 个筛选维度 ✅
+    2. 列表字段: 24 个显示字段 ✅
+    3. 详情抽屉: 左侧项目信息 + 右侧收入确认表单 ✅
+    4. 数据完整性: 确认时间正确显示 ✅
+
+  涉及文件:
+    前端:
+      - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+      - ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue（抽屉组件）
+      - ruoyi-ui/src/api/revenue/company.ts（API 封装）
+
+    后端:
+      - ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectController.java（控制器）
+      - ruoyi-project/src/main/java/com/ruoyi/project/domain/Project.java（实体类）
+      - ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml（MyBatis 映射）
+
+  数据库字段:
+    核心字段:
+      - revenue_confirm_year: 收入确认年度
+      - revenue_confirm_status: 收入确认状态（0=未确认, 1=已确认）
+      - confirm_amount: 确认金额（含税）
+      - tax_rate: 税率（%）
+      - after_tax_amount: 税后金额
+      - company_revenue_confirmed_by: 公司收入确认人ID
+      - company_revenue_confirmed_time: 公司收入确认时间
+
+    关联字段:
+      - province_id: 二级区域ID（关联 pm_secondary_region.province_id）
+      - contract_id: 合同ID（通过 pm_project_contract_rel 关联 pm_contract）
+
+  业务规则:
+    自动计算:
+      - 税后金额 = 确认金额 / (1 + 税率/100)
+      - 精度: 保留2位小数，四舍五入
+
+    自动设置:
+      - 保存时自动设置 revenue_confirm_status = '1'
+      - 保存时自动设置 company_revenue_confirmed_by = 当前登录用户ID
+      - 保存时自动设置 company_revenue_confirmed_time = 当前时间
+
+    显示逻辑:
+      - 确认人和确认时间仅在 revenue_confirm_status === '1' 时显示
+      - 未确认项目显示"收入确认"按钮
+      - 已确认项目显示"查看确认"按钮
+      - 查看模式下可切换到编辑模式（需权限）
+
+  权限标识:
+    - revenue:company:list: 查询列表
+    - revenue:company:view: 查看详情
+    - revenue:company:edit: 编辑/确认
+    - revenue:company:export: 导出列表
+
+  API 接口:
+    - GET /project/project/revenueList: 查询收入确认列表
+    - GET /project/project/revenue/{projectId}: 获取收入确认详情
+    - PUT /project/project/revenueConfirm: 更新收入确认信息
+    - POST /project/project/revenueExport: 导出收入确认列表
+
+公司收入确认查询条件交互优化:
+  优化日期: 2026-02-10
+  优化内容: 提升查询条件的用户交互体验
+
+  1. 项目名称自动补全:
+    优化前:
+      组件: el-input
+      功能: 普通文本输入框
+
+    优化后:
+      组件: el-autocomplete
+      功能: 支持自动补全建议
+
+    实现细节:
+      组件配置:
+        - v-model: queryParams.projectName
+        - :fetch-suggestions: queryProjectNameSuggestions
+        - placeholder: 请输入项目名称
+        - clearable: true
+        - @keyup.enter: handleQuery
+        - @select: handleQuery
+        - style: width: 200px
+
+      自动补全方法:
+        ```javascript
+        function queryProjectNameSuggestions(queryString, cb) {
+          // 如果输入为空，不显示建议
+          if (!queryString) {
+            cb([]);
+            return;
+          }
+
+          // 从当前列表数据中提取项目名称作为建议
+          const suggestions = revenueList.value
+            .filter(item => item.projectName && item.projectName.toLowerCase().includes(queryString.toLowerCase()))
+            .map(item => ({
+              value: item.projectName
+            }));
+
+          // 去重
+          const uniqueSuggestions = Array.from(
+            new Map(suggestions.map(item => [item.value, item])).values()
+          );
+
+          cb(uniqueSuggestions);
+        }
+        ```
+
+      功能特性:
+        - 大小写不敏感匹配
+        - 模糊匹配（包含关键词即可）
+        - 自动去重
+        - 基于当前列表数据（无需额外 API 请求）
+        - 回车键触发查询
+        - 点击建议项自动触发查询
+
+      使用场景:
+        - 快速查找已知项目
+        - 避免输入错误
+        - 提高输入效率
+
+  2. 项目部门选择器优化:
+    优化前:
+      组件: el-tree-select
+      数据管理: 页面内部管理 deptOptions
+      过滤逻辑: 页面内部实现 filterDeptTree
+      数据加载: 页面内部调用 getDeptTree
+      搜索功能: 不支持
+
+    优化后:
+      组件: ProjectDeptSelect（公共组件）
+      数据管理: 组件内部自动管理
+      过滤逻辑: 组件内置（只显示三级及以下机构）
+      数据加载: 组件自动加载
+      搜索功能: 支持（filterable: true）
+
+    实现细节:
+      组件配置:
+        - v-model: queryParams.projectDept
+        - :filterable: true
+        - width: 200px
+
+      组件位置:
+        - ruoyi-ui/src/components/ProjectDeptSelect/index.vue
+
+      组件特性:
+        - 自动过滤前两级部门，只显示三级及以下机构
+        - 自动加载部门树数据（从 /system/dept/treeselect）
+        - 支持部门名称搜索（filterable）
+        - 支持清空选择（clearable）
+        - 支持任意层级选择（checkStrictly）
+
+      过滤算法:
+        ```javascript
+        function filterDeptTree(depts, level = 1) {
+          if (!depts || depts.length === 0) return []
+
+          // 如果当前是第1或第2级，继续递归子节点
+          if (level < 3) {
+            let result = []
+            depts.forEach(dept => {
+              if (dept.children && dept.children.length > 0) {
+                const filtered = filterDeptTree(dept.children, level + 1)
+                result = result.concat(filtered)
+              }
+            })
+            return result
+          }
+
+          // 第3级及以下，保留当前节点及其子节点
+          return depts.map(dept => ({
+            ...dept,
+            children: dept.children && dept.children.length > 0
+              ? filterDeptTree(dept.children, level + 1)
+              : undefined
+          }))
+        }
+        ```
+
+      代码简化:
+        移除的代码:
+          - const deptOptions = ref([])
+          - import { deptTreeSelect } from "@/api/system/user"
+          - function getDeptTree() { ... }
+          - onMounted 中的 getDeptTree() 调用
+
+        新增的代码:
+          - import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
+
+        代码行数:
+          - 优化前: 约 15 行
+          - 优化后: 约 5 行
+          - 减少: 约 10 行
+
+      搜索功能:
+        - 支持输入部门名称关键词搜索
+        - 实时过滤匹配的部门
+        - 快速定位目标部门，无需逐级展开
+
+      使用场景:
+        - 部门较多时快速定位
+        - 不熟悉部门层级结构时快速查找
+        - 提高查询效率
+
+  优化效果总结:
+    1. 项目名称自动补全:
+       - 提升输入效率
+       - 减少输入错误
+       - 提供智能建议
+
+    2. 项目部门搜索:
+       - 代码简化（减少 10 行）
+       - 维护性提升（使用公共组件）
+       - 一致性保证（与其他页面统一）
+       - 支持搜索（快速定位部门）
+       - 自动过滤（只显示三级及以下机构）
+
+  涉及文件:
+    - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+    - ruoyi-ui/src/components/ProjectDeptSelect/index.vue（公共组件）
+
+  测试建议:
+    1. 测试项目名称自动补全功能
+       - 输入关键词验证建议列表
+       - 点击建议项验证自动查询
+       - 回车键验证查询功能
+
+    2. 测试项目部门搜索功能
+       - 输入部门名称关键词验证过滤
+       - 验证只显示三级及以下部门
+       - 验证选择部门后查询功能
+
+公司收入确认一级区域与二级区域联动修复:
+  日期: 2026-02-10
+
+  问题描述:
+    选择一级区域后，二级区域下拉框显示了不相关的省份数据
+    例如：选择"北京地区"（BJ），却显示了华北区域（HBQY）的所有省份
+
+  根本原因:
+    前端传递的参数名与后端期望的参数名不匹配
+    - 前端传递: regionCode
+    - 后端期望: regionDictValue（对应数据库字段 region_dict_value）
+
+  数据库结构说明:
+    表: pm_secondary_region
+    关键字段:
+      - province_id: 省份ID（主键）
+      - province_name: 省份名称（如：北京市、天津市）
+      - region_dict_value: 一级区域字典值（如：BJ、HBQY、DBQY）
+
+    一级区域字典 (sys_yjqy):
+      - BJ: 北京地区（仅包含北京市）
+      - HBQY: 华北区域（天津市、河北省、山西省、内蒙古自治区）
+      - DBQY: 东北区域（辽宁省、大连市、吉林省、黑龙江省）
+      - HDQY: 华东区域（上海市、江苏省、浙江省等）
+      - HNQY: 华南区域（广东省等）
+      - HZQY: 华中区域
+      - XNQY: 西南区域
+      - XBQY: 西北区域
+      - GWDQ: 国外地区
+
+  修复方案:
+    修改前端代码，使用正确的参数名 regionDictValue
+
+    修改位置: ruoyi-ui/src/views/revenue/company/index.vue
+    函数: handleRegionChange(value)
+
+    修改前:
+      listSecondaryRegion({ regionCode: value })
+
+    修改后:
+      listSecondaryRegion({ regionDictValue: value })
+
+  联动逻辑说明:
+    1. 选择一级区域时:
+       - 清空二级区域的值（provinceId = null）
+       - 清空二级区域选项列表（secondaryRegionOptions = []）
+       - 根据一级区域字典值查询对应的二级区域列表
+       - 二级区域选择器变为可用状态
+
+    2. 清空一级区域时:
+       - 清空二级区域的值
+       - 清空二级区域选项列表
+       - 二级区域选择器变为禁用状态（:disabled="!queryParams.region"）
+
+    3. 重置表单时:
+       - 调用 proxy.resetForm("queryRef") 清空所有查询条件
+       - 清空二级区域选项列表（secondaryRegionOptions = []）
+       - 确保下次选择一级区域时不会显示旧数据
+
+  后端接口说明:
+    Controller: SecondaryRegionController
+    接口: GET /project/secondaryRegion/list
+    参数: SecondaryRegion 对象（包含 regionDictValue 字段）
+
+    MyBatis XML: SecondaryRegionMapper.xml
+    查询条件:
+      <if test="regionDictValue != null and regionDictValue != ''">
+        and region_dict_value = #{regionDictValue}
+      </if>
+
+  涉及文件:
+    - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+    - ruoyi-ui/src/api/project/secondaryRegion.js（API 封装）
+    - ruoyi-project/.../SecondaryRegionController.java（后端控制器）
+    - ruoyi-project/.../SecondaryRegionMapper.xml（MyBatis 映射）
+
+  测试建议:
+    1. 选择"北京地区"（BJ）→ 应该只显示：北京市
+    2. 选择"华北区域"（HBQY）→ 应该显示：天津市、河北省、山西省、内蒙古自治区
+    3. 选择"东北区域"（DBQY）→ 应该显示：辽宁省、大连市、吉林省、黑龙江省
+    4. 切换一级区域 → 二级区域应该重新加载对应选项
+    5. 清空一级区域 → 二级区域应该被禁用且清空
+    6. 点击重置按钮 → 所有条件清空，二级区域选项列表清空
+
+项目详情和收入确认页面实际工作量字段显示优化:
+  日期: 2026-02-10
+
+  问题描述:
+    在以下两个页面的项目基本信息中，"预估工作量"后面缺少"实际工作量"字段的显示：
+    1. 项目管理 - 项目详情页面
+    2. 公司收入确认 - 收入确认抽屉（查看确认/编辑确认）
+
+  优化方案:
+    在"预估工作量"字段后面添加"实际工作量"字段显示
+
+  字段说明:
+    - 字段名: actualWorkload
+    - 数据库字段: actual_workload
+    - 字段类型: decimal(10,2)
+    - 显示格式: XX 人天
+    - 默认值: 0（当数据为空时）
+
+  修改位置:
+
+    1. 项目详情页面:
+       文件: ruoyi-ui/src/views/project/project/detail.vue
+       位置: 第41-46行（项目基本信息卡片）
+
+       修改前:
+         <el-descriptions-item label="预估工作量">
+           {{ form.estimatedWorkload || 0 }} 人天
+         </el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="form.projectStatus" />
+         </el-descriptions-item>
+
+       修改后:
+         <el-descriptions-item label="预估工作量">
+           {{ form.estimatedWorkload || 0 }} 人天
+         </el-descriptions-item>
+         <el-descriptions-item label="实际工作量">
+           {{ form.actualWorkload || 0 }} 人天
+         </el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="form.projectStatus" />
+         </el-descriptions-item>
+
+    2. 收入确认抽屉:
+       文件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+       位置: 第35-38行（项目基本信息卡片）
+
+       修改前:
+         <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="projectData.projectStatus" />
+         </el-descriptions-item>
+
+       修改后:
+         <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+         <el-descriptions-item label="实际工作量">{{ projectData.actualWorkload || 0 }} 人天</el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="projectData.projectStatus" />
+         </el-descriptions-item>
+
+  显示效果:
+    项目基本信息部分现在显示顺序为：
+    - 预估工作量: XX 人天
+    - 实际工作量: XX 人天（新增）
+    - 项目状态: XXX
+
+  数据来源:
+    - 项目详情页面: form.actualWorkload（来自 getProject 接口）
+    - 收入确认抽屉: projectData.actualWorkload（来自 getRevenueCompany 接口）
+
+  后端接口说明:
+    两个接口都已包含 actual_workload 字段：
+    1. GET /project/project/{projectId} - 获取项目详情
+    2. GET /project/project/revenue/{projectId} - 获取收入确认详情
+
+    MyBatis XML 查询中已包含该字段：
+    - ProjectMapper.xml: selectProjectVo 包含 actual_workload
+    - 无需修改后端代码
+
+  涉及文件:
+    - ruoyi-ui/src/views/project/project/detail.vue（项目详情页）
+    - ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue（收入确认抽屉）
+
+  测试建议:
+    1. 打开项目详情页面，验证"实际工作量"字段显示正确
+    2. 打开收入确认抽屉（查看模式），验证"实际工作量"字段显示正确
+    3. 打开收入确认抽屉（编辑模式），验证"实际工作量"字段显示正确
+    4. 验证字段显示在"预估工作量"和"项目状态"之间
+    5. 验证当实际工作量为空时显示"0 人天"
