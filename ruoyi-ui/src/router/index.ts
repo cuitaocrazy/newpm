@@ -69,6 +69,12 @@ export const constantRoutes = [
         component: () => import('@/views/project/contract/detail.vue'),
         name: 'ContractDetail',
         meta: { title: '合同详情', activeMenu: '/htkx/contract' }
+      },
+      {
+        path: 'attachment/:contractId(\\d+)',
+        component: () => import('@/views/project/contract/attachment.vue'),
+        name: 'ContractAttachment',
+        meta: { title: '合同附件', activeMenu: '/htkx/contract' }
       }
     ]
   },

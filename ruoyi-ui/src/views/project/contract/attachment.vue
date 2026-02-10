@@ -11,6 +11,9 @@
         <el-descriptions-item label="合同名称" :span="2">
           {{ contract.contractName || '-' }}
         </el-descriptions-item>
+        <el-descriptions-item label="所属部门">
+          {{ contract.deptName || '-' }}
+        </el-descriptions-item>
         <el-descriptions-item label="合同编号">
           {{ contract.contractCode || '-' }}
         </el-descriptions-item>
@@ -25,9 +28,6 @@
         </el-descriptions-item>
         <el-descriptions-item label="合同签订日期">
           {{ contract.contractSignDate || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="所属部门">
-          {{ contract.deptName || '-' }}
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -85,9 +85,13 @@
               <el-button type="primary" @click="handleUpload" :loading="uploading"
                 :disabled="fileList.length === 0">
                 <el-icon><Upload /></el-icon>
-                上传附件
+                上传
               </el-button>
               <el-button @click="resetUploadForm">重置</el-button>
+              <el-button type="primary" @click="handleShowLog">
+                <el-icon><Document /></el-icon>
+                日志
+              </el-button>
             </el-form-item>
           </el-col>
         </el-row>
@@ -99,22 +103,26 @@
       <template #header>
         <div class="card-header">
           <span class="card-title">附件列表</span>
-          <el-button type="primary" link @click="handleShowLog">
-            <el-icon><Document /></el-icon>
-            操作日志
-          </el-button>
         </div>
       </template>
       <el-table v-loading="listLoading" :data="attachmentList" border>
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column label="文档类型" prop="documentTypeName" width="120" align="center" />
+        <el-table-column label="文档类型" prop="documentType" width="150" align="center">
+          <template #default="scope">
+            <dict-tag :options="sys_wdlx" :value="scope.row.documentType"/>
+          </template>
+        </el-table-column>
         <el-table-column label="文件名称" prop="fileName" min-width="200" show-overflow-tooltip />
+        <el-table-column label="文件大小" prop="fileSize" width="120" align="center">
+          <template #default="scope">
+            {{ formatFileSize(scope.row.fileSize) }}
+          </template>
+        </el-table-column>
         <el-table-column label="文件说明" prop="fileDescription" min-width="150" show-overflow-tooltip>
           <template #default="scope">
             {{ scope.row.fileDescription || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="上传人员" prop="createByName" width="120" align="center" />
         <el-table-column label="上传时间" prop="createTime" width="160" align="center" />
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="scope">
@@ -215,6 +223,24 @@ const formatAmount = (amount) => {
   return Number(amount).toFixed(2)
 }
 
+// 获取文件扩展名
+const getFileExtension = (fileName) => {
+  if (!fileName) return '-'
+  const extension = fileName.substring(fileName.lastIndexOf('.') + 1).toUpperCase()
+  return extension || '-'
+}
+
+// 格式化文件大小
+const formatFileSize = (size) => {
+  if (!size || size === 0) return '-'
+  const kb = size / 1024
+  if (kb < 1024) {
+    return kb.toFixed(2) + ' KB'
+  }
+  const mb = kb / 1024
+  return mb.toFixed(2) + ' MB'
+}
+
 // 加载合同信息
 const loadContractInfo = () => {
   if (!contractId.value) {
@@ -237,7 +263,10 @@ const loadAttachmentList = () => {
   if (!contractId.value) return
 
   listLoading.value = true
-  listAttachment('contract', contractId.value).then(response => {
+  listAttachment({
+    businessType: 'contract',
+    businessId: contractId.value
+  }).then(response => {
     attachmentList.value = response.data || []
     listLoading.value = false
   }).catch(() => {

@@ -1,35 +1,43 @@
 <template>
   <div class="app-container">
+    <!-- 第一部分：合同基本信息 -->
     <el-card class="box-card">
       <template #header>
         <div class="card-header">
-          <span style="font-size: 18px; font-weight: bold;">合同详情</span>
+          <span style="font-size: 16px; font-weight: bold;">合同基本信息</span>
           <el-button style="float: right; padding: 3px 0" type="text" icon="Back" @click="handleBack">返回</el-button>
         </div>
       </template>
 
       <el-descriptions :column="2" border>
-        <!-- 第一部分：合同基本信息 -->
-        <el-descriptions-item label="合同编号" label-class-name="label-bold">
-          {{ detailData.contractCode }}
-        </el-descriptions-item>
-        <el-descriptions-item label="合同名称" label-class-name="label-bold">
+        <el-descriptions-item label="合同名称" :span="2" label-class-name="label-bold">
           {{ detailData.contractName }}
         </el-descriptions-item>
-        <el-descriptions-item label="客户" label-class-name="label-bold">
-          {{ getCustomerName(detailData.customerId) }}
+        <el-descriptions-item label="合同编号" label-class-name="label-bold">
+          {{ detailData.contractCode }}
         </el-descriptions-item>
         <el-descriptions-item label="部门" label-class-name="label-bold">
           {{ getDeptName(detailData.deptId) }}
         </el-descriptions-item>
+        <el-descriptions-item label="关联客户" label-class-name="label-bold">
+          {{ getCustomerName(detailData.customerId) }}
+        </el-descriptions-item>
         <el-descriptions-item label="合同类型" label-class-name="label-bold">
           <dict-tag :options="sys_htlx" :value="detailData.contractType"/>
         </el-descriptions-item>
-        <el-descriptions-item label="合同状态" label-class-name="label-bold">
+        <el-descriptions-item label="合同状态" :span="2" label-class-name="label-bold">
           <dict-tag :options="sys_htzt" :value="detailData.contractStatus"/>
         </el-descriptions-item>
+      </el-descriptions>
+    </el-card>
 
-        <!-- 第二部分：合同时间与周期 -->
+    <!-- 第二部分：合同时间与周期 -->
+    <el-card class="box-card" style="margin-top: 20px;">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">合同时间与周期</span>
+      </template>
+
+      <el-descriptions :column="2" border>
         <el-descriptions-item label="合同签订日期" label-class-name="label-bold">
           {{ parseTime(detailData.contractSignDate, '{y}-{m}-{d}') }}
         </el-descriptions-item>
@@ -40,13 +48,21 @@
           {{ detailData.freeMaintenancePeriod }} 月
         </el-descriptions-item>
         <el-descriptions-item></el-descriptions-item>
+      </el-descriptions>
+    </el-card>
 
-        <!-- 第三部分：合同金额 -->
-        <el-descriptions-item label="合同金额(含税)" label-class-name="label-bold">
+    <!-- 第三部分：合同金额 -->
+    <el-card class="box-card" style="margin-top: 20px;">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">合同金额</span>
+      </template>
+
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="合同金额（含税）" label-class-name="label-bold">
           <span style="color: #409EFF; font-weight: bold; font-size: 16px;">{{ formatAmount(detailData.contractAmount) }} 元</span>
         </el-descriptions-item>
         <el-descriptions-item label="税率" label-class-name="label-bold">
-          {{ detailData.taxRate }}%
+          {{ detailData.taxRate }} %
         </el-descriptions-item>
         <el-descriptions-item label="不含税金额" label-class-name="label-bold">
           <span style="color: #67C23A; font-weight: bold; font-size: 16px;">{{ formatAmount(detailData.amountNoTax) }} 元</span>
@@ -54,67 +70,10 @@
         <el-descriptions-item label="税金" label-class-name="label-bold">
           {{ formatAmount(detailData.taxAmount) }} 元
         </el-descriptions-item>
-        <el-descriptions-item label="合同确认金额" label-class-name="label-bold">
-          <span style="color: #E6A23C; font-weight: bold; font-size: 16px;">{{ formatAmount(detailData.confirmAmount) }} 元</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="确认年份" label-class-name="label-bold">
-          <dict-tag :options="sys_ndgl" :value="detailData.confirmYear"/>
-        </el-descriptions-item>
-
-        <!-- 第四部分：备注 -->
-        <el-descriptions-item label="备注" :span="2" label-class-name="label-bold">
-          {{ detailData.remark || '无' }}
-        </el-descriptions-item>
-
-        <!-- 第五部分：创建和更新信息 -->
-        <el-descriptions-item label="创建人" label-class-name="label-bold">
-          {{ detailData.createByName || detailData.createBy }}
-        </el-descriptions-item>
-        <el-descriptions-item label="创建时间" label-class-name="label-bold">
-          {{ parseTime(detailData.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
-        </el-descriptions-item>
-        <el-descriptions-item label="更新人" label-class-name="label-bold">
-          {{ detailData.updateByName || detailData.updateBy }}
-        </el-descriptions-item>
-        <el-descriptions-item label="更新时间" label-class-name="label-bold">
-          {{ parseTime(detailData.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
-        </el-descriptions-item>
       </el-descriptions>
     </el-card>
 
-    <!-- 第六部分：关联项目列表 -->
-    <el-card class="box-card" style="margin-top: 20px;" v-if="projectList.length > 0">
-      <template #header>
-        <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
-      </template>
-      <el-table :data="projectList" border>
-        <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="项目名称" align="center" prop="projectName" show-overflow-tooltip>
-          <template #default="scope">
-            <el-link type="primary" @click="handleViewProject(scope.row.projectId)">
-              {{ scope.row.projectName }}
-            </el-link>
-          </template>
-        </el-table-column>
-        <el-table-column label="预算金额(元)" align="center" prop="projectBudget" width="150">
-          <template #default="scope">
-            {{ formatAmount(scope.row.projectBudget) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="预估工作量(人天)" align="center" prop="estimatedWorkload" width="150">
-          <template #default="scope">
-            {{ scope.row.estimatedWorkload }}
-          </template>
-        </el-table-column>
-        <el-table-column label="实际人天" align="center" prop="actualWorkload" width="150">
-          <template #default="scope">
-            {{ scope.row.actualWorkload || '-' }}
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
-
-    <!-- 第七部分：付款里程碑信息 -->
+    <!-- 第四部分：付款里程碑信息 -->
     <el-card class="box-card" style="margin-top: 20px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">付款里程碑信息</span>
@@ -126,12 +85,12 @@
             <span v-else>{{ scope.$index }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="付款方式名称" align="center" prop="paymentMethodName" show-overflow-tooltip>
+        <el-table-column label="里程碑名称" align="center" prop="paymentMethodName" show-overflow-tooltip>
           <template #default="scope">
             <span v-if="!scope.row.isSummary">{{ scope.row.paymentMethodName }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="付款金额(元)" align="center" prop="paymentAmount" width="130">
+        <el-table-column label="付款金额（元）" align="center" prop="paymentAmount" width="130">
           <template #default="scope">
             <span :style="scope.row.isSummary ? 'font-weight: bold; color: #409EFF;' : ''">
               {{ formatAmount(scope.row.paymentAmount) }}
@@ -168,7 +127,7 @@
             <span v-if="!scope.row.isSummary">{{ scope.row.hasPenalty === '1' ? '是' : '否' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="扣款金额(元)" align="center" prop="penaltyAmount" width="120">
+        <el-table-column label="扣款金额（元）" align="center" prop="penaltyAmount" width="120">
           <template #default="scope">
             <span :style="scope.row.isSummary ? 'font-weight: bold; color: #F56C6C;' : ''">
               {{ scope.row.penaltyAmount ? formatAmount(scope.row.penaltyAmount) : '-' }}
@@ -183,7 +142,7 @@
       </el-table>
     </el-card>
 
-    <!-- 第八部分：合同附件列表 -->
+    <!-- 第五部分：合同附件列表 -->
     <el-card class="box-card" style="margin-top: 20px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">合同附件列表</span>
@@ -195,13 +154,19 @@
             <dict-tag :options="sys_wdlx" :value="scope.row.documentType"/>
           </template>
         </el-table-column>
-        <el-table-column label="文件名称" align="center" prop="fileOriginalName" show-overflow-tooltip />
+        <el-table-column label="文件名称" align="center" prop="fileName" show-overflow-tooltip>
+          <template #default="scope">
+            <el-link type="primary" @click="handleDownload(scope.row)">
+              {{ scope.row.fileName }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column label="文件说明" align="center" prop="fileDescription" show-overflow-tooltip>
           <template #default="scope">
             {{ scope.row.fileDescription || '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="上传人员" align="center" prop="uploadUserName" width="100" />
+        <el-table-column label="上传人员" align="center" prop="createByName" width="100" />
         <el-table-column label="上传时间" align="center" prop="createTime" width="180">
           <template #default="scope">
             {{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
@@ -215,14 +180,61 @@
       </el-table>
     </el-card>
 
-    <!-- 操作按钮 -->
+    <!-- 第六部分：关联项目列表 -->
+    <el-card class="box-card" style="margin-top: 20px;" v-if="projectList.length > 0">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
+      </template>
+      <el-table :data="projectList" border>
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column label="项目名称" align="center" prop="projectName" show-overflow-tooltip>
+          <template #default="scope">
+            <el-link type="primary" @click="handleViewProject(scope.row.projectId)">
+              {{ scope.row.projectName }}
+            </el-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="预算金额（元）" align="center" prop="projectBudget" width="150">
+          <template #default="scope">
+            {{ formatAmount(scope.row.projectBudget) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="预估工作量（人天）" align="center" prop="estimatedWorkload" width="160">
+          <template #default="scope">
+            {{ scope.row.estimatedWorkload }}
+          </template>
+        </el-table-column>
+        <el-table-column label="实际人天" align="center" prop="actualWorkload" width="150">
+          <template #default="scope">
+            {{ scope.row.actualWorkload || '-' }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 第七部分：备注与审计信息 -->
     <el-card class="box-card" style="margin-top: 20px;">
-      <el-row :gutter="20">
-        <el-col :span="24" style="text-align: center;">
-          <el-button type="primary" icon="Edit" @click="handleEdit" v-hasPermi="['project:contract:edit']">编辑</el-button>
-          <el-button @click="handleBack">返回</el-button>
-        </el-col>
-      </el-row>
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">备注与审计信息</span>
+      </template>
+
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="备注" :span="2" label-class-name="label-bold">
+          {{ detailData.remark || '无' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="创建人" label-class-name="label-bold">
+          {{ detailData.createByName || detailData.createBy }}
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间" label-class-name="label-bold">
+          {{ parseTime(detailData.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
+        </el-descriptions-item>
+        <el-descriptions-item label="更新人" label-class-name="label-bold">
+          {{ detailData.updateByName || detailData.updateBy }}
+        </el-descriptions-item>
+        <el-descriptions-item label="更新时间" label-class-name="label-bold">
+          {{ parseTime(detailData.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
+        </el-descriptions-item>
+      </el-descriptions>
     </el-card>
   </div>
 </template>
@@ -234,6 +246,7 @@ import { listAttachment, downloadAttachment } from "@/api/project/attachment"
 import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
+import { saveAs } from 'file-saver'
 
 const { proxy } = getCurrentInstance()
 const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx')
@@ -336,11 +349,6 @@ function formatAmount(amount) {
   return num.toFixed(2)
 }
 
-/** 编辑按钮 */
-function handleEdit() {
-  router.push({ path: `/project/contract/edit/${detailData.value.contractId}` })
-}
-
 /** 返回按钮 */
 function handleBack() {
   router.back()
@@ -353,8 +361,15 @@ function handleViewProject(projectId) {
 
 /** 下载附件 */
 function handleDownload(row) {
+  proxy.$modal.loading('正在下载文件，请稍候...')
   downloadAttachment(row.attachmentId).then(response => {
-    proxy.download(response)
+    const blob = new Blob([response])
+    saveAs(blob, row.fileName)
+    proxy.$modal.closeLoading()
+    proxy.$modal.msgSuccess('下载成功')
+  }).catch(() => {
+    proxy.$modal.closeLoading()
+    proxy.$modal.msgError('下载失败')
   })
 }
 
@@ -371,7 +386,7 @@ function getAttachmentList(contractId) {
     businessType: 'contract',
     businessId: contractId
   }).then(response => {
-    attachmentList.value = response.rows || []
+    attachmentList.value = response.data || []
   })
 }
 

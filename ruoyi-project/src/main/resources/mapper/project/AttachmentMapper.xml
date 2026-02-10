@@ -115,4 +115,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update pm_attachment set del_flag = '1'
         where business_type = #{businessType} and business_id = #{businessId}
     </delete>
+
+    <select id="countByBusinessTypeAndId" resultType="int">
+        select count(*) from pm_attachment
+        where del_flag = '0'
+            and business_type = #{businessType}
+            and business_id = #{businessId}
+    </select>
 </mapper>
