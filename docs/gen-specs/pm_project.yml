@@ -3674,3 +3674,500 @@ customizations:
          - 记录常见错误和解决方案
 
 
+
+# ============================
+# 页面布局定制记录
+# 日期: 2026-02-09
+# ============================
+
+页面布局优化:
+  
+  编辑页面 (edit.vue):
+    - 实际工作量字段:
+        位置: 预估工作量字段右侧
+        布局: 两列布局 (el-col :span="12")
+        组件: el-input 带"人天"后缀
+        格式: 与预估工作量完全统一
+        验证: 支持 validateOnBlur 验证
+        说明: 在项目基本信息模块中显示
+  
+  立项申请页面 (apply.vue):
+    - 整体布局: 从3列改为2列布局 (:span="8" → :span="12")
+    - 字段排列:
+        第1行: [行业] [一级区域]
+        第2行: [二级区域] [简称]
+        第3行: [立项年度] [项目名称]
+        第4行: [项目编号] [项目分类]
+        第5行: [项目部门] [项目状态]
+        第6行: [验收状态] [预估工作量]
+        第7行: [项目预算] (左侧)
+        第8行: [项目地址] (独占一行)
+        第9行: [销售负责人] [销售联系方式]
+        第10行: [参与人员] (独占一行)
+    - 特殊处理:
+        * 项目地址: 独占一行 (:span="24")
+        * 参与人员: 独占一行 (:span="24")，多选下拉框
+        * 项目编号: 移除格式提示文本
+        * 实际工作量: 仅在编辑页面显示，立项申请页面不显示
+    - 字段位置调整:
+        * 项目名称和项目编号互换位置
+        * 销售负责人和销售联系方式在同一行
+  
+  列表页面 (index.vue):
+    - 公司收入确认人: 从输入框改为用户选择器 (el-select)
+    - 字段类型: 从存储姓名改为存储用户ID
+
+# ============================
+# 字段修改记录
+# 日期: 2026-02-09
+# ============================
+
+字段重构:
+  company_revenue_confirmed_by:
+    原字段名: company_revenue_confirmed_by_name
+    修改内容:
+      - 字段名: company_revenue_confirmed_by_name → company_revenue_confirmed_by
+      - 数据类型: String → Long
+      - 存储内容: 姓名 → 用户ID
+      - 注释: 公司收入确认人姓名 → 公司收入确认人ID
+    影响范围:
+      - 数据库: DDL 和迁移脚本
+      - 后端: Project.java 实体类、ProjectMapper.xml
+      - 前端: index.vue 用户选择器
+      - 配置: gen-specs 和 my02 配置文件
+    迁移脚本: pm-sql/fix_company_revenue_confirmed_by.sql
+
+# ============================
+# 菜单结构清理记录
+# 日期: 2026-02-09
+# ============================
+
+菜单清理:
+  问题: 存在孤儿菜单（parent_id=2034 但父菜单不存在）
+  
+  删除的菜单:
+    - 2035: 立项申请 (parent_id=2034)
+    - 2036: 项目管理 (parent_id=2034)
+    - 2037: 项目管理查询 (parent_id=2036)
+    - 2038: 项目管理新增 (parent_id=2036)
+    - 2039: 项目管理修改 (parent_id=2036)
+    - 2040: 项目管理删除 (parent_id=2036)
+    - 2041: 项目管理导出 (parent_id=2036)
+  
+  保留的菜单结构:
+    项目管理 (2059) - 一级菜单
+    ├── 立项申请 (2060)
+    ├── 项目管理 (2061)
+    ├── 立项审核 (2069)
+    ├── 编辑项目 (2043) - 隐藏路由
+    └── 项目详情 (2044) - 隐藏路由
+  
+  清理脚本: pm-sql/fix_remove_orphan_menus.sql
+
+# ============================
+# 数据库配置修正记录
+# 日期: 2026-02-09
+# ============================
+
+数据库连接配置:
+  文件: ruoyi-admin/src/main/resources/application-druid.yml
+  修改内容:
+    - 数据库名: ry → ry-vue
+    - 密码: 123456 → password
+
+# ============================
+# 公司收入确认功能配置
+# 日期: 2026-02-10
+# ============================
+
+公司收入确认管理:
+  功能描述: 经营管理角色用户操作收入确认
+
+  菜单结构:
+    一级菜单: 收入确认管理
+    二级菜单: 公司收入确认
+    权限标识:
+      - revenue:company:list   # 查询
+      - revenue:company:view   # 查看
+      - revenue:company:edit   # 编辑
+      - revenue:company:export # 导出
+
+  页面布局:
+    类型: 抽屉 (Drawer)
+    方向: 从右侧滑出 (rtl)
+    尺寸: 80%
+
+    左侧区域 (60%):
+      标题: 项目信息
+      内容: 6个卡片
+      卡片列表:
+        1. 项目基本信息:
+            字段:
+              - 行业 (industry) - 字典标签 industry
+              - 区域 (region) - 字典标签 sys_yjqy
+              - 简称 (shortName)
+              - 立项年份 (establishedYear)
+              - 项目编号 (projectCode)
+              - 项目名称 (projectName)
+              - 项目分类 (projectCategory) - 字典标签 sys_xmfl
+              - 项目部门 (deptName)
+              - 预估工作量 (estimatedWorkload) - 人天
+              - 项目状态 (projectStatus) - 字典标签 sys_xmjd
+              - 验收状态 (acceptanceStatus) - 字典标签 sys_yszt
+              - 审核状态 (approvalStatus) - 字典标签 sys_spzt
+              - 项目地址 (projectAddress)
+              - 项目计划 (projectPlan) - 文本域
+              - 项目描述 (projectDescription) - 文本域
+              - 审核意见 (approvalReason)
+            布局: 2列 (el-descriptions :column="2")
+
+        2. 人员配置:
+            字段:
+              - 项目经理 (projectManagerName)
+              - 市场经理 (marketManagerName)
+              - 销售负责人 (salesManagerName)
+              - 销售联系方式 (salesContact)
+              - 参与人员 (participantsNames)
+            布局: 2列
+
+        3. 客户信息:
+            字段:
+              - 客户简称 (customerName)
+              - 客户联系人 (customerContactName)
+              - 客户联系方式 (customerContactPhone)
+              - 商户联系人 (merchantContact)
+              - 商户联系方式 (merchantPhone)
+            布局: 2列
+
+        4. 时间规划:
+            字段:
+              - 启动日期 (startDate)
+              - 结束日期 (endDate)
+              - 投产日期 (productionDate)
+              - 验收日期 (acceptanceDate)
+            布局: 2列
+
+        5. 成本预算:
+            字段:
+              - 项目预算 (projectBudget) - 元
+              - 项目费用 (projectCost) - 元
+              - 费用预算 (costBudget) - 元
+              - 成本预算 (budgetCost) - 元
+              - 人力费用 (laborCost) - 元
+              - 采购成本 (purchaseCost) - 元
+            布局: 2列
+
+        6. 备注:
+            字段:
+              - 备注 (remark) - 文本域
+            布局: 1列
+
+    右侧区域 (40%):
+      标题: 收入确认信息
+      内容: 表单
+      表单字段:
+        1. 收入确认状态 (revenueConfirmStatus):
+            类型: 只读显示
+            字典: sys_srqrzt
+            值: 0=未确认, 1=已确认
+            显示: 字典标签
+
+        2. 收入确认年度 (revenueConfirmYear):
+            类型: 下拉选择 (el-select)
+            字典: sys_ndgl
+            必填: true
+            验证: 收入确认年度不能为空
+
+        3. 确认金额（含税）(confirmAmount):
+            类型: 数字输入 (el-input-number)
+            单位: 元
+            精度: 2位小数
+            必填: true
+            验证: 确认金额不能为空
+            事件: @change 触发税后金额计算
+
+        4. 税率 (taxRate):
+            类型: 数字输入 (el-input-number)
+            单位: %
+            精度: 2位小数
+            必填: true
+            验证: 税率不能为空
+            快捷按钮: [6%, 13%]
+            事件: @change 触发税后金额计算
+
+        5. 税后金额 (afterTaxAmount):
+            类型: 只读显示
+            单位: 元
+            精度: 2位小数
+            计算公式: afterTaxAmount = confirmAmount / (1 + taxRate/100)
+            自动计算: 监听 confirmAmount 和 taxRate 变化
+
+        6. 备注 (remark):
+            类型: 文本域 (el-input type="textarea")
+            行数: 3
+            必填: false
+
+        7. 确认人 (companyRevenueConfirmedBy):
+            显示条件: revenueConfirmStatus === '1'
+            类型: 只读显示
+            显示内容: 用户昵称（通过 userMap 映射）
+            数据来源: listUser() API
+
+        8. 确认时间 (companyRevenueConfirmedTime):
+            显示条件: revenueConfirmStatus === '1'
+            类型: 只读显示
+            格式: yyyy-MM-dd HH:mm:ss
+
+  列表页面:
+    路由: /revenue/company
+    组件: ruoyi-ui/src/views/revenue/company/index.vue
+
+    查询条件:
+      - 项目名称 (projectName) - 模糊查询
+      - 项目部门 (projectDept) - 树形选择
+      - 收入确认年度 (revenueConfirmYear) - 字典 sys_ndgl
+      - 收入确认状态 (revenueConfirmStatus) - 字典 sys_srqrzt
+      - 项目分类 (projectCategory) - 字典 sys_xmfl
+      - 一级区域 (region) - 字典 sys_yjqy
+      - 项目经理 (projectManagerId) - 用户选择
+
+    列表字段:
+      - 序号 (type="index")
+      - 项目名称 (projectName)
+      - 项目部门 (deptName)
+      - 项目经理 (projectManagerName)
+      - 项目分类 (projectCategory) - 字典标签
+      - 项目预算 (projectBudget)
+      - 预估工作量 (estimatedWorkload)
+      - 实际人天 (actualWorkload)
+      - 合同金额 (contractAmount)
+      - 收入确认年度 (revenueConfirmYear) - 字典标签
+      - 合同状态 (contractStatus)
+      - 收入确认状态 (revenueConfirmStatus) - 字典标签
+      - 确认金额 (confirmAmount)
+      - 参与人员 (participantsNames)
+      - 启动日期 (startDate)
+      - 结束日期 (endDate)
+      - 验收日期 (acceptanceDate)
+      - 审核状态 (approvalStatus) - 字典标签
+      - 项目状态 (projectStatus) - 字典标签
+      - 验收状态 (acceptanceStatus) - 字典标签
+      - 更新人 (updateBy)
+      - 更新时间 (updateTime)
+      - 操作 (fixed="right")
+
+    操作按钮:
+      - 收入确认 (revenueConfirmStatus === '0'):
+          图标: Edit
+          类型: primary
+          权限: revenue:company:edit
+          事件: handleConfirm(row)
+
+      - 查看确认 (revenueConfirmStatus === '1'):
+          图标: View
+          类型: success
+          权限: revenue:company:view
+          事件: handleView(row)
+
+  后端接口:
+    控制器: ProjectController.java
+
+    接口列表:
+      1. 查询收入确认列表:
+          路径: GET /project/project/revenueList
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:list')")
+          参数: Project (查询条件)
+          返回: TableDataInfo
+
+      2. 获取收入确认详情:
+          路径: GET /project/project/revenue/{projectId}
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:query')")
+          参数: projectId (路径参数)
+          返回: AjaxResult<Project>
+
+      3. 更新收入确认信息:
+          路径: PUT /project/project/revenueConfirm
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:edit')")
+          参数: Project (请求体)
+          返回: AjaxResult
+          自动处理:
+            - revenueConfirmStatus = '1' (已确认)
+            - companyRevenueConfirmedBy = 当前用户ID
+            - companyRevenueConfirmedTime = 当前时间
+            - afterTaxAmount = confirmAmount / (1 + taxRate/100)
+
+      4. 导出收入确认列表:
+          路径: POST /project/project/revenueExport
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:export')")
+          参数: Project (查询条件)
+          返回: Excel 文件
+
+  数据库字段:
+    表名: pm_project
+
+    收入确认相关字段:
+      - revenue_confirm_year (varchar(10)) - 收入确认年度
+      - revenue_confirm_status (char(1)) - 收入确认状态 (0=未确认, 1=已确认)
+      - confirm_amount (decimal(10,2)) - 确认金额（含税）
+      - tax_rate (decimal(5,2)) - 税率(%)
+      - after_tax_amount (decimal(10,2)) - 税后金额
+      - company_revenue_confirmed_by (bigint) - 公司收入确认人ID
+      - company_revenue_confirmed_time (datetime) - 公司收入确认时间
+
+  字典配置:
+    sys_srqrzt (收入确认状态):
+      - 0: 未确认
+      - 1: 已确认
+
+    sys_ndgl (年度管理):
+      - 2024: 2024年
+      - 2025: 2025年
+      - 2026: 2026年
+
+  业务规则:
+    1. 税后金额自动计算:
+        公式: 税后金额 = 确认金额 / (1 + 税率/100)
+        精度: 保留2位小数，四舍五入
+        触发: confirmAmount 或 taxRate 变化时
+
+    2. 确认人自动记录:
+        时机: 保存收入确认信息时
+        值: 当前登录用户ID
+        不可手动修改
+
+    3. 确认时间自动记录:
+        时机: 保存收入确认信息时
+        值: 当前系统时间
+        不可手动修改
+
+    4. 状态自动更新:
+        时机: 保存收入确认信息时
+        值: 自动设置为 '1' (已确认)
+        不可手动修改
+
+    5. 查看模式和编辑模式:
+        未确认 (status='0'): 显示"收入确认"按钮，打开编辑模式
+        已确认 (status='1'): 显示"查看确认"按钮，打开查看模式
+        查看模式: 所有字段只读，显示确认人和确认时间
+        编辑模式: 可编辑收入确认字段
+
+  前端组件:
+    列表页: ruoyi-ui/src/views/revenue/company/index.vue
+    抽屉组件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+    API封装: ruoyi-ui/src/api/revenue/company.ts
+
+  技术要点:
+    1. 用户映射:
+        - 使用 userMap 存储 userId → nickName 映射
+        - 打开抽屉时调用 listUser() 获取所有用户
+        - getUserName(userId) 函数从 userMap 查找昵称
+
+    2. 字典标签:
+        - 使用 <dict-tag> 组件显示字典值
+        - 需要在 useDict() 中声明所需字典
+        - 字典列表: sys_srqrzt, sys_ndgl, industry, sys_yjqy, sys_xmfl, sys_xmjd, sys_yszt, sys_spzt
+
+    3. 数据刷新:
+        - 抽屉组件通过 emit('refresh') 通知父组件
+        - 父组件监听 @refresh 事件，调用 getList() 刷新列表
+
+    4. 表单验证:
+        - 收入确认年度: 必填
+        - 确认金额: 必填
+        - 税率: 必填
+        - 使用 el-form 的 rules 属性配置验证规则
+
+  测试要点:
+    1. 列表页面正常显示
+    2. 查询条件正常工作
+    3. 未确认项目显示"收入确认"按钮
+    4. 已确认项目显示"查看确认"按钮
+    5. 抽屉正常打开和关闭
+    6. 项目信息正确展示（6个卡片）
+    7. 收入确认表单正常编辑
+    8. 税后金额自动计算正确
+    9. 税率快捷按钮正常工作
+    10. 保存后状态自动更新为"已确认"
+    11. 确认人显示用户昵称（不是ID）
+    12. 确认时间正确显示
+    13. 导出功能正常
+    14. 权限控制正常
+    15. 保存后列表自动刷新
+  原因: 与 Docker MySQL 容器配置保持一致
+
+# ============================
+# 定制功能说明
+# 日期: 2026-02-10
+# ============================
+
+customizations:
+  公司收入确认管理:
+    说明: 基于 pm_project 表的专用收入确认界面
+    表名: pm_project
+    实现方式: 自定义前端页面（非代码生成器生成）
+
+    菜单结构:
+      一级菜单: 收入确认管理
+      二级菜单: 公司收入确认
+      路由: /revenue/company
+      权限标识:
+        - revenue:company:list   # 查询
+        - revenue:company:view   # 查看
+        - revenue:company:edit   # 编辑
+        - revenue:company:export # 导出
+
+    文件位置:
+      后端:
+        - 控制器: ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectController.java
+        - 接口方法:
+            - GET /project/project/revenueList - 查询收入确认列表
+            - GET /project/project/revenue/{projectId} - 获取收入确认详情
+            - PUT /project/project/revenueConfirm - 更新收入确认信息
+            - POST /project/project/revenueExport - 导出收入确认列表
+
+      前端:
+        - 列表页: ruoyi-ui/src/views/revenue/company/index.vue
+        - 抽屉组件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+        - API封装: ruoyi-ui/src/api/revenue/company.ts
+
+    使用字段:
+      核心字段:
+        - revenue_confirm_year: 收入确认年度（必填）
+        - revenue_confirm_status: 收入确认状态（0=未确认, 1=已确认）
+        - confirm_amount: 确认金额（含税，必填）
+        - tax_rate: 税率（%，必填）
+        - after_tax_amount: 税后金额（自动计算）
+        - company_revenue_confirmed_by: 公司收入确认人ID（自动设置）
+        - company_revenue_confirmed_time: 公司收入确认时间（自动设置）
+        - remark: 备注
+
+      显示字段（项目信息）:
+        - 项目基本信息: project_code, project_name, industry, region, short_name, established_year, project_category, dept_name, estimated_workload, project_status, acceptance_status, approval_status, project_address, project_plan, project_description, approval_reason
+        - 人员配置: project_manager_name, market_manager_name, sales_manager_name, sales_contact, participants_names
+        - 客户信息: customer_name, customer_contact_name, customer_contact_phone, merchant_contact, merchant_phone
+        - 时间规划: start_date, end_date, production_date, acceptance_date
+        - 成本预算: project_budget, project_cost, cost_budget, budget_cost, labor_cost, purchase_cost
+
+    业务规则:
+      自动计算:
+        - 税后金额 = 确认金额 / (1 + 税率/100)
+        - 精度: 保留2位小数，四舍五入
+
+      自动设置:
+        - 保存时自动设置 revenue_confirm_status = '1'（已确认）
+        - 保存时自动设置 company_revenue_confirmed_by = 当前登录用户ID
+        - 保存时自动设置 company_revenue_confirmed_time = 当前时间
+
+      显示逻辑:
+        - 确认人和确认时间仅在 revenue_confirm_status === '1' 时显示
+        - 确认人显示用户昵称（通过 userMap 映射）
+        - 操作按钮根据 revenue_confirm_status 动态显示
+
+    与项目管理的关系:
+      - 共用同一个数据表: pm_project
+      - 共用同一个实体类: Project.java
+      - 共用同一个 Service: ProjectService
+      - 共用同一个 Mapper: ProjectMapper
+      - 不同的前端页面和路由
+      - 不同的菜单和权限标识
+      - 专注于收入确认相关字段的操作

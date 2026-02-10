@@ -94,49 +94,69 @@
     <!-- 数据表格 -->
     <el-table v-loading="loading" :data="revenueList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="项目编号" align="center" prop="projectCode" width="180" />
-      <el-table-column label="项目名称" align="center" prop="projectName" width="200" show-overflow-tooltip />
-      <el-table-column label="项目部门" align="center" prop="deptName" width="120" />
-      <el-table-column label="确认金额（含税）" align="center" prop="confirmAmount" width="120">
+      <el-table-column label="序号" type="index" width="55" align="center" />
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目部门" align="center" prop="deptName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
+      <el-table-column label="项目分类" align="center" prop="projectCategory" width="100">
         <template #default="scope">
-          <span v-if="scope.row.confirmAmount">{{ parseFloat(scope.row.confirmAmount).toFixed(2) }}</span>
-          <span v-else>-</span>
+          <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
         </template>
       </el-table-column>
-      <el-table-column label="税率" align="center" prop="taxRate" width="80">
-        <template #default="scope">
-          <span v-if="scope.row.taxRate">{{ scope.row.taxRate }}%</span>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" width="120">
-        <template #default="scope">
-          <span v-if="scope.row.afterTaxAmount">{{ parseFloat(scope.row.afterTaxAmount).toFixed(2) }}</span>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="100">
+      <el-table-column label="项目预算" align="center" prop="projectBudget" width="120" />
+      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" width="100" />
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100" />
+      <el-table-column label="合同金额" align="center" prop="contractAmount" width="120" />
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
         <template #default="scope">
           <dict-tag :options="sys_ndgl" :value="scope.row.revenueConfirmYear"/>
         </template>
       </el-table-column>
-      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" width="100">
+      <el-table-column label="合同状态" align="center" prop="contractStatus" width="100" />
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" width="120">
         <template #default="scope">
           <dict-tag :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="确认人" align="center" prop="companyRevenueConfirmedBy" width="100">
+      <el-table-column label="确认金额" align="center" prop="confirmAmount" width="120" />
+      <el-table-column label="参与人员" align="center" prop="participantsNames" min-width="150" show-overflow-tooltip />
+      <el-table-column label="启动日期" align="center" prop="startDate" width="110">
         <template #default="scope">
-          <span v-if="scope.row.companyRevenueConfirmedBy">{{ getUserName(scope.row.companyRevenueConfirmedBy) }}</span>
-          <span v-else>-</span>
+          <span>{{ parseTime(scope.row.startDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="确认时间" align="center" prop="companyRevenueConfirmedTime" width="160">
+      <el-table-column label="结束日期" align="center" prop="endDate" width="110">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.companyRevenueConfirmedTime) }}</span>
+          <span>{{ parseTime(scope.row.endDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150">
+      <el-table-column label="验收日期" align="center" prop="acceptanceDate" width="110">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.acceptanceDate, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="审核状态" align="center" prop="approvalStatus" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_spzt" :value="scope.row.approvalStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目状态" align="center" prop="projectStatus" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_xmjd" :value="scope.row.projectStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="验收状态" align="center" prop="acceptanceStatus" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="更新人" align="center" prop="updateBy" width="100" />
+      <el-table-column label="更新时间" align="center" prop="updateTime" width="110">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.updateTime, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
           <!-- 未确认：显示"收入确认"按钮 -->
           <el-button
@@ -168,16 +188,22 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 收入确认抽屉 -->
+    <RevenueConfirmDrawer
+      ref="drawerRef"
+      @refresh="getList"
+    />
   </div>
 </template>
 
 <script setup name="RevenueCompany">
 import { listRevenueCompany, exportRevenueCompany } from "@/api/revenue/company";
-import { listUser } from "@/api/system/user";
-import { deptTreeSelect } from "@/api/system/dept";
+import { listUser, deptTreeSelect } from "@/api/system/user";
+import RevenueConfirmDrawer from './components/RevenueConfirmDrawer.vue';
 
 const { proxy } = getCurrentInstance();
-const { sys_srqrzt, sys_ndgl, sys_xmfl, sys_yjqy } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'sys_xmfl', 'sys_yjqy');
+const { sys_srqrzt, sys_ndgl, sys_xmfl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'sys_xmfl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt');
 
 const revenueList = ref([]);
 const loading = ref(true);
@@ -187,6 +213,7 @@ const total = ref(0);
 const deptOptions = ref([]);
 const userList = ref([]);
 const userMap = ref({});
+const drawerRef = ref(null);
 
 const data = reactive({
   queryParams: {
@@ -256,14 +283,12 @@ function handleSelectionChange(selection) {
 
 /** 收入确认按钮操作 */
 function handleConfirm(row) {
-  // TODO: 打开收入确认抽屉（编辑模式）
-  proxy.$modal.msgSuccess("收入确认功能待实现");
+  drawerRef.value.open(row.projectId, false);
 }
 
 /** 查看确认按钮操作 */
 function handleView(row) {
-  // TODO: 打开收入确认抽屉（查看模式）
-  proxy.$modal.msgSuccess("查看确认功能待实现");
+  drawerRef.value.open(row.projectId, true);
 }
 
 /** 导出按钮操作 */

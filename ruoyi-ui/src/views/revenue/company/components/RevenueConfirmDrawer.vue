@@ -18,17 +18,38 @@
               </div>
             </template>
             <el-descriptions :column="2" border>
-              <el-descriptions-item label="项目编号">{{ projectData.projectCode }}</el-descriptions-item>
-              <el-descriptions-item label="项目名称">{{ projectData.projectName }}</el-descriptions-item>
-              <el-descriptions-item label="项目全称" :span="2">{{ projectData.projectFullName || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="行业">{{ projectData.industry }}</el-descriptions-item>
-              <el-descriptions-item label="一级区域">{{ projectData.region }}</el-descriptions-item>
-              <el-descriptions-item label="二级区域">{{ projectData.provinceName || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="立项年份">{{ projectData.establishedYear }}</el-descriptions-item>
-              <el-descriptions-item label="项目分类">{{ projectData.projectCategory }}</el-descriptions-item>
-              <el-descriptions-item label="项目部门">{{ projectData.deptName }}</el-descriptions-item>
-              <el-descriptions-item label="项目状态">{{ projectData.projectStatus }}</el-descriptions-item>
-              <el-descriptions-item label="验收状态">{{ projectData.acceptanceStatus }}</el-descriptions-item>
+              <el-descriptions-item label="行业">
+                <dict-tag :options="industry" :value="projectData.industry" />
+              </el-descriptions-item>
+              <el-descriptions-item label="区域">
+                <dict-tag :options="sys_yjqy" :value="projectData.region" />
+              </el-descriptions-item>
+              <el-descriptions-item label="简称">{{ projectData.shortName || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="立项年份">{{ projectData.establishedYear || '-' }} 年</el-descriptions-item>
+              <el-descriptions-item label="项目编号" :span="2">{{ projectData.projectCode || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="项目名称" :span="2">{{ projectData.projectName || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="项目分类">
+                <dict-tag :options="sys_xmfl" :value="projectData.projectCategory" />
+              </el-descriptions-item>
+              <el-descriptions-item label="项目部门">{{ projectData.deptName || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+              <el-descriptions-item label="项目状态">
+                <dict-tag :options="sys_xmjd" :value="projectData.projectStatus" />
+              </el-descriptions-item>
+              <el-descriptions-item label="验收状态">
+                <dict-tag :options="sys_yszt" :value="projectData.acceptanceStatus" />
+              </el-descriptions-item>
+              <el-descriptions-item label="审核状态">
+                <dict-tag :options="sys_spzt" :value="projectData.approvalStatus" />
+              </el-descriptions-item>
+              <el-descriptions-item label="项目地址" :span="2">{{ projectData.projectAddress || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="项目计划" :span="2">
+                <div class="text-content">{{ projectData.projectPlan || '-' }}</div>
+              </el-descriptions-item>
+              <el-descriptions-item label="项目描述" :span="2">
+                <div class="text-content">{{ projectData.projectDescription || '-' }}</div>
+              </el-descriptions-item>
+              <el-descriptions-item label="审核意见" :span="2">{{ projectData.approvalReason || '-' }}</el-descriptions-item>
             </el-descriptions>
           </el-card>
 
@@ -60,7 +81,7 @@
               <el-descriptions-item label="客户联系人">{{ projectData.customerContactName || '-' }}</el-descriptions-item>
               <el-descriptions-item label="客户联系方式">{{ projectData.customerContactPhone || '-' }}</el-descriptions-item>
               <el-descriptions-item label="商户联系人">{{ projectData.merchantContact || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="商户联系方式">{{ projectData.merchantPhone || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="商户联系方式" :span="2">{{ projectData.merchantPhone || '-' }}</el-descriptions-item>
             </el-descriptions>
           </el-card>
 
@@ -72,10 +93,10 @@
               </div>
             </template>
             <el-descriptions :column="2" border>
-              <el-descriptions-item label="启动日期">{{ parseTime(projectData.startDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="结束日期">{{ parseTime(projectData.endDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="投产日期">{{ parseTime(projectData.productionDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="验收日期">{{ parseTime(projectData.acceptanceDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="启动日期">{{ projectData.startDate || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="结束日期">{{ projectData.endDate || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="投产日期">{{ projectData.productionDate || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="验收日期">{{ projectData.acceptanceDate || '-' }}</el-descriptions-item>
             </el-descriptions>
           </el-card>
 
@@ -87,14 +108,12 @@
               </div>
             </template>
             <el-descriptions :column="2" border>
-              <el-descriptions-item label="项目预算">{{ formatMoney(projectData.projectBudget) }}</el-descriptions-item>
-              <el-descriptions-item label="项目费用">{{ formatMoney(projectData.projectCost) }}</el-descriptions-item>
-              <el-descriptions-item label="费用预算">{{ formatMoney(projectData.expenseBudget) }}</el-descriptions-item>
-              <el-descriptions-item label="成本预算">{{ formatMoney(projectData.costBudget) }}</el-descriptions-item>
-              <el-descriptions-item label="人力费用">{{ formatMoney(projectData.laborCost) }}</el-descriptions-item>
-              <el-descriptions-item label="采购成本">{{ formatMoney(projectData.purchaseCost) }}</el-descriptions-item>
-              <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || '-' }} 人天</el-descriptions-item>
-              <el-descriptions-item label="实际工作量">{{ projectData.actualWorkload || '-' }} 人天</el-descriptions-item>
+              <el-descriptions-item label="项目预算">{{ projectData.projectBudget || 0 }} 元</el-descriptions-item>
+              <el-descriptions-item label="项目费用">{{ projectData.projectCost || 0 }} 元</el-descriptions-item>
+              <el-descriptions-item label="费用预算">{{ projectData.costBudget || 0 }} 元</el-descriptions-item>
+              <el-descriptions-item label="成本预算">{{ projectData.budgetCost || 0 }} 元</el-descriptions-item>
+              <el-descriptions-item label="人力费用">{{ projectData.laborCost || 0 }} 元</el-descriptions-item>
+              <el-descriptions-item label="采购成本">{{ projectData.purchaseCost || 0 }} 元</el-descriptions-item>
             </el-descriptions>
           </el-card>
 
@@ -210,7 +229,7 @@
                 <span>{{ getUserName(projectData.companyRevenueConfirmedBy) }}</span>
               </el-form-item>
               <el-form-item v-if="projectData.revenueConfirmStatus === '1'" label="确认时间">
-                <span>{{ parseTime(projectData.companyRevenueConfirmedTime) }}</span>
+                <span>{{ projectData.companyRevenueConfirmedTime ? parseTime(projectData.companyRevenueConfirmedTime) : '-' }}</span>
               </el-form-item>
 
               <!-- 操作按钮 -->
@@ -228,15 +247,17 @@
 
 <script setup name="RevenueConfirmDrawer">
 import { getRevenueCompany, updateRevenueConfirm } from "@/api/revenue/company";
+import { listUser } from "@/api/system/user";
 
 const { proxy } = getCurrentInstance();
-const { sys_srqrzt, sys_ndgl } = proxy.useDict('sys_srqrzt', 'sys_ndgl');
+const { sys_srqrzt, sys_ndgl, industry, sys_yjqy, sys_xmfl, sys_xmjd, sys_yszt, sys_spzt } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_spzt');
 
 const emit = defineEmits(['refresh']);
 
 const visible = ref(false);
 const mode = ref('edit'); // 'view' | 'edit'
 const projectData = ref({});
+const userMap = ref({});
 const formData = ref({
   projectId: null,
   revenueConfirmYear: null,
@@ -271,8 +292,15 @@ const drawerTitle = computed(() => {
 /** 打开抽屉 */
 function open(projectId, viewMode = false) {
   mode.value = viewMode ? 'view' : 'edit';
+  // 获取用户列表
+  getUserList();
+  // 获取项目数据
   getRevenueCompany(projectId).then(response => {
     projectData.value = response.data;
+    console.log('项目数据:', projectData.value);
+    console.log('确认时间:', projectData.value.companyRevenueConfirmedTime);
+    console.log('确认人ID:', projectData.value.companyRevenueConfirmedBy);
+    console.log('确认状态:', projectData.value.revenueConfirmStatus);
     // 初始化表单数据
     formData.value = {
       projectId: projectData.value.projectId,
@@ -283,6 +311,17 @@ function open(projectId, viewMode = false) {
       remark: projectData.value.remark
     };
     visible.value = true;
+  });
+}
+
+/** 获取用户列表 */
+function getUserList() {
+  listUser().then(response => {
+    const users = response.rows;
+    userMap.value = {};
+    users.forEach(user => {
+      userMap.value[user.userId] = user.nickName;
+    });
   });
 }
 
@@ -336,8 +375,7 @@ function formatMoney(value) {
 
 /** 获取用户名 */
 function getUserName(userId) {
-  // TODO: 从用户列表中获取用户名
-  return userId || '-';
+  return userMap.value[userId] || '-';
 }
 
 defineExpose({

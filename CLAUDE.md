@@ -4,18 +4,60 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RuoYi-Vue v3.9.1 — Enterprise admin system with separated frontend/backend.
+RuoYi-Vue v3.9.1 — Enterprise admin system with separated frontend/backend, customized for **Project Management (PM)** business.
+
 - **Backend:** Java 17 / Spring Boot 3.5.8 / Spring Security / MyBatis / Redis / JWT
 - **Frontend:** Vue 3.5 / TypeScript 5.6 / Vite 6.4 / Element Plus 2.13 / Pinia
+- **Business Domain:** Project lifecycle management, customer management, contract management, approval workflows, daily reports, and revenue recognition
+
+## Quick Start
+
+**First-time setup:**
+
+```bash
+# 1. Ensure MySQL 8.x and Redis are running
+# 2. Create database and import schema
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS ry_vue CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p ry_vue < pm-sql/init/00_tables_ddl.sql
+mysql -u root -p ry_vue < pm-sql/init/01_tables_data.sql
+mysql -u root -p ry_vue < pm-sql/init/02_menu_data.sql
+
+# 3. Build and run backend
+mvn clean package -Dmaven.test.skip=true
+java -Xms512m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar
+# Or use the helper script: ./ry.sh start
+
+# 4. In another terminal, run frontend
+cd ruoyi-ui && npm install && npm run dev
+```
+
+**Access:** http://localhost (default credentials: `admin/admin123`)
+
+**Helper scripts:**
+- `ry.sh` / `ry.bat` - Quick start/stop/restart scripts for backend server
+  - `./ry.sh start` - Start backend service
+  - `./ry.sh stop` - Stop backend service
+  - `./ry.sh restart` - Restart backend service
+  - `./ry.sh status` - Check service status
 
 ## Build & Run Commands
 
 ### Backend (from project root)
 
 ```bash
-mvn clean package -Dmaven.test.skip=true        # Build JAR
-java -Xms256m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar  # Run
-mvn clean                                        # Clean
+# Full build
+mvn clean package -Dmaven.test.skip=true        # Build all modules
+java -Xms512m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar  # Run
+# Or use: ./ry.sh start
+
+# Module-specific build
+mvn clean package -pl ruoyi-admin -am -Dmaven.test.skip=true     # Build admin module with dependencies
+mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true   # Build CLI generator only
+mvn clean compile -pl ruoyi-project -am                          # Compile project module only
+
+# Clean
+mvn clean                                        # Clean all
+mvn clean -pl ruoyi-project                      # Clean specific module
 ```
 
 ### Frontend (from ruoyi-ui/)
@@ -36,17 +78,28 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli.jar --sql=<ddl>.sql --config=<confi
 
 The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use the `/ruoyi-gen` skill for interactive code generation.
 
-### E2E Testing (from project root)
+### E2E Testing (from project root) - 🚧 Planned
+
+**Note:** E2E testing infrastructure is configured but test cases are not yet implemented.
 
 ```bash
 npx playwright install                    # Install browsers (first time only)
-npx playwright test                       # Run all E2E tests
+npx playwright test                       # Run all E2E tests (when implemented)
+npx playwright test tests/project.spec.ts # Run specific test file
 npx playwright test --ui                  # Run tests in UI mode
 npx playwright test --headed              # Run tests in headed mode
+npx playwright test --debug               # Run tests in debug mode
 npx playwright show-report                # View test report
 ```
 
-**Test Configuration**: `playwright.config.js` - Playwright E2E tests for project management features. Tests are in `tests/` directory.
+**Test Configuration**: `playwright.config.js` - Playwright E2E test configuration is ready.
+
+**Planned Test Coverage:**
+- Project creation and approval workflow
+- Customer and contact management
+- Contract and payment tracking
+- Daily report submission and statistics
+- Revenue recognition workflow
 
 ### Prerequisites
 
@@ -107,13 +160,47 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
   - Approval reason/comments
   - Approver tracking with timestamp
 
+**Business Workflows (from `docs/pm/PM需求.md`):**
+
+1. **Project Initiation (立项申请):**
+   - Project manager/market manager submits new project application
+   - System generates project code: `{industry}-{region}-{shortName}-{year}`
+   - Includes: basic info, personnel, customer, timeline, cost budget
+   - Status: 待审核 (pending approval)
+
+2. **Project Approval (项目审核):**
+   - Project supervisor reviews and approves/rejects applications
+   - Approval actions: 通过 (approve), 不通过 (reject)
+   - Tracks approval history with comments
+
+3. **Contract Management (合同管理):**
+   - Link contracts to projects
+   - Track contract status: 未签署/已签署
+   - Payment tracking with multiple payment terms
+   - Payment status: 未开未付, 已提交验收材料, 验收材料已审核, 待通知开票, 已通知
+
+4. **Daily Reports (工作日报):**
+   - Employees submit daily work reports linked to projects
+   - Track actual workload (person-days) per project
+   - Calendar view for team daily reports
+   - Statistics: project person-day aggregation, team reports
+
+5. **Revenue Recognition (收入确认):**
+   - Confirm project revenue by year
+   - Track confirmation status: 未确认, 待确认, 已确认, 无法确认
+   - Link to contract payments and project completion
+
 **Dictionary Dependencies:**
 
 - `industry` - 行业分类
-- `sys_yjqy` - 区域分类
-- `sys_xmfl` - 项目分类
-- `sys_xmjd` - 项目阶段
+- `sys_yjqy` - 区域分类 (一级区域, 二级区域)
+- `sys_xmfl` - 项目分类 (软件开发类, 硬件销售类, 系统集成类, 开发人力外包, 运维人力外包, 测试人力外包)
+- `sys_xmjd` - 项目阶段 (需求分析, 设计阶段, 开发阶段, 部署阶段, 测试阶段, 运维阶段)
 - `sys_yszt` - 验收状态
+- `sys_xmzt` - 项目状态 (未启动, 已启动, 已测试, 已投产, 已结项, 已关闭)
+- `sys_htzt` - 合同状态 (未签署, 已签署)
+- `sys_fkzt` - 付款状态 (未开未付, 已提交验收材料, 验收材料已审核, 待通知开票, 已通知)
+- `sys_qrzt` - 确认状态 (未确认, 待确认, 已确认, 无法确认)
 
 **Controllers:**
 
@@ -200,6 +287,27 @@ public AjaxResult add(@Validated @RequestBody Entity entity) {
 
 Vue 3 + TypeScript + Vite + Element Plus + Pinia + Vue Router 4
 
+### Directory Structure (ruoyi-ui/)
+
+```
+src/
+├── api/              → API functions (typed with interfaces from types/)
+├── assets/           → Static assets (images, styles)
+├── components/       → Reusable Vue components
+├── directive/        → Custom directives (v-hasPermi, v-hasRole, etc.)
+├── layout/           → Layout components (navbar, sidebar, tags-view)
+├── plugins/          → Plugin configurations (modal, download, cache, etc.)
+├── router/           → Vue Router configuration
+├── store/            → Pinia stores (user, app, permission, settings, tagsView, dict)
+├── types/            → TypeScript type definitions
+│   └── api/          → API response types
+├── utils/            → Utility functions (request.ts, auth.ts, etc.)
+└── views/            → Page components
+    ├── system/       → System management pages
+    ├── project/      → Project management pages (custom business)
+    └── ...
+```
+
 ### API Layer
 
 API functions in `src/api/` are fully typed with interfaces from `src/types/`. Pattern:
@@ -260,6 +368,19 @@ Registered in `main.ts`: DictTag, Pagination, FileUpload, ImageUpload, ImagePrev
 
 All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>`, `BaseEntity`, `PageDomain`
 
+### Development Tips
+
+**Debugging Frontend:**
+- Use Vue DevTools browser extension to inspect component state and Pinia stores
+- Check Network tab for API calls (look for `/dev-api` prefix)
+- Console errors often indicate missing permissions or incorrect API responses
+- Use `console.log(proxy)` in setup() to see available global properties (but don't use `proxy.$http`)
+
+**Hot Module Replacement (HMR):**
+- Vite dev server supports HMR - changes to `.vue` files reflect immediately
+- If HMR breaks, restart dev server: `Ctrl+C` then `npm run dev`
+- Changes to `router/index.ts` or `store/` may require manual refresh
+
 ## Configuration Files
 
 ### Backend
@@ -284,10 +405,15 @@ All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>
 ## Database Schema
 
 Database initialization scripts are in `pm-sql/init/`:
-- `00_tables_ddl.sql` - Table structure definitions
+- `00_tables_ddl.sql` - Table structure definitions (all business tables)
 - `01_tables_data.sql` - Initial data and dictionary entries
+- `02_menu_data.sql` - Menu and permission data for UI navigation
 
-When adding new business modules, place DDL files in `pm-sql/init/` for the `/ruoyi-gen` skill to discover.
+**Database name:** `ry_vue` (MySQL 8.x, charset: `utf8mb4`, collation: `utf8mb4_unicode_ci`)
+
+When adding new business modules, place DDL files in `pm-sql/init/00_tables_ddl.sql` for the `/ruoyi-gen` skill to discover.
+
+**One-off migration scripts:** `pm-sql/fix_*.sql` - Ad-hoc fixes and data migrations (not part of init sequence)
 
 ## Code Generation Workflow
 
@@ -353,6 +479,22 @@ Use the `ruoyi-gen` skill for interactive code generation. The skill automates t
 - `pm-sql/fix_*.sql` - One-off migration scripts
 
 **Pattern**: New tables go to `00_tables_ddl.sql`, menu changes go to `02_menu_data.sql`.
+
+## Project Documentation
+
+- **`docs/pm/PM需求.md`** - Complete business requirements document (Chinese)
+  - Project management workflows
+  - Customer and contract management
+  - Daily reports and statistics
+  - Revenue recognition
+  - Dictionary definitions
+
+- **`docs/gen-specs/`** - Code generation specification files (YAML)
+  - One file per table: `<table_name>.yml`
+  - Contains field mappings, query types, HTML types, and customizations
+  - Used by `/ruoyi-gen` skill for interactive code generation
+
+- **`docs/plans/`** - Implementation plans and design documents
 
 ## Development Workflow
 
@@ -429,3 +571,26 @@ public TableDataInfo list(Entity entity) {
     return getDataTable(list);
 }
 ```
+
+## Troubleshooting
+
+### Backend Won't Start
+
+1. **Check MySQL connection**: Ensure MySQL is running on port 3306 with database `ry-vue`
+2. **Check Redis connection**: Ensure Redis is running on port 6379
+3. **Port conflict**: If port 8080 is in use, change `server.port` in `application.yml`
+4. **Database not initialized**: Run SQL scripts in `pm-sql/init/` in order (00, 01, 02)
+
+### Frontend Build Errors
+
+1. **Node modules issue**: Delete `node_modules/` and `package-lock.json`, then `npm install`
+2. **Port 80 requires sudo**: On macOS/Linux, use `sudo npm run dev` or change port in `vite.config.ts`
+3. **TypeScript errors**: Run `npm run type-check` to see all type errors
+4. **Vite cache issue**: Delete `node_modules/.vite/` and restart dev server
+
+### Code Generation Issues
+
+1. **CLI JAR not found**: Build it first with `mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true`
+2. **DDL parsing error**: Ensure DDL syntax is valid MySQL 8.0 syntax
+3. **Generated code not working**: Check if menu SQL was imported to database
+4. **Collation mismatch**: Add `COLLATE utf8mb4_unicode_ci` when joining system tables
