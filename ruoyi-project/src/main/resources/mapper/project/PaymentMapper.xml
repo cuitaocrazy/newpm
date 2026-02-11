@@ -25,32 +25,74 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"    column="remark"    />
     </resultMap>
 
+    <resultMap type="Payment" id="PaymentWithContractResult" extends="PaymentResult">
+        <result property="contractName"    column="contract_name"    />
+        <result property="contractCode"    column="contract_code"    />
+        <result property="contractStatus"    column="contract_status"    />
+        <result property="customerName"    column="customer_name"    />
+        <result property="contractAmount"    column="contract_amount"    />
+        <result property="contractSignDate"    column="contract_sign_date"    />
+        <result property="freeMaintenancePeriod"    column="free_maintenance_period"    />
+        <result property="deptId"    column="dept_id"    />
+        <result property="deptName"    column="dept_name"    />
+        <result property="updateByName"    column="update_by_name"    />
+    </resultMap>
+
     <sql id="selectPaymentVo">
         select payment_id, contract_id, payment_method_name, payment_amount, has_penalty, penalty_amount, payment_status, expected_quarter, actual_quarter, submit_acceptance_date, actual_payment_date, confirm_year, del_flag, create_by, create_time, update_by, update_time, remark from pm_payment
     </sql>
 
-    <select id="selectPaymentList" parameterType="Payment" resultMap="PaymentResult">
-        <include refid="selectPaymentVo"/>
+    <select id="selectPaymentList" parameterType="Payment" resultMap="PaymentWithContractResult">
+        select
+            p.payment_id, p.contract_id, p.payment_method_name, p.payment_amount,
+            p.has_penalty, p.penalty_amount, p.payment_status, p.expected_quarter,
+            p.actual_quarter, p.submit_acceptance_date, p.actual_payment_date,
+            p.confirm_year, p.del_flag, p.create_by, p.create_time,
+            p.update_by, p.update_time, p.remark,
+            c.contract_name, c.contract_code, c.contract_status,
+            c.contract_amount, c.contract_sign_date, c.free_maintenance_period,
+            c.dept_id,
+            cu.customer_simple_name as customer_name,
+            d.dept_name,
+            u.nick_name as update_by_name
+        from pm_payment p
+        left join pm_contract c on p.contract_id = c.contract_id
+        left join pm_customer cu on c.customer_id = cu.customer_id
+        left join sys_dept d on c.dept_id = d.dept_id
+        left join sys_user u on p.update_by = u.user_name
         <where>
-            <if test="contractId != null "> and contract_id = #{contractId}</if>
-            <if test="paymentMethodName != null  and paymentMethodName != ''"> and payment_method_name like concat('%', #{paymentMethodName}, '%')</if>
-            <if test="hasPenalty != null  and hasPenalty != ''"> and has_penalty = #{hasPenalty}</if>
-            <if test="paymentStatus != null  and paymentStatus != ''"> and payment_status = #{paymentStatus}</if>
-            <if test="expectedQuarter != null  and expectedQuarter != ''"> and expected_quarter = #{expectedQuarter}</if>
-            <if test="actualQuarter != null  and actualQuarter != ''"> and actual_quarter = #{actualQuarter}</if>
-            <if test="confirmYear != null  and confirmYear != ''"> and confirm_year = #{confirmYear}</if>
+            <if test="contractId != null"> and p.contract_id = #{contractId}</if>
+            <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
+            <if test="contractCode != null and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
+            <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+            <if test="customerName != null and customerName != ''"> and cu.customer_simple_name like concat('%', #{customerName}, '%')</if>
+            <if test="paymentMethodName != null and paymentMethodName != ''"> and p.payment_method_name like concat('%', #{paymentMethodName}, '%')</if>
+            <if test="hasPenalty != null and hasPenalty != ''"> and p.has_penalty = #{hasPenalty}</if>
+            <if test="paymentStatus != null and paymentStatus != ''"> and p.payment_status = #{paymentStatus}</if>
+            <if test="expectedQuarter != null and expectedQuarter != ''"> and p.expected_quarter = #{expectedQuarter}</if>
+            <if test="actualQuarter != null and actualQuarter != ''"> and p.actual_quarter = #{actualQuarter}</if>
+            <if test="confirmYear != null and confirmYear != ''"> and p.confirm_year = #{confirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''">
-                and date_format(actual_payment_date,'%Y-%m-%d') &gt;= date_format(#{params.actualPaymentDateStart},'%Y-%m-%d')
+                and date_format(p.actual_payment_date,'%Y-%m-%d') &gt;= date_format(#{params.actualPaymentDateStart},'%Y-%m-%d')
             </if>
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''">
-                and date_format(actual_payment_date,'%Y-%m-%d') &lt;= date_format(#{params.actualPaymentDateEnd},'%Y-%m-%d')
+                and date_format(p.actual_payment_date,'%Y-%m-%d') &lt;= date_format(#{params.actualPaymentDateEnd},'%Y-%m-%d')
             </if>
         </where>
+        order by p.create_time desc
     </select>
     
-    <select id="selectPaymentByPaymentId" parameterType="Long" resultMap="PaymentResult">
-        <include refid="selectPaymentVo"/>
-        where payment_id = #{paymentId}
+    <select id="selectPaymentByPaymentId" parameterType="Long" resultMap="PaymentWithContractResult">
+        select
+            p.payment_id, p.contract_id, p.payment_method_name, p.payment_amount,
+            p.has_penalty, p.penalty_amount, p.payment_status, p.expected_quarter,
+            p.actual_quarter, p.submit_acceptance_date, p.actual_payment_date,
+            p.confirm_year, p.del_flag, p.create_by, p.create_time,
+            p.update_by, p.update_time, p.remark,
+            c.contract_name, c.contract_code, c.contract_amount
+        from pm_payment p
+        left join pm_contract c on p.contract_id = c.contract_id
+        where p.payment_id = #{paymentId}
     </select>
 
     <insert id="insertPayment" parameterType="Payment" useGeneratedKeys="true" keyProperty="paymentId">

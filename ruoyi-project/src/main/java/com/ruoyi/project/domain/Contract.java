@@ -128,6 +128,12 @@ public class Contract extends BaseEntity
     /** 当前行的项目信息（扩展字段，用于列表展示时的项目分行） */
     private Project currentProject;
 
+    /** 付款里程碑列表（扩展字段，用于付款里程碑查询页面） */
+    private List<Payment> paymentList;
+
+    /** 当前行的付款里程碑信息（扩展字段，用于列表展示时的付款里程碑分行） */
+    private Payment currentPayment;
+
     /** 是否为第一行（扩展字段，用于前端合并单元格判断） */
     private Boolean isFirstRow;
 
@@ -442,6 +448,26 @@ public class Contract extends BaseEntity
     public Project getCurrentProject()
     {
         return currentProject;
+    }
+
+    public void setPaymentList(List<Payment> paymentList)
+    {
+        this.paymentList = paymentList;
+    }
+
+    public List<Payment> getPaymentList()
+    {
+        return paymentList;
+    }
+
+    public void setCurrentPayment(Payment currentPayment)
+    {
+        this.currentPayment = currentPayment;
+    }
+
+    public Payment getCurrentPayment()
+    {
+        return currentPayment;
     }
 
     public void setIsFirstRow(Boolean isFirstRow)

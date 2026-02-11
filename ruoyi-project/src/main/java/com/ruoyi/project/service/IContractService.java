@@ -85,4 +85,20 @@ public interface IContractService
      * @return true-唯一，false-不唯一
      */
     public boolean checkContractNameUnique(String contractName, Long contractId);
+
+    /**
+     * 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
+     *
+     * @param contract 查询条件
+     * @return 合同及付款里程碑列表
+     */
+    public List<Contract> selectContractWithPaymentsList(Contract contract);
+
+    /**
+     * 统计付款里程碑总金额（用于付款里程碑查询页面）
+     *
+     * @param contract 查询条件
+     * @return 付款总金额
+     */
+    public BigDecimal sumPaymentAmount(Contract contract);
 }

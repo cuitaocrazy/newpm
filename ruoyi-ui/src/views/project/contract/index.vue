@@ -122,7 +122,7 @@
           v-hasPermi="['project:contract:export']"
         >导出</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
     <el-table
@@ -132,13 +132,13 @@
       border
       stripe
       style="width: 100%">
-      <el-table-column label="序号" width="60" align="center" fixed="left">
+      <el-table-column label="序号" width="60" align="center" fixed="left" v-if="columns.index.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
           <span v-else>{{ (queryParams.pageNum - 1) * queryParams.pageSize + scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同名称" align="center" prop="contractName" min-width="180" show-overflow-tooltip fixed="left">
+      <el-table-column label="合同名称" align="center" prop="contractName" min-width="180" show-overflow-tooltip fixed="left" v-if="columns.contractName.visible">
         <template #default="scope">
           <el-link
             v-if="!scope.row.isSummary"
@@ -149,7 +149,7 @@
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="关联项目" align="left" prop="projectList" min-width="160">
+      <el-table-column label="关联项目" align="left" prop="projectList" min-width="160" v-if="columns.projectList.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
             <template v-if="scope.row.projectList && scope.row.projectList.length > 0">
@@ -161,81 +161,81 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="客户名称" align="center" prop="customerId" min-width="140" show-overflow-tooltip>
+      <el-table-column label="客户名称" align="center" prop="customerId" min-width="140" show-overflow-tooltip v-if="columns.customerId.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getCustomerName(scope.row.customerId) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip>
+      <el-table-column label="部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip v-if="columns.deptId.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getDeptName(scope.row.deptId) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同类型" align="center" prop="contractType" width="100">
+      <el-table-column label="合同类型" align="center" prop="contractType" width="100" v-if="columns.contractType.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummary" :options="sys_htlx" :value="scope.row.contractType"/>
         </template>
       </el-table-column>
-      <el-table-column label="合同状态" align="center" prop="contractStatus" width="100">
+      <el-table-column label="合同状态" align="center" prop="contractStatus" width="100" v-if="columns.contractStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummary" :options="sys_htzt" :value="scope.row.contractStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="合同签订日期" align="center" prop="contractSignDate" width="120">
+      <el-table-column label="合同签订日期" align="center" prop="contractSignDate" width="120" v-if="columns.contractSignDate.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.contractSignDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同周期(月)" align="center" prop="contractPeriod" width="110">
+      <el-table-column label="合同周期(月)" align="center" prop="contractPeriod" width="110" v-if="columns.contractPeriod.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.contractPeriod }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="130">
+      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="130" v-if="columns.contractAmount.visible">
         <template #default="scope">
           <span :style="scope.row.isSummary ? 'font-weight: bold; color: #409EFF;' : ''">
             {{ formatAmount(scope.row.contractAmount) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="不含税金额(元)" align="right" prop="amountNoTax" min-width="140">
+      <el-table-column label="不含税金额(元)" align="right" prop="amountNoTax" min-width="140" v-if="columns.amountNoTax.visible">
         <template #default="scope">
           <span :style="scope.row.isSummary ? 'font-weight: bold; color: #67C23A;' : ''">
             {{ formatAmount(scope.row.amountNoTax) }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="免维期(月)" align="center" prop="freeMaintenancePeriod" width="100">
+      <el-table-column label="免维期(月)" align="center" prop="freeMaintenancePeriod" width="100" v-if="columns.freeMaintenancePeriod.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.freeMaintenancePeriod }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="备注" align="center" prop="remark" min-width="150" show-overflow-tooltip>
+      <el-table-column label="备注" align="center" prop="remark" min-width="150" show-overflow-tooltip v-if="columns.remark.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.remark }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建日期" align="center" prop="createTime" width="160">
+      <el-table-column label="创建日期" align="center" prop="createTime" width="160" v-if="columns.createTime.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建人" align="center" prop="createByName" width="100">
+      <el-table-column label="创建人" align="center" prop="createByName" width="100" v-if="columns.createByName.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.createByName || scope.row.createBy }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="最后更新日期" align="center" prop="updateTime" width="160">
+      <el-table-column label="最后更新日期" align="center" prop="updateTime" width="160" v-if="columns.updateTime.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="最后更新人" align="center" prop="updateByName" width="100">
+      <el-table-column label="最后更新人" align="center" prop="updateByName" width="100" v-if="columns.updateByName.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.updateByName || scope.row.updateBy }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" width="280" fixed="right" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="280" fixed="right" class-name="small-padding fixed-width" v-if="columns.actions.visible">
         <template #default="scope">
           <template v-if="!scope.row.isSummary">
             <el-button link type="primary" icon="View" @click="handleView(scope.row)" v-hasPermi="['project:contract:query']">详情</el-button>
@@ -387,6 +387,28 @@ const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + '/project/attachment/u
 const uploadHeaders = ref({ Authorization: 'Bearer ' + getToken() })
 const uploadData = ref({})
 const maxFileSize = ref(50) // MB
+
+// 列显隐信息
+const columns = ref({
+  index: { label: '序号', visible: true },
+  contractName: { label: '合同名称', visible: true },
+  projectList: { label: '关联项目', visible: true },
+  customerId: { label: '客户名称', visible: true },
+  deptId: { label: '部门', visible: true },
+  contractType: { label: '合同类型', visible: true },
+  contractStatus: { label: '合同状态', visible: true },
+  contractSignDate: { label: '合同签订日期', visible: true },
+  contractPeriod: { label: '合同周期', visible: true },
+  contractAmount: { label: '合同金额', visible: true },
+  amountNoTax: { label: '不含税金额', visible: true },
+  freeMaintenancePeriod: { label: '免维期', visible: true },
+  remark: { label: '备注', visible: true },
+  createTime: { label: '创建日期', visible: true },
+  createByName: { label: '创建人', visible: true },
+  updateTime: { label: '最后更新日期', visible: true },
+  updateByName: { label: '最后更新人', visible: true },
+  actions: { label: '操作', visible: true }
+})
 
 const data = reactive({
   queryParams: {
@@ -555,24 +577,24 @@ function resetQuery() {
 
 /** 新增按钮操作 */
 function handleAdd() {
-  router.push({ path: '/project/contract/add' })
+  router.push({ path: '/htkx/contract/add' })
 }
 
 /** 查看详情按钮操作 */
 function handleView(row) {
-  router.push({ path: `/project/contract/detail/${row.contractId}` })
+  router.push({ path: `/htkx/contract/detail/${row.contractId}` })
 }
 
 /** 右键菜单 - 在新标签页打开 */
 function handleContextMenu(event, row) {
   event.preventDefault()
-  const url = router.resolve({ path: `/project/contract/detail/${row.contractId}` }).href
+  const url = router.resolve({ path: `/htkx/contract/detail/${row.contractId}` }).href
   window.open(url, '_blank')
 }
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
-  router.push({ path: `/project/contract/edit/${row.contractId}` })
+  router.push({ path: `/htkx/contract/edit/${row.contractId}` })
 }
 
 /** 删除按钮操作 */
@@ -601,7 +623,7 @@ function handleExport() {
 
 /** 附件按钮操作 */
 function handleAttachment(row) {
-  router.push({ path: `/project/contract/attachment/${row.contractId}` })
+  router.push({ path: `/htkx/contract/attachment/${row.contractId}` })
 }
 
 /** 查询附件列表 */

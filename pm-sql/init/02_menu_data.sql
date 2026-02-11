@@ -145,31 +145,109 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('项目审核操作', @reviewMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:review:approve', '#', 'admin', sysdate(), '', NULL, '');
 
 -- ============================
--- 合同管理模块菜单数据
+-- 合同款项模块菜单数据
 -- ============================
 
--- 菜单 SQL
-insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('合同管理', '2010', '1', 'contract', 'project/contract/index', 1, 0, 'C', '0', '0', 'project:contract:list', '#', 'admin', sysdate(), '', null, '合同管理菜单');
+-- 先删除可能存在的重复菜单（防止重复添加）
+DELETE FROM sys_menu WHERE menu_name = '合同款项' AND parent_id = 0 AND path = 'htkx';
 
--- 按钮父菜单ID
-SELECT @parentId := LAST_INSERT_ID();
+-- 一级菜单：合同款项
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同款项', 0, 5, 'htkx', NULL, 1, 0, 'M', '0', '0', '', 'form', 'admin', sysdate(), '', NULL, '合同款项目录');
 
--- 按钮 SQL
-insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('合同管理查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:query',        '#', 'admin', sysdate(), '', null, '');
+-- 获取合同款项一级菜单ID
+SELECT @htkxMenuId := LAST_INSERT_ID();
 
-insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('合同管理新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:add',          '#', 'admin', sysdate(), '', null, '');
+-- 二级菜单：合同管理
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同管理', @htkxMenuId, 1, 'contract', 'project/contract/index', 1, 0, 'C', '0', '0', 'project:contract:list', 'edit', 'admin', sysdate(), '', NULL, '合同管理菜单');
 
-insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('合同管理修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:edit',         '#', 'admin', sysdate(), '', null, '');
+-- 获取合同管理菜单ID
+SELECT @contractMenuId := LAST_INSERT_ID();
 
-insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('合同管理删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:remove',       '#', 'admin', sysdate(), '', null, '');
+-- 按钮权限：查询
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同管理查询', @contractMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '');
 
-insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-values('合同管理导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:contract:export',       '#', 'admin', sysdate(), '', null, '');
+-- 按钮权限：新增
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同管理新增', @contractMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:contract:add', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：修改
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同管理修改', @contractMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'project:contract:edit', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：删除
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同管理删除', @contractMenuId, 4, '#', '', 1, 0, 'F', '0', '0', 'project:contract:remove', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：导出
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('合同管理导出', @contractMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:contract:export', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 隐藏菜单：新增合同（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('新增合同', @htkxMenuId, 10, 'contract/add', 'project/contract/form', 1, 0, 'C', '1', '0', 'project:contract:add', '#', 'admin', sysdate(), '', NULL, '新增合同页面', 'ContractAdd', '/htkx/contract');
+
+-- 隐藏菜单：编辑合同（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('编辑合同', @htkxMenuId, 11, 'contract/edit/:contractId(\\d+)', 'project/contract/form', 1, 0, 'C', '1', '0', 'project:contract:edit', '#', 'admin', sysdate(), '', NULL, '编辑合同页面', 'ContractEdit', '/htkx/contract');
+
+-- 隐藏菜单：合同详情（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('合同详情', @htkxMenuId, 12, 'contract/detail/:contractId(\\d+)', 'project/contract/detail', 1, 0, 'C', '1', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '合同详情页面', 'ContractDetail', '/htkx/contract');
+
+-- 隐藏菜单：合同附件（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('合同附件', @htkxMenuId, 13, 'contract/attachment/:contractId(\\d+)', 'project/contract/attachment', 1, 0, 'C', '1', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '合同附件页面', 'ContractAttachment', '/htkx/contract');
+
+
+-- ============================
+-- 付款里程碑模块菜单数据
+-- ============================
+
+-- 二级菜单：付款里程碑（挂在合同款项下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('付款里程碑', @htkxMenuId, 2, 'payment', 'project/payment/index', 1, 0, 'C', '0', '0', 'project:payment:list', 'money', 'admin', sysdate(), '', NULL, '付款里程碑菜单');
+
+-- 获取付款里程碑菜单ID
+SELECT @paymentMenuId := LAST_INSERT_ID();
+
+-- 按钮权限：查询
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('付款里程碑查询', @paymentMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：新增
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('付款里程碑新增', @paymentMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:payment:add', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：修改
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('付款里程碑修改', @paymentMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'project:payment:edit', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：删除
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('付款里程碑删除', @paymentMenuId, 4, '#', '', 1, 0, 'F', '0', '0', 'project:payment:remove', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：导出
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('付款里程碑导出', @paymentMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:payment:export', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 隐藏菜单：新增款项（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('新增款项', @htkxMenuId, 20, 'payment/add', 'project/payment/form', 1, 0, 'C', '1', '0', 'project:payment:add', '#', 'admin', sysdate(), '', NULL, '新增款项页面', 'PaymentAdd', '/htkx/payment');
+
+-- 隐藏菜单：编辑款项（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('编辑款项', @htkxMenuId, 21, 'payment/edit/:paymentId(\\d+)', 'project/payment/form', 1, 0, 'C', '1', '0', 'project:payment:edit', '#', 'admin', sysdate(), '', NULL, '编辑款项页面', 'PaymentEdit', '/htkx/payment');
+
+-- 隐藏菜单：款项详情（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('款项详情', @htkxMenuId, 22, 'payment/detail/:paymentId(\\d+)', 'project/payment/detail', 1, 0, 'C', '1', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '款项详情页面', 'PaymentDetail', '/htkx/payment');
+
+-- 隐藏菜单：款项附件（挂在合同款项根目录下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('款项附件', @htkxMenuId, 23, 'payment/attachment/:paymentId(\\d+)', 'project/payment/attachment', 1, 0, 'C', '1', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '款项附件页面', 'PaymentAttachment', '/htkx/payment');
 
 -- ========================================
 -- 收入确认管理模块菜单数据

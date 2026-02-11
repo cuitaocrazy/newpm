@@ -9,6 +9,15 @@ export function listPayment(query) {
   })
 }
 
+// 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
+export function listPaymentWithContracts(query) {
+  return request({
+    url: '/project/payment/listWithContracts',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询款项管理详细
 export function getPayment(paymentId) {
   return request({
@@ -48,5 +57,14 @@ export function checkAttachments(paymentId) {
   return request({
     url: '/project/payment/checkAttachments/' + paymentId,
     method: 'get'
+  })
+}
+
+// 统计付款里程碑总金额
+export function sumPaymentAmount(query) {
+  return request({
+    url: '/project/payment/sumPaymentAmount',
+    method: 'get',
+    params: query
   })
 }

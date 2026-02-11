@@ -38,6 +38,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 合同编号
+      sort: 0
     notes: |
       合同编号不做唯一性校验：
       - 数据库层面删除了 UNIQUE KEY uk_contract_code 约束
@@ -56,6 +60,10 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 合同名称
+      sort: 1
     notes: |
       合同名称唯一性校验：
       - 新增和编辑时校验合同名称唯一性
@@ -102,6 +110,11 @@ columns:
     isRequired: true
     htmlType: select
     dictType: sys_htlx
+    excelConfig:
+      export: true
+      name: 合同类型
+      sort: 4
+      dictType: sys_htlx
   contract_status:
     columnComment: 合同状态
     columnType: varchar(50)
@@ -115,6 +128,11 @@ columns:
     isRequired: false
     htmlType: select
     dictType: sys_htzt
+    excelConfig:
+      export: true
+      name: 合同状态
+      sort: 5
+      dictType: sys_htzt
     notes: |
       合同状态字典值及颜色标识：
       - 1-已签：success (绿色) - 合同已正式签订，状态正常
@@ -141,6 +159,12 @@ columns:
     isRequired: true
     htmlType: datetime
     dictType: ""
+    excelConfig:
+      export: true
+      name: 合同签订日期
+      sort: 6
+      width: 30
+      dateFormat: yyyy-MM-dd
   contract_period:
     columnComment: 合同周期(月)
     columnType: int
@@ -154,6 +178,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 合同周期(月)
+      sort: 7
   contract_amount:
     columnComment: 合同金额(含税)
     columnType: decimal(15,2)
@@ -167,6 +195,10 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 合同金额(含税)
+      sort: 8
   tax_rate:
     columnComment: 税率(%)
     columnType: decimal(5,2)
@@ -180,6 +212,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 税率(%)
+      sort: 9
     notes: |
       税率字段说明：
       - 前端表单不设置默认值，由用户自行填写
@@ -198,6 +234,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 不含税金额
+      sort: 10
   tax_amount:
     columnComment: 税金
     columnType: decimal(15,2)
@@ -211,6 +251,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 税金
+      sort: 11
   confirm_amount:
     columnComment: 合同确认金额
     columnType: decimal(15,2)
@@ -224,6 +268,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 合同确认金额
+      sort: 12
   confirm_year:
     columnComment: 确认年份
     columnType: varchar(10)
@@ -237,6 +285,11 @@ columns:
     isRequired: false
     htmlType: select
     dictType: sys_ndgl
+    excelConfig:
+      export: true
+      name: 确认年份
+      sort: 13
+      dictType: sys_ndgl
   free_maintenance_period:
     columnComment: 免维期(月)
     columnType: int
@@ -250,6 +303,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 免维期(月)
+      sort: 14
   del_flag:
     columnComment: 删除标志
     columnType: char(1)
@@ -404,6 +461,67 @@ columns:
     dictType: ""
 
 # ============================
+# 扩展字段（关联查询字段，不在数据库表中）
+# ============================
+extendedFields:
+  customerName:
+    columnComment: 客户名称（关联查询）
+    javaType: String
+    javaField: customerName
+    source: pm_customer.customer_simple_name
+    description: 用于列表页显示和导出
+    excelConfig:
+      export: true
+      name: 客户名称
+      sort: 3
+
+  deptName:
+    columnComment: 部门名称（关联查询）
+    javaType: String
+    javaField: deptName
+    source: sys_dept.dept_name
+    description: 用于列表页显示和导出
+    excelConfig:
+      export: true
+      name: 部门名称
+      sort: 2
+
+  contractTypeName:
+    columnComment: 合同类型名称（关联查询）
+    javaType: String
+    javaField: contractTypeName
+    source: sys_dict_data.dict_label
+    description: 用于列表页显示
+
+  contractStatusName:
+    columnComment: 合同状态名称（关联查询）
+    javaType: String
+    javaField: contractStatusName
+    source: sys_dict_data.dict_label
+    description: 用于列表页显示
+
+  createByName:
+    columnComment: 创建人姓名（关联查询）
+    javaType: String
+    javaField: createByName
+    source: sys_user.nick_name
+    description: 用于列表页显示
+
+  updateByName:
+    columnComment: 更新人姓名（关联查询）
+    javaType: String
+    javaField: updateByName
+    source: sys_user.nick_name
+    description: 用于列表页显示
+
+  paymentList:
+    columnComment: 付款里程碑列表（主子表关联）
+    javaType: List<Payment>
+    javaField: paymentList
+    source: pm_payment
+    description: 用于主子表模式，一个合同包含多个付款里程碑
+
+# ============================
 # Tab 3: 生成信息
 # ============================
 genInfo:
@@ -463,20 +581,20 @@ customizations:
     notes: |
       纯前端修改
 
-      导出功能优化（2026-02-09）：
-      1. 导出文件名格式：合同管理_yyyyMMddhhmmss.xlsx
+      导出功能配置：
+      1. 导出文件名格式：合同管理_yyyyMMddHHmmss.xlsx
          - 示例：合同管理_20260209153045.xlsx
          - 使用中文名称，便于识别
-         - 时间戳格式：年月日时分秒
+         - 时间戳格式：年月日时分秒（yyyyMMddHHmmss）
 
-      2. 导出字段优化：
+      2. 导出字段配置：
          - 客户ID改为客户名称（导出 customerName 字段）
          - 部门ID改为部门名称（导出 deptName 字段）
          - 合同类型展示字典标签（使用 dictType = "sys_htlx"）
          - 合同状态展示字典标签（使用 dictType = "sys_htzt"）
-         - 去掉备用域1-5字段（不再导出）
+         - 不导出备用域1-5字段
 
-      3. 导出列顺序（2026-02-09调整）：
+      3. 导出列顺序：
          1. 合同编号
          2. 合同名称
          3. 部门名称（紧跟合同名称）
@@ -496,27 +614,30 @@ customizations:
          说明：部门名称和客户名称放在合同名称之后、合同类型之前，
          更符合业务逻辑（先看合同基本信息，再看合同属性）
 
-      4. 后端实体类修改（Contract.java）：
-         - customerId：删除 @Excel 注解
-         - deptId：删除 @Excel 注解
-         - customerName：添加 @Excel(name = "客户名称")，移动到合同名称之后
-         - deptName：添加 @Excel(name = "部门名称")，移动到合同名称之后
-         - contractType：修改为 @Excel(name = "合同类型", dictType = "sys_htlx")
-         - contractStatus：修改为 @Excel(name = "合同状态", dictType = "sys_htzt")
-         - reservedField1~5：删除 @Excel 注解
+      4. 后端实体类配置（Contract.java）：
+         - customerId：不添加 @Excel 注解（不导出ID）
+         - deptId：不添加 @Excel 注解（不导出ID）
+         - customerName：添加 @Excel(name = "客户名称", sort = 3)
+         - deptName：添加 @Excel(name = "部门名称", sort = 2)
+         - contractType：添加 @Excel(name = "合同类型", sort = 4, dictType = "sys_htlx")
+         - contractStatus：添加 @Excel(name = "合同状态", sort = 5, dictType = "sys_htzt")
+         - reservedField1~5：不添加 @Excel 注解（不导出备用域）
 
-      5. 前端导出方法修改（index.vue:595-600）：
+      5. 前端导出方法实现（index.vue）：
          ```javascript
-         const timestamp = proxy.parseTime(new Date(), '{y}{m}{d}{h}{i}{s}')
-         proxy.download('project/contract/export', {
-           ...queryParams.value
-         }, `合同管理_${timestamp}.xlsx`)
+         function handleExport() {
+           const timestamp = proxy.parseTime(new Date(), '{y}{m}{d}{h}{i}{s}')
+           proxy.download('project/contract/export', {
+             ...queryParams.value
+           }, `合同管理_${timestamp}.xlsx`)
+         }
          ```
+         说明：必须传递第三个参数（文件名）给 proxy.download 方法
 
       6. 导出效果：
          - Excel 文件包含可读的名称字段，不再是ID
          - 字典字段显示标签名，不再是字典值
-         - 文件名清晰易识别
+         - 文件名清晰易识别，包含时间戳
          - 去除无用的备用域字段
          - 列顺序符合业务逻辑，便于阅读
 
@@ -1390,7 +1511,6 @@ customizations:
       - ProjectMapper.java
       - ProjectMapper.xml
       - 详细文档：docs/contract-project-unique-constraint.md
-      - SQL修复文档：docs/contract-project-sql-fix.md
 
   add_form_defaults:
     intent: "新增合同表单字段默认值设置"
@@ -1963,18 +2083,11 @@ customizations:
       - 配置文件位置：ruoyi-admin/src/main/resources/application.yml
       - 修改后需要重启后端服务生效
 
-      配置修改记录（2026-02-09）：
-      - 问题：文件超过10MB上传失败，报错 "The field file exceeds its maximum permitted size of 10485760 bytes"
-      - 原因：Spring Boot默认配置限制为10MB，与业务需求（30MB）不符
-      - 修改前配置：
-        * max-file-size: 10MB
-        * max-request-size: 20MB
-      - 修改后配置：
-        * max-file-size: 30MB
-        * max-request-size: 30MB
-      - 修复文件：ruoyi-admin/src/main/resources/application.yml:60-62
+      Spring Boot 文件上传配置：
+      - 配置文件：ruoyi-admin/src/main/resources/application.yml
+      - max-file-size: 30MB（单个文件最大大小）
+      - max-request-size: 30MB（单次请求最大大小）
       - 影响范围：所有文件上传功能（合同附件、款项附件等）
-      - 修复后：可以上传最大30MB的文件
 
       后端文件格式校验：
       - AttachmentServiceImpl.ALLOWED_EXTENSIONS 常量定义允许的文件扩展名
@@ -1987,12 +2100,6 @@ customizations:
       2. 记录到 pm_attachment 表
       3. 记录日志到 pm_attachment_log（操作描述：【上传文件】：{文件名}）
       4. 刷新附件列表
-
-      格式更新记录：
-      - 2026-02-04：新增 .gif 格式支持（前端 + 后端同步更新）
-
-      配置更新记录：
-      - 2026-02-04：文件上传大小限制从 10MB 调整为 30MB（系统级配置）
 
   attachment_delete:
     intent: "附件删除功能"
@@ -2061,4 +2168,152 @@ customizations:
       - documentTypeName: 文档类型字典标签（如 "1-合同扫描件"）
       - operationTime: 操作时间
       - createTime: 前端兼容字段，映射到 operationTime
+
+  column_visibility:
+    intent: "列表显隐列功能"
+    component:
+      type: right-toolbar
+      props:
+        columns: columns
+    bindTo: table_columns
+    service: null
+    notes: |
+      显隐列功能配置（2026-02-10新增）：
+
+      功能说明：
+      - 用户可通过右侧工具栏的"显隐列"按钮控制表格列的显示/隐藏
+      - 所有列默认显示（visible: true）
+      - 用户的显隐设置会保存在浏览器本地存储中
+
+      可控制的列（共18列）：
+      1. index - 序号
+      2. contractName - 合同名称（固定在左侧）
+      3. projectList - 关联项目
+      4. customerId - 客户名称
+      5. deptId - 部门
+      6. contractType - 合同类型
+      7. contractStatus - 合同状态
+      8. contractSignDate - 合同签订日期
+      9. contractPeriod - 合同周期
+      10. contractAmount - 合同金额
+      11. amountNoTax - 不含税金额
+      12. freeMaintenancePeriod - 免维期
+      13. remark - 备注
+      14. createTime - 创建日期
+      15. createByName - 创建人
+      16. updateTime - 最后更新日期
+      17. updateByName - 最后更新人
+      18. actions - 操作（固定在右侧）
+
+      实现方式：
+      - 前端定义 columns 响应式对象，包含所有列的配置
+      - 每个列配置包含：key（列标识）、label（列名）、visible（是否可见）
+      - 每个 el-table-column 添加 v-if="columns.xxx.visible" 条件
+      - right-toolbar 组件通过 :columns="columns" 绑定列配置
+
+      代码位置：
+      - ruoyi-ui/src/views/project/contract/index.vue
+      - 第391-411行：columns 对象定义
+      - 第135-238行：表格列添加 v-if 条件
+
+# ============================
+# 实现说明
+# ============================
+implementation:
+  description: 本规格文件定义了合同管理模块的完整功能配置，包括CRUD操作、附件管理、导出功能、列显隐等
+
+  keyFeatures:
+    - 合同名称唯一性校验：新增和编辑时校验合同名称唯一性（精确匹配）
+    - 合同编号不做唯一性校验：允许重复的合同编号
+    - 部门树选择：从第三级开始展示，过滤掉第一级和第二级部门
+    - 客户选择：支持模糊搜索，显示客户简称
+    - 金额自动计算：根据合同金额和税率自动计算不含税金额和税金
+    - 税率字段：不设置默认值，由用户自行填写
+    - 合同状态颜色标识：已签(绿)、未签(橙)、待变更(蓝)、已变更(深蓝)、合同作废(红)
+    - 附件管理：
+        - 支持格式：doc、docx、xls、xlsx、pdf、csv、png、jpg、gif、txt、7z、zip、gz
+        - 文件大小：单个不超过30MB
+        - 文件路径：{部署路径}/合同/{contract_id}_{contract_name}/{yyyyMMdd}/{文件名}
+        - 附件操作日志：记录上传、下载、删除操作
+    - 导出功能：
+        - 文件名格式：合同管理_yyyyMMddHHmmss.xlsx（中文前缀+时间戳）
+        - 导出字段：15个字段，包含客户名称、部门名称（不导出ID）
+        - 字典转换：合同类型、合同状态自动转换为标签
+        - 列顺序：合同编号、合同名称、部门名称、客户名称、合同类型等
+        - 前端实现：必须传递文件名参数给 proxy.download 方法
+    - 列显隐功能：用户可自定义18个列的显示/隐藏，设置保存在浏览器本地存储
+    - 详情页面：三部分卡片式布局（合同基本信息、关联项目信息、附件列表）
+    - 删除业务规则：有附件时禁止删除，确保数据完整性
+
+  technicalStack:
+    backend:
+      - Java 17 / Spring Boot 3.5.8
+      - MyBatis（多表关联查询）
+      - 多表JOIN查询（pm_contract, pm_customer, sys_dept, sys_user, sys_dict_data）
+      - Spring Boot 文件上传配置：max-file-size: 30MB, max-request-size: 30MB
+    frontend:
+      - Vue 3.5 / TypeScript 5.6
+      - Element Plus 2.13
+      - 部门树过滤（filterDeptTree）
+      - 金额自动计算（watchEffect）
+      - 列显隐控制（columns 响应式对象）
+
+  codeLocations:
+    backend:
+      - ruoyi-project/src/main/java/com/ruoyi/project/domain/Contract.java（合同实体，包含 @Excel 注解）
+      - ruoyi-project/src/main/java/com/ruoyi/project/controller/ContractController.java（控制器，包含 export 方法）
+      - ruoyi-project/src/main/java/com/ruoyi/project/service/IContractService.java（服务接口）
+      - ruoyi-project/src/main/java/com/ruoyi/project/service/impl/ContractServiceImpl.java（服务实现，包含唯一性校验）
+      - ruoyi-project/src/main/java/com/ruoyi/project/mapper/ContractMapper.java（Mapper）
+      - ruoyi-project/src/main/resources/mapper/project/ContractMapper.xml（SQL 查询）
+      - ruoyi-admin/src/main/resources/application.yml（文件上传配置）
+    frontend:
+      - ruoyi-ui/src/views/project/contract/index.vue（列表页，包含 handleExport 方法和列显隐功能）
+      - ruoyi-ui/src/views/project/contract/form.vue（新增/编辑页，包含唯一性校验和金额计算）
+      - ruoyi-ui/src/views/project/contract/detail.vue（详情页）
+      - ruoyi-ui/src/views/project/contract/attachment.vue（附件页）
+      - ruoyi-ui/src/api/project/contract.js（API 函数）
+      - ruoyi-ui/src/router/index.ts（路由配置）
+      - ruoyi-ui/src/utils/request.ts（download 方法实现）
+
+  databaseSchema:
+    mainTable: pm_contract
+    relatedTables:
+      - pm_customer: 客户信息（LEFT JOIN）
+      - sys_dept: 部门信息（LEFT JOIN）
+      - sys_dict_data: 字典数据（LEFT JOIN，合同类型和合同状态）
+      - sys_user: 用户信息（LEFT JOIN，创建人和更新人）
+      - pm_attachment: 附件信息（业务关联，business_type='contract'）
+      - pm_attachment_log: 附件操作日志（业务关联）
+      - pm_project_contract_rel: 项目合同关联表（多对多关系）
+
+  dictDependencies:
+    - sys_htlx: 合同类型
+    - sys_htzt: 合同状态
+    - sys_ndgl: 年度管理
+    - sys_wdlx: 文档类型（附件）
+    - sys_yjqy: 区域分类（客户）
+    - industry: 行业分类（客户）
+
+  excelExportConfig:
+    fields:
+      - sort: 0, name: 合同编号, field: contractCode
+      - sort: 1, name: 合同名称, field: contractName
+      - sort: 2, name: 部门名称, field: deptName (关联查询)
+      - sort: 3, name: 客户名称, field: customerName (关联查询)
+      - sort: 4, name: 合同类型, field: contractType, dictType: sys_htlx
+      - sort: 5, name: 合同状态, field: contractStatus, dictType: sys_htzt
+      - sort: 6, name: 合同签订日期, field: contractSignDate, dateFormat: yyyy-MM-dd
+      - sort: 7, name: 合同周期(月), field: contractPeriod
+      - sort: 8, name: 合同金额(含税), field: contractAmount
+      - sort: 9, name: 税率(%), field: taxRate
+      - sort: 10, name: 不含税金额, field: amountNoTax
+      - sort: 11, name: 税金, field: taxAmount
+      - sort: 12, name: 合同确认金额, field: confirmAmount
+      - sort: 13, name: 确认年份, field: confirmYear, dictType: sys_ndgl
+      - sort: 14, name: 免维期(月), field: freeMaintenancePeriod
+    excludedFields:
+      - customerId: 不导出ID，导出 customerName
+      - deptId: 不导出ID，导出 deptName
+      - reservedField1~5: 不导出备用域字段
 

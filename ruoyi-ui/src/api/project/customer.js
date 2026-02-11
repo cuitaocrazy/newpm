@@ -9,6 +9,14 @@ export function listCustomer(query) {
   })
 }
 
+// 查询所有客户列表（用于下拉选择）
+export function listAllCustomer() {
+  return request({
+    url: '/project/customer/listAll',
+    method: 'get'
+  })
+}
+
 // 查询客户管理详细
 export function getCustomer(customerId) {
   return request({

@@ -8,21 +8,25 @@
         </div>
       </template>
       <el-descriptions :column="2" border v-loading="paymentLoading">
-        <el-descriptions-item label="里程碑名称" :span="2">
-          {{ payment.paymentMethodName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="关联合同">
+        <!-- 第一行：合同名称 -->
+        <el-descriptions-item label="合同名称" :span="2">
           {{ payment.contractName || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="付款金额（元）">
-          {{ formatAmount(payment.paymentAmount) }}
+
+        <!-- 第二行：合同编号、合同金额 -->
+        <el-descriptions-item label="合同编号">
+          {{ payment.contractCode || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="合同金额">
+          {{ formatAmount(payment.contractAmount) }} 元
+        </el-descriptions-item>
+
+        <!-- 第三行：付款方式名称、付款状态 -->
+        <el-descriptions-item label="付款方式名称">
+          {{ payment.paymentMethodName || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="付款状态">
           <dict-tag v-if="payment.paymentStatus" :options="sys_fkzt" :value="payment.paymentStatus"/>
-          <span v-else>-</span>
-        </el-descriptions-item>
-        <el-descriptions-item label="款项确认年份">
-          <dict-tag v-if="payment.confirmYear" :options="sys_ndgl" :value="payment.confirmYear"/>
           <span v-else>-</span>
         </el-descriptions-item>
       </el-descriptions>
@@ -233,7 +237,10 @@ const loadAttachmentList = () => {
   if (!paymentId.value) return
 
   listLoading.value = true
-  listAttachment('payment', paymentId.value).then(response => {
+  listAttachment({
+    businessType: 'payment',
+    businessId: paymentId.value
+  }).then(response => {
     attachmentList.value = response.data || []
     listLoading.value = false
   }).catch(() => {
@@ -333,7 +340,7 @@ const handleDownload = (row) => {
 
 // 删除附件
 const handleDelete = (row) => {
-  const message = `确认删除附件【${row.fileName}】吗？`
+  const message = `确认删除【${payment.value.paymentMethodName}】下的【${row.fileName}】附件吗？`
   proxy.$modal.confirm(message).then(() => {
     return delAttachment(row.attachmentId)
   }).then(() => {
@@ -358,12 +365,12 @@ const handleShowLog = () => {
 
 // 返回
 const handleBack = () => {
-  router.push({ path: '/project/payment', query: { t: Date.now() } })
+  router.push({ path: '/htkx/payment', query: { t: Date.now() } })
 }
 
 // 初始化
 onMounted(() => {
-  paymentId.value = route.params.id
+  paymentId.value = route.params.paymentId
   if (paymentId.value) {
     loadPaymentInfo()
     loadAttachmentList()

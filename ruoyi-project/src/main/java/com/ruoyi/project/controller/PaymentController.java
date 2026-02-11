@@ -17,13 +17,15 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.project.domain.Payment;
+import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.service.IPaymentService;
+import com.ruoyi.project.service.IContractService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 款项管理Controller
- * 
+ *
  * @author ruoyi
  * @date 2026-02-04
  */
@@ -33,6 +35,9 @@ public class PaymentController extends BaseController
 {
     @Autowired
     private IPaymentService paymentService;
+
+    @Autowired
+    private IContractService contractService;
 
     /**
      * 查询款项管理列表
@@ -47,16 +52,37 @@ public class PaymentController extends BaseController
     }
 
     /**
+     * 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
+     */
+    @PreAuthorize("@ss.hasPermi('project:payment:list')")
+    @GetMapping("/listWithContracts")
+    public TableDataInfo listWithContracts(Contract contract)
+    {
+        startPage();
+        List<Contract> list = contractService.selectContractWithPaymentsList(contract);
+        return getDataTable(list);
+    }
+
+    /**
+     * 统计付款里程碑总金额（用于付款里程碑查询页面）
+     */
+    @PreAuthorize("@ss.hasPermi('project:payment:list')")
+    @GetMapping("/sumPaymentAmount")
+    public AjaxResult sumPaymentAmount(Contract contract)
+    {
+        return success(contractService.sumPaymentAmount(contract));
+    }
+
+    /**
      * 导出款项管理列表
      */
     @PreAuthorize("@ss.hasPermi('project:payment:export')")
     @Log(title = "款项管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Payment payment)
+    public void export(HttpServletResponse response, Contract contract)
     {
-        List<Payment> list = paymentService.selectPaymentList(payment);
-        ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
-        util.exportExcel(response, list, "款项管理数据");
+        List<Contract> list = contractService.selectContractWithPaymentsList(contract);
+        paymentService.exportPaymentList(response, list);
     }
 
     /**

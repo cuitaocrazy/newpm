@@ -53,6 +53,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 付款里程碑名称
+      sort: 2
 
   payment_amount:
     columnComment: 付款总金额
@@ -67,6 +71,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 付款金额（元）
+      sort: 4
 
   has_penalty:
     columnComment: 是否涉及违约扣款(1是 0否)
@@ -81,6 +89,11 @@ columns:
     isRequired: false
     htmlType: radio
     dictType: ""
+    excelConfig:
+      export: true
+      name: 是否涉及违约扣款
+      sort: 5
+      readConverterExp: "0=否,1=是"
 
   penalty_amount:
     columnComment: 扣款金额(元)
@@ -95,6 +108,10 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 扣款金额（元）
+      sort: 6
 
   payment_status:
     columnComment: 付款状态
@@ -109,6 +126,11 @@ columns:
     isRequired: false
     htmlType: select
     dictType: sys_fkzt
+    excelConfig:
+      export: true
+      name: 付款状态
+      sort: 3
+      dictType: sys_fkzt
 
   expected_quarter:
     columnComment: 预计回款所属季度
@@ -123,6 +145,11 @@ columns:
     isRequired: false
     htmlType: select
     dictType: sys_jdgl
+    excelConfig:
+      export: true
+      name: 预计回款季度
+      sort: 7
+      dictType: sys_jdgl
 
   actual_quarter:
     columnComment: 实际回款所属季度
@@ -137,6 +164,11 @@ columns:
     isRequired: false
     htmlType: select
     dictType: sys_jdgl
+    excelConfig:
+      export: true
+      name: 实际回款季度
+      sort: 8
+      dictType: sys_jdgl
 
   submit_acceptance_date:
     columnComment: 提交验收材料日期
@@ -151,6 +183,12 @@ columns:
     isRequired: false
     htmlType: datetime
     dictType: ""
+    excelConfig:
+      export: true
+      name: 提交验收材料日期
+      sort: 11
+      width: 30
+      dateFormat: yyyy-MM-dd
 
   actual_payment_date:
     columnComment: 实际回款日期
@@ -165,6 +203,12 @@ columns:
     isRequired: false
     htmlType: datetime
     dictType: ""
+    excelConfig:
+      export: true
+      name: 实际回款日期
+      sort: 9
+      width: 30
+      dateFormat: yyyy-MM-dd
 
   flow_status:
     columnComment: 流程状态
@@ -193,6 +237,11 @@ columns:
     isRequired: false
     htmlType: select
     dictType: sys_ndgl
+    excelConfig:
+      export: true
+      name: 里程碑确认年份
+      sort: 10
+      dictType: sys_ndgl
 
   del_flag:
     columnComment: 删除标志(0正常 1删除)
@@ -279,6 +328,91 @@ columns:
     dictType: ""
 
 # ============================
+# 扩展字段（关联查询字段，不在数据库表中）
+# ============================
+extendedFields:
+  contractName:
+    columnComment: 合同名称（关联查询）
+    javaType: String
+    javaField: contractName
+    source: pm_contract.contract_name
+    description: 用于导出时显示合同名称
+    excelConfig:
+      export: true
+      name: 合同名称
+      sort: 1
+
+  contractCode:
+    columnComment: 合同编号（关联查询）
+    javaType: String
+    javaField: contractCode
+    source: pm_contract.contract_code
+    description: 用于列表页显示
+
+  contractStatus:
+    columnComment: 合同状态（关联查询）
+    javaType: String
+    javaField: contractStatus
+    source: pm_contract.contract_status
+    description: 用于列表页显示
+
+  customerName:
+    columnComment: 客户名称（关联查询）
+    javaType: String
+    javaField: customerName
+    source: pm_customer.customer_simple_name
+    description: 用于列表页显示
+
+  contractAmount:
+    columnComment: 合同金额（关联查询）
+    javaType: BigDecimal
+    javaField: contractAmount
+    source: pm_contract.contract_amount
+    description: 用于列表页显示
+
+  contractSignDate:
+    columnComment: 合同签订日期（关联查询）
+    javaType: Date
+    javaField: contractSignDate
+    source: pm_contract.contract_sign_date
+    description: 用于列表页显示
+
+  freeMaintenancePeriod:
+    columnComment: 免维期（关联查询）
+    javaType: Integer
+    javaField: freeMaintenancePeriod
+    source: pm_contract.free_maintenance_period
+    description: 用于列表页显示
+
+  deptId:
+    columnComment: 部门ID（关联查询）
+    javaType: Long
+    javaField: deptId
+    source: pm_contract.dept_id
+    description: 用于数据权限过滤
+
+  deptName:
+    columnComment: 部门名称（关联查询）
+    javaType: String
+    javaField: deptName
+    source: sys_dept.dept_name
+    description: 用于列表页显示
+
+  createByName:
+    columnComment: 创建人姓名（关联查询）
+    javaType: String
+    javaField: createByName
+    source: sys_user.nick_name
+    description: 用于列表页显示
+
+  updateByName:
+    columnComment: 更新人姓名（关联查询）
+    javaType: String
+    javaField: updateByName
+    source: sys_user.nick_name
+    description: 用于列表页显示
+
+# ============================
 # Tab 3: 生成信息
 # ============================
 genInfo:
@@ -310,4 +444,1434 @@ relations:
 # ============================
 # 定制需求（超出标准模板的组件/交互/接口需求）
 # ============================
-customizations: {}
+customizations:
+  # 查询条件配置
+  queryConditions:
+    # 主要查询条件（默认显示）
+    mainConditions:
+      - field: contractName
+        label: 合同名称
+        type: input
+        queryType: LIKE
+        placeholder: 请输入合同名称
+        width: 200px
+      - field: contractCode
+        label: 合同编号
+        type: input
+        queryType: LIKE
+        placeholder: 请输入合同编号
+        width: 200px
+      - field: contractStatus
+        label: 合同状态
+        type: select
+        queryType: EQ
+        dictType: sys_htzt
+        placeholder: 请选择合同状态
+        width: 200px
+      - field: customerName
+        label: 客户名称
+        type: input
+        queryType: LIKE
+        placeholder: 请输入客户名称
+        width: 200px
+      - field: paymentStatus
+        label: 付款状态
+        type: select
+        queryType: EQ
+        dictType: sys_fkzt
+        placeholder: 请选择付款状态
+        width: 200px
+
+    # 折叠查询条件（点击"更多"按钮后显示）
+    collapsibleConditions:
+      - field: expectedQuarter
+        label: 预计回款季度
+        type: select
+        queryType: EQ
+        dictType: sys_jdgl
+        placeholder: 请选择预计回款季度
+        width: 200px
+      - field: confirmYear
+        label: 款项确认年份
+        type: select
+        queryType: EQ
+        dictType: sys_ndgl
+        placeholder: 请选择款项确认年份
+        width: 200px
+      - field: paymentMethodName
+        label: 付款方式名称
+        type: input
+        queryType: LIKE
+        placeholder: 请输入付款方式名称
+        width: 200px
+      - field: hasPenalty
+        label: 是否涉及违约扣款
+        type: select
+        queryType: EQ
+        options:
+          - label: 是
+            value: "1"
+          - label: 否
+            value: "0"
+        placeholder: 请选择
+        width: 200px
+      - field: actualQuarter
+        label: 实际回款季度
+        type: select
+        queryType: EQ
+        dictType: sys_jdgl
+        placeholder: 请选择实际回款季度
+        width: 200px
+      - field: actualPaymentDateRange
+        label: 实际回款日期
+        type: daterange
+        queryType: BETWEEN
+        placeholder: 开始日期-结束日期
+        width: 240px
+        format: YYYY-MM-DD
+
+    # 表单配置
+    formConfig:
+      labelWidth: 140px
+      inline: true
+      collapsible: true
+      collapseButtonText:
+        expand: 更多
+        collapse: 收起
+
+  # 列表展示配置（主子表模式）
+  listDisplay:
+    displayMode: 主子表展示模式
+    description: 合同为主表，付款里程碑为子表，展示所有合同及其付款里程碑
+
+    # 金额统计行
+    summaryRow:
+      enabled: true
+      position: 表格上方
+      api: /project/payment/sumPaymentAmount
+      description: 统计查询结果所有数据的付款总金额（不是当前页）
+      display:
+        label: 付款总金额：
+        format: 千分位 + 元
+        style:
+          backgroundColor: "#f5f7fa"
+          border: "1px solid #dcdfe6"
+          padding: "12px 16px"
+          labelColor: "#606266"
+          labelWeight: 600
+          valueColor: "#409eff"
+          valueWeight: 700
+          valueFontSize: "16px"
+      features:
+        - 与查询条件联动，筛选后自动更新统计
+        - 统计所有查询结果的总金额，不受分页影响
+        - 金额使用千分位格式化显示
+        - 统计行样式突出，易于识别
+      backend:
+        query: sumPaymentAmount
+        sql: "select COALESCE(sum(p.payment_amount), 0) from pm_payment p ..."
+        returnType: BigDecimal
+        description: 使用 COALESCE 处理空值，确保返回 0 而不是 null
+
+    tableConfig:
+      border: true
+      stripe: true
+      loading: true
+      spanMethod: 合同信息列按付款里程碑数量合并
+
+    columns:
+      - field: index
+        label: 序号
+        type: custom
+        width: 60px
+        align: center
+        fixed: left
+        description: 以付款里程碑为维度显示连续递增序号
+
+      - field: contractName
+        label: 合同名称
+        type: link
+        minWidth: 260px
+        headerAlign: center
+        align: left
+        fixed: left
+        wordWrap: true
+        clickable: true
+        clickAction: handleViewContract
+        source: pm_contract.contract_name
+        features:
+          - 表头居中，内容左对齐
+          - 文本过长时自动换行显示
+          - 可点击跳转到合同详情页
+          - 第一行显示"新增付款里程碑"按钮
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: contractStatus
+        label: 合同状态
+        type: dict
+        width: 100px
+        align: center
+        dictType: sys_htzt
+        source: pm_contract.contract_status
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: customerName
+        label: 客户名称
+        type: text
+        minWidth: 140px
+        align: center
+        showOverflowTooltip: true
+        source: pm_customer.customer_simple_name (alias: customer_name)
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: contractAmount
+        label: 合同金额（元）
+        type: money
+        minWidth: 130px
+        align: right
+        format: thousandSeparator
+        source: pm_contract.contract_amount
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: contractSignDate
+        label: 合同签订日期
+        type: date
+        width: 120px
+        align: center
+        format: yyyy-MM-dd
+        source: pm_contract.contract_sign_date
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: freeMaintenancePeriod
+        label: 免维期（月）
+        type: number
+        width: 100px
+        align: center
+        emptyText: "-"
+        source: pm_contract.free_maintenance_period
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: deptName
+        label: 合同所属团队
+        type: text
+        minWidth: 120px
+        align: center
+        showOverflowTooltip: true
+        source: sys_dept.dept_name (JOIN via pm_contract.dept_id)
+        cellMerge: true
+        mergeBy: contractId
+
+      - field: paymentMethodName
+        label: 付款里程碑名称
+        type: text
+        minWidth: 180px
+        align: center
+        showOverflowTooltip: true
+        source: pm_payment.payment_method_name
+
+      - field: paymentStatus
+        label: 付款状态
+        type: dict
+        width: 100px
+        align: center
+        dictType: sys_fkzt
+        source: pm_payment.payment_status
+
+      - field: expectedQuarter
+        label: 预计回款季度
+        type: dict
+        width: 120px
+        align: center
+        dictType: sys_jdgl
+        source: pm_payment.expected_quarter
+
+      - field: actualQuarter
+        label: 实际回款季度
+        type: dict
+        width: 120px
+        align: center
+        dictType: sys_jdgl
+        emptyText: "-"
+        source: pm_payment.actual_quarter
+
+      - field: actualPaymentDate
+        label: 实际回款日期
+        type: date
+        width: 120px
+        align: center
+        format: yyyy-MM-dd
+        emptyText: "-"
+        source: pm_payment.actual_payment_date
+
+      - field: confirmYear
+        label: 里程碑确认年份
+        type: dict
+        width: 130px
+        align: center
+        dictType: sys_ndgl
+        source: pm_payment.confirm_year
+
+      - field: paymentAmount
+        label: 付款金额（元）
+        type: money
+        minWidth: 130px
+        align: right
+        format: thousandSeparator
+        source: pm_payment.payment_amount
+
+      - field: updateByName
+        label: 更新人
+        type: text
+        width: 100px
+        align: center
+        emptyText: "-"
+        source: sys_user.nick_name (JOIN via pm_payment.update_by)
+        fallbackLogic: updateByName → createByName → updateBy → createBy → '-'
+        description: 优先显示更新人姓名，依次fallback到创建人姓名、更新人用户名、创建人用户名
+
+      - field: updateTime
+        label: 更新时间
+        type: datetime
+        width: 160px
+        align: center
+        format: yyyy-MM-dd HH:mm:ss
+        source: pm_payment.update_time
+        fallbackLogic: updateTime → createTime → '-'
+        description: 优先显示更新时间，fallback到创建时间
+
+      - field: actions
+        label: 操作
+        type: actions
+        width: 280px
+        align: center
+        fixed: right
+        conditionalDisplay: true
+        emptyText: 暂无付款记录
+        buttons:
+          - text: 详情
+            type: primary
+            icon: View
+            action: handleDetail
+            permission: project:payment:query
+          - text: 编辑
+            type: primary
+            icon: Edit
+            action: handleUpdate
+            permission: project:payment:edit
+          - text: 附件
+            type: primary
+            icon: Paperclip
+            action: handleAttachment
+            permission: project:payment:query
+          - text: 删除
+            type: primary
+            icon: Delete
+            action: handleDelete
+            permission: project:payment:remove
+
+  # 后端API配置
+  backendAPI:
+    listAPI:
+      endpoint: GET /project/payment/listWithContracts
+      controller: PaymentController.listWithContracts()
+      service: ContractService.selectContractWithPaymentsList()
+      mapper: ContractMapper.selectContractWithPaymentsList()
+      description: 查询合同及其付款里程碑列表（主子表模式）
+      permission: project:payment:list
+      queryParams:
+        contract:
+          - contractCode: 合同编号（LIKE）
+          - contractName: 合同名称（LIKE）
+          - contractStatus: 合同状态（EQ）
+          - customerName: 客户名称（LIKE）
+        payment:
+          - paymentMethodName: 付款方式名称（LIKE）
+          - hasPenalty: 是否违约扣款（EQ）
+          - paymentStatus: 付款状态（EQ）
+          - expectedQuarter: 预计回款季度（EQ）
+          - actualQuarter: 实际回款季度（EQ）
+          - paymentConfirmYear: 款项确认年份（EQ）
+          - actualPaymentDateStart: 实际回款日期开始（GTE）
+          - actualPaymentDateEnd: 实际回款日期结束（LTE）
+
+    dataModel:
+      Contract:
+        newFields:
+          - paymentList: List<Payment> - 付款里程碑列表
+          - currentPayment: Payment - 当前行的付款里程碑信息
+      Payment:
+        newFields:
+          - createByName: String - 创建人姓名（关联查询）
+
+  # 关联查询配置
+  joinQueries:
+    - table: pm_contract
+      alias: c
+      joinType: LEFT JOIN
+      onCondition: p.contract_id = c.contract_id
+      fields:
+        - contract_name
+        - contract_code
+        - contract_status
+        - contract_amount
+        - contract_sign_date
+        - free_maintenance_period
+        - dept_id
+      description: 获取合同基本信息
+
+    - table: pm_customer
+      alias: cu
+      joinType: LEFT JOIN
+      onCondition: c.customer_id = cu.customer_id
+      fields:
+        - customer_simple_name (alias: customer_name)
+      description: 获取客户名称
+
+    - table: sys_dept
+      alias: d
+      joinType: LEFT JOIN
+      onCondition: c.dept_id = d.dept_id
+      fields:
+        - dept_name
+      description: 获取部门名称（合同所属团队）
+
+    - table: sys_user (update_by)
+      alias: u
+      joinType: LEFT JOIN
+      onCondition: p.update_by = u.user_name
+      fields:
+        - nick_name (alias: update_by_name)
+      description: 获取更新人姓名
+
+    - table: sys_user (create_by)
+      alias: u2
+      joinType: LEFT JOIN
+      onCondition: p.create_by = u2.user_name
+      fields:
+        - nick_name (alias: create_by_name)
+      description: 获取创建人姓名
+
+  # 数据格式化规则
+  formatRules:
+    money:
+      type: thousandSeparator
+      decimalPlaces: 2
+      emptyValue: "0.00"
+      description: 金额字段使用千分位格式化，保留两位小数
+
+    date:
+      format: yyyy-MM-dd
+      emptyValue: "-"
+      description: 日期字段统一格式
+
+    datetime:
+      format: yyyy-MM-dd HH:mm:ss
+      emptyValue: "-"
+      description: 日期时间字段统一格式
+
+  # 列显隐功能配置
+  columnVisibility:
+    enabled: true
+    description: 用户可通过右侧工具栏控制列的显示/隐藏
+    defaultVisible: true
+    implementation: |
+      实现方式：
+      - 前端定义 columns 响应式对象，包含所有列的配置
+      - 每个列配置包含：key（列标识）、label（列名）、visible（是否可见）
+      - 每个 el-table-column 添加 v-if="columns.xxx.visible" 条件
+      - right-toolbar 组件通过 :columns="columns" 绑定列配置
+      - 用户的显隐设置保存在浏览器本地存储中
+
+      代码位置：
+      - ruoyi-ui/src/views/project/payment/index.vue
+      - columns 对象定义在 script 部分
+      - 表格列添加 v-if 条件
+
+    columns:
+      - key: index
+        label: 序号
+        visible: true
+      - key: contractName
+        label: 合同名称
+        visible: true
+        fixed: left
+      - key: contractStatus
+        label: 合同状态
+        visible: true
+      - key: customerName
+        label: 客户名称
+        visible: true
+      - key: contractAmount
+        label: 合同金额
+        visible: true
+      - key: contractSignDate
+        label: 合同签订日期
+        visible: true
+      - key: freeMaintenancePeriod
+        label: 免维期
+        visible: true
+      - key: deptName
+        label: 合同所属团队
+        visible: true
+      - key: paymentMethodName
+        label: 付款里程碑名称
+        visible: true
+      - key: paymentStatus
+        label: 付款状态
+        visible: true
+      - key: expectedQuarter
+        label: 预计回款季度
+        visible: true
+      - key: actualQuarter
+        label: 实际回款季度
+        visible: true
+      - key: actualPaymentDate
+        label: 实际回款日期
+        visible: true
+      - key: confirmYear
+        label: 里程碑确认年份
+        visible: true
+      - key: paymentAmount
+        label: 付款金额
+        visible: true
+      - key: updateByName
+        label: 更新人
+        visible: true
+      - key: updateTime
+        label: 更新时间
+        visible: true
+      - key: actions
+        label: 操作
+        visible: true
+        fixed: right
+
+  # 新增/编辑表单配置
+  formConfig:
+    # 合同选择配置
+    contractSelect:
+      component: el-select
+      displayFormat: "{contractCode}-{contractName}"
+      emptyCodeFormat: "{contractName}"
+      disabled: isEdit || isPresetContract
+      features:
+        filterable: true
+        remote: true
+        autoLoad: true
+      behavior:
+        - 点击下拉框自动加载初始合同列表（最多100条）
+        - 输入关键词实时模糊搜索合同名称或编号
+        - 显示加载状态，提升交互反馈
+        - 编辑模式或预设合同模式下禁用
+      backend:
+        - ContractMapper.xml 的 searchContracts 查询
+        - 添加 limit 100 限制
+        - 支持空关键词查询
+
+    # 合同详细信息展示
+    contractDetail:
+      enabled: true
+      trigger: handleContractChange
+      sections:
+        - name: 合同基本信息
+          component: el-descriptions
+          layout: 3
+          fields:
+            - contractName: 合同名称（单独一行，占3列）
+            - contractCode: 合同编号
+            - freeMaintenancePeriod: 免维期（月）
+            - deptName: 部门名称
+            - customerName: 客户名称
+            - contractTypeName: 合同类型
+            - contractStatusName: 合同状态
+            - contractAmount: 合同金额（含税）
+            - confirmAmount: 合同确认金额
+            - confirmYear: 确认年份
+            - contractSignDate: 签订日期
+            - contractPeriod: 合同周期（月）
+          total: 12个字段
+
+        - name: 已付款里程碑列表
+          component: el-table
+          maxHeight: 300px
+          columns:
+            - 序号
+            - 里程碑名称
+            - 付款金额（元）
+            - 付款状态
+            - 预计回款季度
+            - 开票日期
+            - 实际回款季度
+            - 实际回款日期
+            - 确认年份
+            - 是否违约扣款
+            - 扣款金额（元）
+          total: 11列
+          features:
+            - 金额字段使用千分位格式化
+            - 违约扣款金额根据 hasPenalty 字段显示
+            - 字典值自动转换为标签
+
+      dictDependencies:
+        - sys_htlx: 合同类型
+        - sys_htzt: 合同状态
+        - sys_fkzt: 付款状态
+        - sys_jdgl: 季度管理
+
+    # 底部按钮组配置
+    bottomButtons:
+      newMode:
+        buttons:
+          - text: 提交
+            action: handleSubmit
+            afterSubmit: 跳转到付款里程碑查询页面
+          - text: 取消
+            action: handleCancel
+            afterCancel: 跳转到付款里程碑查询页面
+        description: 新增模式下不显示重置按钮，简化操作流程
+
+      editMode:
+        buttons:
+          - text: 提交
+            action: handleSubmit
+            afterSubmit: 跳转到付款里程碑查询页面
+          - text: 取消
+            action: handleCancel
+            afterCancel: 跳转到付款里程碑查询页面
+        description: 编辑模式下不显示重置按钮，避免误操作
+
+    # 预设合同模式
+    presetContractMode:
+      enabled: true
+      trigger: URL参数包含 contractId
+      urlParameters:
+        - contractId: 合同ID（必需）
+        - contractName: 合同名称（用于下拉框显示）
+      behavior:
+        - 合同选择框禁用
+        - 自动加载合同详细信息
+        - 自动加载已有付款里程碑
+      userFlow:
+        - 用户在列表页点击"新增付款里程碑"按钮
+        - 跳转到新增页面，合同已预设且不可编辑
+        - 页面自动加载该合同的详细信息和已有付款里程碑
+        - 用户填写新的付款里程碑信息并提交
+
+    # 编辑模式配置
+    editMode:
+      routeParam: paymentId
+      isEditComputed: route.params.paymentId
+      dataLoading:
+        - loadPaymentDetail(paymentId): 加载付款里程碑详情
+        - loadContractDetail(contractId): 加载合同详细信息
+        - loadPaymentMilestones(contractId): 加载已付款里程碑列表
+      behavior:
+        - 合同选择框禁用
+        - 显示完整的合同信息和里程碑列表
+        - 不显示重置按钮
+
+  # 路由配置
+  routeConfig:
+    basePath: /htkx/payment
+    menuStructure:
+      parent:
+        menu_id: 2010
+        menu_name: 合同款项
+        path: htkx
+      child:
+        parent_id: 2010
+        menu_name: 款项管理
+        path: payment
+      fullPath: /htkx/payment
+
+    routes:
+      - path: /project/payment/add
+        meta:
+          title: 新增款项
+          activeMenu: /htkx/payment
+      - path: /project/payment/edit/:paymentId(\\d+)
+        meta:
+          title: 编辑款项
+          activeMenu: /htkx/payment
+      - path: /project/payment/detail/:paymentId(\\d+)
+        meta:
+          title: 款项详情
+          activeMenu: /htkx/payment
+      - path: /project/payment/attachment/:paymentId(\\d+)
+        meta:
+          title: 款项附件
+          activeMenu: /htkx/payment
+
+  # 列表页交互功能
+  listPageInteractions:
+    # 快速新增付款里程碑
+    quickAddPayment:
+      trigger: 点击合同名称下方的"新增付款里程碑"按钮
+      display: 仅在合同第一行显示
+      icon: Plus
+      permission: project:payment:add
+      action: handleAddPaymentForContract
+      behavior: 跳转到新增页面，预设当前合同且不可编辑
+
+    # 合同名称点击跳转
+    contractNameClick:
+      trigger: 点击合同名称
+      component: el-link
+      type: primary
+      underline: false
+      action: handleViewContract
+      behavior: 跳转到合同详情页，传递来源标识 from=payment
+      returnLogic: 合同详情页返回按钮根据来源智能返回到付款里程碑页面
+
+    # 删除付款里程碑
+    deletePayment:
+      trigger: 点击操作列的"删除"按钮
+      permission: project:payment:remove
+      action: handleDelete
+      businessRules:
+        attachmentCheck:
+          enabled: true
+          api: /project/payment/checkAttachments/{paymentId}
+          rule: 如果付款里程碑已上传附件，则禁止删除
+          errorMessage: "合同【${contractName}】下付款里程碑【${paymentName}】已上传附件，无法进行删除操作！"
+          description: 必须先在附件管理页面删除所有附件，才能删除付款里程碑
+        confirmMessage: "此操作将永久删除付款里程碑【${paymentName}】，且无法恢复！是否继续？"
+      workflow:
+        step1: 调用 checkAttachments API 检查是否有附件
+        step2: 如果有附件（count > 0），显示错误提示并终止操作
+        step3: 如果无附件，显示确认对话框
+        step4: 用户确认后，调用删除 API
+        step5: 删除成功后刷新列表
+      dataSafety:
+        - 防止误删除：有附件时禁止删除
+        - 数据完整性：确保附件和付款里程碑的关联完整性
+        - 可追溯性：保留附件记录，避免数据丢失
+
+    # 导出付款里程碑
+    exportPayment:
+      trigger: 点击"导出"按钮
+      permission: project:payment:export
+      action: handleExport
+      api: /project/payment/export
+      method: POST
+      dataSource: 主子表查询结果（selectContractWithPaymentsList）
+
+      exportRules:
+        dataFilter:
+          description: 只导出有付款里程碑的合同，无付款里程碑的合同不导出
+          implementation: |
+            列表查询使用 LEFT JOIN 返回所有合同（包括没有付款里程碑的），
+            导出时通过业务逻辑进行双重过滤：
+            1. 第一层过滤：contract.getPaymentList() != null && !contract.getPaymentList().isEmpty()
+            2. 第二层过滤：payment.getPaymentId() != null
+          reason: |
+            - 列表页需要显示所有合同（包括没有付款里程碑的），方便用户快速新增付款里程碑
+            - 导出功能只需要导出有效的付款里程碑数据，用于数据分析和报表
+            - 通过业务逻辑过滤而不是修改查询 SQL，保持列表和导出使用同一个查询接口
+        dataExpand:
+          description: 将主子表数据展开为平铺列表，每个付款里程碑一行
+          implementation: |
+            遍历每个合同的 paymentList，为每个付款里程碑创建一行数据，
+            并将合同名称设置到付款里程碑对象中（payment.setContractName）
+        contractNameMerge:
+          description: 多个里程碑时合同名称会重复显示（不合并单元格）
+          note: Excel 导出不支持单元格合并，每行独立显示完整信息
+
+      exportFields:
+        - field: contractName
+          label: 合同名称
+          sort: 1
+          source: pm_contract.contract_name
+          description: 关联查询的合同名称
+
+        - field: paymentMethodName
+          label: 付款里程碑名称
+          sort: 2
+          source: pm_payment.payment_method_name
+
+        - field: paymentStatus
+          label: 付款状态
+          sort: 3
+          dictType: sys_fkzt
+          description: 自动转换字典值为标签
+
+        - field: paymentAmount
+          label: 付款金额（元）
+          sort: 4
+          type: BigDecimal
+          source: pm_payment.payment_amount
+
+        - field: hasPenalty
+          label: 是否涉及违约扣款
+          sort: 5
+          converter: "0=否,1=是"
+          source: pm_payment.has_penalty
+
+        - field: penaltyAmount
+          label: 扣款金额（元）
+          sort: 6
+          type: BigDecimal
+          source: pm_payment.penalty_amount
+
+        - field: expectedQuarter
+          label: 预计回款季度
+          sort: 7
+          dictType: sys_jdgl
+          source: pm_payment.expected_quarter
+
+        - field: actualQuarter
+          label: 实际回款季度
+          sort: 8
+          dictType: sys_jdgl
+          source: pm_payment.actual_quarter
+
+        - field: actualPaymentDate
+          label: 实际回款日期
+          sort: 9
+          type: Date
+          format: yyyy-MM-dd
+          source: pm_payment.actual_payment_date
+
+        - field: confirmYear
+          label: 里程碑确认年份
+          sort: 10
+          dictType: sys_ndgl
+          source: pm_payment.confirm_year
+
+        - field: submitAcceptanceDate
+          label: 提交验收材料日期
+          sort: 11
+          type: Date
+          format: yyyy-MM-dd
+          source: pm_payment.submit_acceptance_date
+
+      fileName:
+        pattern: "付款里程碑_yyyyMMddHHmmss.xlsx"
+        example: "付款里程碑_20260210153045.xlsx"
+        description: 文件名使用中文前缀加时间戳格式，确保文件名语义化且避免重名
+        generation:
+          frontend:
+            location: "ruoyi-ui/src/views/project/payment/index.vue"
+            method: handleExport
+            implementation: |
+              function handleExport() {
+                const timestamp = proxy.parseTime(new Date(), '{y}{m}{d}{h}{i}{s}')
+                proxy.download('project/payment/export', {
+                  ...queryParams.value
+                }, `付款里程碑_${timestamp}.xlsx`)
+              }
+            note: |
+              - 必须传递第三个参数（文件名）给 proxy.download 方法
+              - 使用 proxy.parseTime 生成 yyyyMMddHHmmss 格式的时间戳
+              - 文件名格式：付款里程碑_{timestamp}.xlsx
+          backend:
+            location: "ruoyi-project/src/main/java/com/ruoyi/project/service/impl/PaymentServiceImpl.java"
+            method: exportPaymentList
+            implementation: |
+              SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+              String fileName = "付款里程碑_" + sdf.format(new java.util.Date());
+              ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
+              util.exportExcel(response, exportList, fileName);
+            note: |
+              - 后端生成的文件名会被前端传入的文件名覆盖
+              - 实际使用前端传入的文件名，后端文件名作为备用
+
+      backend:
+        controller:
+          class: PaymentController
+          method: export
+          location: "ruoyi-project/src/main/java/com/ruoyi/project/controller/PaymentController.java"
+          signature: |
+            @PreAuthorize("@ss.hasPermi('project:payment:export')")
+            @Log(title = "款项管理", businessType = BusinessType.EXPORT)
+            @PostMapping("/export")
+            public void export(HttpServletResponse response, Contract contract)
+          implementation: |
+            List<Contract> list = contractService.selectContractWithPaymentsList(contract);
+            paymentService.exportPaymentList(response, list);
+
+        service:
+          class: PaymentServiceImpl
+          method: exportPaymentList
+          location: "ruoyi-project/src/main/java/com/ruoyi/project/service/impl/PaymentServiceImpl.java"
+          signature: |
+            @Override
+            public void exportPaymentList(HttpServletResponse response, List<Contract> contractList)
+          implementation: |
+            // 将主子表数据展开为平铺列表
+            List<Payment> exportList = new ArrayList<>();
+
+            for (Contract contract : contractList) {
+                // 只导出有付款里程碑的合同
+                if (contract.getPaymentList() != null && !contract.getPaymentList().isEmpty()) {
+                    for (Payment payment : contract.getPaymentList()) {
+                        // 检查 paymentId 是否有效（过滤掉空的付款里程碑）
+                        if (payment.getPaymentId() != null) {
+                            // 设置合同名称到付款里程碑对象中
+                            payment.setContractName(contract.getContractName());
+                            exportList.add(payment);
+                        }
+                    }
+                }
+            }
+
+            // 生成文件名：付款里程碑_yyyyMMddHHmmss.xlsx
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+            String fileName = "付款里程碑_" + sdf.format(new java.util.Date());
+
+            // 导出Excel
+            ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
+            util.exportExcel(response, exportList, fileName);
+
+        dataQuery:
+          service: ContractService
+          method: selectContractWithPaymentsList
+          mapper: ContractMapper.selectContractWithPaymentsList
+          description: 查询合同及其付款里程碑列表（主子表模式）
+          joinType: LEFT JOIN
+          note: 使用 LEFT JOIN 确保返回所有合同，包括没有付款里程碑的合同
+
+        excelUtil:
+          class: ExcelUtil<Payment>
+          method: exportExcel
+          parameters:
+            - response: HttpServletResponse
+            - list: List<Payment>
+            - sheetName: String (文件名)
+          note: |
+            - ExcelUtil 根据 Payment 类的 @Excel 注解自动生成 Excel 列
+            - 字典值自动转换为标签（dictType 属性）
+            - 日期格式化为 yyyy-MM-dd（dateFormat 属性）
+            - 是否字段自动转换（readConverterExp 属性）
+
+        workflow:
+          step1:
+            action: 调用主子表查询获取合同及付款里程碑列表
+            method: contractService.selectContractWithPaymentsList(contract)
+            result: List<Contract>，每个 Contract 包含 paymentList
+          step2:
+            action: 过滤掉没有付款里程碑的合同
+            condition: contract.getPaymentList() != null && !contract.getPaymentList().isEmpty()
+            result: 只保留有付款里程碑的合同
+          step3:
+            action: 过滤掉空的付款里程碑记录
+            condition: payment.getPaymentId() != null
+            result: 只保留有效的付款里程碑
+          step4:
+            action: 将主子表数据展开为平铺列表
+            process: 遍历每个合同的 paymentList，为每个付款里程碑创建一行
+            result: List<Payment>
+          step5:
+            action: 设置合同名称到每个付款里程碑对象
+            method: payment.setContractName(contract.getContractName())
+            purpose: 导出时显示合同名称
+          step6:
+            action: 生成文件名
+            format: "付款里程碑_yyyyMMddHHmmss"
+            method: SimpleDateFormat
+          step7:
+            action: 使用 ExcelUtil 导出 Excel 文件
+            method: util.exportExcel(response, exportList, fileName)
+            result: Excel 文件通过 response 输出流返回给前端
+
+      features:
+        - 导出内容与查询条件联动，支持筛选导出
+        - 只导出有付款里程碑的合同，通过双重过滤确保数据有效性
+        - 字典值自动转换为标签（付款状态、季度、年份）
+        - 是否字段自动转换（0=否,1=是）
+        - 日期格式化为 yyyy-MM-dd
+        - 文件名使用中文前缀加时间戳，格式：付款里程碑_yyyyMMddHHmmss.xlsx
+        - 导出字段顺序固定，便于数据分析
+        - 前端传递文件名参数，确保文件名符合业务要求
+
+  # 详情页面配置
+  detailPage:
+    description: 付款里程碑详情页面，展示完整的付款里程碑信息、关联合同信息和附件列表
+    layout: 三部分卡片式布局
+    labelWidth: 160px
+
+    # 第一部分：付款里程碑基本信息
+    section1:
+      title: 付款里程碑基本信息
+      component: el-descriptions
+      column: 2
+      border: true
+      fields:
+        row1:
+          - field: paymentMethodName
+            label: 付款里程碑名称
+            span: 1
+          - field: paymentStatus
+            label: 付款状态
+            type: dict
+            dictType: sys_fkzt
+            span: 1
+
+        row2:
+          - field: paymentAmount
+            label: 付款金额（元）
+            type: money
+            format: 千分位
+            span: 1
+          - field: confirmYear
+            label: 付款里程碑确认年份
+            type: dict
+            dictType: sys_ndgl
+            span: 1
+
+        row3:
+          - field: hasPenalty
+            label: 是否涉及违约扣款
+            type: tag
+            tagType: "hasPenalty === '1' ? 'danger' : 'success'"
+            displayValue: "hasPenalty === '1' ? '是' : '否'"
+            span: "hasPenalty === '1' ? 1 : 2"
+            description: 动态列宽，是-占1列，否-占2列
+          - field: penaltyAmount
+            label: 扣款金额（元）
+            type: money
+            format: 千分位
+            span: 1
+            visible: "hasPenalty === '1'"
+            description: 仅在涉及违约扣款时显示
+
+        row4:
+          - field: expectedQuarter
+            label: 预计回款所属季度
+            type: dict
+            dictType: sys_jdgl
+            span: 1
+          - field: actualQuarter
+            label: 实际回款所属季度
+            type: dict
+            dictType: sys_jdgl
+            span: 1
+            emptyValue: "-"
+
+        row5:
+          - field: submitAcceptanceDate
+            label: 开票日期
+            type: date
+            format: "{y}-{m}-{d}"
+            span: 1
+          - field: actualPaymentDate
+            label: 实际回款日期
+            type: date
+            format: "{y}-{m}-{d}"
+            span: 1
+
+        row6:
+          - field: remark
+            label: 备注
+            span: 2
+            emptyValue: "-"
+
+        row7:
+          - field: createBy
+            label: 创建人
+            span: 1
+          - field: createTime
+            label: 创建时间
+            type: datetime
+            span: 1
+
+        row8:
+          - field: updateBy
+            label: 更新人
+            span: 1
+          - field: updateTime
+            label: 更新时间
+            type: datetime
+            span: 1
+
+    # 第二部分：关联合同信息
+    section2:
+      title: 关联合同信息
+      component: el-descriptions
+      column: 2
+      border: true
+      fields:
+        row1:
+          - field: contractName
+            label: 合同名称
+            span: 2
+            source: pm_contract.contract_name
+
+        row2:
+          - field: deptName
+            label: 所属部门
+            span: 1
+            source: sys_dept.dept_name
+          - field: contractCode
+            label: 合同编号
+            span: 1
+            source: pm_contract.contract_code
+
+        row3:
+          - field: contractStatus
+            label: 合同状态
+            type: dict
+            dictType: sys_htzt
+            span: 1
+            source: pm_contract.contract_status
+          - field: freeMaintenancePeriod
+            label: 免维期（月）
+            span: 1
+            source: pm_contract.free_maintenance_period
+
+        row4:
+          - field: contractAmount
+            label: 合同金额（含税）
+            type: money
+            format: 千分位
+            span: 1
+            source: pm_contract.contract_amount
+          - field: contractSignDate
+            label: 合同签订日期
+            type: date
+            span: 1
+            source: pm_contract.contract_sign_date
+
+    # 第三部分：付款里程碑附件列表
+    section3:
+      title: 付款里程碑附件列表
+      component: el-table
+      border: true
+      loading: attachmentLoading
+      dataSource: attachmentList
+      api:
+        list: /project/attachment/list
+        download: /project/attachment/download/{attachmentId}
+        params:
+          businessType: payment
+          businessId: paymentId
+      columns:
+        - field: index
+          label: 序号
+          type: index
+          width: 60px
+          align: center
+
+        - field: documentType
+          label: 文档类型
+          type: dict
+          dictType: sys_wdlx
+          width: 120px
+          align: center
+
+        - field: fileName
+          label: 文件名称
+          minWidth: 200px
+          showOverflowTooltip: true
+
+        - field: fileDescription
+          label: 文件说明
+          minWidth: 200px
+          showOverflowTooltip: true
+
+        - field: createBy
+          label: 上传人员
+          width: 120px
+          align: center
+
+        - field: createTime
+          label: 上传时间
+          type: datetime
+          width: 160px
+          align: center
+
+        - field: actions
+          label: 操作
+          type: actions
+          width: 150px
+          align: center
+          fixed: right
+          buttons:
+            - text: 下载
+              type: primary
+              icon: Download
+              action: handleDownload
+              link: true
+
+    # 底部按钮
+    bottomButtons:
+      - text: 返回
+        action: handleBack
+        afterClick: 跳转到付款里程碑查询页面
+
+    # 字典依赖
+    dictDependencies:
+      - sys_fkzt: 付款状态
+      - sys_ndgl: 年度管理
+      - sys_jdgl: 季度管理
+      - sys_htzt: 合同状态
+      - sys_wdlx: 文档类型
+
+    # 功能特性
+    features:
+      - 三部分卡片式布局，信息层次清晰
+      - 动态列宽：违约扣款字段根据值自动调整列宽
+      - 条件显示：扣款金额仅在涉及违约扣款时显示
+      - 附件管理：集成附件列表查询和下载功能
+      - 金额格式化：所有金额字段使用千分位格式
+      - 字典标签：自动转换字典值为标签显示
+
+  # 附件管理页面配置
+  attachmentPage:
+    description: 付款里程碑附件管理页面，展示付款里程碑基本信息、上传附件、附件列表管理
+    layout: 三部分卡片式布局
+    route: /htkx/payment/attachment/:paymentId
+
+    # 第一部分：付款里程碑基本信息
+    section1:
+      title: 付款里程碑基本信息
+      component: el-descriptions
+      column: 2
+      border: true
+      loading: paymentLoading
+      fields:
+        row1:
+          - field: contractName
+            label: 合同名称
+            span: 2
+            source: pm_contract.contract_name
+
+        row2:
+          - field: contractCode
+            label: 合同编号
+            span: 1
+            source: pm_contract.contract_code
+          - field: contractAmount
+            label: 合同金额
+            type: money
+            format: 千分位
+            suffix: 元
+            span: 1
+            source: pm_contract.contract_amount
+
+        row3:
+          - field: paymentMethodName
+            label: 付款方式名称
+            span: 1
+            source: pm_payment.payment_method_name
+          - field: paymentStatus
+            label: 付款状态
+            type: dict
+            dictType: sys_fkzt
+            span: 1
+            source: pm_payment.payment_status
+
+    # 第二部分：上传附件
+    section2:
+      title: 上传附件
+      component: el-form
+      labelWidth: 120px
+      fields:
+        - field: documentType
+          label: 文档类型
+          type: select
+          dictType: sys_wdlx
+          required: true
+          clearable: true
+          placeholder: 请选择文档类型
+
+        - field: file
+          label: 上传附件
+          type: upload
+          required: true
+          limit: 1
+          maxSize: 30MB
+          allowedExtensions: ['.doc', '.docx', '.xls', '.xlsx', '.pdf', '.csv', '.png', '.jpg', '.gif', '.txt', '.7z', '.zip', '.gz']
+          autoUpload: false
+
+        - field: fileDescription
+          label: 文件说明
+          type: textarea
+          rows: 3
+          maxlength: 500
+          showWordLimit: true
+          placeholder: 请输入文件说明
+
+      buttons:
+        - text: 上传
+          action: handleUpload
+          type: primary
+          loading: uploading
+
+    # 第三部分：附件列表
+    section3:
+      title: 附件列表
+      component: el-table
+      border: true
+      loading: listLoading
+      dataSource: attachmentList
+      api:
+        list: /project/attachment/list
+        download: /project/attachment/download/{attachmentId}
+        delete: /project/attachment/{attachmentId}
+        log: /project/attachment/log
+        params:
+          businessType: payment
+          businessId: paymentId
+      columns:
+        - field: index
+          label: 序号
+          type: index
+          width: 60px
+          align: center
+
+        - field: documentType
+          label: 文档类型
+          type: dict
+          dictType: sys_wdlx
+          width: 120px
+          align: center
+
+        - field: fileName
+          label: 文件名称
+          minWidth: 200px
+          showOverflowTooltip: true
+
+        - field: fileSize
+          label: 文件大小
+          type: fileSize
+          width: 100px
+          align: center
+
+        - field: fileDescription
+          label: 文件说明
+          minWidth: 200px
+          showOverflowTooltip: true
+
+        - field: createBy
+          label: 上传人员
+          width: 120px
+          align: center
+
+        - field: createTime
+          label: 上传时间
+          type: datetime
+          width: 160px
+          align: center
+
+        - field: actions
+          label: 操作
+          type: actions
+          width: 200px
+          align: center
+          fixed: right
+          buttons:
+            - text: 下载
+              type: primary
+              icon: Download
+              action: handleDownload
+              link: true
+            - text: 删除
+              type: danger
+              icon: Delete
+              action: handleDelete
+              link: true
+              permission: project:payment:remove
+              confirmation: true
+              confirmMessage: 确认删除该附件吗？
+            - text: 日志
+              type: info
+              icon: Document
+              action: handleLog
+              link: true
+
+    # 底部按钮
+    bottomButtons:
+      - text: 返回
+        action: handleBack
+        afterClick: 跳转到付款里程碑查询页面
+
+    # 字典依赖
+    dictDependencies:
+      - sys_fkzt: 付款状态
+      - sys_ndgl: 年度管理
+      - sys_wdlx: 文档类型
+
+    # 功能特性
+    features:
+      - 三部分卡片式布局，功能分区清晰
+      - 付款里程碑基本信息展示：合同名称、合同编号、合同金额、付款方式名称、付款状态
+      - 附件上传：支持多种文件格式，文件大小限制30MB
+      - 附件列表管理：下载、删除、查看操作日志
+      - 金额格式化：合同金额使用千分位格式
+      - 字典标签：自动转换字典值为标签显示
+
+    # 后端支持
+    backend:
+      query: selectPaymentByPaymentId
+      resultMap: PaymentWithContractResult
+      joinTables:
+        - pm_contract: 关联合同信息
+      returnFields:
+        - contract_name: 合同名称
+        - contract_code: 合同编号
+        - contract_amount: 合同金额
+        - payment_method_name: 付款方式名称
+        - payment_status: 付款状态
+
+# ============================
+# 实现说明
+# ============================
+implementation:
+  description: 本规格文件定义了付款里程碑管理模块的完整功能配置，包括主子表展示模式、表单交互、路由配置等
+
+  keyFeatures:
+    - 主子表展示模式：合同为主表，付款里程碑为子表，支持单元格合并
+    - 金额统计功能：列表第一行显示付款总金额，统计所有查询结果（不受分页影响）
+    - 智能表单：合同选择支持模糊搜索，自动加载合同详情和已有里程碑
+    - 预设合同模式：从列表页快速新增付款里程碑
+    - 更新人fallback逻辑：新增记录显示创建人，已更新记录显示更新人
+    - 列显隐功能：用户可自定义列的显示/隐藏
+    - 合同名称可点击：跳转到合同详情页，智能返回
+    - 详情页面优化：三部分卡片式布局，集成附件列表，动态列宽显示
+    - 附件管理页面：展示付款里程碑基本信息，支持附件上传、下载、删除、日志查看
+    - 表单优化：所有下拉选和日期选择器支持清除，去掉重置按钮简化操作
+    - 删除业务规则：有附件时禁止删除，确保数据完整性和可追溯性
+    - 导出功能：
+        - 文件名格式：付款里程碑_yyyyMMddHHmmss.xlsx（中文前缀+时间戳）
+        - 数据过滤：只导出有付款里程碑的合同，通过双重过滤确保数据有效性
+        - 字段顺序：合同名称、付款里程碑名称、付款状态、付款金额等11个字段
+        - 字典转换：付款状态、季度、年份等字典值自动转换为标签
+        - 日期格式：统一格式化为 yyyy-MM-dd
+        - 前端实现：必须传递文件名参数给 proxy.download 方法
+        - 后端实现：双重过滤（paymentList 非空 + paymentId 非 null）
+
+  technicalStack:
+    backend:
+      - Java 17 / Spring Boot 3.5.8
+      - MyBatis（主子表关联查询）
+      - 多表JOIN查询（pm_contract, pm_customer, sys_dept, sys_user）
+    frontend:
+      - Vue 3.5 / TypeScript 5.6
+      - Element Plus 2.13
+      - 主子表数据处理（processDisplayList）
+      - 单元格合并（spanMethod）
+
+  codeLocations:
+    backend:
+      - ruoyi-project/src/main/java/com/ruoyi/project/domain/Contract.java（合同实体，包含 paymentList）
+      - ruoyi-project/src/main/java/com/ruoyi/project/domain/Payment.java（付款里程碑实体，包含 @Excel 注解）
+      - ruoyi-project/src/main/java/com/ruoyi/project/controller/PaymentController.java（控制器，包含 export 方法）
+      - ruoyi-project/src/main/java/com/ruoyi/project/service/IPaymentService.java（服务接口）
+      - ruoyi-project/src/main/java/com/ruoyi/project/service/impl/PaymentServiceImpl.java（服务实现，包含 exportPaymentList 方法）
+      - ruoyi-project/src/main/java/com/ruoyi/project/service/IContractService.java（合同服务接口）
+      - ruoyi-project/src/main/java/com/ruoyi/project/mapper/ContractMapper.java（合同 Mapper）
+      - ruoyi-project/src/main/resources/mapper/project/ContractMapper.xml（主子表查询 SQL）
+    frontend:
+      - ruoyi-ui/src/views/project/payment/index.vue（列表页，包含 handleExport 方法）
+      - ruoyi-ui/src/views/project/payment/form.vue（新增/编辑页）
+      - ruoyi-ui/src/views/project/payment/detail.vue（详情页）
+      - ruoyi-ui/src/views/project/payment/attachment.vue（附件页）
+      - ruoyi-ui/src/api/project/payment.js（API 函数）
+      - ruoyi-ui/src/router/index.ts（路由配置）
+      - ruoyi-ui/src/utils/request.ts（download 方法实现）

@@ -307,4 +307,28 @@ public class ContractServiceImpl implements IContractService
         // 新增模式，找到同名合同，不唯一
         return false;
     }
+
+    /**
+     * 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
+     *
+     * @param contract 查询条件
+     * @return 合同及付款里程碑列表
+     */
+    @Override
+    public List<Contract> selectContractWithPaymentsList(Contract contract)
+    {
+        return contractMapper.selectContractWithPaymentsList(contract);
+    }
+
+    /**
+     * 统计付款里程碑总金额（用于付款里程碑查询页面）
+     *
+     * @param contract 查询条件
+     * @return 付款总金额
+     */
+    @Override
+    public BigDecimal sumPaymentAmount(Contract contract)
+    {
+        return contractMapper.sumPaymentAmount(contract);
+    }
 }

@@ -40,6 +40,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateByName"    column="update_by_name"    />
     </resultMap>
 
+    <resultMap type="Contract" id="ContractWithPaymentsResult" extends="ContractResult">
+        <collection property="paymentList" ofType="Payment">
+            <result property="paymentId" column="payment_id" />
+            <result property="contractId" column="contract_id" />
+            <result property="paymentMethodName" column="payment_method_name" />
+            <result property="paymentAmount" column="payment_amount" />
+            <result property="hasPenalty" column="has_penalty" />
+            <result property="penaltyAmount" column="penalty_amount" />
+            <result property="paymentStatus" column="payment_status" />
+            <result property="expectedQuarter" column="expected_quarter" />
+            <result property="actualQuarter" column="actual_quarter" />
+            <result property="submitAcceptanceDate" column="submit_acceptance_date" />
+            <result property="actualPaymentDate" column="actual_payment_date" />
+            <result property="confirmYear" column="payment_confirm_year" />
+            <result property="createBy" column="payment_create_by" />
+            <result property="createTime" column="payment_create_time" />
+            <result property="updateBy" column="payment_update_by" />
+            <result property="updateTime" column="payment_update_time" />
+            <result property="createByName" column="payment_create_by_name" />
+            <result property="updateByName" column="payment_update_by_name" />
+        </collection>
+    </resultMap>
+
     <sql id="selectContractVo">
         select contract_id, contract_code, contract_name, customer_id, dept_id, contract_type, contract_status, contract_sign_date, contract_period, contract_amount, tax_rate, amount_no_tax, tax_amount, confirm_amount, confirm_year, free_maintenance_period, del_flag, create_by, create_time, update_by, update_time, remark, reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5 from pm_contract
     </sql>
@@ -222,7 +245,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <select id="searchContracts" parameterType="String" resultMap="ContractResult">
-        select contract_id, contract_code, contract_name, contract_status
+        select contract_id, contract_code, contract_name, contract_status, contract_amount
         from pm_contract
         where del_flag = '0'
         <if test="keyword != null and keyword != ''">
@@ -230,5 +253,95 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             or contract_code like concat('%', #{keyword}, '%'))
         </if>
         order by create_time desc
+        limit 100
+    </select>
+
+    <select id="selectContractWithPaymentsList" parameterType="Contract" resultMap="ContractWithPaymentsResult">
+        select
+            c.contract_id, c.contract_code, c.contract_name, c.customer_id, c.dept_id,
+            c.contract_type, c.contract_status, c.contract_sign_date, c.contract_period,
+            c.contract_amount, c.tax_rate, c.amount_no_tax, c.tax_amount,
+            c.confirm_amount, c.confirm_year, c.free_maintenance_period,
+            c.create_by, c.create_time, c.update_by, c.update_time, c.remark,
+            d.dept_name as dept_name,
+            cust.customer_simple_name as customer_name,
+            dict1.dict_label as contract_type_name,
+            dict2.dict_label as contract_status_name,
+            u1.nick_name as create_by_name,
+            u2.nick_name as update_by_name,
+            p.payment_id,
+            p.payment_method_name,
+            p.payment_amount,
+            p.has_penalty,
+            p.penalty_amount,
+            p.payment_status,
+            p.expected_quarter,
+            p.actual_quarter,
+            p.submit_acceptance_date,
+            p.actual_payment_date,
+            p.confirm_year as payment_confirm_year,
+            p.create_by as payment_create_by,
+            p.create_time as payment_create_time,
+            p.update_by as payment_update_by,
+            p.update_time as payment_update_time,
+            u3.nick_name as payment_create_by_name,
+            u4.nick_name as payment_update_by_name
+        from pm_contract c
+        left join sys_dept d on c.dept_id = d.dept_id
+        left join pm_customer cust on c.customer_id = cust.customer_id
+        left join sys_dict_data dict1 on c.contract_type = dict1.dict_value and dict1.dict_type = 'sys_htlx'
+        left join sys_dict_data dict2 on c.contract_status = dict2.dict_value and dict2.dict_type = 'sys_htzt'
+        left join sys_user u1 on c.create_by = u1.user_name
+        left join sys_user u2 on c.update_by = u2.user_name
+        left join pm_payment p on c.contract_id = p.contract_id and p.del_flag = '0'
+        left join sys_user u3 on p.create_by = u3.user_name
+        left join sys_user u4 on p.update_by = u4.user_name
+        <where>
+            c.del_flag = '0'
+            <if test="contractCode != null and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
+            <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
+            <if test="customerId != null"> and c.customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''"> and cust.customer_simple_name like concat('%', #{customerName}, '%')</if>
+            <if test="deptId != null"> and c.dept_id = #{deptId}</if>
+            <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
+            <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+            <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
+            <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
+            <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
+            <if test="params.expectedQuarter != null and params.expectedQuarter != ''"> and p.expected_quarter = #{params.expectedQuarter}</if>
+            <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
+            <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
+            <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
+            <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
+        </where>
+        order by c.create_time desc, p.create_time asc
+    </select>
+
+    <!-- 统计付款里程碑总金额 -->
+    <select id="sumPaymentAmount" parameterType="Contract" resultType="java.math.BigDecimal">
+        select COALESCE(sum(p.payment_amount), 0)
+        from pm_contract c
+        left join pm_customer cust on c.customer_id = cust.customer_id
+        left join pm_payment p on c.contract_id = p.contract_id and p.del_flag = '0'
+        <where>
+            c.del_flag = '0'
+            <if test="contractCode != null and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
+            <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
+            <if test="customerId != null"> and c.customer_id = #{customerId}</if>
+            <if test="customerName != null and customerName != ''"> and cust.customer_simple_name like concat('%', #{customerName}, '%')</if>
+            <if test="deptId != null"> and c.dept_id = #{deptId}</if>
+            <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
+            <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+            <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
+            <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
+            <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
+            <if test="params.expectedQuarter != null and params.expectedQuarter != ''"> and p.expected_quarter = #{params.expectedQuarter}</if>
+            <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
+            <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
+            <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
+            <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
+        </where>
     </select>
 </mapper>

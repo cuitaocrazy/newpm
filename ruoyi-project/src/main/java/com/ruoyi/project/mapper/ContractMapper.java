@@ -78,4 +78,20 @@ public interface ContractMapper
      * @return 合同列表
      */
     public List<Contract> searchContracts(String keyword);
+
+    /**
+     * 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
+     *
+     * @param contract 查询条件
+     * @return 合同及付款里程碑列表
+     */
+    public List<Contract> selectContractWithPaymentsList(Contract contract);
+
+    /**
+     * 统计付款里程碑总金额（用于付款里程碑查询页面）
+     *
+     * @param contract 查询条件
+     * @return 付款总金额
+     */
+    public BigDecimal sumPaymentAmount(Contract contract);
 }

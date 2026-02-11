@@ -48,68 +48,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/project/contract',
-    component: Layout,
-    hidden: true,
-    children: [
-      {
-        path: 'add',
-        component: () => import('@/views/project/contract/form.vue'),
-        name: 'ContractAdd',
-        meta: { title: '新增合同', activeMenu: '/htkx/contract' }
-      },
-      {
-        path: 'edit/:contractId(\\d+)',
-        component: () => import('@/views/project/contract/form.vue'),
-        name: 'ContractEdit',
-        meta: { title: '编辑合同', activeMenu: '/htkx/contract' }
-      },
-      {
-        path: 'detail/:contractId(\\d+)',
-        component: () => import('@/views/project/contract/detail.vue'),
-        name: 'ContractDetail',
-        meta: { title: '合同详情', activeMenu: '/htkx/contract' }
-      },
-      {
-        path: 'attachment/:contractId(\\d+)',
-        component: () => import('@/views/project/contract/attachment.vue'),
-        name: 'ContractAttachment',
-        meta: { title: '合同附件', activeMenu: '/htkx/contract' }
-      }
-    ]
-  },
-  {
-    path: '/project/payment',
-    component: Layout,
-    hidden: true,
-    children: [
-      {
-        path: 'add',
-        component: () => import('@/views/project/payment/form.vue'),
-        name: 'PaymentAdd',
-        meta: { title: '新增款项', activeMenu: '/project/payment' }
-      },
-      {
-        path: 'edit/:paymentId(\\d+)',
-        component: () => import('@/views/project/payment/form.vue'),
-        name: 'PaymentEdit',
-        meta: { title: '编辑款项', activeMenu: '/project/payment' }
-      },
-      {
-        path: 'detail/:paymentId(\\d+)',
-        component: () => import('@/views/project/payment/detail.vue'),
-        name: 'PaymentDetail',
-        meta: { title: '款项详情', activeMenu: '/project/payment' }
-      },
-      {
-        path: 'attachment/:paymentId(\\d+)',
-        component: () => import('@/views/project/payment/attachment.vue'),
-        name: 'PaymentAttachment',
-        meta: { title: '款项附件', activeMenu: '/project/payment' }
-      }
-    ]
-  },
-  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404.vue'),
     hidden: true
