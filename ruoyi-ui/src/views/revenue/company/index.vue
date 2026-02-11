@@ -270,6 +270,9 @@ import { listRevenue, exportRevenue } from "@/api/revenue/company"
 import { listSecondaryRegion } from "@/api/project/secondaryRegion"
 import { listUserByPost } from "@/api/system/user"
 import { listDept } from "@/api/system/dept"
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const { proxy } = getCurrentInstance()
 
@@ -402,14 +405,18 @@ function initOptions() {
 
 /** 收入确认按钮 */
 function handleRevenue(row) {
-  // TODO: 跳转到详情页（编辑模式）
-  console.log('收入确认', row)
+  router.push({
+    path: '/revenue/company/detail/' + row.projectId,
+    query: { mode: 'edit' }
+  })
 }
 
 /** 收入查看按钮 */
 function handleRevenueView(row) {
-  // TODO: 跳转到详情页（查看模式）
-  console.log('收入查看', row)
+  router.push({
+    path: '/revenue/company/detail/' + row.projectId,
+    query: { mode: 'view' }
+  })
 }
 
 // 初始化
