@@ -267,6 +267,9 @@
 
 <script setup name="RevenueCompany">
 import { listRevenue, exportRevenue } from "@/api/revenue/company"
+import { listSecondaryRegion } from "@/api/project/secondaryRegion"
+import { listUserByPost } from "@/api/system/user"
+import { listDept } from "@/api/system/dept"
 
 const { proxy } = getCurrentInstance()
 
@@ -373,13 +376,28 @@ function handleRegionChange(value) {
   queryParams.value.regionId = null
   provinceList.value = []
   if (value) {
-    // TODO: 加载二级区域列表
+    listSecondaryRegion({ regionCode: value }).then(response => {
+      provinceList.value = response.rows || []
+    })
   }
 }
 
 /** 初始化下拉选项 */
 function initOptions() {
-  // TODO: 加载部门树、区域列表、项目经理、市场经理
+  // 加载部门树
+  listDept().then(response => {
+    deptTree.value = proxy.handleTree(response.data, "deptId")
+  })
+
+  // 加载项目经理（岗位代码：pm）
+  listUserByPost('pm').then(response => {
+    projectManagerList.value = response.data || []
+  })
+
+  // 加载市场经理（岗位代码：scjl）
+  listUserByPost('scjl').then(response => {
+    marketManagerList.value = response.data || []
+  })
 }
 
 /** 收入确认按钮 */
