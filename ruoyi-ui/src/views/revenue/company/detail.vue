@@ -77,7 +77,7 @@
 
           <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
             <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
-              <el-select v-model="form.revenueConfirmStatus" placeholder="请选择收入确认状态">
+              <el-select v-model="form.revenueConfirmStatus" placeholder="请选择收入确认状态" :disabled="isViewMode">
                 <el-option
                   v-for="dict in sys_srqrzt"
                   :key="dict.value"
@@ -88,7 +88,7 @@
             </el-form-item>
 
             <el-form-item label="收入确认年度" prop="revenueConfirmYear">
-              <el-select v-model="form.revenueConfirmYear" placeholder="请选择收入确认年度">
+              <el-select v-model="form.revenueConfirmYear" placeholder="请选择收入确认年度" :disabled="isViewMode">
                 <el-option
                   v-for="dict in sys_ndgl"
                   :key="dict.value"
@@ -105,6 +105,7 @@
                 :step="100"
                 :min="0"
                 placeholder="请输入确认金额"
+                :disabled="isViewMode"
                 style="width: 100%;"
               />
               <span style="margin-left: 8px;">元</span>
@@ -118,6 +119,7 @@
                 :min="0"
                 :max="100"
                 placeholder="请输入税率"
+                :disabled="isViewMode"
                 style="width: 100%;"
               />
               <span style="margin-left: 8px;">%</span>
@@ -130,8 +132,9 @@
             </el-form-item>
 
             <el-form-item style="margin-top: 20px;">
-              <el-button type="primary" @click="submitForm">保存</el-button>
-              <el-button @click="goBack">取消</el-button>
+              <el-button v-if="!isViewMode" type="primary" @click="submitForm">保存</el-button>
+              <el-button v-if="isViewMode" type="primary" @click="toggleEditMode">编辑</el-button>
+              <el-button @click="goBack">{{ isViewMode ? '关闭' : '取消' }}</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -150,7 +153,11 @@ const { proxy } = getCurrentInstance()
 const { sys_srqrzt, sys_ndgl, sys_xmfl } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'sys_xmfl')
 
 const projectId = ref(route.params.projectId)
-const pageTitle = ref("收入确认")
+const mode = ref(route.query.mode || 'edit') // edit | view
+const isViewMode = computed(() => mode.value === 'view')
+const pageTitle = computed(() => {
+  return mode.value === 'view' ? '收入查看' : '收入确认'
+})
 
 const data = reactive({
   form: {},
@@ -227,6 +234,11 @@ function submitForm() {
 /** 返回 */
 function goBack() {
   router.push("/revenue/company")
+}
+
+/** 切换编辑模式 */
+function toggleEditMode() {
+  mode.value = 'edit'
 }
 
 // 初始化
