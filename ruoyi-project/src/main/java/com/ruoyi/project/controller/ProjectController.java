@@ -234,4 +234,17 @@ public class ProjectController extends BaseController
 
         return toAjax(projectService.updateProject(project));
     }
+
+    /**
+     * 导出收入确认列表
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:export')")
+    @Log(title = "收入确认", businessType = BusinessType.EXPORT)
+    @PostMapping("/revenue/export")
+    public void exportRevenue(HttpServletResponse response, Project project)
+    {
+        List<Project> list = projectService.selectProjectList(project);
+        ExcelUtil<Project> util = new ExcelUtil<Project>(Project.class);
+        util.exportExcel(response, list, "收入确认数据");
+    }
 }
