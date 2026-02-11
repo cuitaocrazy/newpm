@@ -152,7 +152,12 @@
     </el-row>
 
     <el-table v-loading="loading" :data="revenueList">
-      <el-table-column label="序号" type="index" width="55" align="center" />
+      <el-table-column label="序号" width="55" align="center">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
+          <span v-else>{{ scope.$index }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
       <el-table-column label="项目编码" align="center" prop="projectCode" min-width="150" show-overflow-tooltip />
       <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip />
@@ -185,30 +190,67 @@
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
-      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120" />
-      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120" />
-      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120" />
-      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100" />
-      <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100" />
-      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120" />
+      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
+          <span v-else>{{ scope.row.confirmAmount }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.afterTaxAmount }}</span>
+          <span v-else>{{ scope.row.afterTaxAmount }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
+          <span v-else>{{ scope.row.projectBudget }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.estimatedWorkload }}</span>
+          <span v-else>{{ scope.row.estimatedWorkload }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
+          <span v-else>{{ scope.row.actualWorkload }}</span>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
+          <span v-else>{{ scope.row.contractAmount }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
-          <el-button
-            v-if="scope.row.revenueConfirmStatus === '0' || !scope.row.revenueConfirmStatus"
-            link
-            type="success"
-            icon="Money"
-            @click="handleRevenue(scope.row)"
-            v-hasPermi="['revenue:company:edit']"
-          >收入确认</el-button>
-          <el-button
-            v-else-if="scope.row.revenueConfirmStatus === '1'"
-            link
-            type="primary"
-            icon="View"
-            @click="handleRevenueView(scope.row)"
-            v-hasPermi="['revenue:company:view']"
-          >收入查看</el-button>
+          <template v-if="!scope.row.isSummaryRow">
+            <el-button
+              v-if="scope.row.revenueConfirmStatus === '0' || !scope.row.revenueConfirmStatus"
+              link
+              type="success"
+              icon="Money"
+              @click="handleRevenue(scope.row)"
+              v-hasPermi="['revenue:company:edit']"
+            >收入确认</el-button>
+            <el-button
+              v-else-if="scope.row.revenueConfirmStatus === '1'"
+              link
+              type="primary"
+              icon="View"
+              @click="handleRevenueView(scope.row)"
+              v-hasPermi="['revenue:company:view']"
+            >收入查看</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -268,10 +310,43 @@ const { queryParams } = toRefs(data)
 function getList() {
   loading.value = true
   listRevenue(queryParams.value).then(response => {
-    revenueList.value = response.rows
+    const list = response.rows
+    const summary = calculateSummary(list)
+    revenueList.value = [summary, ...list] // 合计行在第一行
     total.value = response.total
     loading.value = false
   })
+}
+
+/** 计算合计行 */
+function calculateSummary(list) {
+  const summary = {
+    isSummaryRow: true,
+    projectBudget: 0,
+    estimatedWorkload: 0,
+    actualWorkload: 0,
+    contractAmount: 0,
+    confirmAmount: 0,
+    afterTaxAmount: 0
+  }
+
+  list.forEach(item => {
+    summary.projectBudget += (item.projectBudget || 0)
+    summary.estimatedWorkload += (item.estimatedWorkload || 0)
+    summary.actualWorkload += (item.actualWorkload || 0)
+    summary.contractAmount += (item.contractAmount || 0)
+    summary.confirmAmount += (item.confirmAmount || 0)
+    summary.afterTaxAmount += (item.afterTaxAmount || 0)
+  })
+
+  // 格式化为两位小数
+  Object.keys(summary).forEach(key => {
+    if (key !== 'isSummaryRow' && summary[key]) {
+      summary[key] = summary[key].toFixed(2)
+    }
+  })
+
+  return summary
 }
 
 /** 搜索按钮操作 */
