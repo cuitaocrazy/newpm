@@ -152,7 +152,65 @@
     </el-row>
 
     <el-table v-loading="loading" :data="revenueList">
-      <!-- 表格列将在下一步添加 -->
+      <el-table-column label="序号" type="index" width="55" align="center" />
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目编码" align="center" prop="projectCode" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip />
+      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
+      <el-table-column label="市场经理" align="center" prop="marketManagerName" min-width="100" />
+      <el-table-column label="项目分类" align="center" prop="projectCategory" width="120">
+        <template #default="scope">
+          <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="一级区域" align="center" prop="region" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="二级区域" align="center" prop="regionName" width="100" />
+      <el-table-column label="项目阶段" align="center" prop="projectStage" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_xmjd" :value="scope.row.projectStage"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+        <template #default="scope">
+          <span>{{ parseTime(scope.row.createTime) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
+        <template #default="scope">
+          <dict-tag :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
+      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120" />
+      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120" />
+      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120" />
+      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100" />
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100" />
+      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120" />
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
+        <template #default="scope">
+          <el-button
+            v-if="scope.row.revenueConfirmStatus === '0' || !scope.row.revenueConfirmStatus"
+            link
+            type="success"
+            icon="Money"
+            @click="handleRevenue(scope.row)"
+            v-hasPermi="['revenue:company:edit']"
+          >收入确认</el-button>
+          <el-button
+            v-else-if="scope.row.revenueConfirmStatus === '1'"
+            link
+            type="primary"
+            icon="View"
+            @click="handleRevenueView(scope.row)"
+            v-hasPermi="['revenue:company:view']"
+          >收入查看</el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination
@@ -247,6 +305,18 @@ function handleRegionChange(value) {
 /** 初始化下拉选项 */
 function initOptions() {
   // TODO: 加载部门树、区域列表、项目经理、市场经理
+}
+
+/** 收入确认按钮 */
+function handleRevenue(row) {
+  // TODO: 跳转到详情页（编辑模式）
+  console.log('收入确认', row)
+}
+
+/** 收入查看按钮 */
+function handleRevenueView(row) {
+  // TODO: 跳转到详情页（查看模式）
+  console.log('收入查看', row)
 }
 
 // 初始化
