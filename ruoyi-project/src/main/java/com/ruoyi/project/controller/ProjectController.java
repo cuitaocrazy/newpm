@@ -1,9 +1,7 @@
 package com.ruoyi.project.controller;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +12,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -29,7 +27,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * 项目管理Controller
  * 
  * @author ruoyi
- * @date 2026-02-05
+ * @date 2026-02-11
  */
 @RestController
 @RequestMapping("/project/project")
@@ -107,118 +105,86 @@ public class ProjectController extends BaseController
     }
 
     /**
-     * 根据部门查询项目列表（用于下拉选择）
-     * @param deptId 部门ID
-     * @param excludeContractId 排除已关联此合同的项目（编辑时使用）
+     * 获取用户列表（按岗位过滤）
+     * @param postCode 岗位编码：pm-项目经理, scjl-市场经理, xsfzr-销售负责人
      */
     @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/listByDept")
-    public AjaxResult listByDept(Long deptId, Long excludeContractId)
+    @GetMapping("/users")
+    public AjaxResult getUsersByPost(@RequestParam(required = false) String postCode)
     {
-        List<Project> list = projectService.selectProjectListByDept(deptId, excludeContractId);
-        return success(list);
+        return success(projectService.getUsersByPost(postCode));
     }
 
     /**
-     * 获取项目名称列表（用于智能提示）
+     * 获取二级区域列表（根据一级区域）
+     * @param regionDictValue 一级区域字典值
      */
     @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/nameList")
-    public AjaxResult nameList(String projectName)
+    @GetMapping("/secondaryRegions")
+    public AjaxResult getSecondaryRegions(@RequestParam String regionDictValue)
     {
-        List<String> list = projectService.selectProjectNameList(projectName);
-        return success(list);
+        return success(projectService.getSecondaryRegionsByRegion(regionDictValue));
     }
 
     /**
-     * 获取项目编号列表（用于智能提示）
+     * 获取客户列表（支持搜索）
+     * @param customerSimpleName 客户简称（模糊搜索）
      */
     @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/codeList")
-    public AjaxResult codeList(String projectCode)
+    @GetMapping("/customers")
+    public AjaxResult getCustomers(@RequestParam(required = false) String customerSimpleName)
     {
-        List<String> list = projectService.selectProjectCodeList(projectCode);
-        return success(list);
+        return success(projectService.getCustomers(customerSimpleName));
     }
 
     /**
-     * 获取项目金额汇总
+     * 获取客户联系人列表（根据客户ID）
+     * @param customerId 客户ID
      */
     @PreAuthorize("@ss.hasPermi('project:project:list')")
-    @GetMapping("/summary")
-    public AjaxResult summary(Project project)
+    @GetMapping("/customerContacts")
+    public AjaxResult getCustomerContacts(@RequestParam Long customerId)
     {
-        return success(projectService.selectProjectSummary(project));
+        return success(projectService.getCustomerContacts(customerId));
     }
 
-    // ========================================
-    // 公司收入确认相关接口
-    // ========================================
+    /**
+     * 获取部门树（三级及以下机构）
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @GetMapping("/deptTree")
+    public AjaxResult getDeptTree()
+    {
+        return success(projectService.getDeptTree());
+    }
+
+    /**
+     * 生成项目编号
+     * @param params 包含：industryCode, regionCode, provinceCode, shortName, establishedYear
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:add')")
+    @PostMapping("/generateCode")
+    public AjaxResult generateProjectCode(@RequestBody Map<String, String> params)
+    {
+        String projectCode = projectService.generateProjectCode(
+            params.get("industryCode"),
+            params.get("regionCode"),
+            params.get("provinceCode"),
+            params.get("shortName"),
+            params.get("establishedYear")
+        );
+        return success(projectCode);
+    }
 
     /**
      * 查询公司收入确认列表
      */
-    @PreAuthorize("@ss.hasPermi('revenue:company:query')")
-    @GetMapping("/revenueList")
+    @PreAuthorize("@ss.hasPermi('revenue:company:list')")
+    @GetMapping("/revenue/list")
     public TableDataInfo revenueList(Project project)
     {
         startPage();
         List<Project> list = projectService.selectProjectList(project);
         return getDataTable(list);
-    }
-
-    /**
-     * 获取公司收入确认详情
-     */
-    @PreAuthorize("@ss.hasPermi('revenue:company:view')")
-    @GetMapping("/revenue/{projectId}")
-    public AjaxResult getRevenueInfo(@PathVariable("projectId") Long projectId)
-    {
-        return success(projectService.selectProjectByProjectId(projectId));
-    }
-
-    /**
-     * 更新公司收入确认信息
-     */
-    @PreAuthorize("@ss.hasPermi('revenue:company:edit')")
-    @Log(title = "公司收入确认", businessType = BusinessType.UPDATE)
-    @PutMapping("/revenueConfirm")
-    public AjaxResult updateRevenueConfirm(@RequestBody Project project)
-    {
-        // 自动设置收入确认状态为已确认
-        project.setRevenueConfirmStatus("1");
-
-        // 自动设置确认人为当前登录用户
-        project.setCompanyRevenueConfirmedBy(getUserId());
-
-        // 自动设置确认时间为当前时间
-        project.setCompanyRevenueConfirmedTime(new Date());
-
-        // 自动计算税后金额：税后金额 = 确认金额 / (1 + 税率/100)
-        if (project.getConfirmAmount() != null && project.getTaxRate() != null) {
-            BigDecimal confirmAmount = project.getConfirmAmount();
-            BigDecimal taxRate = project.getTaxRate();
-            BigDecimal afterTaxAmount = confirmAmount.divide(
-                BigDecimal.ONE.add(taxRate.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP)),
-                2,
-                RoundingMode.HALF_UP
-            );
-            project.setAfterTaxAmount(afterTaxAmount);
-        }
-
-        return toAjax(projectService.updateProject(project));
-    }
-
-    /**
-     * 导出公司收入确认列表
-     */
-    @PreAuthorize("@ss.hasPermi('revenue:company:export')")
-    @Log(title = "公司收入确认", businessType = BusinessType.EXPORT)
-    @PostMapping("/revenueExport")
-    public void revenueExport(HttpServletResponse response, Project project)
-    {
-        List<Project> list = projectService.selectProjectList(project);
-        ExcelUtil<Project> util = new ExcelUtil<Project>(Project.class);
-        util.exportExcel(response, list, "公司收入确认数据");
     }
 }
