@@ -151,9 +151,18 @@
     </el-row>
 
     <!-- 数据表格 -->
-    <el-table v-loading="loading" :data="revenueList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="序号" type="index" width="55" align="center" />
+    <el-table
+      v-loading="loading"
+      :data="revenueListWithSummary"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column type="selection" width="55" align="center" :selectable="checkSelectable" />
+      <el-table-column label="序号" width="55" align="center">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
+          <span v-else>{{ scope.$index }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
       <el-table-column label="项目部门" align="center" prop="deptName" min-width="120" show-overflow-tooltip />
       <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
@@ -165,15 +174,27 @@
       <el-table-column label="二级区域" align="center" prop="provinceName" width="100" show-overflow-tooltip />
       <el-table-column label="项目预算（元）" align="center" prop="projectBudget" width="120">
         <template #default="scope">
-          <span>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
+          <span v-else>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="预估工作量（人天）" align="center" prop="estimatedWorkload" width="140" />
-      <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100" />
+      <el-table-column label="预估工作量（人天）" align="center" prop="estimatedWorkload" width="140">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.estimatedWorkload }}</span>
+          <span v-else>{{ scope.row.estimatedWorkload }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" width="100">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
+          <span v-else>{{ scope.row.actualWorkload }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="合同名称" align="center" prop="contractName" min-width="150" show-overflow-tooltip />
       <el-table-column label="合同金额（元）" align="center" prop="contractAmount" width="130">
         <template #default="scope">
-          <span>{{ scope.row.contractAmount ? parseFloat(scope.row.contractAmount).toLocaleString() : '-' }}</span>
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
+          <span v-else>{{ scope.row.contractAmount ? parseFloat(scope.row.contractAmount).toLocaleString() : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
@@ -189,7 +210,8 @@
       </el-table-column>
       <el-table-column label="确认金额（元）" align="center" prop="confirmAmount" width="130">
         <template #default="scope">
-          <span>{{ scope.row.confirmAmount ? parseFloat(scope.row.confirmAmount).toLocaleString() : '-' }}</span>
+          <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
+          <span v-else>{{ scope.row.confirmAmount ? parseFloat(scope.row.confirmAmount).toLocaleString() : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="参与人员" align="center" prop="participantsNames" min-width="150" show-overflow-tooltip />
@@ -231,24 +253,27 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
-          <!-- 未确认：显示"收入确认"按钮 -->
-          <el-button
-            v-if="scope.row.revenueConfirmStatus === '0'"
-            link
-            type="primary"
-            icon="Edit"
-            @click="handleConfirm(scope.row)"
-            v-hasPermi="['revenue:company:edit']"
-          >收入确认</el-button>
-          <!-- 已确认：显示"查看确认"按钮 -->
-          <el-button
-            v-if="scope.row.revenueConfirmStatus === '1'"
-            link
-            type="success"
-            icon="View"
-            @click="handleView(scope.row)"
-            v-hasPermi="['revenue:company:view']"
-          >查看确认</el-button>
+          <!-- 合计行不显示操作按钮 -->
+          <template v-if="!scope.row.isSummary">
+            <!-- 未确认：显示"收入确认"按钮 -->
+            <el-button
+              v-if="scope.row.revenueConfirmStatus === '0'"
+              link
+              type="primary"
+              icon="Edit"
+              @click="handleConfirm(scope.row)"
+              v-hasPermi="['revenue:company:edit']"
+            >收入确认</el-button>
+            <!-- 已确认：显示"查看确认"按钮 -->
+            <el-button
+              v-if="scope.row.revenueConfirmStatus === '1'"
+              link
+              type="success"
+              icon="View"
+              @click="handleView(scope.row)"
+              v-hasPermi="['revenue:company:view']"
+            >查看确认</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -291,6 +316,41 @@ const drawerRef = ref(null);
 const secondaryRegionOptions = ref([]);
 const projectManagerList = ref([]);
 const marketManagerList = ref([]);
+
+/** 带合计行的列表数据 */
+const revenueListWithSummary = computed(() => {
+  if (revenueList.value.length === 0) {
+    return [];
+  }
+
+  // 计算合计
+  const summary = {
+    isSummary: true,
+    projectBudget: 0,
+    estimatedWorkload: 0,
+    actualWorkload: 0,
+    contractAmount: 0,
+    confirmAmount: 0
+  };
+
+  revenueList.value.forEach(item => {
+    summary.projectBudget += Number(item.projectBudget) || 0;
+    summary.estimatedWorkload += Number(item.estimatedWorkload) || 0;
+    summary.actualWorkload += Number(item.actualWorkload) || 0;
+    summary.contractAmount += Number(item.contractAmount) || 0;
+    summary.confirmAmount += Number(item.confirmAmount) || 0;
+  });
+
+  // 格式化合计值
+  summary.projectBudget = summary.projectBudget.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  summary.estimatedWorkload = summary.estimatedWorkload.toFixed(2);
+  summary.actualWorkload = summary.actualWorkload.toFixed(2);
+  summary.contractAmount = summary.contractAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  summary.confirmAmount = summary.confirmAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // 将合计行插入到第一行
+  return [summary, ...revenueList.value];
+});
 
 const data = reactive({
   queryParams: {
@@ -400,6 +460,11 @@ function resetQuery() {
 /** 多选框选中数据 */
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.projectId);
+}
+
+/** 选择框是否可选 */
+function checkSelectable(row) {
+  return !row.isSummary;
 }
 
 /** 收入确认按钮操作 */
