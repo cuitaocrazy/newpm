@@ -76,7 +76,58 @@
           </template>
 
           <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
-            <!-- 表单字段将在下一步添加 -->
+            <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
+              <el-select v-model="form.revenueConfirmStatus" placeholder="请选择收入确认状态">
+                <el-option
+                  v-for="dict in sys_srqrzt"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="收入确认年度" prop="revenueConfirmYear">
+              <el-select v-model="form.revenueConfirmYear" placeholder="请选择收入确认年度">
+                <el-option
+                  v-for="dict in sys_ndgl"
+                  :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="确认金额（含税）" prop="confirmAmount">
+              <el-input-number
+                v-model="form.confirmAmount"
+                :precision="2"
+                :step="100"
+                :min="0"
+                placeholder="请输入确认金额"
+                style="width: 100%;"
+              />
+              <span style="margin-left: 8px;">元</span>
+            </el-form-item>
+
+            <el-form-item label="税率" prop="taxRate">
+              <el-input-number
+                v-model="form.taxRate"
+                :precision="2"
+                :step="0.1"
+                :min="0"
+                :max="100"
+                placeholder="请输入税率"
+                style="width: 100%;"
+              />
+              <span style="margin-left: 8px;">%</span>
+            </el-form-item>
+
+            <el-form-item label="税后金额（不含税）">
+              <el-input v-model="form.afterTaxAmount" disabled style="width: 100%;">
+                <template #append>元</template>
+              </el-input>
+            </el-form-item>
 
             <el-form-item style="margin-top: 20px;">
               <el-button type="primary" @click="submitForm">保存</el-button>
@@ -96,12 +147,27 @@ const route = useRoute()
 const router = useRouter()
 const { proxy } = getCurrentInstance()
 
+const { sys_srqrzt, sys_ndgl, sys_xmfl } = proxy.useDict('sys_srqrzt', 'sys_ndgl', 'sys_xmfl')
+
 const projectId = ref(route.params.projectId)
 const pageTitle = ref("收入确认")
 
 const data = reactive({
   form: {},
-  rules: {}
+  rules: {
+    revenueConfirmStatus: [
+      { required: true, message: "收入确认状态不能为空", trigger: "change" }
+    ],
+    revenueConfirmYear: [
+      { required: true, message: "收入确认年度不能为空", trigger: "change" }
+    ],
+    confirmAmount: [
+      { required: true, message: "确认金额不能为空", trigger: "blur" }
+    ],
+    taxRate: [
+      { required: true, message: "税率不能为空", trigger: "blur" }
+    ]
+  }
 })
 
 const { form, rules } = toRefs(data)
