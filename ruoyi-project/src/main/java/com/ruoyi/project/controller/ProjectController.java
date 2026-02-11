@@ -1,5 +1,7 @@
 package com.ruoyi.project.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
@@ -196,5 +198,40 @@ public class ProjectController extends BaseController
     public AjaxResult getRevenueInfo(@PathVariable("projectId") Long projectId)
     {
         return success(projectService.selectProjectByProjectId(projectId));
+    }
+
+    /**
+     * 保存收入确认信息
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:edit')")
+    @Log(title = "收入确认", businessType = BusinessType.UPDATE)
+    @PutMapping("/revenue")
+    public AjaxResult updateRevenue(@RequestBody Project project)
+    {
+        // 验证必填字段
+        if (project.getRevenueConfirmStatus() == null || project.getRevenueConfirmStatus().trim().isEmpty()) {
+            return error("收入确认状态不能为空");
+        }
+        if (project.getRevenueConfirmYear() == null || project.getRevenueConfirmYear().trim().isEmpty()) {
+            return error("收入确认年度不能为空");
+        }
+        if (project.getConfirmAmount() == null) {
+            return error("确认金额不能为空");
+        }
+        if (project.getTaxRate() == null) {
+            return error("税率不能为空");
+        }
+
+        // 自动计算税后金额
+        BigDecimal confirmAmount = project.getConfirmAmount();
+        BigDecimal taxRate = project.getTaxRate();
+        BigDecimal afterTaxAmount = confirmAmount.divide(
+            BigDecimal.ONE.add(taxRate.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP)),
+            2,
+            RoundingMode.HALF_UP
+        );
+        project.setAfterTaxAmount(afterTaxAmount);
+
+        return toAjax(projectService.updateProject(project));
     }
 }
