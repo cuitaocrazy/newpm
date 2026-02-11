@@ -187,4 +187,14 @@ public class ProjectController extends BaseController
         List<Project> list = projectService.selectProjectList(project);
         return getDataTable(list);
     }
+
+    /**
+     * 获取收入确认详情
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:query')")
+    @GetMapping("/revenue/{projectId}")
+    public AjaxResult getRevenueInfo(@PathVariable("projectId") Long projectId)
+    {
+        return success(projectService.selectProjectByProjectId(projectId));
+    }
 }
