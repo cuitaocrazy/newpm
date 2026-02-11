@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 查询省级区域列表
+// 查询二级区域列表
 export function listSecondaryRegion(query) {
   return request({
     url: '/project/secondaryRegion/list',
@@ -9,15 +9,15 @@ export function listSecondaryRegion(query) {
   })
 }
 
-// 查询省级区域详细
-export function getSecondaryRegion(provinceId) {
+// 查询二级区域详细
+export function getSecondaryRegion(regionId) {
   return request({
-    url: '/project/secondaryRegion/' + provinceId,
+    url: '/project/secondaryRegion/' + regionId,
     method: 'get'
   })
 }
 
-// 新增省级区域
+// 新增二级区域
 export function addSecondaryRegion(data) {
   return request({
     url: '/project/secondaryRegion',
@@ -26,7 +26,7 @@ export function addSecondaryRegion(data) {
   })
 }
 
-// 修改省级区域
+// 修改二级区域
 export function updateSecondaryRegion(data) {
   return request({
     url: '/project/secondaryRegion',
@@ -35,10 +35,10 @@ export function updateSecondaryRegion(data) {
   })
 }
 
-// 删除省级区域
-export function delSecondaryRegion(provinceId) {
+// 删除二级区域
+export function delSecondaryRegion(regionId) {
   return request({
-    url: '/project/secondaryRegion/' + provinceId,
+    url: '/project/secondaryRegion/' + regionId,
     method: 'delete'
   })
 }

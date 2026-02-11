@@ -22,10 +22,10 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
- * 项目审核Controller
+ * 立项审核Controller
  * 
  * @author ruoyi
- * @date 2026-02-01
+ * @date 2026-02-11
  */
 @RestController
 @RequestMapping("/project/approval")
@@ -35,7 +35,7 @@ public class ProjectApprovalController extends BaseController
     private IProjectApprovalService projectApprovalService;
 
     /**
-     * 查询项目审核列表
+     * 查询立项审核列表
      */
     @PreAuthorize("@ss.hasPermi('project:approval:list')")
     @GetMapping("/list")
@@ -47,20 +47,20 @@ public class ProjectApprovalController extends BaseController
     }
 
     /**
-     * 导出项目审核列表
+     * 导出立项审核列表
      */
     @PreAuthorize("@ss.hasPermi('project:approval:export')")
-    @Log(title = "项目审核", businessType = BusinessType.EXPORT)
+    @Log(title = "立项审核", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, ProjectApproval projectApproval)
     {
         List<ProjectApproval> list = projectApprovalService.selectProjectApprovalList(projectApproval);
         ExcelUtil<ProjectApproval> util = new ExcelUtil<ProjectApproval>(ProjectApproval.class);
-        util.exportExcel(response, list, "项目审核数据");
+        util.exportExcel(response, list, "立项审核数据");
     }
 
     /**
-     * 获取项目审核详细信息
+     * 获取立项审核详细信息
      */
     @PreAuthorize("@ss.hasPermi('project:approval:query')")
     @GetMapping(value = "/{approvalId}")
@@ -70,10 +70,10 @@ public class ProjectApprovalController extends BaseController
     }
 
     /**
-     * 新增项目审核
+     * 新增立项审核
      */
     @PreAuthorize("@ss.hasPermi('project:approval:add')")
-    @Log(title = "项目审核", businessType = BusinessType.INSERT)
+    @Log(title = "立项审核", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody ProjectApproval projectApproval)
     {
@@ -81,10 +81,10 @@ public class ProjectApprovalController extends BaseController
     }
 
     /**
-     * 修改项目审核
+     * 修改立项审核
      */
     @PreAuthorize("@ss.hasPermi('project:approval:edit')")
-    @Log(title = "项目审核", businessType = BusinessType.UPDATE)
+    @Log(title = "立项审核", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody ProjectApproval projectApproval)
     {
@@ -92,10 +92,10 @@ public class ProjectApprovalController extends BaseController
     }
 
     /**
-     * 删除项目审核
+     * 删除立项审核
      */
     @PreAuthorize("@ss.hasPermi('project:approval:remove')")
-    @Log(title = "项目审核", businessType = BusinessType.DELETE)
+    @Log(title = "立项审核", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{approvalIds}")
     public AjaxResult remove(@PathVariable Long[] approvalIds)
     {

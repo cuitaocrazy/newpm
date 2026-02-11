@@ -6,7 +6,7 @@ basicInfo:
   tableComment: 项目审核表
   className: ProjectApproval
   functionAuthor: ruoyi
-  remark: "项目审核记录表，记录每次审核的历史"
+  remark: "保存每次审核记录，项目表只保存最新审核状态"
 
 # ============================
 # Tab 2: 字段信息
@@ -14,11 +14,12 @@ basicInfo:
 columns:
   approval_id:
     columnComment: 审核主键ID
+    columnType: bigint
     javaType: Long
     javaField: approvalId
     isInsert: false
     isEdit: false
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -27,19 +28,21 @@ columns:
 
   project_id:
     columnComment: 项目ID
+    columnType: bigint
     javaType: Long
     javaField: projectId
     isInsert: true
-    isEdit: true
-    isList: true
+    isEdit: false
+    isList: false
     isQuery: true
     queryType: EQ
     isRequired: true
-    htmlType: input
+    htmlType: select
     dictType: ""
 
   approval_status:
-    columnComment: 审核状态
+    columnComment: 审核状态(0-待审核、1-通过、2-不通过)
+    columnType: varchar(50)
     javaType: String
     javaField: approvalStatus
     isInsert: true
@@ -48,16 +51,17 @@ columns:
     isQuery: true
     queryType: EQ
     isRequired: true
-    htmlType: select
-    dictType: sys_spzt
+    htmlType: radio
+    dictType: "sys_spzt"
 
   approval_reason:
     columnComment: 审核原因/意见
+    columnType: text
     javaType: String
     javaField: approvalReason
     isInsert: true
     isEdit: true
-    isList: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -66,32 +70,35 @@ columns:
 
   approver_id:
     columnComment: 审核人ID
+    columnType: bigint
     javaType: Long
     javaField: approverId
     isInsert: true
-    isEdit: true
+    isEdit: false
     isList: true
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: input
+    htmlType: select
     dictType: ""
 
   approval_time:
     columnComment: 审核时间
+    columnType: datetime
     javaType: Date
     javaField: approvalTime
     isInsert: true
-    isEdit: true
-    isList: true
-    isQuery: true
-    queryType: BETWEEN
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
     isRequired: false
     htmlType: datetime
     dictType: ""
 
   del_flag:
-    columnComment: 删除标志
+    columnComment: 删除标志(0正常 1删除)
+    columnType: char(1)
     javaType: String
     javaField: delFlag
     isInsert: false
@@ -105,6 +112,7 @@ columns:
 
   create_by:
     columnComment: 创建者
+    columnType: varchar(64)
     javaType: String
     javaField: createBy
     isInsert: false
@@ -118,19 +126,21 @@ columns:
 
   create_time:
     columnComment: 创建时间
+    columnType: datetime
     javaType: Date
     javaField: createTime
     isInsert: false
     isEdit: false
     isList: true
-    isQuery: true
-    queryType: BETWEEN
+    isQuery: false
+    queryType: EQ
     isRequired: false
     htmlType: datetime
     dictType: ""
 
   update_by:
     columnComment: 更新者
+    columnType: varchar(64)
     javaType: String
     javaField: updateBy
     isInsert: false
@@ -144,6 +154,7 @@ columns:
 
   update_time:
     columnComment: 更新时间
+    columnType: datetime
     javaType: Date
     javaField: updateTime
     isInsert: false
@@ -157,6 +168,7 @@ columns:
 
   remark:
     columnComment: 备注
+    columnType: varchar(500)
     javaType: String
     javaField: remark
     isInsert: true
@@ -177,484 +189,42 @@ genInfo:
   packageName: com.ruoyi.project
   moduleName: project
   businessName: approval
-  functionName: 项目审核
-  parentMenuId: 2059
+  functionName: 立项审核
+  parentMenuId: 3
 
 # ============================
-# 定制需求（超出标准模板的组件/交互/接口需求）
+# 自定义 UI
 # ============================
 customizations:
-  # ============================
-  # 立项审核功能定制需求
-  # ============================
+  approval_drawer:
+    description: "审核详情使用抽屉(Drawer)组件展示，包含项目管理详情的所有信息+审核状态+审核意见输入框"
 
-  review_drawer_style:
-    intent: "立项审核页面使用抽屉样式而非对话框，从右侧滑出，宽度60%，底部按钮固定，支持全部展开/收起，拒绝时输入框下方提示"
-    component:
-      type: el-drawer
-      props:
-        direction: "rtl"
-        size: "60%"
-        closeOnClickModal: true
-        closeOnPressEscape: false
-        title: "动态显示项目名称"
-        class: "review-drawer"
-    bindTo: page
-    service: null
-    notes: |
-      实现位置：ruoyi-ui/src/views/project/review/index.vue
+  approval_status:
+    description: "审核状态使用单选框，选项：0=待审核、1=通过、2=不通过（字典：sys_spzt）"
 
-      抽屉配置：
-      - 从右侧滑出，占据60%屏幕宽度（优化后）
-      - 标题动态显示：'审核项目 - ' + reviewForm.projectName
-      - 关闭方式：点击遮罩层、右上角X按钮、取消按钮
-      - 样式类：review-drawer（用于自定义样式）
+  approval_button:
+    description: "列表操作列只有一个'审核'按钮，点击打开审核详情抽屉"
 
-      自定义头部：
-      - 使用 template #header 自定义抽屉头部
-      - 左侧：项目标题
-      - 右侧：全部展开/全部收起链接按钮
-      - 样式：flex 布局，space-between 对齐
+  approval_logic:
+    description: "审核通过/拒绝后，需要同时更新pm_project表的approval_status和approval_reason字段，并在pm_project_approval表插入审核记录"
 
-      折叠/展开功能：
-      - 默认状态：全部展开（activeNames: ['1', '2', '3', '4', '5']）
-      - 全部展开：展开所有5个面板
-      - 全部收起：只保留基本信息展开（activeNames: ['1']）
-      - 状态跟踪：isAllExpanded 变量控制按钮文字切换
-      - 实现函数：toggleAllCollapse()
+  query_conditions:
+    description: "查询条件：项目名称、项目编号、项目部门（三级及以下树形）、行业、项目分类、一级区域、二级区域（动态关联）、项目经理、市场经理、项目阶段、审核状态"
 
-      审核意见输入：
-      - 位置：折叠面板下方，用 el-divider 分隔
-      - 输入框：textarea，3行，placeholder 提示"拒绝时必填"
-      - 拒绝验证：点击拒绝按钮时，如果审核意见为空：
-        * 输入框下方显示红色错误提示（带警告图标）
-        * 输入框边框变红（.is-error 样式）
-        * 自动滚动到输入框位置
-        * 开始输入后自动清除错误状态
-      - 错误提示样式：
-        * 红色文字 + 警告图标
-        * 带淡入淡出动画效果
-        * 位置在输入框正下方，与抽屉风格统一
-      - 优点：不使用弹框，避免抽屉在侧边、弹框在中间的不协调感
+  list_fields:
+    description: "列表字段：项目编号、项目名称、项目部门、项目分类、一级区域、二级区域、项目阶段、审核状态、项目经理、市场经理、立项年度、创建时间、操作(审核按钮)"
 
-      样式优化：
-      - 抽屉头和body之间距离缩短：padding-top: 10px
-      - 折叠面板上边距调整：margin-top: -10px
-      - 头部布局样式：
-        .drawer-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-        }
-      - 错误提示样式：
-        .error-tip {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          color: #f56c6c;
-          font-size: 12px;
-          margin-top: 5px;
-        }
-      - CSS实现：
-        .review-drawer :deep(.el-drawer__body) {
-          padding-top: 10px;
-        }
+  list_join_project:
+    description: "列表需要关联pm_project表显示项目信息，通过project_id关联"
 
-      内容区域：
-      - 5个折叠面板（基本信息、人员配置、客户信息、时间规划、成本预算）
-      - 审核意见表单放在折叠面板下方，用 el-divider 分隔
-      - 内容区域可滚动
+  approver_permission:
+    description: "审核权限：仅团队经理岗位人员可以审核（岗位编码需确认）"
 
-      底部按钮：
-      - 固定在底部，右对齐
-      - 通过按钮（绿色）、拒绝按钮（红色）、取消按钮（默认）
-      - 样式：display: flex; justify-content: flex-end; gap: 10px;
+  project_manager_display:
+    description: "项目经理显示用户昵称，数据来源：sys_user表中岗位编码为'pm'的用户"
 
-      交互行为：
-      - 审核成功后自动关闭抽屉并刷新列表
-      - 拒绝时必须填写审核意见（前端校验，输入框下方提示）
-      - 打开抽屉时默认全部展开，方便查看所有信息
-      - 关闭抽屉时清除错误提示状态
+  market_manager_display:
+    description: "市场经理显示用户昵称，数据来源：sys_user表中岗位编码为'scjl'的用户"
 
-      设计文档：docs/plans/2026-02-08-review-drawer-design.md
-
-  review_approval_status_filter:
-    intent: "立项审核查询条件支持审核状态筛选，默认显示待审核（0），可切换查看已通过（1）或已拒绝（2）"
-    component:
-      type: el-select
-      props:
-        dictType: "sys_spzt"
-        defaultValue: "0"
-        clearable: true
-        placeholder: "请选择审核状态"
-    bindTo: approval_status
-    service:
-      endpoint: "GET /project/review/list?approvalStatus={status}"
-      source: "复用 ProjectReviewService.selectReviewList，ProjectMapper.xml - selectReviewList"
-      returns: "分页列表数据"
-      newApi: false
-    notes: |
-      实现位置：
-      - 后端：ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
-      - 前端：ruoyi-ui/src/views/project/review/index.vue
-
-      后端实现：
-      - SQL 支持动态审核状态查询，不硬编码 approval_status='0'
-      - WHERE 条件：<if test="approvalStatus != null and approvalStatus != ''">AND p.approval_status = #{approvalStatus}</if>
-      - 移除原有的硬编码：WHERE p.approval_status = '0' AND p.del_flag = '0'
-      - 改为：WHERE p.del_flag = '0' + 动态条件
-
-      前端实现：
-      - 查询参数：approvalStatus: '0'（默认值）
-      - 字典类型：sys_spzt（审核状态字典）
-      - 重置按钮后保持默认值：queryParams.value.approvalStatus = '0'
-
-      功能增强：
-      - 支持查询所有审核状态（待审核/已通过/已拒绝）
-      - 默认显示待审核项目（最常用场景）
-      - 可以查看审核历史和统计
-
-  review_project_detail_collapse:
-    intent: "审核抽屉中展示完整项目信息，使用折叠面板分5个模块展示，默认全部展开"
-    component:
-      type: el-collapse
-      props:
-        modelValue: "['1', '2', '3', '4', '5']"
-        style: "margin-top: -10px"
-    bindTo: page
-    service:
-      endpoint: "GET /project/review/{projectId}"
-      source: "复用 ProjectReviewService.selectProjectById → ProjectMapper.selectProjectByProjectId"
-      returns: "项目完整信息（包含二级区域名称、参与人员姓名、销售联系方式、客户联系方式）"
-      newApi: false
-    notes: |
-      实现位置：ruoyi-ui/src/views/project/review/index.vue
-
-      折叠面板模块（使用 el-descriptions 展示）：
-      1. 基本信息（name="1"）：
-         - 项目名称、项目编码、项目部门
-         - 项目分类（字典）
-         - 预估工作量、实际工作量（新增，显示在预估工作量后面）
-         - 项目阶段（字典）、验收状态（字典）
-         - 一级区域（字典）、二级区域（provinceName，关联查询）
-         - 项目地址（跨2列）、项目计划（跨2列）
-         - 注意：移除了"项目描述"字段
-
-      2. 人员配置（name="2"）：
-         - 项目经理、市场经理
-         - 销售负责人（salesManagerName）
-         - 销售联系方式（salesContact，关联查询销售负责人的手机号）
-         - 参与人员（participantsNames，跨2列显示，关联查询）
-
-      3. 客户信息（name="3"）：
-         - 客户名称、客户联系人
-         - 客户联系方式（customerContactPhone，关联查询客户联系人表）
-         - 商户联系人、商户联系方式（merchantPhone）
-
-      4. 时间规划（name="4"，原"时间信息"）：
-         - 启动日期、结束日期
-         - 上线日期、验收日期
-         - 日期格式：parseTime(date, '{y}-{m}-{d}')
-
-      5. 成本预算（name="5"，原"预算信息"）：
-         - 项目预算（元）、项目费用（元）
-         - 成本预算（元）、人工成本（元）、采购成本（元）
-         - 所有金额字段后添加单位"元"，提升可读性
-
-      已删除的模块：
-      - 工作量信息模块（原 name="6"）：实际工作量已合并到基本信息中
-      - 项目描述模块（原 name="7"）：项目地址和项目计划已在基本信息中显示，项目描述字段已移除
-
-      模块顺序（最终版）：
-      - 基本信息 → 人员配置 → 客户信息 → 时间规划 → 成本预算
-
-      数据加载：
-      - 点击"审核"按钮时调用 getReview(projectId)
-      - 数据存储在 reviewForm.value
-      - 默认展开所有面板：activeNames.value = ['1', '2', '3', '4', '5']
-      - 全部收起时：activeNames.value = ['1']（只保留基本信息）
-
-      后端数据支持：
-      - 二级区域名称：ProjectMapper.xml 关联 pm_secondary_region 表
-        * SQL: LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
-        * 字段映射：sr.province_name AS province_name
-
-      - 参与人员姓名：ProjectMapper.xml 子查询
-        * SQL: SELECT GROUP_CONCAT(u.nick_name ORDER BY FIND_IN_SET(u.user_id, p.participants) SEPARATOR ',')
-        * 字段映射：participants_names
-        * 说明：将多个用户姓名拼接成逗号分隔的字符串，按 participants 字段顺序排列
-
-      - 销售联系方式：ProjectMapper.xml 关联查询
-        * SQL: sm.phonenumber AS sales_contact
-        * 字段映射：sales_contact
-        * 说明：从销售负责人（sales_manager_id）关联的用户表中获取手机号
-
-      - 客户联系方式：ProjectMapper.xml 关联查询
-        * SQL: cc.contact_phone AS customer_contact_phone
-        * 字段映射：customer_contact_phone
-        * 说明：从客户联系人表（pm_customer_contact）中获取联系人电话
-
-      - Project 实体添加字段：
-        * provinceName（二级区域名称）
-        * participantsNames（参与人员姓名列表）
-        * salesContact（销售联系方式）
-        * customerContactPhone（客户联系方式）
-        * 包含对应的 getter/setter 方法
-
-      优化说明：
-      - 简化了模块结构，从7个模块减少到5个模块
-      - 工作量信息整合到基本信息中，避免重复
-      - 移除了独立的项目描述模块，相关字段已在基本信息中展示
-      - 默认全部展开，方便审核人员快速查看所有信息
-      - 支持一键全部展开/收起，灵活控制显示内容
-      - 页面更简洁，信息更集中
-      - 所有关联数据都能正确回显
-
-  review_approval_action:
-    intent: "审核操作支持通过和拒绝，拒绝时必须填写审核意见，审核后发送邮件通知"
-    component:
-      type: custom
-      spec: |
-        - 通过按钮：type="success"，绿色，审核意见可选
-        - 拒绝按钮：type="danger"，红色，审核意见必填（前端校验）
-        - 取消按钮：默认样式，关闭抽屉
-        - 审核前弹出确认框：proxy.$modal.confirm()
-        - 审核成功后提示并刷新列表：proxy.$modal.msgSuccess()
-    bindTo: page
-    service:
-      endpoint: "POST /project/review/approve"
-      source: "ProjectReviewService.approveProject"
-      returns: "操作结果"
-      newApi: false
-    notes: |
-      实现位置：
-      - 后端 Service：ruoyi-project/.../service/impl/ProjectReviewServiceImpl.java
-      - 后端 Controller：ruoyi-project/.../controller/ProjectReviewController.java
-      - 前端：ruoyi-ui/src/views/project/review/index.vue
-
-      后端实现：
-      - Service 方法：approveProject(projectId, approvalStatus, approvalReason)
-      - 更新字段：approval_status、approval_reason、approver_id、approval_time
-      - 审核人ID：SecurityUtils.getUserId() 转 String
-      - 审核时间：DateUtils.getNowDate()
-      - 事务控制：@Transactional
-      - 邮件通知：审核成功后调用 projectEmailService.sendApprovalNotification()（异步）
-
-      前端实现：
-      - submitApprove(approvalStatus) 方法
-      - 拒绝时校验：if (approvalStatus === '2' && !approvalReason) { 提示错误 }
-      - 确认框：'是否确认' + statusText + '该项目立项申请？'
-      - 提交数据：{ projectId, approvalStatus, approvalReason }
-      - 成功后：关闭抽屉 + 刷新列表
-
-      邮件通知（可选功能）：
-      - Service：IProjectEmailService.sendApprovalNotification()
-      - 实现：ProjectEmailServiceImpl（@Async 异步）
-      - 当前状态：仅日志记录，需配置 Spring Mail 才能实际发送
-      - 邮件内容：项目名称、项目编码、审核结果、审核意见
-      - 收件人：项目创建人（从 pm_project.create_by 查询用户邮箱）
-
-  review_data_scope_control:
-    intent: "团队负责人只能审核自己部门的项目，使用 @DataScope 注解实现数据权限控制"
-    component: null
-    bindTo: null
-    service:
-      endpoint: "GET /project/review/list"
-      source: "ProjectReviewService.selectReviewList 使用 @DataScope(deptAlias='d', userAlias='u1')"
-      returns: "过滤后的项目列表"
-      newApi: false
-    notes: |
-      实现位置：
-      - Service：ruoyi-project/.../service/impl/ProjectReviewServiceImpl.java
-      - Mapper XML：ruoyi-project/.../mapper/project/ProjectMapper.xml
-
-      后端实现：
-      - Service 方法添加注解：@DataScope(deptAlias = "d", userAlias = "u1")
-      - Mapper XML 使用占位符：${params.dataScope}
-      - SQL 示例：
-        WHERE p.del_flag = '0'
-        ${params.dataScope}
-        AND ...
-
-      权限范围（根据角色配置）：
-      - 1=全部数据权限：可以看到所有项目
-      - 2=自定义数据权限：可以看到指定部门的项目
-      - 3=本部门数据权限：只能看到本部门的项目
-      - 4=本部门及以下数据权限：可以看到本部门及下级部门的项目
-      - 5=仅本人数据权限：只能看到自己创建的项目
-
-      岗位权限：
-      - project:review:query - 项目审核查询权限
-      - project:review:approve - 项目审核操作权限
-
-      菜单配置：
-      - 菜单名称：立项审核
-      - 路由路径：/project/review
-      - 组件路径：project/review/index
-      - 父级菜单：项目管理（menu_id: 2059）
-      - 菜单 SQL：pm-sql/init/02_menu_data.sql
-
-  review_secondary_region_join:
-    intent: "审核列表关联二级区域表显示省份名称，修复表名错误（pm_province → pm_secondary_region）"
-    component: null
-    bindTo: provinceName
-    service:
-      endpoint: "GET /project/review/list"
-      source: "ProjectMapper.xml - selectReviewList"
-      returns: "列表数据包含 provinceName"
-      newApi: false
-    notes: |
-      实现位置：ruoyi-project/.../mapper/project/ProjectMapper.xml
-
-      问题修复：
-      - 原错误：LEFT JOIN pm_province pr ON p.province_id = pr.province_id
-      - 修复后：LEFT JOIN pm_secondary_region pr ON p.province_id = pr.province_id
-      - 原因：数据库中实际表名是 pm_secondary_region，不是 pm_province
-
-      SQL 实现：
-      SELECT
-        p.project_id,
-        p.project_name,
-        ...
-        pr.province_name
-      FROM pm_project p
-      LEFT JOIN pm_secondary_region pr ON p.province_id = pr.province_id
-      WHERE p.del_flag = '0'
-
-      前端显示：
-      - 列表列：<el-table-column label="二级区域" prop="provinceName" />
-      - 审核抽屉：<el-descriptions-item label="二级区域">{{ reviewForm.provinceName }}</el-descriptions-item>
-
-  review_query_conditions:
-    intent: "立项审核查询条件包含8个字段，支持多条件组合查询，项目部门使用公共组件"
-    component:
-      type: el-form
-      props:
-        inline: true
-        labelWidth: "100px"
-    bindTo: page
-    service:
-      endpoint: "GET /project/review/list"
-      source: "ProjectReviewService.selectReviewList"
-      returns: "分页列表数据"
-      newApi: false
-    notes: |
-      实现位置：ruoyi-ui/src/views/project/review/index.vue
-
-      查询条件（8个）：
-      1. 项目名称（projectName）：
-         - 类型：el-input
-         - 查询方式：LIKE（模糊查询）
-         - 宽度：200px
-
-      2. 项目部门（projectDept）：
-         - 类型：ProjectDeptSelect（公共组件）
-         - 组件路径：@/components/ProjectDeptSelect/index.vue
-         - 数据源：组件内部自动加载 /system/dept/treeselect
-         - 查询方式：EQ
-         - 宽度：200px
-         - 特性：
-           * 自动加载部门树数据
-           * 自动过滤只显示三级及以下机构
-           * 支持清空和搜索
-           * check-strictly 模式（可选任意级别）
-         - 优化：
-           * 移除了页面内的 deptOptions 变量
-           * 移除了 getDeptTree() 函数
-           * 使用统一的公共组件，代码更简洁
-
-      3. 项目分类（projectCategory）：
-         - 类型：el-select
-         - 字典：sys_xmfl
-         - 查询方式：EQ
-         - 宽度：200px
-
-      4. 一级区域（region）：
-         - 类型：el-select
-         - 字典：sys_yjqy
-         - 查询方式：EQ
-         - 宽度：200px
-         - 联动：选择后加载二级区域
-
-      5. 二级区域（provinceId）：
-         - 类型：el-select
-         - 数据源：/project/secondaryRegion/list?regionCode={region}
-         - 查询方式：EQ
-         - 宽度：200px
-         - 依赖：一级区域
-
-      6. 项目经理（projectManagerId）：
-         - 类型：el-select
-         - 数据源：/system/user/listByPost?postCode=pm
-         - 岗位代码：pm（修正：原错误代码 xmjl）
-         - 查询方式：EQ
-         - 宽度：200px
-         - 可搜索：filterable
-         - 修复：参数传递方式从对象改为字符串 listUserByPost('pm')
-
-      7. 市场经理（marketManagerId）：
-         - 类型：el-select
-         - 数据源：/system/user/listByPost?postCode=scjl
-         - 查询方式：EQ
-         - 宽度：200px
-         - 可搜索：filterable
-         - 修复：参数传递方式从对象改为字符串 listUserByPost('scjl')
-
-      8. 审核状态（approvalStatus）：
-         - 类型：el-select
-         - 字典：sys_spzt
-         - 查询方式：EQ
-         - 宽度：200px
-         - 默认值：'0'（待审核）
-
-      操作按钮：
-      - 搜索：type="primary"，icon="Search"
-      - 重置：icon="Refresh"，重置后保持 approvalStatus='0'
-
-      数据加载优化：
-      - 项目经理和市场经理数据在页面初始化时加载
-      - 岗位代码查询：
-        * 项目经理：post_code = 'pm'（post_id = 2）
-        * 市场经理：post_code = 'scjl'（post_id = 13）
-      - 部门树数据由 ProjectDeptSelect 组件自动加载
-
-  review_list_display:
-    intent: "立项审核列表展示11个列，包含项目基本信息和操作按钮"
-    component:
-      type: el-table
-      props:
-        loading: true
-        data: "reviewList"
-    bindTo: page
-    service:
-      endpoint: "GET /project/review/list"
-      source: "ProjectReviewService.selectReviewList"
-      returns: "分页列表数据"
-      newApi: false
-    notes: |
-      实现位置：ruoyi-ui/src/views/project/review/index.vue
-
-      列表列（11个）：
-      1. 序号：type="index"，width="55"
-      2. 项目名称：prop="projectName"，min-width="150"，show-overflow-tooltip
-      3. 项目编码：prop="projectCode"，min-width="150"，show-overflow-tooltip
-      4. 项目部门：prop="deptName"，min-width="120"，show-overflow-tooltip
-      5. 项目经理：prop="projectManagerName"，min-width="100"
-      6. 市场经理：prop="marketManagerName"，min-width="100"
-      7. 项目分类：prop="projectCategory"，width="100"，使用 dict-tag
-      8. 一级区域：prop="region"，width="100"，使用 dict-tag
-      9. 二级区域：prop="provinceName"，width="100"
-      10. 项目阶段：prop="projectStatus"，width="100"，使用 dict-tag
-      11. 创建时间：prop="createTime"，width="160"，使用 parseTime 格式化
-
-      操作列：
-      - 宽度：120px
-      - 固定：fixed="right"
-      - 审核按钮：link type="primary" icon="Edit"
-      - 权限：v-hasPermi="['project:review:approve']"
-
-      分页组件：
-      - 组件：<pagination>
-      - 绑定：total、pageNum、pageSize
-      - 事件：@pagination="getList"
+  project_dept_display:
+    description: "项目部门显示完整路径，用'-'分隔，仅展示三级及以下机构"

@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 查询项目审核列表
+// 查询立项审核列表
 export function listApproval(query) {
   return request({
     url: '/project/approval/list',
@@ -9,7 +9,7 @@ export function listApproval(query) {
   })
 }
 
-// 查询项目审核详细
+// 查询立项审核详细
 export function getApproval(approvalId) {
   return request({
     url: '/project/approval/' + approvalId,
@@ -17,7 +17,7 @@ export function getApproval(approvalId) {
   })
 }
 
-// 新增项目审核
+// 新增立项审核
 export function addApproval(data) {
   return request({
     url: '/project/approval',
@@ -26,7 +26,7 @@ export function addApproval(data) {
   })
 }
 
-// 修改项目审核
+// 修改立项审核
 export function updateApproval(data) {
   return request({
     url: '/project/approval',
@@ -35,7 +35,7 @@ export function updateApproval(data) {
   })
 }
 
-// 删除项目审核
+// 删除立项审核
 export function delApproval(approvalId) {
   return request({
     url: '/project/approval/' + approvalId,

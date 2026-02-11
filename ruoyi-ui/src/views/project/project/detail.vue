@@ -36,16 +36,19 @@
           <dict-tag :options="sys_xmfl" :value="form.projectCategory" />
         </el-descriptions-item>
         <el-descriptions-item label="项目部门">
-          {{ form.deptName || '-' }}
+          {{ form.projectDept || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="预估工作量">
           {{ form.estimatedWorkload || 0 }} 人天
         </el-descriptions-item>
+        <el-descriptions-item label="项目预算">
+          {{ form.projectBudget || 0 }} 元
+        </el-descriptions-item>
         <el-descriptions-item label="实际工作量">
           {{ form.actualWorkload || 0 }} 人天
         </el-descriptions-item>
-        <el-descriptions-item label="项目状态">
-          <dict-tag :options="sys_xmjd" :value="form.projectStatus" />
+        <el-descriptions-item label="项目阶段">
+          <dict-tag :options="sys_xmjd" :value="form.projectStage" />
         </el-descriptions-item>
         <el-descriptions-item label="验收状态">
           <dict-tag :options="sys_yszt" :value="form.acceptanceStatus" />
@@ -214,10 +217,10 @@ const data = reactive({
     projectName: '',
     projectCategory: '',
     projectDept: '',
-    deptName: '',
-    projectStatus: '',
+    projectStage: '',
     acceptanceStatus: '',
     estimatedWorkload: '',
+    actualWorkload: '',
     projectPlan: '',
     projectDescription: '',
     projectAddress: '',
@@ -282,16 +285,15 @@ function loadProjectData() {
   loading.value = true
   getProject(projectId).then(response => {
     const data = response.data
-    // 后端 regionCode 映射到前端 provinceCode
-    if (data.regionCode) {
-      data.provinceCode = data.regionCode
-    }
     // 转换参与人员格式：字符串 → 数组
     if (data.participants) {
       data.participants = data.participants.split(',').map(Number)
     }
     // 填充表单
     Object.assign(form.value, data)
+
+    // 加载关联的名称数据
+    loadRelatedNames(data)
 
     // 如果有客户ID，加载联系人列表以获取联系方式
     if (data.customerId && data.customerContactId) {
@@ -312,6 +314,63 @@ function loadProjectData() {
   }).finally(() => {
     loading.value = false
   })
+}
+
+// 加载关联的名称数据
+function loadRelatedNames(projectData) {
+  // 加载项目经理名称
+  if (projectData.projectManagerId) {
+    request({
+      url: `/system/user/${projectData.projectManagerId}`,
+      method: 'get'
+    }).then(res => {
+      form.value.projectManagerName = res.data.nickName || ''
+    }).catch(() => {})
+  }
+
+  // 加载市场经理名称
+  if (projectData.marketManagerId) {
+    request({
+      url: `/system/user/${projectData.marketManagerId}`,
+      method: 'get'
+    }).then(res => {
+      form.value.marketManagerName = res.data.nickName || ''
+    }).catch(() => {})
+  }
+
+  // 加载销售负责人名称
+  if (projectData.salesManagerId) {
+    request({
+      url: `/system/user/${projectData.salesManagerId}`,
+      method: 'get'
+    }).then(res => {
+      form.value.salesManagerName = res.data.nickName || ''
+    }).catch(() => {})
+  }
+
+  // 加载客户名称
+  if (projectData.customerId) {
+    request({
+      url: `/project/customer/${projectData.customerId}`,
+      method: 'get'
+    }).then(res => {
+      form.value.customerName = res.data.customerSimpleName || res.data.customerFullName || ''
+    }).catch(() => {})
+  }
+
+  // 加载客户联系人名称
+  if (projectData.customerId && projectData.customerContactId) {
+    request({
+      url: '/project/customer/contact/listByCustomer',
+      method: 'get',
+      params: { customerId: projectData.customerId }
+    }).then(res => {
+      const contact = res.data.find(c => c.contactId === projectData.customerContactId)
+      if (contact) {
+        form.value.customerContactName = contact.contactName || ''
+      }
+    }).catch(() => {})
+  }
 }
 
 // 加载客户联系人电话

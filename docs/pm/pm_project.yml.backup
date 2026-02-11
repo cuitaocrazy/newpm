@@ -1,0 +1,5053 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_project
+  tableComment: 项目管理
+  className: Project
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  project_id:
+    columnComment: 项目ID
+    javaType: Long
+    javaField: projectId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_code:
+    columnComment: 项目编号
+    javaType: String
+    javaField: projectCode
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    notes: |
+      项目编号生成规则：
+      格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}
+
+      字段来源：
+      - 行业代码：industry 字段的字典值
+      - 一级区域代码：region 字段的字典值（sys_yjqy）
+      - 二级区域代码：provinceCode（前端字段，映射到后端 regionCode）
+      - 简称：shortName 字段的值
+      - 年份：establishedYear 字段的值
+
+      示例：IT-HBQY-11-北京-2024
+
+      生成时机：
+      - 立项申请页面自动生成（只读字段）
+      - 监听以上5个字段的变化，任一字段变化时重新生成
+      - 所有字段都有值时才生成
+
+  project_name:
+    columnComment: 项目名称
+    javaType: String
+    javaField: projectName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_full_name:
+    columnComment: 项目全称
+    javaType: String
+    javaField: projectFullName
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  industry:
+    columnComment: 行业
+    javaType: String
+    javaField: industry
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "industry"
+
+  region:
+    columnComment: 一级区域
+    javaType: String
+    javaField: region
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_yjqy"
+
+  short_name:
+    columnComment: 简称
+    javaType: String
+    javaField: shortName
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  established_year:
+    columnComment: 立项年份
+    javaType: Integer
+    javaField: establishedYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_ndgl"
+    notes: |
+      立项年份，如 2024、2025
+
+      数据来源：sys_dict_data (sys_ndgl)
+      用途：项目编号生成的第五部分（最后一部分）
+
+      前端实现：
+      - apply.vue: 使用 el-select 选择立项年度
+      - edit.vue: 使用 el-select 选择立项年份
+      - 项目编号格式：{industry}-{region}-{provinceCode}-{shortName}-{establishedYear}
+
+      重要：edit.vue 中的 watch 必须监听 establishedYear，不是 year
+
+      ========================================
+      数据类型转换（2026-02-08）
+      ========================================
+
+      问题：字典值为字符串，后端字段为 Integer
+      - 字典 sys_ndgl 的 dict_value 可能是字符串（如 "2025q"）
+      - 后端 Project.establishedYear 字段类型为 Integer
+      - 直接提交会导致 JSON 反序列化失败
+
+      解决方案：提交前转换为整数
+
+      apply.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          const submitData = {
+            ...form.value,
+            regionCode: form.value.provinceCode,
+            establishedYear: parseInt(form.value.establishedYear)  // 转换为整数
+          }
+          delete submitData.provinceCode
+
+          addProject(submitData).then(response => {
+            proxy.$modal.msgSuccess("提交成功")
+            router.push('/project/list')
+          })
+        })
+      }
+      ```
+
+      edit.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          proxy.$modal.confirm('确认保存项目信息？').then(() => {
+            const submitData = { ...form.value }
+            // ... 其他处理
+            // 转换 establishedYear 为整数
+            if (submitData.establishedYear) {
+              submitData.establishedYear = parseInt(submitData.establishedYear)
+            }
+
+            updateProject(submitData).then(response => {
+              proxy.$modal.msgSuccess('保存成功')
+              router.push('/project/list')
+            })
+          })
+        })
+      }
+      ```
+
+      错误示例：
+      ```
+      JSON parse error: Cannot deserialize value of type `java.lang.Integer`
+      from String "2025q": not a valid `java.lang.Integer` value
+      ```
+
+      最佳实践：
+      1. 字典数据的 dict_value 应该只包含纯数字（如 "2025"）
+      2. 前端提交前统一进行类型转换
+      3. 使用 parseInt() 确保转换为整数
+      4. 对于可能为空的字段，先判断再转换
+
+  project_category:
+    columnComment: 项目分类
+    javaType: String
+    javaField: projectCategory
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_xmfl"
+
+  project_dept:
+    columnComment: 项目部门
+    javaType: String
+    javaField: projectDept
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  project_status:
+    columnComment: 项目状态
+    javaType: String
+    javaField: projectStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_xmzt"
+
+  acceptance_status:
+    columnComment: 验收状态
+    javaType: String
+    javaField: acceptanceStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_yszt"
+
+  estimated_workload:
+    columnComment: 预估工作量(人天)
+    javaType: BigDecimal
+    javaField: estimatedWorkload
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  actual_workload:
+    columnComment: 实际工作量(人天)
+    javaType: BigDecimal
+    javaField: actualWorkload
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      实际工作量字段说明：
+      - 在编辑页面（edit.vue）中显示在"预估工作量"字段右侧
+      - 格式与预估工作量统一，使用 el-input 组件，带"人天"后缀
+      - 布局：两列布局（el-col :span="12"），与预估工作量并排显示
+      - 验证：支持 validateOnBlur 验证
+      - 位置：项目基本信息模块，预估工作量字段之后
+
+  project_address:
+    columnComment: 项目地址
+    javaType: String
+    javaField: projectAddress
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+
+  project_plan:
+    columnComment: 项目计划
+    javaType: String
+    javaField: projectPlan
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+
+  project_description:
+    columnComment: 项目描述
+    javaType: String
+    javaField: projectDescription
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+
+  project_manager_id:
+    columnComment: 项目经理ID
+    javaType: Long
+    javaField: projectManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  market_manager_id:
+    columnComment: 市场经理ID
+    javaType: Long
+    javaField: marketManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  participants:
+    columnComment: 参与人员ID列表
+    javaType: String
+    javaField: participants
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  sales_manager_id:
+    columnComment: 销售负责人ID
+    javaType: Long
+    javaField: salesManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  sales_contact:
+    columnComment: 销售联系方式
+    javaType: String
+    javaField: salesContact
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  team_leader_id:
+    columnComment: 团队负责人ID
+    javaType: Long
+    javaField: teamLeaderId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  customer_id:
+    columnComment: 客户ID
+    javaType: Long
+    javaField: customerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  customer_contact_id:
+    columnComment: 客户联系人ID
+    javaType: Long
+    javaField: customerContactId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  merchant_contact:
+    columnComment: 商户联系人
+    javaType: String
+    javaField: merchantContact
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  merchant_phone:
+    columnComment: 商户联系方式
+    javaType: String
+    javaField: merchantPhone
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  start_date:
+    columnComment: 启动日期
+    javaType: Date
+    javaField: startDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  end_date:
+    columnComment: 结束日期
+    javaType: Date
+    javaField: endDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  production_date:
+    columnComment: 投产日期
+    javaType: Date
+    javaField: productionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  acceptance_date:
+    columnComment: 验收日期
+    javaType: Date
+    javaField: acceptanceDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  project_budget:
+    columnComment: 项目预算(元)
+    javaType: BigDecimal
+    javaField: projectBudget
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_cost:
+    columnComment: 项目费用(元)
+    javaType: BigDecimal
+    javaField: projectCost
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  expense_budget:
+    columnComment: 费用预算(元)
+    javaType: BigDecimal
+    javaField: expenseBudget
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  cost_budget:
+    columnComment: 成本预算(元)
+    javaType: BigDecimal
+    javaField: costBudget
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  labor_cost:
+    columnComment: 人力费用(元)
+    javaType: BigDecimal
+    javaField: laborCost
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  purchase_cost:
+    columnComment: 采购成本
+    javaType: BigDecimal
+    javaField: purchaseCost
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  approval_status:
+    columnComment: 审批状态
+    javaType: String
+    javaField: approvalStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_spzt"
+
+  approval_reason:
+    columnComment: 审批意见
+    javaType: String
+    javaField: approvalReason
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  industry_code:
+    columnComment: 行业代码
+    javaType: String
+    javaField: industryCode
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  region_code:
+    columnComment: 二级区域代码
+    javaType: String
+    javaField: regionCode
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+    notes: |
+      存储二级区域代码（province_code），如"BJ"、"SH"
+
+      数据来源：pm_secondary_region.province_code
+      前端字段：provinceCode（v-model="form.provinceCode"）
+      后端字段：regionCode（对应数据库 region_code）
+      用途：项目编号生成的第三部分
+
+      前后端映射：提交/查询时 provinceCode 映射到 regionCode
+
+      级联逻辑：
+      - 依赖一级区域（region）
+      - 一级区域变化时清空并重新加载
+      - 选择时自动设置 province_id
+
+  province_id:
+    columnComment: 二级区域ID
+    javaType: Long
+    javaField: provinceId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      关联 pm_secondary_region.province_id（主键）
+
+      用途：关联查询二级区域详细信息
+      前端逻辑：选择 regionCode 时自动设置此字段
+
+      实现：
+      const selectedRegion = secondaryRegionOptions.value.find(
+        item => item.provinceCode === provinceCode
+      )
+      if (selectedRegion) {
+        form.value.provinceId = selectedRegion.provinceId
+      }
+
+  approval_time:
+    columnComment: 审批时间
+    javaType: Date
+    javaField: approvalTime
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  approver_id:
+    columnComment: 审批人
+    javaType: String
+    javaField: approverId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  tax_rate:
+    columnComment: 税率(%)
+    javaType: BigDecimal
+    javaField: taxRate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_user_id:
+    columnComment: 确认人ID
+    javaType: Long
+    javaField: confirmUserId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  confirm_time:
+    columnComment: 确认时间
+    javaType: Date
+    javaField: confirmTime
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  reserved_field1:
+    columnComment: 备用域1
+    javaType: String
+    javaField: reservedField1
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field2:
+    columnComment: 备用域2
+    javaType: String
+    javaField: reservedField2
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field3:
+    columnComment: 备用域3
+    javaType: String
+    javaField: reservedField3
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field4:
+    columnComment: 备用域4
+    javaType: String
+    javaField: reservedField4
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  reserved_field5:
+    columnComment: 备用域5
+    javaType: String
+    javaField: reservedField5
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      显示更新人的用户昵称（nick_name），如果为空则显示创建人昵称
+
+      自动填充逻辑（ProjectServiceImpl.java）：
+      ```java
+      // 新增时自动设置创建人
+      project.setCreateBy(SecurityUtils.getUsername());
+      project.setCreateTime(DateUtils.getNowDate());
+
+      // 修改时自动设置更新人
+      project.setUpdateBy(SecurityUtils.getUsername());
+      project.setUpdateTime(DateUtils.getNowDate());
+      ```
+
+      SQL 实现（ProjectMapper.xml）：
+      ```sql
+      LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+      LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
+      SELECT COALESCE(updater.nick_name, creator.nick_name, p.update_by, p.create_by) AS update_by
+      ```
+
+      显示优先级：
+      1. 更新人昵称（updater.nick_name）
+      2. 创建人昵称（creator.nick_name）
+      3. 更新人用户名（p.update_by）
+      4. 创建人用户名（p.create_by）
+
+      说明：
+      - update_by 字段存储的是用户名（user_name）
+      - 通过关联 sys_user 表获取用户昵称（nick_name）
+      - 如果 update_by 为空，则显示 create_by 的昵称
+      - 使用 COALESCE 函数实现回退逻辑
+      - 列表显示：用户昵称（如"张三"）
+      - 数据库存储：用户名（如"admin"）
+
+      重要：
+      - 新增和修改操作会自动填充 createBy 和 updateBy
+      - 无需前端传递这些字段
+      - 后端 Service 层自动处理
+
+  update_time:
+    columnComment: 更新时间
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  revenue_confirm_status:
+    columnComment: 收入确认状态
+    javaType: String
+    javaField: revenueConfirmStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  revenue_confirm_year:
+    columnComment: 收入确认年度
+    javaType: String
+    javaField: revenueConfirmYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_ndgl"
+
+  confirm_amount:
+    columnComment: 确认金额(含税)
+    javaType: BigDecimal
+    javaField: confirmAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  after_tax_amount:
+    columnComment: 税后金额
+    javaType: BigDecimal
+    javaField: afterTaxAmount
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  company_revenue_confirmed_by:
+    columnComment: 公司收入确认人ID
+    javaType: Long
+    javaField: companyRevenueConfirmedBy
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: sub
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: project
+  functionName: 项目管理
+  parentMenuId: 3
+  subTableName: pm_project_approval
+  subTableFkName: project_id
+  subTableGenerateMenu: true
+
+# ============================
+# 子表字段信息
+# ============================
+subTableColumns:
+  approval_id:
+    columnComment: 审核主键ID
+    javaType: Long
+    javaField: approvalId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 项目ID
+    javaType: Long
+    javaField: projectId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  approval_status:
+    columnComment: 审核状态
+    javaType: String
+    javaField: approvalStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: "sys_spzt"
+
+  approval_reason:
+    columnComment: 审核原因/意见
+    javaType: String
+    javaField: approvalReason
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: editor
+    dictType: ""
+
+  approver_id:
+    columnComment: 审核人ID
+    javaType: Long
+    javaField: approverId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  approval_time:
+    columnComment: 审核时间
+    javaType: Date
+    javaField: approvalTime
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# 定制需求
+# ============================
+customizations:
+  # ========================================
+  # 公共组件说明（2026-02-08）
+  # ========================================
+  common_components:
+    intent: "项目管理模块使用的公共组件列表"
+    component:
+      type: custom
+      spec: "封装常用功能为公共组件，提高代码复用性和维护性"
+    bindTo: null
+    service:
+      endpoint: null
+      source: "前端公共组件"
+      newApi: false
+    notes: |
+      ========================================
+      公共组件列表
+      ========================================
+
+      1. ProjectDeptSelect - 项目部门选择器
+         位置: ruoyi-ui/src/components/ProjectDeptSelect/index.vue
+         注册: main.ts 全局注册
+         用途: 项目部门树形选择，自动过滤前两级部门
+         使用: <project-dept-select v-model="form.projectDept" />
+         文档: docs/components/ProjectDeptSelect.md
+
+         特性:
+         - 自动加载部门树数据
+         - 自动过滤前两级，只显示三级及以下机构
+         - 支持任意层级选择（checkStrictly）
+         - 支持清空、禁用、过滤等功能
+         - 封装了 filterDeptTree 过滤逻辑
+
+         应用页面:
+         - index.vue: 项目列表查询条件
+         - apply.vue: 立项申请表单
+         - edit.vue: 编辑项目表单
+
+      ========================================
+      公共组件开发规范
+      ========================================
+
+      1. 组件命名: 使用 PascalCase，如 ProjectDeptSelect
+      2. 文件位置: ruoyi-ui/src/components/{ComponentName}/index.vue
+      3. 全局注册: 在 main.ts 中注册，方便全局使用
+      4. 文档编写: 在 docs/components/ 目录下创建对应的 .md 文档
+      5. Props 设计: 提供合理的默认值，支持常用配置
+      6. 事件支持: 支持 v-model 双向绑定和常用事件（change, blur 等）
+      7. 方法暴露: 使用 defineExpose 暴露必要的方法供外部调用
+
+      ========================================
+      组件提取原则
+      ========================================
+
+      满足以下条件之一的功能应考虑提取为公共组件:
+      1. 在 3 个及以上页面中重复使用
+      2. 包含复杂的业务逻辑（如数据过滤、格式化）
+      3. 需要统一维护和更新
+      4. 有明确的输入输出接口
+      5. 功能相对独立，不依赖特定页面上下文
+
+  # ========================================
+  # 页面布局规范（2026-02-08）
+  # ========================================
+  page_layout_standards:
+    intent: "项目管理模块页面布局统一规范"
+    component:
+      type: custom
+      spec: "统一的页面结构和样式规范"
+    bindTo: ["apply.vue", "edit.vue", "detail.vue"]
+    service:
+      endpoint: null
+      source: "前端布局规范"
+      newApi: false
+    notes: |
+      ========================================
+      底部按钮布局规范
+      ========================================
+
+      所有表单页面（立项申请、编辑、详情）统一使用固定底部按钮布局。
+
+      HTML 结构：
+      ```vue
+      <!-- 底部操作按钮 -->
+      <div class="form-footer">
+        <el-button type="primary" size="large" @click="submitForm">提交/保存</el-button>
+        <el-button size="large" @click="cancel">取消/返回</el-button>
+      </div>
+      ```
+
+      样式规范：
+      ```scss
+      .app-container {
+        padding-bottom: 80px;  // 避免内容被按钮遮挡
+      }
+
+      .form-footer {
+        position: sticky;      // 滚动时固定在底部
+        bottom: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #dcdfe6;
+        text-align: center;    // 按钮居中
+        z-index: 10;          // 确保在最上层
+
+        .el-button {
+          min-width: 120px;   // 按钮最小宽度
+          margin: 0 10px;     // 按钮间距
+        }
+      }
+      ```
+
+      ========================================
+      各页面按钮配置
+      ========================================
+
+      1. 立项申请页面（apply.vue）
+         按钮：提交、重置、取消
+         ```vue
+         <el-button type="primary" size="large" @click="submitForm">提交</el-button>
+         <el-button size="large" @click="resetForm">重置</el-button>
+         <el-button size="large" @click="cancel">取消</el-button>
+         ```
+
+      2. 编辑页面（edit.vue）
+         按钮：保存、取消
+         ```vue
+         <el-button type="primary" size="large" @click="submitForm" :loading="submitLoading">
+           保存
+         </el-button>
+         <el-button size="large" @click="cancel">取消</el-button>
+         ```
+
+      3. 详情页面（detail.vue）
+         按钮：返回
+         ```vue
+         <el-button size="large" @click="handleBack">返回</el-button>
+         ```
+
+      ========================================
+      布局特性
+      ========================================
+
+      1. 固定定位
+         - 使用 position: sticky
+         - 滚动时始终固定在底部
+         - 不遮挡页面内容
+
+      2. 居中对齐
+         - text-align: center
+         - 按钮水平居中显示
+
+      3. 统一样式
+         - 白色背景
+         - 顶部边框分隔
+         - 按钮最小宽度 120px
+         - 按钮间距 10px
+
+      4. 响应式
+         - 按钮 size="large"
+         - 适配不同屏幕尺寸
+
+      ========================================
+      实现要点
+      ========================================
+
+      1. 页面容器底部内边距
+         - 设置 padding-bottom: 80px
+         - 避免内容被固定按钮遮挡
+
+      2. z-index 层级
+         - 设置 z-index: 10
+         - 确保按钮在最上层
+
+      3. 按钮状态
+         - 主按钮使用 type="primary"
+         - 提交/保存按钮支持 :loading 状态
+         - 所有按钮使用 size="large"
+
+      4. 事件处理
+         - 提交/保存：表单验证 + 数据提交
+         - 重置：清空表单数据
+         - 取消/返回：确认提示 + 路由跳转
+
+      ========================================
+      最佳实践
+      ========================================
+
+      1. 统一使用 .form-footer 类名
+      2. 按钮顺序：主操作在左，次要操作在右
+      3. 危险操作（删除）需要二次确认
+      4. 提交按钮显示 loading 状态
+      5. 取消操作提示未保存数据将丢失
+
+      ========================================
+      常见问题与解决方案
+      ========================================
+
+      问题1：按钮没有居中显示
+      原因：样式选择器类名与 HTML 类名不匹配
+      解决：确保 CSS 选择器与 HTML 的 class 属性一致
+
+      示例：
+      ```vue
+      <!-- HTML -->
+      <div class="project-edit">
+        <div class="form-footer">...</div>
+      </div>
+
+      <!-- CSS（必须匹配） -->
+      <style scoped lang="scss">
+      .project-edit {  // ✅ 与 HTML 类名一致
+        .form-footer {
+          text-align: center;
+        }
+      }
+      </style>
+      ```
+
+      问题2：样式不生效
+      原因：scoped 样式作用域问题
+      解决：检查样式嵌套层级，确保选择器正确
+
+      问题3：按钮被内容遮挡
+      原因：页面容器没有设置底部内边距
+      解决：添加 padding-bottom: 80px
+
+      调试技巧：
+      1. 使用浏览器开发者工具检查元素
+      2. 查看 Computed 样式是否生效
+      3. 检查是否有其他样式覆盖
+      4. 清除浏览器缓存
+
+  # ========================================
+  # 查询条件精简与数据源配置（2026-02-05）
+  # ========================================
+  query_conditions_config:
+    intent: "查询条件精简为12个常用字段，并配置各字段的数据源"
+    component:
+      type: custom
+      spec: "精简查询表单，配置数据源和组件类型"
+    bindTo: queryParams
+    service:
+      endpoint: null
+      source: "前端实现，各字段数据源见下方详细说明"
+      newApi: false
+    notes: |
+      ========================================
+      查询条件列表（共12个）
+      ========================================
+
+      1. 项目名称 (project_name)
+         - 组件类型: el-autocomplete（自动补全）
+         - 数据源: 项目表 pm_project，获取所有项目名称
+         - 接口: GET /project/project/list?pageNum=1&pageSize=1000
+         - 返回字段: projectName
+         - 实现方式: 页面加载时获取所有项目名称，前端过滤匹配
+
+      2. 项目部门 (project_dept)
+         - 组件类型: project-dept-select（公共组件）
+         - 数据源: 部门表 sys_dept，多级树形结构
+         - 接口: GET /system/dept/treeselect
+         - 返回字段: { id, label, children }
+         - 说明: 使用 ProjectDeptSelect 公共组件，自动过滤前两级部门
+         - 使用: <project-dept-select v-model="queryParams.projectDept" style="width: 200px" />
+
+      3. 收入确认年度 (revenue_confirm_year)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_ndgl（年度管理）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_ndgl') 获取
+
+      4. 项目分类 (project_category)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_xmfl（项目分类）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_xmfl') 获取
+
+      5. 一级区域 (region)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_yjqy（一级区域）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_yjqy') 获取，变化时触发二级区域加载
+
+      6. 二级区域 (region_code)
+         - 组件类型: el-select（下拉选择，级联）
+         - 数据源: 省级区域表 pm_secondary_region
+         - 接口: GET /project/secondaryRegion/listByRegion?regionDictValue={region}
+         - 返回字段: { provinceCode, provinceName }
+         - 说明: 根据一级区域动态加载，支持过滤搜索
+         - 禁用逻辑: 默认禁用，选择一级区域后才能选择
+         - 字段映射: 后端 provinceCode → 前端 regionCode（绑定值）
+         - 字段映射: 后端 provinceName → 前端显示标签
+
+      7. 项目经理 (project_manager_id)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 用户表 sys_user，通过岗位表 sys_post 关联
+         - 岗位编码: pm（项目经理）
+         - 接口: GET /system/user/listByPost?postCode=pm
+         - 返回字段: { userId, nickName }
+         - 说明: 显示用户昵称，提交用户ID，支持过滤搜索
+
+      8. 市场经理 (market_manager_id)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 用户表 sys_user，通过岗位表 sys_post 关联
+         - 岗位编码: scjl（市场经理）
+         - 接口: GET /system/user/listByPost?postCode=scjl
+         - 返回字段: { userId, nickName }
+         - 说明: 显示用户昵称，提交用户ID，支持过滤搜索
+
+      9. 立项年度 (established_year)
+         - 组件类型: el-select（下拉选择）
+         - 数据源: 字典表 sys_dict_data
+         - 字典类型: sys_ndgl（年度管理）
+         - 返回字段: { value, label }
+         - 说明: 通过 useDict('sys_ndgl') 获取
+
+      10. 项目阶段 (project_status)
+          - 组件类型: el-select（下拉选择）
+          - 数据源: 字典表 sys_dict_data
+          - 字典类型: sys_xmjd（项目阶段）
+          - 返回字段: { value, label }
+          - 说明: 通过 useDict('sys_xmjd') 获取
+
+      11. 审核状态 (approval_status)
+          - 组件类型: el-select（下拉选择）
+          - 数据源: 字典表 sys_dict_data
+          - 字典类型: sys_spzt（审批状态）
+          - 返回字段: { value, label }
+          - 说明: 通过 useDict('sys_spzt') 获取
+
+      12. 验收状态 (acceptance_status)
+          - 组件类型: el-select（下拉选择）
+          - 数据源: 字典表 sys_dict_data
+          - 字典类型: sys_yszt（验收状态）
+          - 返回字段: { value, label }
+          - 说明: 通过 useDict('sys_yszt') 获取
+
+      ========================================
+      前端实现要点
+      ========================================
+
+      1. 字典数据加载:
+         const { sys_xmfl, sys_ndgl, sys_yjqy, sys_spzt, sys_xmjd, sys_yszt } =
+           proxy.useDict('sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_spzt', 'sys_xmjd', 'sys_yszt')
+
+      2. 页面加载时初始化:
+         - loadProjectManagers()    // 加载项目经理列表
+         - loadMarketManagers()      // 加载市场经理列表
+         - loadDeptTree()            // 加载部门树
+         - loadProjectNames()        // 加载项目名称列表（用于自动补全）
+
+      3. 级联选择处理:
+         - handleRegionChange(value) // 一级区域变化时加载二级区域
+
+      4. 自动补全处理:
+         - queryProjectNames(queryString, cb) // 项目名称自动补全查询
+
+      ========================================
+      依赖的字典类型
+      ========================================
+
+      需要在系统管理 → 字典管理中配置以下字典类型：
+      - sys_ndgl: 年度管理（如：2024, 2025, 2026）
+      - sys_xmfl: 项目分类（如：软件开发、系统集成、技术服务）
+      - sys_yjqy: 一级区域（如：华北区域、华东区域、华南区域）
+      - sys_xmjd: 项目阶段（如：立项、实施、验收、结项）
+      - sys_spzt: 审批状态（如：待审核、已通过、已驳回）
+      - sys_yszt: 验收状态（如：未验收、已验收、验收不通过）
+      - sys_htzt: 合同状态（用于列表显示）
+
+      ========================================
+      依赖的岗位编码
+      ========================================
+
+      需要在系统管理 → 岗位管理中配置以下岗位：
+      - pm: 项目经理
+      - scjl: 市场经理
+
+  # ========================================
+  # 查询条件定制
+  # ========================================
+  project_manager_select:
+    intent: "项目经理选择，从岗位编码为pm的用户中选择"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: project_manager_id
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=pm"
+      source: "复用 SysUserService，接口已存在"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "提交值为 userId，显示值为 nickName"
+
+  market_manager_select:
+    intent: "市场经理选择，从岗位编码为scjl的用户中选择"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: market_manager_id
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=scjl"
+      source: "复用 SysUserService，接口已存在"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "提交值为 userId，显示值为 nickName"
+
+  project_dept_tree:
+    intent: "项目部门选择，树形结构，任意层级可选，使用公共组件 ProjectDeptSelect"
+    component:
+      type: project-dept-select
+      props:
+        checkStrictly: true
+        clearable: true
+        filterable: false
+        autoLoad: true
+    bindTo: project_dept
+    service:
+      endpoint: "GET /system/dept/treeselect"
+      source: "复用 SysDeptService，RuoYi 自带"
+      newApi: false
+    notes: |
+      提交值为 deptId，显示值为 deptName
+
+      ========================================
+      公共组件说明（2026-02-08）
+      ========================================
+
+      组件名称: ProjectDeptSelect
+      组件位置: ruoyi-ui/src/components/ProjectDeptSelect/index.vue
+      全局注册: main.ts 中已全局注册，无需手动导入
+
+      功能特性:
+      - 自动加载部门树数据
+      - 自动过滤前两级部门，只显示三级及以下机构
+      - 支持任意层级选择（checkStrictly: true）
+      - 支持清空、禁用、过滤等常用功能
+      - 封装了 filterDeptTree 过滤逻辑
+
+      使用方式:
+      ```vue
+      <!-- 基础用法 -->
+      <project-dept-select v-model="form.projectDept" />
+
+      <!-- 查询条件（index.vue） -->
+      <el-form-item label="项目部门" prop="projectDept">
+        <project-dept-select
+          v-model="queryParams.projectDept"
+          style="width: 200px"
+        />
+      </el-form-item>
+
+      <!-- 立项申请/编辑（apply.vue, edit.vue） -->
+      <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
+        <project-dept-select
+          v-model="form.projectDept"
+          @blur="validateOnBlur('projectDept')"
+        />
+      </el-form-item>
+      ```
+
+      Props:
+      - modelValue: 绑定值（String/Number）
+      - placeholder: 占位文本（默认：请选择项目部门）
+      - checkStrictly: 父子节点不互相关联（默认：true）
+      - clearable: 是否可清空（默认：true）
+      - disabled: 是否禁用（默认：false）
+      - filterable: 是否可搜索（默认：false）
+      - width: 组件宽度（默认：100%）
+      - autoLoad: 是否自动加载数据（默认：true）
+
+      Events:
+      - update:modelValue: 绑定值变化时触发
+      - change: 选中值发生变化时触发
+      - blur: 失去焦点时触发
+
+      Methods:
+      - loadDeptTree(): 手动加载部门树数据
+
+      过滤逻辑:
+      - 跳过第1、2级部门节点
+      - 从第3级开始保留节点及其所有子节点
+      - 保持树形结构的层级关系
+      - 格式化显示：二部-分行业务组（项目四组）
+
+      已应用页面:
+      - index.vue: 项目列表查询条件
+      - apply.vue: 立项申请表单
+      - edit.vue: 编辑项目表单
+
+      迁移说明:
+      旧代码需要手动管理 deptOptions、filterDeptTree、getDeptTree
+      新代码直接使用 <project-dept-select> 组件，无需额外代码
+
+      详细文档: docs/components/ProjectDeptSelect.md
+
+  participants_tags:
+    intent: "参与人员多选，标签形式展示，支持添加和删除"
+    component:
+      type: custom
+      spec: "多选标签组件，显示已选人员昵称，支持点击删除，支持弹窗多选添加"
+    bindTo: participants
+    service:
+      endpoint: "GET /system/user/list"
+      source: "复用 SysUserService，RuoYi 自带"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: "participants 字段存储逗号分隔的 userId 列表"
+
+  sales_manager_select:
+    intent: "销售负责人选择，从岗位编码为xsfzr的用户中选择"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: sales_manager_id
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=xsfzr"
+      source: "复用 SysUserService，接口已存在"
+      returns: "[{ userId, nickName }]"
+      newApi: false
+    notes: |
+      提交值为 userId，显示值为 nickName，岗位编码：xsfzr（销售负责人）
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：新建项目，选择销售负责人
+      - edit.vue（编辑）：编辑项目，可修改销售负责人
+      - detail.vue（详情）：只读显示，disabled
+
+  sales_contact_auto:
+    intent: "销售联系方式自动带出，选择销售负责人后自动填充"
+    component:
+      type: el-input
+      props:
+        readonly: true
+        placeholder: "自动带出"
+    bindTo: sales_contact
+    service:
+      endpoint: null
+      source: "从 salesManagerOptions 中获取 phonenumber"
+      newApi: false
+    notes: |
+      只读显示，不可手动编辑
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：选择销售负责人后自动填充
+      - edit.vue（编辑）：选择销售负责人后自动填充
+      - detail.vue（详情）：只读显示，disabled
+
+  customer_select:
+    intent: "客户选择，根据项目区域过滤客户"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+    bindTo: customer_id
+    service:
+      endpoint: "GET /project/customer/list?region={region}"
+      source: "复用 PmCustomerService，已存在"
+      returns: "[{ customerId, customerSimpleName }]"
+      newApi: false
+    notes: |
+      Label: "客户名称"（不显示ID）
+      显示值: customerSimpleName
+      提交值: customerId
+      过滤规则: 根据项目的一级区域（region）过滤客户列表
+      联动: 区域变化时重新加载客户列表
+      触发: 选择客户时触发 handleCustomerChange() 加载联系人
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：新建项目，选择客户
+      - edit.vue（编辑）：回显已保存的客户，支持修改
+      - detail.vue（详情）：回显已保存的客户，disabled 只读
+      1. Label显示"客户名称"（不是"客户ID"）
+      2. 根据项目的一级区域过滤客户列表
+      3. 监听 region 变化，自动重新加载客户列表
+      4. 页面加载时调用 loadCustomers() 加载客户列表
+      5. 选择客户时触发 handleCustomerChange() 加载联系人
+
+      前端实现：
+      ```javascript
+      // 加载客户列表（根据区域过滤）
+      function loadCustomers() {
+        const params = {}
+        if (form.value.region) {
+          params.region = form.value.region
+        }
+        request({
+          url: '/project/customer/list',
+          method: 'get',
+          params: params
+        }).then(response => {
+          customerOptions.value = response.rows || []
+        })
+      }
+
+      // 监听区域变化
+      watch(() => form.value.region, (newRegion) => {
+        if (newRegion) {
+          loadCustomers()
+        }
+      })
+      ```
+
+  customer_contact_cascade:
+    intent: "客户联系人级联选择，根据客户动态加载"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+        disabled: "!form.customerId"
+    bindTo: customer_contact_id
+    service:
+      endpoint: "GET /project/customer/contact/listByCustomer?customerId={customerId}"
+      source: "复用 CustomerService，接口已存在"
+      returns: "[{ contactId, contactName, contactPhone }]"
+      newApi: false
+    notes: |
+      Label: "客户联系人"（不显示ID）
+      显示值: contactName
+      提交值: contactId
+      禁用条件: 未选择客户时禁用
+      级联逻辑: 选择客户后清空联系人，加载该客户的联系人列表
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：新建项目，选择联系人
+      - edit.vue（编辑）：回显已保存的联系人，支持修改，加载项目数据后自动加载联系人列表
+      - detail.vue（详情）：回显已保存的联系人，disabled 只读
+
+      编辑模式回显逻辑：
+      ```javascript
+      // edit.vue - 加载项目数据后
+      if (data.customerId) {
+        handleCustomerChange(data.customerId)  // 加载联系人列表
+      }
+
+      // detail.vue - 加载项目数据后
+      if (data.customerId) {
+        loadCustomerContacts(data.customerId)  // 加载联系人列表并填充联系方式
+      }
+      ```
+      7. 编辑项目时，如果有客户ID，自动加载联系人列表
+
+      前端实现：
+      ```javascript
+      // 客户变化时加载联系人
+      function handleCustomerChange(customerId) {
+        // 清空联系人和联系方式
+        form.value.customerContactId = null
+        customerContactPhone.value = ''
+        contactOptions.value = []
+
+        if (!customerId) return
+
+        // 加载该客户的联系人列表
+        request({
+          url: '/project/customer/contact/listByCustomer',
+          method: 'get',
+          params: { customerId: customerId }
+        }).then(response => {
+          contactOptions.value = response.data || []
+        })
+      }
+
+  customer_contact_phone_auto:
+    intent: "客户联系方式自动回显，只读显示"
+    component:
+      type: el-input
+      props:
+        readonly: true
+        placeholder: "自动带出"
+    bindTo: customerContactPhone
+    service:
+      endpoint: null
+      source: "从联系人列表中获取 contactPhone"
+      newApi: false
+    notes: |
+      临时变量: customerContactPhone（不保存到数据库）
+      自动填充: 选择联系人后从 contactOptions 中获取 contactPhone
+      只读: 不可手动编辑
+
+      页面差异（2026-02-06）：
+      - apply.vue（立项申请）：选择联系人后自动填充
+      - edit.vue（编辑）：选择联系人后自动填充，或加载项目数据后自动填充
+      - detail.vue（详情）：加载项目数据后自动填充，disabled 只读
+
+  merchant_contact_manual:
+    intent: "商户联系人手动输入，独立字段，不关联客户联系人"
+    component:
+      type: el-input
+      props:
+        placeholder: "请输入商户联系人"
+    bindTo: merchant_contact
+    service:
+      endpoint: null
+      source: "前端手动输入"
+      newApi: false
+    notes: "商户联系人是独立字段，手动输入，不从客户联系人自动带出"
+
+  merchant_phone_manual:
+    intent: "商户联系方式手动输入，独立字段，不关联客户联系方式"
+    component:
+      type: el-input
+      props:
+        placeholder: "请输入商户联系方式"
+    bindTo: merchant_phone
+    service:
+      endpoint: null
+      source: "前端手动输入"
+      newApi: false
+    notes: |
+      商户联系方式是独立字段，手动输入，不从客户联系方式自动带出
+
+      字段说明：
+      - customerContactPhone：临时变量，显示客户联系人的电话（只读，不保存）
+      - merchantPhone：数据库字段，保存商户联系方式（可编辑，保存到数据库）
+
+      布局结构（2026-02-06更新）：
+      第一行（3列）：
+      - 客户名称（el-select，8列）
+      - 客户联系人（el-select，8列，级联）
+      - 客户联系方式（el-input readonly，8列，自动回显）
+
+      第二行（2列）：
+      - 商户联系人（el-input，12列）
+      - 商户联系方式（el-input，12列）
+      第一行：客户名称 | 客户联系人 | 客户联系方式（只读，临时变量）
+      第二行：商户联系人 | 商户联系方式（可编辑，保存到数据库）
+
+  project_code_auto:
+    intent: "项目编号自动生成，格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}"
+    component:
+      type: custom
+      spec: "监听 industry、region、regionCode、shortName、establishedYear 变化，自动生成项目编号"
+    bindTo: project_code
+    service:
+      endpoint: null
+      source: "前端根据规则自动生成"
+      newApi: false
+    notes: "只读显示，不可手动编辑，格式示例：IT-HBQY-11-北京-2024"
+
+  region_cascade:
+    intent: "二级区域级联选择，根据一级区域动态加载二级区域（省份）"
+    component:
+      type: el-select
+      props:
+        filterable: true
+        clearable: true
+        disabled: "!queryParams.region"  # 未选择一级区域时禁用
+    bindTo: region_code
+    service:
+      endpoint: "GET /project/secondaryRegion/listByRegion?regionDictValue={regionDictValue}"
+      source: "复用 SecondaryRegionService，接口已存在"
+      returns: "[{ provinceCode, provinceName }]"
+      newApi: false
+    notes: |
+      监听 region 变化，动态加载省份列表
+
+      实现要点：
+      1. 一级区域字段使用 sys_yjqy 字典（不是 region 字典）
+      2. 二级区域字段名映射：provinceCode（后端）→ regionCode（前端绑定值）
+      3. 二级区域字段名映射：provinceName（后端）→ 显示标签
+      4. 默认禁用状态，选择一级区域后才能选择二级区域
+      5. 一级区域变化时清空二级区域值并重新加载数据
+
+      前端实现：
+      - :disabled="!queryParams.region"
+      - @change="handleRegionChange" 在一级区域上
+      - handleRegionChange 函数清空 regionCode 并调用 getSecondaryRegions
+
+  # ========================================
+  # 列表字段定制
+  # ========================================
+  list_contract_info:
+    intent: "列表显示合同金额和合同状态，通过关联表查询主合同信息"
+    component:
+      type: custom
+      spec: "通过 pm_project_contract_rel 关联表查询主合同信息，显示合同金额和合同状态"
+    bindTo: ["contract_amount", "contract_status"]
+    service:
+      endpoint: null
+      source: "后端查询时 LEFT JOIN pm_project_contract_rel 和 pm_contract，获取主合同（is_main=1）的金额和状态"
+      newApi: false
+    notes: |
+      SQL 示例：
+      LEFT JOIN pm_project_contract_rel rel ON p.project_id = rel.project_id AND rel.is_main = '1' AND rel.del_flag = '0'
+      LEFT JOIN pm_contract c ON rel.contract_id = c.contract_id AND c.del_flag = '0'
+
+      返回字段：
+      - contract_amount: 合同金额（decimal）
+      - contract_status: 合同状态（字典 sys_htzt）
+
+  list_dept_format:
+    intent: "项目部门格式化显示，只显示三级及以下机构，用'-'隔开"
+    component:
+      type: custom
+      spec: "格式化部门层级显示，从三级机构开始"
+    bindTo: project_dept
+    service:
+      endpoint: null
+      source: "后端查询时使用递归 CTE 构建部门路径，前端部门树选择器过滤前两级"
+      newApi: false
+    notes: |
+      后端实现（ProjectMapper.xml）：
+      - 使用 MySQL 递归 CTE (WITH RECURSIVE) 构建完整部门路径
+      - 从当前部门向上递归查找所有父部门
+      - 计算部门层级，从第三级开始截取路径
+      - 使用 SUBSTRING_INDEX 函数提取三级及以下部门名称
+      - 格式：二部-分行业务组（项目四组）
+
+      前端实现（apply.vue, edit.vue, index.vue, detail.vue）：
+      - 添加 filterDeptTree() 函数过滤部门树
+      - 递归遍历部门树，跳过前两级
+      - 只保留三级及以下机构供用户选择
+      - 保持树形结构的层级关系
+
+      SQL 示例：
+      ```sql
+      WITH RECURSIVE dept_path AS (
+          SELECT dept_id, dept_name, parent_id, 1 AS level,
+                 CAST(dept_name AS CHAR(500)) AS path
+          FROM sys_dept
+          WHERE dept_id = CAST(p.project_dept AS UNSIGNED)
+          UNION ALL
+          SELECT d.dept_id, d.dept_name, d.parent_id, dp.level + 1,
+                 CONCAT(d.dept_name, '-', dp.path)
+          FROM sys_dept d
+          INNER JOIN dept_path dp ON d.dept_id = dp.parent_id
+      )
+      SELECT SUBSTRING_INDEX(path, '-', -(MAX(level) - 2))
+      FROM dept_path
+      WHERE MAX(level) >= 3
+      ```
+
+  list_participants_format:
+    intent: "参与人员格式化显示，显示用户昵称列表"
+    component:
+      type: custom
+      spec: "将逗号分隔的 userId 转换为昵称显示"
+    bindTo: participants
+    service:
+      endpoint: null
+      source: "后端查询时关联用户表，转换为昵称"
+      newApi: false
+    notes: "例：张三,李四,王五"
+
+  list_summary_row:
+    intent: "列表汇总行，显示项目预算、预估工作量、实际人天、合同金额、确认金额的合计"
+    component:
+      type: custom
+      spec: "在表头下方显示合计行"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端计算当前页数据的合计"
+      newApi: false
+    notes: "合计字段：project_budget, estimated_workload, actual_workload, contract_amount, confirm_amount"
+
+  # ========================================
+  # 操作按钮定制
+  # ========================================
+  action_buttons:
+    intent: "列表操作按钮：查看详情、编辑、收入确认、附件、删除、打印立项申请单"
+    component:
+      type: custom
+      spec: "6个操作按钮"
+    bindTo: toolbar
+    service:
+      endpoint: null
+      source: "前端实现各按钮功能"
+      newApi: false
+    notes: "查看详情（只读）、编辑、收入确认（弹窗）、附件管理、删除、打印"
+
+  # ========================================
+  # 收入确认功能
+  # ========================================
+  revenue_confirm_dialog:
+    intent: "收入确认弹窗，左侧项目信息，右侧收入确认信息"
+    component:
+      type: custom
+      spec: "弹窗布局：左侧项目信息（不含备注和备用字段），右侧收入确认表单"
+    bindTo: dialog
+    service:
+      endpoint: "PUT /project/project/confirmRevenue"
+      source: "新增收入确认接口"
+      newApi: true
+    notes: "收入确认字段：tax_rate, confirm_amount, after_tax_amount, revenue_confirm_year, revenue_confirm_status, company_revenue_confirmed_by, confirm_time"
+
+  revenue_tax_rate:
+    intent: "税率选择，6%软件开发类，13%硬件类"
+    component:
+      type: el-select
+      props:
+        options: [{value: 6, label: '6% (软件开发类)'}, {value: 13, label: '13% (硬件类)'}]
+    bindTo: tax_rate
+    service:
+      endpoint: null
+      source: "前端固定选项"
+      newApi: false
+    notes: "选择后自动计算不含税金额和税后金额"
+
+  revenue_amount_calc:
+    intent: "不含税金额和税后金额自动计算"
+    component:
+      type: custom
+      spec: "监听 tax_rate 和 confirm_amount 变化，自动计算"
+    bindTo: after_tax_amount
+    service:
+      endpoint: null
+      source: "前端计算：合同金额/(1+税率)，确认金额/(1+税率)"
+      newApi: false
+    notes: "公式：金额 / (1 + 税率/100)"
+
+  # ========================================
+  # 立项申请页面折叠面板（2026-02-06）
+  # ========================================
+  apply_page_title:
+    intent: "立项申请页面标题"
+    component:
+      type: h2
+      props:
+        style: "margin-bottom: 20px; font-weight: bold;"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端静态内容"
+      newApi: false
+    notes: "内容：立项申请"
+
+  apply_page_title:
+    intent: "立项申请页面标题"
+    component:
+      type: h2
+      props:
+        style: "margin: 0 0 6px 0; font-weight: bold;"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端静态内容"
+      newApi: false
+    notes: "内容：立项申请"
+
+  apply_page_collapse_panels:
+    intent: "立项申请页面使用 el-card 实现折叠面板，支持全部展开/折叠"
+    component:
+      type: el-card
+      props:
+        shadow: hover
+        style: "margin-bottom: 15px"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端实现"
+      newApi: false
+    notes: |
+      工具栏：右对齐，两个 el-link（type="primary"）
+      - "全部展开"：activeNames.value = ['1', '3', '4', '5', '6', '7']
+      - "全部折叠"：activeNames.value = []
+
+      Card header：可点击，显示箭头图标和标题
+      - 点击切换：togglePanel(name) 添加/移除 name
+      - 箭头图标：activeNames.includes(name) ? 'el-icon-arrow-down' : 'el-icon-arrow-right'
+      - 内容区：v-show="activeNames.includes(name)"
+
+      7个面板：name="1", "3", "4", "5", "6", "7"（默认全部展开）
+      对应：一、项目基本信息  二、人员配置  三、客户信息  四、时间规划  五、成本预算  六、备注
+
+      CSS样式：禁用 label 点击触发表单控件
+      ```css
+      :deep(.el-form-item__label) {
+        pointer-events: none;
+      }
+      ```
+
+  apply_page_footer_buttons:
+    intent: "立项申请页面底部操作按钮，固定在底部中间位置"
+    component:
+      type: custom
+      spec: "使用 sticky 定位的底部按钮区域"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端实现"
+      newApi: false
+    notes: |
+      ========================================
+      按钮布局（2026-02-08）
+      ========================================
+
+      HTML 结构：
+      ```vue
+      <!-- 底部操作按钮 -->
+      <div class="form-footer">
+        <el-button type="primary" size="large" @click="submitForm">提交</el-button>
+        <el-button size="large" @click="resetForm">重置</el-button>
+        <el-button size="large" @click="cancel">取消</el-button>
+      </div>
+      ```
+
+      样式实现：
+      ```scss
+      .app-container {
+        padding-bottom: 80px;  // 避免内容被按钮遮挡
+      }
+
+      .form-footer {
+        position: sticky;      // 滚动时固定在底部
+        bottom: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #dcdfe6;
+        text-align: center;    // 按钮居中
+        z-index: 10;          // 确保在最上层
+
+        .el-button {
+          min-width: 120px;   // 按钮最小宽度
+          margin: 0 10px;     // 按钮间距
+        }
+      }
+      ```
+
+      按钮配置：
+      - 提交按钮：type="primary", size="large"
+      - 重置按钮：size="large"
+      - 取消按钮：size="large"
+
+      特性：
+      - 居中对齐
+      - 固定在底部（sticky 定位）
+      - 滚动时始终可见
+      - 白色背景 + 顶部边框
+      - 按钮间距均匀（10px）
+      - 按钮最小宽度 120px
+
+  # ========================================
+  # 编辑页面特殊字段（2026-02-06）
+  # ========================================
+  edit_page_footer_buttons:
+    intent: "编辑页面底部操作按钮，固定在底部中间位置"
+    component:
+      type: custom
+      spec: "使用 sticky 定位的底部按钮区域"
+    bindTo: page
+    service:
+      endpoint: null
+      source: "前端实现"
+      newApi: false
+    notes: |
+      ========================================
+      按钮布局（2026-02-08）
+      ========================================
+
+      HTML 结构：
+      ```vue
+      <!-- 底部操作按钮 -->
+      <div class="form-footer">
+        <el-button type="primary" size="large" @click="submitForm" :loading="submitLoading">
+          保存
+        </el-button>
+        <el-button size="large" @click="cancel">取消</el-button>
+      </div>
+      ```
+
+      样式实现：
+      ```scss
+      .project-edit {
+        .form-footer {
+          position: sticky;      // 滚动时固定在底部
+          bottom: 0;
+          padding: 20px;
+          background-color: #fff;
+          border-top: 1px solid #dcdfe6;
+          text-align: center;    // 按钮居中
+          z-index: 10;          // 确保在最上层
+
+          .el-button {
+            min-width: 120px;   // 按钮最小宽度
+            margin: 0 10px;     // 按钮间距
+          }
+        }
+      }
+      ```
+
+      按钮配置：
+      - 保存按钮：type="primary", size="large", :loading="submitLoading"
+      - 取消按钮：size="large"
+
+      特性：
+      - 居中对齐
+      - 固定在底部（sticky 定位）
+      - 滚动时始终可见
+      - 白色背景 + 顶部边框
+      - 按钮间距均匀（10px）
+      - 按钮最小宽度 120px
+      - 保存按钮支持 loading 状态
+
+      与立项申请页面的区别：
+      - 编辑页面只有"保存"和"取消"两个按钮
+      - 保存按钮有 loading 状态
+      - 立项申请页面有"提交"、"重置"、"取消"三个按钮
+
+      ========================================
+      常见问题（2026-02-08）
+      ========================================
+
+      问题：按钮没有居中显示
+      原因：样式选择器类名与 HTML 类名不匹配
+
+      错误示例：
+      ```vue
+      <!-- HTML -->
+      <div class="app-container project-edit">
+        <div class="form-footer">...</div>
+      </div>
+
+      <!-- CSS（错误：类名不匹配） -->
+      <style scoped lang="scss">
+      .project-apply {  // ❌ HTML 是 project-edit，CSS 写成 project-apply
+        .form-footer {
+          text-align: center;
+        }
+      }
+      </style>
+      ```
+
+      正确示例：
+      ```vue
+      <!-- HTML -->
+      <div class="app-container project-edit">
+        <div class="form-footer">...</div>
+      </div>
+
+      <!-- CSS（正确：类名匹配） -->
+      <style scoped lang="scss">
+      .project-edit {  // ✅ 与 HTML 类名一致
+        .form-footer {
+          text-align: center;
+        }
+      }
+      </style>
+      ```
+
+      调试步骤：
+      1. 检查 HTML 元素的 class 属性
+      2. 检查 CSS 选择器是否与 HTML 类名匹配
+      3. 使用浏览器开发者工具查看样式是否生效
+      4. 检查 scoped 样式的作用域
+      5. 清除浏览器缓存后重新加载
+
+      常见错误：
+      - 复制粘贴代码时忘记修改类名
+      - HTML 和 CSS 在不同文件中，修改了一处忘记修改另一处
+      - scoped 样式作用域问题
+
+  # ========================================
+  # 编辑页面特殊字段（2026-02-06）
+  # ========================================
+  edit_page_approval_fields:
+    intent: "编辑页面显示审核状态和审核意见（只读）"
+    component:
+      type: dict-tag
+      props:
+        options: sys_spzt
+        value: form.approvalStatus
+    bindTo: ["approval_status", "approval_reason"]
+    service:
+      endpoint: null
+      source: "字典表 sys_spzt（用于翻译显示）"
+      newApi: false
+    notes: |
+      审核状态（只读显示）：
+      - 组件：dict-tag（字典标签组件）
+      - 数据源：字典表 sys_spzt
+      - 值映射：
+        - 0=待审核（type="warning" 黄色）
+        - 1=审核通过（type="success" 绿色）
+        - 2=审核拒绝（type="danger" 红色）
+
+      审核意见（只读显示）：
+      - 组件：el-input（disabled）
+      - placeholder: "暂无审核意见"
+
+      位置：项目基本信息面板的最后一行
+
+      字典加载：proxy.useDict('sys_spzt')
+
+  # ========================================
+  # 路由配置原则（2026-02-06）
+  # ========================================
+  route_configuration_principle:
+    intent: "项目管理模块只使用动态路由，不使用静态路由"
+    component:
+      type: null
+    bindTo: page
+    service:
+      endpoint: "GET /getRouters"
+      source: "后端动态生成路由"
+      newApi: false
+    notes: |
+      **重要原则：**
+      1. 不要在 router/index.ts 中添加静态路由
+      2. 所有路由通过数据库菜单表动态生成
+      3. 编辑和详情等隐藏路由必须挂在目录类型（M）的菜单下
+
+      **路由层级结构：**
+      - 项目管理（menu_type=M, parent_id=0）
+        - 立项申请（menu_type=C, visible=0）
+        - 项目列表（menu_type=C, visible=0）
+        - 编辑项目（menu_type=C, visible=1, 隐藏）
+        - 项目详情（menu_type=C, visible=1, 隐藏）
+
+      **关键配置：**
+      - 编辑路由：parent_id=项目管理ID, path='list/edit/:projectId(\\d+)'
+      - 详情路由：parent_id=项目管理ID, path='list/detail/:projectId(\\d+)'
+      - 完整路径：/project/list/edit/:id, /project/list/detail/:id
+
+      **防止菜单重复：**
+      SQL 初始化脚本中添加删除语句：
+      ```sql
+      DELETE FROM sys_menu WHERE menu_name = '项目管理' AND parent_id = 0 AND path = 'project';
+      ```
+
+      **后端路由生成逻辑：**
+      - 只有 menu_type='M'（目录）的菜单会递归生成子路由
+      - menu_type='C'（菜单）的子路由不会被生成
+      - 因此编辑/详情必须挂在项目管理（M）下，不能挂在项目列表（C）下
+
+      位置：项目基本信息面板的最后一行
+
+  # ========================================
+  # 路由配置（2026-02-06）
+  # ========================================
+  route_configuration:
+    intent: "项目管理模块的路由配置，全部使用动态路由，避免路由名称冲突"
+    component:
+      type: custom
+      spec: "数据库菜单配置 + 前端动态路由加载"
+    bindTo: page
+    service:
+      endpoint: "GET /getRouters"
+      source: "RuoYi 框架自带的动态路由接口"
+      newApi: false
+    notes: |
+      ========================================
+      路由结构说明
+      ========================================
+
+      项目管理 (menu_id=2034, visible=0, route_name='ProjectManage')
+      ├─ 立项申请 (menu_id=2035, path='apply', visible=0, route_name='ProjectApply')
+      │  └─ 组件: project/project/apply.vue
+      │
+      └─ 项目列表 (menu_id=2036, path='list', visible=0, route_name='ProjectList')
+         ├─ 组件: project/project/index.vue
+         ├─ 编辑项目 (menu_id=2043, path='edit/:projectId(\\d+)', visible=1, route_name='ProjectEdit')
+         │  └─ 组件: project/project/edit.vue
+         └─ 项目详情 (menu_id=2044, path='detail/:projectId(\\d+)', visible=1, route_name='ProjectDetail')
+            └─ 组件: project/project/detail.vue
+
+      ========================================
+      关键配置说明
+      ========================================
+
+      1. 路由名称 (route_name)
+         - 父菜单: ProjectManage
+         - 立项申请: ProjectApply
+         - 项目列表: ProjectList
+         - 编辑项目: ProjectEdit
+         - 项目详情: ProjectDetail
+         - 作用: 避免路由名称冲突，每个路由必须有唯一的 route_name
+
+      2. 路由路径 (path)
+         - 父菜单: project (一级路径)
+         - 立项申请: apply (相对路径，完整路径为 /project/apply)
+         - 项目列表: list (相对路径，完整路径为 /project/list)
+         - 编辑项目: edit/:projectId(\\d+) (带参数的相对路径)
+         - 项目详情: detail/:projectId(\\d+) (带参数的相对路径)
+
+      3. 可见性 (visible)
+         - visible=0: 显示在侧边栏菜单
+         - visible=1: 隐藏菜单（不显示在侧边栏，但可以通过路由访问）
+         - 编辑和详情页设置为 visible=1，作为隐藏路由
+
+      4. 组件路径 (component)
+         - 立项申请: project/project/apply
+         - 项目列表: project/project/index
+         - 编辑项目: project/project/edit
+         - 项目详情: project/project/detail
+         - 注意: 不需要 .vue 后缀，框架会自动添加
+
+      5. activeMenu 配置
+         - 编辑和详情页的 meta.activeMenu 设置为 '/project/list'
+         - 作用: 访问编辑/详情页时，侧边栏高亮"项目列表"菜单
+         - 由后端 buildMenus() 方法自动处理
+
+      ========================================
+      数据库菜单配置 SQL
+      ========================================
+
+      位置: pm-sql/init/02_menu_data.sql
+
+      -- 一级菜单：项目管理
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('项目管理', 0, 3, 'project', NULL, 1, 0, 'M', '0', '0', '',
+        'project', 'admin', sysdate(), 'ProjectManage', '项目管理目录');
+
+      -- 二级菜单：立项申请
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('立项申请', @projectRootMenuId, 1, 'apply', 'project/project/apply',
+        1, 0, 'C', '0', '0', 'project:project:add', 'edit', 'admin', sysdate(),
+        'ProjectApply', '项目立项申请菜单');
+
+      -- 二级菜单：项目列表
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('项目列表', @projectRootMenuId, 2, 'list', 'project/project/index',
+        1, 0, 'C', '0', '0', 'project:project:list', 'list', 'admin', sysdate(),
+        'ProjectList', '项目列表菜单');
+
+      -- 隐藏菜单：编辑项目
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('编辑项目', @projectMenuId, 10, 'edit/:projectId(\\d+)',
+        'project/project/edit', 1, 0, 'C', '1', '0', 'project:project:edit',
+        '#', 'admin', sysdate(), 'ProjectEdit', '编辑项目页面');
+
+      -- 隐藏菜单：项目详情
+      INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component,
+        is_frame, is_cache, menu_type, visible, status, perms, icon,
+        create_by, create_time, route_name, remark)
+      VALUES ('项目详情', @projectMenuId, 11, 'detail/:projectId(\\d+)',
+        'project/project/detail', 1, 0, 'C', '1', '0', 'project:project:query',
+        '#', 'admin', sysdate(), 'ProjectDetail', '项目详情页面');
+
+      ========================================
+      前端路由配置
+      ========================================
+
+      位置: ruoyi-ui/src/router/index.ts
+
+      说明:
+      - 删除了所有项目相关的静态路由配置
+      - 完全依赖后端动态加载路由
+      - 路由由 permission.ts 中的 generateRoutes() 方法动态添加
+
+      ========================================
+      文件结构
+      ========================================
+
+      ruoyi-ui/src/views/project/
+      ├─ project/
+      │  ├─ apply.vue      # 立项申请页面
+      │  ├─ index.vue      # 项目列表页面
+      │  ├─ edit.vue       # 编辑项目页面
+      │  └─ detail.vue     # 项目详情页面
+      ├─ customer/
+      ├─ approval/
+      └─ ...
+
+      注意: 删除了 project/apply/ 目录，统一使用 project/project/ 目录
+
+      ========================================
+      路由跳转示例
+      ========================================
+
+      1. 跳转到立项申请页面:
+         router.push('/project/apply')
+
+      2. 跳转到项目列表页面:
+         router.push('/project/list')
+
+      3. 跳转到编辑项目页面:
+         router.push(`/project/list/edit/${projectId}`)
+
+      4. 跳转到项目详情页面:
+         router.push(`/project/list/detail/${projectId}`)
+
+      5. 保存成功后返回列表:
+         router.push('/project/list')
+
+      注意事项:
+      - 所有保存成功后的跳转统一使用 router.push('/project/list')
+      - 不要使用 router.push('/project/project')（旧路径）
+      - 适用页面: apply.vue, edit.vue, detail.vue
+
+      ========================================
+      常见问题与解决方案
+      ========================================
+
+      问题1: 路由名称冲突错误
+      错误信息: "A route named 'Project' has been added as a child of a route
+                with the same name"
+
+      原因: 父路由和子路由使用了相同的路由名称
+
+      解决方案:
+      - 为每个菜单配置明确的 route_name 字段
+      - 确保所有 route_name 全局唯一
+      - 父菜单: ProjectManage
+      - 子菜单: ProjectApply, ProjectList, ProjectEdit, ProjectDetail
+
+      问题2: 侧边栏菜单不高亮
+
+      原因: 隐藏路由没有配置 activeMenu
+
+      解决方案:
+      - 编辑和详情页的 meta.activeMenu 设置为 '/project/list'
+      - 由后端 SysMenuServiceImpl.buildMenus() 自动处理
+
+      问题3: 路由跳转404
+
+      原因: 路径配置错误或组件路径不存在
+
+      解决方案:
+      - 检查数据库中的 path 和 component 字段
+      - 确保组件文件存在于 ruoyi-ui/src/views/ 对应路径
+      - 子路由的 path 使用相对路径（不以 / 开头）
+
+  # ========================================
+  # 表单验证增强（2026-02-08）
+  # ========================================
+  form_validation_enhancement:
+    intent: "立项申请和项目编辑页面的表单验证增强，实现实时验证和错误定位"
+    component:
+      type: custom
+      spec: "使用 Composable 模式实现表单验证增强功能"
+    bindTo: ["apply.vue", "edit.vue"]
+    service:
+      endpoint: null
+      source: "前端 Composable 实现"
+      newApi: false
+    notes: |
+      ========================================
+      功能概述
+      ========================================
+
+      1. 实时验证（blur 触发）
+         - 用户填写完字段后，光标离开时立即验证
+         - 立即显示错误提示，无需等待提交
+         - 提升用户体验，减少提交失败
+
+      2. 提交时错误定位
+         - 点击提交按钮时，如果有验证错误
+         - 自动展开包含错误的折叠面板
+         - 平滑滚动到第一个错误字段
+         - 错误字段抖动高亮，吸引注意力
+
+      3. 自动填充字段验证
+         - 销售联系方式：选择销售负责人后自动填充并验证
+         - 客户联系方式：选择客户联系人后自动填充
+         - 只读字段自动触发验证，清除错误提示
+
+      4. 禁用 label 点击
+         - 点击 form-item 的 label 不会触发控件
+         - 避免误触发日期选择器等组件
+
+      ========================================
+      核心文件
+      ========================================
+
+      1. Composable 文件
+         位置: ruoyi-ui/src/composables/useFormValidation.ts
+
+         功能:
+         - validateOnBlur(prop): 单字段实时验证
+         - validateAndScroll(callback): 提交验证 + 自动滚动
+         - scrollToError(prop): 滚动到指定错误字段
+         - clearValidate(): 清空所有验证错误
+         - resetFields(): 重置表单
+
+         导出:
+         - errorFields: 错误字段映射
+         - errorCount: 错误数量
+
+      2. 样式文件
+         位置: ruoyi-ui/src/assets/styles/form-validation.scss
+
+         功能:
+         - 抖动动画 (@keyframes shake)
+         - 错误边框高亮 (.shake-error)
+         - 验证成功视觉反馈（可选）
+
+      ========================================
+      使用方法
+      ========================================
+
+      1. 引入 Composable
+         ```typescript
+         import { useFormValidation } from '@/composables/useFormValidation'
+
+         const formRef = ref()
+         const activeNames = ref(['1', '2', '3', '4', '5', '6'])
+         const { validateOnBlur, validateAndScroll } = useFormValidation(formRef, activeNames)
+         ```
+
+      2. 添加 data 属性
+         所有 el-card 添加 data-panel 属性:
+         ```vue
+         <el-card data-panel="1">
+         ```
+
+         所有 el-form-item 添加 data-prop 属性:
+         ```vue
+         <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
+         ```
+
+      3. 添加 blur 事件
+         所有表单控件添加 @blur 事件:
+         ```vue
+         <el-input v-model="form.projectName" @blur="validateOnBlur('projectName')" />
+         <el-select v-model="form.industry" @blur="validateOnBlur('industry')">
+         <el-date-picker v-model="form.startDate" @blur="validateOnBlur('startDate')" />
+         ```
+
+      4. 修改提交函数
+         ```typescript
+         function submitForm() {
+           validateAndScroll(() => {
+             // 验证通过后的提交逻辑
+             addProject(form.value).then(res => {
+               proxy.$modal.msgSuccess('提交成功')
+               router.push('/project/list')
+             })
+           })
+         }
+         ```
+
+      5. 自动填充字段验证
+         ```typescript
+         function handleSalesManagerChange(userId) {
+           if (!userId) {
+             form.value.salesContact = null
+             return
+           }
+           const user = salesManagerOptions.value.find(u => u.userId === userId)
+           if (user) {
+             form.value.salesContact = user.phonenumber || ''
+             // 自动填充后立即触发验证，清除错误提示
+             nextTick(() => {
+               validateOnBlur('salesContact')
+             })
+           }
+         }
+         ```
+
+      6. 禁用 label 点击
+         ```scss
+         /* 禁用 label 点击触发表单控件的默认行为 */
+         :deep(.el-form-item__label) {
+           pointer-events: none;
+         }
+         ```
+
+      7. 引入样式文件
+         ```vue
+         <style scoped src="@/assets/styles/form-validation.scss"></style>
+         ```
+
+      ========================================
+      apply.vue 实现细节
+      ========================================
+
+      1. 面板结构
+         - 使用 el-card 实现折叠面板（不是 el-collapse）
+         - 6个面板：data-panel="1", "3", "4", "5", "6", "7"
+         - 默认全部展开：activeNames = ['1', '3', '4', '5', '6', '7']
+
+      2. 表单字段
+         - 共 35 个字段
+         - 所有字段都添加了 data-prop 属性
+         - 所有字段都添加了 @blur 验证事件
+
+      3. 自动填充字段
+         - salesContact: 选择销售负责人后自动填充并验证
+
+      4. 工具栏
+         - 全部展开/全部折叠按钮
+         - 右对齐，使用 el-link
+
+      ========================================
+      edit.vue 实现细节
+      ========================================
+
+      1. 面板结构
+         - 使用 el-collapse 实现折叠面板（不是 el-card）
+         - 6个面板：name="1", "2", "3", "4", "5", "6"
+         - 默认全部展开：activeNames = ['1', '2', '3', '4', '5', '6']
+
+      2. 表单字段
+         - 共 24 个字段
+         - 所有字段都添加了 data-prop 属性
+         - 所有字段都添加了 @blur 验证事件
+
+      3. 自动填充字段
+         - salesContact: 选择销售负责人后自动填充并验证
+
+      4. 数据回显修复
+         - 客户联系人和联系方式回显问题已修复
+         - 加载项目数据时，先保存 customerContactId
+         - 加载联系人列表后，恢复 customerContactId 并触发联系方式显示
+
+      ========================================
+      技术细节
+      ========================================
+
+      1. 字段定位机制
+         通过 data-prop 属性定位字段:
+         ```javascript
+         const element = document.querySelector(`[data-prop="${prop}"]`)
+         ```
+
+      2. 面板展开机制
+         apply.vue (el-card):
+         ```javascript
+         const panel = element.closest('[data-panel]')
+         const panelIndex = panel?.getAttribute('data-panel')
+         if (!activeNames.value.includes(panelIndex)) {
+           activeNames.value.push(panelIndex)
+         }
+         ```
+
+         edit.vue (el-collapse):
+         ```javascript
+         const panel = element.closest('.el-collapse-item')
+         const panelName = panel?.getAttribute('name')
+         if (!activeNames.value.includes(panelName)) {
+           activeNames.value.push(panelName)
+         }
+         ```
+
+      3. 滚动时机
+         ```javascript
+         setTimeout(() => {
+           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+         }, 300) // 等待面板展开动画完成
+         ```
+
+      4. 抖动动画
+         ```scss
+         @keyframes shake {
+           0%, 100% { transform: translateX(0); }
+           25% { transform: translateX(-10px); }
+           75% { transform: translateX(10px); }
+         }
+
+         .shake-error {
+           animation: shake 0.6s;
+           border: 2px solid var(--el-color-danger) !important;
+           border-radius: 4px;
+           padding: 10px;
+           background-color: rgba(245, 108, 108, 0.05);
+         }
+         ```
+
+      ========================================
+      已知问题和解决方案
+      ========================================
+
+      1. 只读字段验证错误不消失
+         问题: 只读字段无法触发 blur 事件
+         解决: 在自动填充后手动调用 validateOnBlur()
+
+      2. el-select 的 blur 事件可能不触发
+         问题: Element Plus 的 select 组件 blur 行为不一致
+         解决: 如果遇到问题，可以改用 @change 事件
+
+      3. 客户联系人不回显
+         问题: handleCustomerChange() 会清空 customerContactId
+         解决: 加载数据时先保存值，加载完成后恢复
+
+      ========================================
+      测试清单
+      ========================================
+
+      apply.vue:
+      - [x] 实时验证：光标离开后立即显示错误
+      - [x] 提交验证：点击提交按钮滚动到第一个错误
+      - [x] 面板展开：自动展开包含错误的面板
+      - [x] 抖动动画：错误字段抖动高亮
+      - [x] 自动填充：销售联系方式自动验证
+
+      edit.vue:
+      - [x] 页面加载：无编译错误
+      - [x] 数据回显：客户联系人和联系方式正确显示
+      - [x] 实时验证：光标离开后立即显示错误
+      - [x] 提交验证：点击提交按钮滚动到第一个错误
+      - [x] 面板展开：自动展开包含错误的面板
+      - [x] 抖动动画：错误字段抖动高亮
+      - [x] 自动填充：销售联系方式自动验证
+      - [x] 禁用 label 点击：点击 label 不触发控件
+
+      ========================================
+      相关文档
+      ========================================
+
+      - docs/pm/form-validation-implementation.md - 实现文档
+      - docs/pm/form-validation-completion.md - 完成总结
+      - docs/pm/form-validation-final-fix.md - 最终修复
+      - docs/pm/form-validation-complete-report.md - 完成报告
+
+  # ========================================
+  # 审计字段自动填充（2026-02-08）
+  # ========================================
+  audit_fields_auto_fill:
+    intent: "自动填充创建人、创建时间、更新人、更新时间字段"
+    component:
+      type: backend
+      spec: "Service 层自动设置审计字段"
+    bindTo: ["create_by", "create_time", "update_by", "update_time"]
+    service:
+      endpoint: null
+      source: "ProjectServiceImpl.java"
+      newApi: false
+    notes: |
+      ========================================
+      功能概述
+      ========================================
+
+      自动填充审计字段，无需前端传递，后端 Service 层自动处理。
+
+      ========================================
+      实现位置
+      ========================================
+
+      文件: ruoyi-project/src/main/java/com/ruoyi/project/service/impl/ProjectServiceImpl.java
+
+      ========================================
+      新增操作
+      ========================================
+
+      ```java
+      @Transactional
+      @Override
+      public int insertProject(Project project)
+      {
+          // 自动设置创建人和创建时间
+          project.setCreateBy(SecurityUtils.getUsername());
+          project.setCreateTime(DateUtils.getNowDate());
+
+          int rows = projectMapper.insertProject(project);
+          insertProjectApproval(project);
+          return rows;
+      }
+      ```
+
+      说明:
+      - SecurityUtils.getUsername(): 获取当前登录用户的用户名
+      - DateUtils.getNowDate(): 获取当前时间
+      - 自动填充 create_by 和 create_time 字段
+
+      ========================================
+      修改操作
+      ========================================
+
+      ```java
+      @Transactional
+      @Override
+      public int updateProject(Project project)
+      {
+          // 自动设置更新人和更新时间
+          project.setUpdateBy(SecurityUtils.getUsername());
+          project.setUpdateTime(DateUtils.getNowDate());
+
+          projectMapper.deleteProjectApprovalByProjectId(project.getProjectId());
+          insertProjectApproval(project);
+          return projectMapper.updateProject(project);
+      }
+      ```
+
+      说明:
+      - 每次修改时自动更新 update_by 和 update_time 字段
+      - 记录最后一次修改的用户和时间
+
+      ========================================
+      查询显示逻辑
+      ========================================
+
+      文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+      update_by 字段显示逻辑:
+      ```sql
+      -- 关联创建人和更新人用户表
+      LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+      LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
+
+      -- 显示逻辑：优先显示更新人昵称，如果为空则显示创建人昵称
+      SELECT COALESCE(updater.nick_name, creator.nick_name, p.update_by, p.create_by) AS update_by
+      ```
+
+      显示优先级:
+      1. 更新人昵称（updater.nick_name）- 如果有更新记录且能关联到用户
+      2. 创建人昵称（creator.nick_name）- 如果没有更新记录但能关联到创建人
+      3. 更新人用户名（p.update_by）- 如果有更新记录但关联不到用户表
+      4. 创建人用户名（p.create_by）- 如果都关联不到，显示创建人用户名
+
+      业务场景:
+      - 新建项目：update_by 为空，显示创建人昵称
+      - 修改项目：update_by 有值，显示更新人昵称
+      - 用户被删除：关联不到用户表，显示用户名字符串
+
+      ========================================
+      字符集处理
+      ========================================
+
+      问题: MySQL 8.0 默认字符集 utf8mb4_0900_ai_ci 与系统表 utf8mb4_unicode_ci 不一致
+
+      解决方案: 在 JOIN 时显式指定字符集
+      ```sql
+      LEFT JOIN sys_user creator ON p.create_by COLLATE utf8mb4_unicode_ci = creator.user_name
+      LEFT JOIN sys_user updater ON p.update_by COLLATE utf8mb4_unicode_ci = updater.user_name
+      ```
+
+      ========================================
+      前端处理
+      ========================================
+
+      前端无需特殊处理:
+      - 新增/修改时不传递 createBy、createTime、updateBy、updateTime
+      - 后端自动填充这些字段
+      - 列表查询时直接显示返回的昵称
+
+      ========================================
+      依赖说明
+      ========================================
+
+      1. SecurityUtils 工具类
+         - 位置: ruoyi-common/src/main/java/com/ruoyi/common/utils/SecurityUtils.java
+         - 方法: getUsername() - 获取当前登录用户名
+         - 依赖: Spring Security 上下文
+
+      2. DateUtils 工具类
+         - 位置: ruoyi-common/src/main/java/com/ruoyi/common/utils/DateUtils.java
+         - 方法: getNowDate() - 获取当前时间
+         - 返回: java.util.Date
+
+      3. sys_user 系统表
+         - 字段: user_name (用户名), nick_name (昵称)
+         - 用途: 关联查询用户昵称
+
+      ========================================
+      测试验证
+      ========================================
+
+      1. 新增项目测试
+         - 创建新项目
+         - 验证 create_by 是否为当前登录用户
+         - 验证 create_time 是否为当前时间
+         - 验证 update_by 是否为空
+
+      2. 修改项目测试
+         - 修改已有项目
+         - 验证 update_by 是否为当前登录用户
+         - 验证 update_time 是否为当前时间
+         - 验证 create_by 和 create_time 是否保持不变
+
+      3. 列表显示测试
+         - 新建项目：update_by 列显示创建人昵称
+         - 修改项目：update_by 列显示更新人昵称
+         - 用户被删除：显示用户名字符串
+
+      ========================================
+      注意事项
+      ========================================
+
+      1. 必须在登录状态下操作
+         - SecurityUtils.getUsername() 依赖 Spring Security 上下文
+         - 未登录状态会抛出异常
+
+      2. 字符集一致性
+         - 新建表时使用 utf8mb4_unicode_ci 字符集
+         - 或在 JOIN 时显式指定 COLLATE
+
+      3. MyBatis 动态 SQL
+         - insert 语句使用 <if test="createBy != null">
+         - 必须先设置字段值，才会插入到数据库
+
+      4. 事务处理
+         - insertProject 和 updateProject 都使用 @Transactional
+         - 确保审计字段和业务数据一致性
+
+  # ========================================
+  # 详情页面布局配置（2026-02-08）
+  # ========================================
+  detail_page_layout:
+    intent: "项目详情页面使用 el-descriptions 组件展示，清晰美观的只读信息展示"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        shadow: "never"
+        column: 3
+        border: true
+    bindTo: "detail.vue"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "复用 ProjectService.selectProjectById"
+      newApi: false
+    notes: |
+      页面特性：
+      - 页面标题："项目详情"，提示："查看项目完整信息"
+      - 使用 el-card 包裹每个信息模块
+      - 使用 el-descriptions 组件展示数据（替代表单控件）
+      - 6个信息卡片，每个卡片一个主题
+      - 底部只有"返回"按钮，居中显示
+
+      底部按钮布局（2026-02-08）：
+      ```vue
+      <div class="form-footer">
+        <el-button size="large" @click="handleBack">返回</el-button>
+      </div>
+      ```
+
+      样式：
+      ```scss
+      .form-footer {
+        position: sticky;
+        bottom: 0;
+        padding: 20px;
+        background-color: #fff;
+        border-top: 1px solid #dcdfe6;
+        text-align: center;
+        z-index: 10;
+
+        .el-button {
+          min-width: 120px;
+        }
+      }
+      ```
+
+  detail_page_card1_basic_info:
+    intent: "详情页卡片1：项目基本信息，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 项目基本信息"
+    service: null
+    notes: |
+      卡片标题：项目基本信息
+
+      字段列表（按显示顺序）：
+      1. 行业 - dict-tag 显示，字典 industry
+      2. 区域 - dict-tag 显示，字典 sys_yjqy
+      3. 简称 - 文本显示
+      4. 年份 - 文本显示，后缀"年"
+      5. 项目编号 - 文本显示，:span="2"（占2列）
+      6. 项目名称 - 文本显示，:span="3"（占3列）
+      7. 项目分类 - dict-tag 显示，字典 sys_xmfl
+      8. 项目部门 - 文本显示（deptName）
+      9. 预估工作量 - 文本显示，后缀"人天"
+      10. 项目状态 - dict-tag 显示，字典 sys_xmjd
+      11. 验收状态 - dict-tag 显示，字典 sys_yszt
+      12. 审核状态 - dict-tag 显示，字典 sys_spzt
+      13. 项目地址 - 文本显示，:span="3"
+      14. 项目计划 - 文本显示，:span="3"，使用 text-content 类
+      15. 项目描述 - 文本显示，:span="3"，使用 text-content 类
+      16. 审核意见 - 文本显示，:span="3"
+
+      注意：不显示审核时间字段
+
+  detail_page_card2_personnel:
+    intent: "详情页卡片2：人员配置，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 人员配置"
+    service: null
+    notes: |
+      卡片标题：人员配置
+
+      字段列表：
+      1. 项目经理 - 文本显示（projectManagerName）
+      2. 市场经理 - 文本显示（marketManagerName）
+      3. 销售负责人 - 文本显示（salesManagerName）
+      4. 销售联系方式 - 文本显示，:span="3"
+      5. 参与人员 - el-tag 标签展示，:span="3"
+         - 使用 v-for 遍历 selectedParticipants
+         - 标签类型：type="info"
+         - 标签样式：margin-right: 8px; margin-bottom: 8px;
+         - 空状态：显示"暂无参与人员"
+
+  detail_page_card3_customer:
+    intent: "详情页卡片3：客户信息，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 客户信息"
+    service: null
+    notes: |
+      卡片标题：客户信息
+
+      字段列表：
+      1. 客户名称 - 文本显示（customerName）
+      2. 客户联系人 - 文本显示（customerContactName）
+      3. 客户联系方式 - 文本显示（customerContactPhone）
+      4. 商户联系人 - 文本显示
+      5. 商户联系方式 - 文本显示，:span="2"
+
+  detail_page_card4_timeline:
+    intent: "详情页卡片4：时间规划，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 时间规划"
+    service: null
+    notes: |
+      卡片标题：时间规划
+
+      字段列表：
+      1. 启动日期 - 文本显示（startDate）
+      2. 结束日期 - 文本显示（endDate）
+      3. 投产日期 - 文本显示（productionDate）
+      4. 验收日期 - 文本显示，:span="3"（acceptanceDate）
+
+  detail_page_card5_budget:
+    intent: "详情页卡片5：成本预算，使用 el-descriptions 3列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 3
+        border: true
+    bindTo: "detail.vue - 成本预算"
+    service: null
+    notes: |
+      卡片标题：成本预算
+
+      字段列表：
+      1. 项目预算 - 文本显示，后缀"元"
+      2. 项目费用 - 文本显示，后缀"元"
+      3. 费用预算 - 文本显示，后缀"元"
+      4. 成本预算 - 文本显示，后缀"元"
+      5. 人力费用 - 文本显示，后缀"元"
+      6. 采购成本 - 文本显示，后缀"元"
+
+  detail_page_card6_remark:
+    intent: "详情页卡片6：备注，使用 el-descriptions 1列布局"
+    component:
+      type: "el-card + el-descriptions"
+      props:
+        column: 1
+        border: true
+    bindTo: "detail.vue - 备注"
+    service: null
+    notes: |
+      卡片标题：备注
+
+      字段列表：
+      1. 备注 - 文本显示，使用 text-content 类
+
+  detail_page_descriptions_usage:
+    intent: "el-descriptions 组件使用规范"
+    component:
+      type: "el-descriptions + el-descriptions-item"
+      props:
+        column: 3  # 默认3列布局
+        border: true  # 显示边框
+    bindTo: "detail.vue - 所有卡片"
+    service: null
+    notes: |
+      el-descriptions 组件配置：
+      - :column="3" - 默认3列布局
+      - border - 显示边框，更清晰
+
+      el-descriptions-item 配置：
+      - label - 字段标签
+      - :span="n" - 跨列显示（1-3）
+        - 默认占1列
+        - 长文本字段（项目名称、地址、计划、描述）占3列
+        - 项目编号占2列
+
+      数据显示规则：
+      - 字典值：使用 <dict-tag :options="xxx" :value="form.xxx" />
+      - 文本值：使用 {{ form.xxx || '-' }}
+      - 带单位：{{ form.xxx || 0 }} 单位
+      - 长文本：<div class="text-content">{{ form.xxx || '-' }}</div>
+      - 标签列表：<el-tag v-for="..." :key="...">...</el-tag>
+
+  detail_page_data_loading:
+    intent: "详情页数据加载逻辑"
+    component: null
+    bindTo: "detail.vue - script"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectService.selectProjectById"
+      newApi: false
+    notes: |
+      数据加载流程：
+      1. 从路由参数获取 projectId
+      2. 调用 getProject(projectId) 获取项目数据
+      3. 数据映射：
+         - regionCode → provinceCode
+         - participants 字符串 → 数组
+      4. 填充 form 对象
+      5. 加载客户联系人电话（如果有 customerContactId）
+      6. 加载所有用户列表（用于参与人员显示）
+      7. 筛选参与人员：从 allUsers 中筛选 participants 对应的用户
+
+      关键函数：
+      - loadProjectData() - 加载项目数据
+      - loadAllUsers() - 加载所有用户
+      - loadCustomerContactPhone(contactId) - 加载客户联系人电话
+
+  detail_page_styles:
+    intent: "详情页样式配置"
+    component: null
+    bindTo: "detail.vue - style"
+    service: null
+    notes: |
+      样式类：
+      1. .project-detail - 页面容器
+      2. .page-header - 页面标题卡片
+         - margin-bottom: 20px
+      3. .detail-card - 信息卡片
+         - margin-bottom: 20px
+         - shadow="never"
+      4. .card-title - 卡片标题
+         - font-size: 16px
+         - font-weight: 600
+         - color: #303133
+      5. .text-content - 长文本内容
+         - white-space: pre-wrap
+         - word-break: break-all
+         - line-height: 1.6
+      6. .selected-participants - 参与人员容器
+      7. .participant-tag - 参与人员标签
+         - margin-right: 8px
+         - margin-bottom: 8px
+      8. .form-footer - 底部按钮区域
+         - position: sticky
+         - bottom: 0
+         - padding: 20px
+         - background-color: #fff
+         - border-top: 1px solid #dcdfe6
+         - text-align: center
+         - z-index: 10
+
+  detail_page_vs_form_layout:
+    intent: "el-descriptions 布局与表单布局的对比"
+    component: null
+    bindTo: "detail.vue"
+    service: null
+    notes: |
+      el-descriptions 布局优势：
+      1. 专为只读信息展示设计
+      2. 自动处理标签和内容的对齐
+      3. 内置边框和分隔线，视觉更清晰
+      4. 响应式布局，自动适配不同屏幕
+      5. 代码更简洁，无需 el-row + el-col
+      6. 无需 disabled 属性，天然只读
+
+      表单布局（apply.vue, edit.vue）：
+      - 使用 el-form + el-row + el-col
+      - 需要表单验证
+      - 字段可编辑
+      - 需要 disabled 属性控制只读
+
+      详情布局（detail.vue）：
+      - 使用 el-card + el-descriptions
+      - 无需表单验证
+      - 天然只读展示
+      - 更适合信息查看
+
+      适用场景：
+      - 详情页、查看页 → el-descriptions
+      - 编辑页、新增页 → el-form
+
+  # ========================================
+  # 详情页面数据加载修复（2026-02-08）
+  # ========================================
+  detail_page_field_mapping_fix:
+    intent: "详情页面字段映射修复，立项年份字段从 year 改为 establishedYear"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "立项年份"
+    bindTo: "establishedYear"
+    service:
+      endpoint: null
+      source: "前端字段映射修正"
+      newApi: false
+    notes: "前端 form.year 改为 form.establishedYear，与后端实体类字段名一致。显示格式：{{ form.establishedYear || '-' }} 年"
+
+  detail_page_personnel_names_display:
+    intent: "详情页面人员姓名显示，通过关联 sys_user 表获取昵称"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "项目经理/市场经理/销售负责人"
+    bindTo: ["projectManagerName", "marketManagerName", "salesManagerName"]
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectMapper.xml - selectProjectByProjectId 添加 LEFT JOIN sys_user"
+      returns: "{ projectManagerName, marketManagerName, salesManagerName }"
+      newApi: false
+    notes: "后端 SQL 添加三个 LEFT JOIN sys_user，分别关联项目经理、市场经理、销售负责人，返回 nick_name 字段。前端实体类添加对应的 String 字段和 getter/setter。"
+
+  detail_page_customer_info_display:
+    intent: "详情页面客户信息显示，通过关联 pm_customer 和 pm_customer_contact 表获取"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "客户名称/客户联系人"
+    bindTo: ["customerName", "customerContactName"]
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectMapper.xml - selectProjectByProjectId 添加 LEFT JOIN pm_customer 和 pm_customer_contact"
+      returns: "{ customerName, customerContactName }"
+      newApi: false
+    notes: "后端 SQL 添加 LEFT JOIN pm_customer c 和 LEFT JOIN pm_customer_contact cc，使用 customer_simple_name AS customer_name 和 contact_name AS customer_contact_name。注意客户表字段是 customer_simple_name 不是 customer_name。"
+
+  detail_page_production_date_format:
+    intent: "投产日期格式化，添加 @JsonFormat 注解确保返回 yyyy-MM-dd 格式"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "投产日期"
+    bindTo: "productionDate"
+    service:
+      endpoint: null
+      source: "Project.java 实体类添加 @JsonFormat 注解"
+      newApi: false
+    notes: "在 productionDate 字段上添加 @JsonFormat(pattern = \"yyyy-MM-dd\") 注解，与其他日期字段保持一致。"
+
+  detail_page_dept_hierarchy_display:
+    intent: "项目部门显示第三级及以下层级，使用递归 CTE 构建部门路径"
+    component:
+      type: "el-descriptions-item"
+      props:
+        label: "项目部门"
+    bindTo: "deptName"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "ProjectMapper.xml - selectProjectByProjectId 使用 WITH RECURSIVE 递归查询"
+      returns: "格式化的部门路径，如：二部-分行业务组（项目四组）"
+      newApi: false
+    notes: "使用 MySQL 递归 CTE 从当前部门向上查找所有父部门，构建完整路径。如果层级 >= 3，使用 SUBSTRING_INDEX 截取第三级及以下；如果层级 < 3，显示全部。分隔符为'-'。"
+
+  # ========================================
+  # 列表合计行功能（2026-02-08）
+  # ========================================
+  list_summary_row_between_header_and_data:
+    intent: "在表头和第一行数据之间显示合计行，自动计算金额字段的合计"
+    component:
+      type: "el-table"
+      props:
+        data: "projectListWithSummary"
+    bindTo: ["projectBudget", "estimatedWorkload", "actualWorkload", "contractAmount", "confirmAmount"]
+    service:
+      endpoint: null
+      source: "前端计算当前页数据的合计"
+      newApi: false
+    notes: |
+      实现方式：在数据数组的第一个位置插入合计行对象
+
+      合计字段（5个）：
+      - projectBudget: 项目预算
+      - estimatedWorkload: 预估工作量
+      - actualWorkload: 实际人天
+      - contractAmount: 合同金额
+      - confirmAmount: 确认金额
+
+      前端实现：
+      1. 数据源：projectListWithSummary = [summaryRow, ...projectList]
+      2. 合计行标识：summaryRow.isSummary = true
+      3. 计算方法：calculateSummary() 遍历 projectList 累加金额
+      4. 数字格式：保留两位小数 toFixed(2)
+
+      显示优化：
+      - 序号列：合计行不显示序号
+      - 选择框：合计行不可选择（:selectable="checkSelectable"）
+      - 项目名称列：显示"合计"文字（加粗）
+      - 金额列：合计值加粗显示
+      - 操作列：合计行不显示操作按钮（v-if="!scope.row.isSummary"）
+      - 其他列：显示空白
+
+      样式：
+      - 背景色：#f5f7fa（浅灰色）
+      - 字体：加粗（font-weight: bold）
+      - CSS：:deep(.el-table__body tr:first-child)
+
+      操作列实现：
+      ```vue
+      <el-table-column label="操作" align="center" width="200" fixed="right">
+        <template #default="scope">
+          <template v-if="!scope.row.isSummary">
+            <el-button link type="primary" icon="View" @click="handleDetail(scope.row)">详情</el-button>
+            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)">修改</el-button>
+            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
+          </template>
+        </template>
+      </el-table-column>
+      ```
+
+  # ========================================
+  # 数据类型转换规范（2026-02-08）
+  # ========================================
+  data_type_conversion:
+    intent: "前后端数据类型转换规范，确保数据类型匹配"
+    component:
+      type: custom
+      spec: "前端提交数据前进行类型转换"
+    bindTo: ["apply.vue", "edit.vue"]
+    service:
+      endpoint: null
+      source: "前端数据处理"
+      newApi: false
+    notes: |
+      ========================================
+      问题背景
+      ========================================
+
+      前端表单绑定的数据通常是字符串类型（特别是字典值），但后端实体类的字段可能是其他类型（Integer、Long、BigDecimal 等）。
+      直接提交会导致 JSON 反序列化失败。
+
+      常见错误：
+      ```
+      JSON parse error: Cannot deserialize value of type `java.lang.Integer`
+      from String "2025q": not a valid `java.lang.Integer` value
+      ```
+
+      ========================================
+      需要转换的字段
+      ========================================
+
+      1. establishedYear (立项年份)
+         - 前端类型: String (字典值，如 "2025q")
+         - 后端类型: Integer
+         - 转换方法: parseInt(value)
+
+      2. projectDept (项目部门)
+         - 前端类型: String (部门ID)
+         - 后端类型: String
+         - 无需转换
+
+      3. 数值类型字段
+         - projectBudget, estimatedWorkload, actualWorkload 等
+         - 前端类型: String (输入框值)
+         - 后端类型: BigDecimal
+         - 转换方法: parseFloat(value) 或后端自动转换
+
+      ========================================
+      转换实现
+      ========================================
+
+      apply.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          const submitData = {
+            ...form.value,
+            regionCode: form.value.provinceCode,  // 字段映射
+            establishedYear: parseInt(form.value.establishedYear)  // 类型转换
+          }
+          delete submitData.provinceCode  // 删除前端字段
+
+          addProject(submitData).then(response => {
+            proxy.$modal.msgSuccess("提交成功")
+            router.push('/project/list')
+          })
+        })
+      }
+      ```
+
+      edit.vue 提交处理：
+      ```javascript
+      function submitForm() {
+        validateAndScroll(() => {
+          proxy.$modal.confirm('确认保存项目信息？').then(() => {
+            const submitData = { ...form.value }
+
+            // 参与人员数组转字符串
+            if (Array.isArray(submitData.participants)) {
+              submitData.participants = submitData.participants.join(',')
+            }
+
+            // 字段映射
+            submitData.regionCode = submitData.provinceCode
+            delete submitData.provinceCode
+
+            // 类型转换
+            if (submitData.establishedYear) {
+              submitData.establishedYear = parseInt(submitData.establishedYear)
+            }
+
+            updateProject(submitData).then(response => {
+              proxy.$modal.msgSuccess('保存成功')
+              router.push('/project/list')
+            })
+          })
+        })
+      }
+      ```
+
+      ========================================
+      转换规范
+      ========================================
+
+      1. 整数类型转换
+         - 使用 parseInt(value)
+         - 对于可能为空的字段，先判断再转换
+         - 示例：if (value) { data.field = parseInt(value) }
+
+      2. 浮点数类型转换
+         - 使用 parseFloat(value)
+         - 保留小数位数：parseFloat(value).toFixed(2)
+
+      3. 布尔类型转换
+         - 使用 Boolean(value) 或 !!value
+         - 字符串 "true"/"false" 需要特殊处理
+
+      4. 日期类型转换
+         - Element Plus 日期选择器返回的是 Date 对象或字符串
+         - 后端通常接收 "yyyy-MM-dd" 格式字符串
+         - 使用 value-format="YYYY-MM-DD" 自动格式化
+
+      5. 数组类型转换
+         - 后端接收逗号分隔字符串
+         - 使用 array.join(',')
+         - 示例：participants.join(',')
+
+      ========================================
+      字典数据规范
+      ========================================
+
+      为避免类型转换问题，字典数据应遵循以下规范：
+
+      1. 数值类型字典
+         - dict_value 应该只包含纯数字
+         - 正确：dict_value = "2025"
+         - 错误：dict_value = "2025q" 或 "2025年"
+
+      2. 字典标签
+         - dict_label 可以包含任意文本
+         - 示例：dict_label = "2025年"
+
+      3. 字典排序
+         - dict_sort 用于控制显示顺序
+         - 不影响 dict_value 的值
+
+      ========================================
+      调试技巧
+      ========================================
+
+      1. 查看提交数据
+         ```javascript
+         console.log('提交数据:', submitData)
+         console.log('establishedYear 类型:', typeof submitData.establishedYear)
+         ```
+
+      2. 后端错误日志
+         - 查看 JSON 反序列化错误信息
+         - 确认字段名称和类型
+
+      3. 网络请求
+         - 浏览器开发者工具 → Network → Payload
+         - 查看实际发送的 JSON 数据
+
+      ========================================
+      最佳实践
+      ========================================
+
+      1. 统一处理
+         - 在提交函数中统一进行类型转换
+         - 避免在多个地方重复转换逻辑
+
+      2. 类型安全
+         - 使用 TypeScript 定义接口类型
+         - 编译时检查类型错误
+
+      3. 防御性编程
+         - 对可能为空的字段进行判断
+         - 使用默认值避免 undefined
+
+      4. 文档记录
+         - 在字段 notes 中说明类型转换要求
+         - 记录常见错误和解决方案
+
+
+
+# ============================
+# 页面布局定制记录
+# 日期: 2026-02-09
+# ============================
+
+页面布局优化:
+  
+  编辑页面 (edit.vue):
+    - 实际工作量字段:
+        位置: 预估工作量字段右侧
+        布局: 两列布局 (el-col :span="12")
+        组件: el-input 带"人天"后缀
+        格式: 与预估工作量完全统一
+        验证: 支持 validateOnBlur 验证
+        说明: 在项目基本信息模块中显示
+  
+  立项申请页面 (apply.vue):
+    - 整体布局: 从3列改为2列布局 (:span="8" → :span="12")
+    - 字段排列:
+        第1行: [行业] [一级区域]
+        第2行: [二级区域] [简称]
+        第3行: [立项年度] [项目名称]
+        第4行: [项目编号] [项目分类]
+        第5行: [项目部门] [项目状态]
+        第6行: [验收状态] [预估工作量]
+        第7行: [项目预算] (左侧)
+        第8行: [项目地址] (独占一行)
+        第9行: [销售负责人] [销售联系方式]
+        第10行: [参与人员] (独占一行)
+    - 特殊处理:
+        * 项目地址: 独占一行 (:span="24")
+        * 参与人员: 独占一行 (:span="24")，多选下拉框
+        * 项目编号: 移除格式提示文本
+        * 实际工作量: 仅在编辑页面显示，立项申请页面不显示
+    - 字段位置调整:
+        * 项目名称和项目编号互换位置
+        * 销售负责人和销售联系方式在同一行
+  
+  列表页面 (index.vue):
+    - 公司收入确认人: 从输入框改为用户选择器 (el-select)
+    - 字段类型: 从存储姓名改为存储用户ID
+
+# ============================
+# 字段修改记录
+# 日期: 2026-02-09
+# ============================
+
+字段重构:
+  company_revenue_confirmed_by:
+    原字段名: company_revenue_confirmed_by_name
+    修改内容:
+      - 字段名: company_revenue_confirmed_by_name → company_revenue_confirmed_by
+      - 数据类型: String → Long
+      - 存储内容: 姓名 → 用户ID
+      - 注释: 公司收入确认人姓名 → 公司收入确认人ID
+    影响范围:
+      - 数据库: DDL 和迁移脚本
+      - 后端: Project.java 实体类、ProjectMapper.xml
+      - 前端: index.vue 用户选择器
+      - 配置: gen-specs 和 my02 配置文件
+    迁移脚本: pm-sql/fix_company_revenue_confirmed_by.sql
+
+# ============================
+# 菜单结构清理记录
+# 日期: 2026-02-09
+# ============================
+
+菜单清理:
+  问题: 存在孤儿菜单（parent_id=2034 但父菜单不存在）
+  
+  删除的菜单:
+    - 2035: 立项申请 (parent_id=2034)
+    - 2036: 项目管理 (parent_id=2034)
+    - 2037: 项目管理查询 (parent_id=2036)
+    - 2038: 项目管理新增 (parent_id=2036)
+    - 2039: 项目管理修改 (parent_id=2036)
+    - 2040: 项目管理删除 (parent_id=2036)
+    - 2041: 项目管理导出 (parent_id=2036)
+  
+  保留的菜单结构:
+    项目管理 (2059) - 一级菜单
+    ├── 立项申请 (2060)
+    ├── 项目管理 (2061)
+    ├── 立项审核 (2069)
+    ├── 编辑项目 (2043) - 隐藏路由
+    └── 项目详情 (2044) - 隐藏路由
+  
+  清理脚本: pm-sql/fix_remove_orphan_menus.sql
+
+# ============================
+# 数据库配置修正记录
+# 日期: 2026-02-09
+# ============================
+
+数据库连接配置:
+  文件: ruoyi-admin/src/main/resources/application-druid.yml
+  修改内容:
+    - 数据库名: ry → ry-vue
+    - 密码: 123456 → password
+
+# ============================
+# 公司收入确认功能配置
+# 日期: 2026-02-10
+# ============================
+
+公司收入确认管理:
+  功能描述: 经营管理角色用户操作收入确认
+
+  菜单结构:
+    一级菜单: 收入确认管理
+    二级菜单: 公司收入确认
+    权限标识:
+      - revenue:company:list   # 查询
+      - revenue:company:view   # 查看
+      - revenue:company:edit   # 编辑
+      - revenue:company:export # 导出
+
+  页面布局:
+    类型: 抽屉 (Drawer)
+    方向: 从右侧滑出 (rtl)
+    尺寸: 80%
+
+    左侧区域 (60%):
+      标题: 项目信息
+      内容: 6个卡片
+      卡片列表:
+        1. 项目基本信息:
+            字段:
+              - 行业 (industry) - 字典标签 industry
+              - 区域 (region) - 字典标签 sys_yjqy
+              - 简称 (shortName)
+              - 立项年份 (establishedYear)
+              - 项目编号 (projectCode)
+              - 项目名称 (projectName)
+              - 项目分类 (projectCategory) - 字典标签 sys_xmfl
+              - 项目部门 (deptName)
+              - 预估工作量 (estimatedWorkload) - 人天
+              - 项目状态 (projectStatus) - 字典标签 sys_xmjd
+              - 验收状态 (acceptanceStatus) - 字典标签 sys_yszt
+              - 审核状态 (approvalStatus) - 字典标签 sys_spzt
+              - 项目地址 (projectAddress)
+              - 项目计划 (projectPlan) - 文本域
+              - 项目描述 (projectDescription) - 文本域
+              - 审核意见 (approvalReason)
+            布局: 2列 (el-descriptions :column="2")
+
+        2. 人员配置:
+            字段:
+              - 项目经理 (projectManagerName)
+              - 市场经理 (marketManagerName)
+              - 销售负责人 (salesManagerName)
+              - 销售联系方式 (salesContact)
+              - 参与人员 (participantsNames)
+            布局: 2列
+
+        3. 客户信息:
+            字段:
+              - 客户简称 (customerName)
+              - 客户联系人 (customerContactName)
+              - 客户联系方式 (customerContactPhone)
+              - 商户联系人 (merchantContact)
+              - 商户联系方式 (merchantPhone)
+            布局: 2列
+
+        4. 时间规划:
+            字段:
+              - 启动日期 (startDate)
+              - 结束日期 (endDate)
+              - 投产日期 (productionDate)
+              - 验收日期 (acceptanceDate)
+            布局: 2列
+
+        5. 成本预算:
+            字段:
+              - 项目预算 (projectBudget) - 元
+              - 项目费用 (projectCost) - 元
+              - 费用预算 (costBudget) - 元
+              - 成本预算 (budgetCost) - 元
+              - 人力费用 (laborCost) - 元
+              - 采购成本 (purchaseCost) - 元
+            布局: 2列
+
+        6. 备注:
+            字段:
+              - 备注 (remark) - 文本域
+            布局: 1列
+
+    右侧区域 (40%):
+      标题: 收入确认信息
+      内容: 表单
+      表单字段:
+        1. 收入确认状态 (revenueConfirmStatus):
+            类型: 只读显示
+            字典: sys_srqrzt
+            值: 0=未确认, 1=已确认
+            显示: 字典标签
+
+        2. 收入确认年度 (revenueConfirmYear):
+            类型: 下拉选择 (el-select)
+            字典: sys_ndgl
+            必填: true
+            验证: 收入确认年度不能为空
+
+        3. 确认金额（含税）(confirmAmount):
+            类型: 数字输入 (el-input-number)
+            单位: 元
+            精度: 2位小数
+            必填: true
+            验证: 确认金额不能为空
+            事件: @change 触发税后金额计算
+
+        4. 税率 (taxRate):
+            类型: 数字输入 (el-input-number)
+            单位: %
+            精度: 2位小数
+            必填: true
+            验证: 税率不能为空
+            快捷按钮: [6%, 13%]
+            事件: @change 触发税后金额计算
+
+        5. 税后金额 (afterTaxAmount):
+            类型: 只读显示
+            单位: 元
+            精度: 2位小数
+            计算公式: afterTaxAmount = confirmAmount / (1 + taxRate/100)
+            自动计算: 监听 confirmAmount 和 taxRate 变化
+
+        6. 备注 (remark):
+            类型: 文本域 (el-input type="textarea")
+            行数: 3
+            必填: false
+
+        7. 确认人 (companyRevenueConfirmedBy):
+            显示条件: revenueConfirmStatus === '1'
+            类型: 只读显示
+            显示内容: 用户昵称（通过 userMap 映射）
+            数据来源: listUser() API
+
+        8. 确认时间 (companyRevenueConfirmedTime):
+            显示条件: revenueConfirmStatus === '1'
+            类型: 只读显示
+            格式: yyyy-MM-dd HH:mm:ss
+
+  列表页面:
+    路由: /revenue/company
+    组件: ruoyi-ui/src/views/revenue/company/index.vue
+
+    查询条件:
+      - 项目名称 (projectName) - 模糊查询
+      - 项目部门 (projectDept) - 树形选择
+      - 收入确认年度 (revenueConfirmYear) - 字典 sys_ndgl
+      - 收入确认状态 (revenueConfirmStatus) - 字典 sys_srqrzt
+      - 项目分类 (projectCategory) - 字典 sys_xmfl
+      - 一级区域 (region) - 字典 sys_yjqy
+      - 项目经理 (projectManagerId) - 用户选择
+
+    列表字段:
+      - 序号 (type="index")
+      - 项目名称 (projectName)
+      - 项目部门 (deptName)
+      - 项目经理 (projectManagerName)
+      - 项目分类 (projectCategory) - 字典标签
+      - 项目预算 (projectBudget)
+      - 预估工作量 (estimatedWorkload)
+      - 实际人天 (actualWorkload)
+      - 合同金额 (contractAmount)
+      - 收入确认年度 (revenueConfirmYear) - 字典标签
+      - 合同状态 (contractStatus)
+      - 收入确认状态 (revenueConfirmStatus) - 字典标签
+      - 确认金额 (confirmAmount)
+      - 参与人员 (participantsNames)
+      - 启动日期 (startDate)
+      - 结束日期 (endDate)
+      - 验收日期 (acceptanceDate)
+      - 审核状态 (approvalStatus) - 字典标签
+      - 项目状态 (projectStatus) - 字典标签
+      - 验收状态 (acceptanceStatus) - 字典标签
+      - 更新人 (updateBy)
+      - 更新时间 (updateTime)
+      - 操作 (fixed="right")
+
+    操作按钮:
+      - 收入确认 (revenueConfirmStatus === '0'):
+          图标: Edit
+          类型: primary
+          权限: revenue:company:edit
+          事件: handleConfirm(row)
+
+      - 查看确认 (revenueConfirmStatus === '1'):
+          图标: View
+          类型: success
+          权限: revenue:company:view
+          事件: handleView(row)
+
+  后端接口:
+    控制器: ProjectController.java
+
+    接口列表:
+      1. 查询收入确认列表:
+          路径: GET /project/project/revenueList
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:list')")
+          参数: Project (查询条件)
+          返回: TableDataInfo
+
+      2. 获取收入确认详情:
+          路径: GET /project/project/revenue/{projectId}
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:query')")
+          参数: projectId (路径参数)
+          返回: AjaxResult<Project>
+
+      3. 更新收入确认信息:
+          路径: PUT /project/project/revenueConfirm
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:edit')")
+          参数: Project (请求体)
+          返回: AjaxResult
+          自动处理:
+            - revenueConfirmStatus = '1' (已确认)
+            - companyRevenueConfirmedBy = 当前用户ID
+            - companyRevenueConfirmedTime = 当前时间
+            - afterTaxAmount = confirmAmount / (1 + taxRate/100)
+
+      4. 导出收入确认列表:
+          路径: POST /project/project/revenueExport
+          权限: @PreAuthorize("@ss.hasPermi('revenue:company:export')")
+          参数: Project (查询条件)
+          返回: Excel 文件
+
+  数据库字段:
+    表名: pm_project
+
+    收入确认相关字段:
+      - revenue_confirm_year (varchar(10)) - 收入确认年度
+      - revenue_confirm_status (char(1)) - 收入确认状态 (0=未确认, 1=已确认)
+      - confirm_amount (decimal(10,2)) - 确认金额（含税）
+      - tax_rate (decimal(5,2)) - 税率(%)
+      - after_tax_amount (decimal(10,2)) - 税后金额
+      - company_revenue_confirmed_by (bigint) - 公司收入确认人ID
+      - company_revenue_confirmed_time (datetime) - 公司收入确认时间
+
+  字典配置:
+    sys_srqrzt (收入确认状态):
+      - 0: 未确认
+      - 1: 已确认
+
+    sys_ndgl (年度管理):
+      - 2024: 2024年
+      - 2025: 2025年
+      - 2026: 2026年
+
+  业务规则:
+    1. 税后金额自动计算:
+        公式: 税后金额 = 确认金额 / (1 + 税率/100)
+        精度: 保留2位小数，四舍五入
+        触发: confirmAmount 或 taxRate 变化时
+
+    2. 确认人自动记录:
+        时机: 保存收入确认信息时
+        值: 当前登录用户ID
+        不可手动修改
+
+    3. 确认时间自动记录:
+        时机: 保存收入确认信息时
+        值: 当前系统时间
+        不可手动修改
+
+    4. 状态自动更新:
+        时机: 保存收入确认信息时
+        值: 自动设置为 '1' (已确认)
+        不可手动修改
+
+    5. 查看模式和编辑模式:
+        未确认 (status='0'): 显示"收入确认"按钮，打开编辑模式
+        已确认 (status='1'): 显示"查看确认"按钮，打开查看模式
+        查看模式: 所有字段只读，显示确认人和确认时间
+        编辑模式: 可编辑收入确认字段
+
+  前端组件:
+    列表页: ruoyi-ui/src/views/revenue/company/index.vue
+    抽屉组件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+    API封装: ruoyi-ui/src/api/revenue/company.ts
+
+  技术要点:
+    1. 用户映射:
+        - 使用 userMap 存储 userId → nickName 映射
+        - 打开抽屉时调用 listUser() 获取所有用户
+        - getUserName(userId) 函数从 userMap 查找昵称
+
+    2. 字典标签:
+        - 使用 <dict-tag> 组件显示字典值
+        - 需要在 useDict() 中声明所需字典
+        - 字典列表: sys_srqrzt, sys_ndgl, industry, sys_yjqy, sys_xmfl, sys_xmjd, sys_yszt, sys_spzt
+
+    3. 数据刷新:
+        - 抽屉组件通过 emit('refresh') 通知父组件
+        - 父组件监听 @refresh 事件，调用 getList() 刷新列表
+
+    4. 表单验证:
+        - 收入确认年度: 必填
+        - 确认金额: 必填
+        - 税率: 必填
+        - 使用 el-form 的 rules 属性配置验证规则
+
+  测试要点:
+    1. 列表页面正常显示
+    2. 查询条件正常工作
+    3. 未确认项目显示"收入确认"按钮
+    4. 已确认项目显示"查看确认"按钮
+    5. 抽屉正常打开和关闭
+    6. 项目信息正确展示（6个卡片）
+    7. 收入确认表单正常编辑
+    8. 税后金额自动计算正确
+    9. 税率快捷按钮正常工作
+    10. 保存后状态自动更新为"已确认"
+    11. 确认人显示用户昵称（不是ID）
+    12. 确认时间正确显示
+    13. 导出功能正常
+    14. 权限控制正常
+    15. 保存后列表自动刷新
+  原因: 与 Docker MySQL 容器配置保持一致
+
+# ============================
+# 定制功能说明
+# 日期: 2026-02-10
+# ============================
+
+customizations:
+  公司收入确认管理:
+    说明: 基于 pm_project 表的专用收入确认界面
+    表名: pm_project
+    实现方式: 自定义前端页面（非代码生成器生成）
+
+    菜单结构:
+      一级菜单: 收入确认管理
+      二级菜单: 公司收入确认
+      路由: /revenue/company
+      权限标识:
+        - revenue:company:list   # 查询
+        - revenue:company:view   # 查看
+        - revenue:company:edit   # 编辑
+        - revenue:company:export # 导出
+
+    文件位置:
+      后端:
+        - 控制器: ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectController.java
+        - 接口方法:
+            - GET /project/project/revenueList - 查询收入确认列表
+            - GET /project/project/revenue/{projectId} - 获取收入确认详情
+            - PUT /project/project/revenueConfirm - 更新收入确认信息
+            - POST /project/project/revenueExport - 导出收入确认列表
+
+      前端:
+        - 列表页: ruoyi-ui/src/views/revenue/company/index.vue
+        - 抽屉组件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+        - API封装: ruoyi-ui/src/api/revenue/company.ts
+
+    使用字段:
+      核心字段:
+        - revenue_confirm_year: 收入确认年度（必填）
+        - revenue_confirm_status: 收入确认状态（0=未确认, 1=已确认）
+        - confirm_amount: 确认金额（含税，必填）
+        - tax_rate: 税率（%，必填）
+        - after_tax_amount: 税后金额（自动计算）
+        - company_revenue_confirmed_by: 公司收入确认人ID（自动设置）
+        - company_revenue_confirmed_time: 公司收入确认时间（自动设置）
+        - remark: 备注
+
+      显示字段（项目信息）:
+        - 项目基本信息: project_code, project_name, industry, region, short_name, established_year, project_category, dept_name, estimated_workload, project_status, acceptance_status, approval_status, project_address, project_plan, project_description, approval_reason
+        - 人员配置: project_manager_name, market_manager_name, sales_manager_name, sales_contact, participants_names
+        - 客户信息: customer_name, customer_contact_name, customer_contact_phone, merchant_contact, merchant_phone
+        - 时间规划: start_date, end_date, production_date, acceptance_date
+        - 成本预算: project_budget, project_cost, cost_budget, budget_cost, labor_cost, purchase_cost
+
+    业务规则:
+      自动计算:
+        - 税后金额 = 确认金额 / (1 + 税率/100)
+        - 精度: 保留2位小数，四舍五入
+
+      自动设置:
+        - 保存时自动设置 revenue_confirm_status = '1'（已确认）
+        - 保存时自动设置 company_revenue_confirmed_by = 当前登录用户ID
+        - 保存时自动设置 company_revenue_confirmed_time = 当前时间
+
+      显示逻辑:
+        - 确认人和确认时间仅在 revenue_confirm_status === '1' 时显示
+        - 确认人显示用户昵称（通过 userMap 映射）
+        - 操作按钮根据 revenue_confirm_status 动态显示
+
+    与项目管理的关系:
+      - 共用同一个数据表: pm_project
+      - 共用同一个实体类: Project.java
+      - 共用同一个 Service: ProjectService
+      - 共用同一个 Mapper: ProjectMapper
+      - 不同的前端页面和路由
+      - 不同的菜单和权限标识
+      - 专注于收入确认相关字段的操作
+
+# ============================
+# 公司收入确认功能优化记录
+# 日期: 2026-02-10
+# ============================
+
+公司收入确认查询条件优化:
+  优化日期: 2026-02-10
+  优化内容: 完善查询条件，支持 13 个筛选维度
+
+  查询条件列表:
+    1. 项目名称 (projectName):
+        类型: 模糊查询
+        前端组件: el-input
+        后端条件: LIKE '%#{projectName}%'
+
+    2. 项目部门 (projectDept):
+        类型: 精确查询
+        前端组件: el-tree-select（部门树）
+        后端条件: = #{projectDept}
+
+    3. 收入确认年度 (revenueConfirmYear):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_ndgl
+        后端条件: = #{revenueConfirmYear}
+
+    4. 项目分类 (projectCategory):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_xmfl
+        后端条件: = #{projectCategory}
+
+    5. 一级区域 (region):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_yjqy
+        后端条件: = #{region}
+        级联: 选择后自动加载二级区域
+
+    6. 二级区域 (provinceId):
+        类型: 精确查询
+        前端组件: el-select（级联）
+        数据源: pm_secondary_region 表
+        后端条件: = #{provinceId}
+        依赖: 必须先选择一级区域
+        禁用条件: !queryParams.region
+
+    7. 项目经理 (projectManagerId):
+        类型: 精确查询
+        前端组件: el-select（可搜索）
+        数据源: 岗位代码 'pm' 的用户列表
+        API: listUserByPost('pm')
+        后端条件: = #{projectManagerId}
+
+    8. 市场经理 (marketManagerId):
+        类型: 精确查询
+        前端组件: el-select（可搜索）
+        数据源: 岗位代码 'scjl' 的用户列表
+        API: listUserByPost('scjl')
+        后端条件: = #{marketManagerId}
+
+    9. 立项年度 (establishedYear):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_ndgl
+        后端条件: = #{establishedYear}
+
+    10. 审核状态 (approvalStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_spzt
+        后端条件: = #{approvalStatus}
+
+    11. 验收状态 (acceptanceStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_yszt
+        后端条件: = #{acceptanceStatus}
+
+    12. 合同状态 (contractStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_htzt
+        后端条件: c.contract_status = #{contractStatus}
+        说明: 通过关联 pm_contract 表查询
+
+    13. 收入确认状态 (revenueConfirmStatus):
+        类型: 精确查询
+        前端组件: el-select
+        字典: sys_srqrzt
+        后端条件: = #{revenueConfirmStatus}
+
+  前端实现:
+    文件: ruoyi-ui/src/views/revenue/company/index.vue
+
+    新增导入:
+      - import { listUserByPost } from "@/api/system/user"
+      - import { listSecondaryRegion } from "@/api/project/secondaryRegion"
+
+    新增字典:
+      - sys_htzt: 合同状态字典
+
+    新增数据:
+      - secondaryRegionOptions: 二级区域选项列表
+      - projectManagerList: 项目经理列表（岗位 pm）
+      - marketManagerList: 市场经理列表（岗位 scjl）
+
+    新增方法:
+      - handleRegionChange(value): 一级区域变化时加载二级区域
+      - getUserList(): 加载项目经理和市场经理列表
+
+    查询参数:
+      queryParams:
+        - projectName: null
+        - projectDept: null
+        - revenueConfirmYear: null
+        - revenueConfirmStatus: null
+        - projectCategory: null
+        - region: null
+        - provinceId: null
+        - projectManagerId: null
+        - marketManagerId: null
+        - establishedYear: null
+        - approvalStatus: null
+        - acceptanceStatus: null
+        - contractStatus: null
+
+  后端实现:
+    文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+    selectProjectList 查询优化:
+      新增 WHERE 条件:
+        - <if test="contractStatus != null and contractStatus != ''">
+            and c.contract_status = #{contractStatus}
+          </if>
+
+      新增表关联:
+        - LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
+
+      新增查询字段:
+        - sr.province_name AS province_name
+
+    已支持的 WHERE 条件:
+      - projectName: LIKE 模糊查询
+      - region: 精确查询
+      - establishedYear: 精确查询
+      - projectCategory: 精确查询
+      - projectDept: 精确查询
+      - projectStatus: 精确查询
+      - acceptanceStatus: 精确查询
+      - projectManagerId: 精确查询
+      - marketManagerId: 精确查询
+      - approvalStatus: 精确查询
+      - regionCode: 精确查询
+      - provinceId: 精确查询
+      - revenueConfirmStatus: 精确查询
+      - revenueConfirmYear: 精确查询
+      - contractStatus: 精确查询（新增）
+
+公司收入确认列表字段优化:
+  优化日期: 2026-02-10
+  优化内容: 完善列表显示字段，新增缺失字段，优化金额格式化
+
+  列表字段（24个）:
+    1. 序号: type="index"
+    2. 项目名称: projectName（min-width: 150px, show-overflow-tooltip）
+    3. 项目部门: deptName（min-width: 120px, show-overflow-tooltip）
+    4. 项目经理: projectManagerName（min-width: 100px）
+    5. 项目分类: projectCategory（width: 100px, 字典标签）
+    6. 二级区域: provinceName（width: 100px, show-overflow-tooltip）【新增】
+    7. 项目预算（元）: projectBudget（width: 120px, 千分位格式化）【优化】
+    8. 预估工作量（人天）: estimatedWorkload（width: 140px）
+    9. 实际人天: actualWorkload（width: 100px）
+    10. 合同名称: contractName（min-width: 150px, show-overflow-tooltip）【新增】
+    11. 合同金额（元）: contractAmount（width: 130px, 千分位格式化）【优化】
+    12. 合同状态: contractStatus（width: 100px）
+    13. 收入确认年度: revenueConfirmYear（width: 120px, 字典标签）
+    14. 收入确认状态: revenueConfirmStatus（width: 120px, 字典标签）
+    15. 确认金额（元）: confirmAmount（width: 130px, 千分位格式化）【优化】
+    16. 参与人员: participantsNames（min-width: 150px, show-overflow-tooltip）
+    17. 启动日期: startDate（width: 110px, 日期格式化）
+    18. 结束日期: endDate（width: 110px, 日期格式化）
+    19. 验收日期: acceptanceDate（width: 110px, 日期格式化）
+    20. 审核状态: approvalStatus（width: 100px, 字典标签）
+    21. 项目状态: projectStatus（width: 100px, 字典标签）
+    22. 验收状态: acceptanceStatus（width: 100px, 字典标签）
+    23. 更新人: updateBy（width: 100px）
+    24. 更新时间: updateTime（width: 110px, 日期格式化）
+
+  前端优化:
+    文件: ruoyi-ui/src/views/revenue/company/index.vue
+
+    新增字段:
+      - 二级区域 (provinceName):
+          <el-table-column label="二级区域" align="center" prop="provinceName" width="100" show-overflow-tooltip />
+
+      - 合同名称 (contractName):
+          <el-table-column label="合同名称" align="center" prop="contractName" min-width="150" show-overflow-tooltip />
+
+    金额格式化:
+      模板:
+        <template #default="scope">
+          <span>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+        </template>
+
+      应用字段:
+        - 项目预算（元）: projectBudget
+        - 合同金额（元）: contractAmount
+        - 确认金额（元）: confirmAmount
+
+      效果:
+        - 1000000 → 1,000,000
+        - null → -
+
+    列宽调整:
+      - 预估工作量（人天）: 100px → 140px
+      - 合同金额（元）: 120px → 130px
+      - 确认金额（元）: 120px → 130px
+
+  后端优化:
+    文件: ruoyi-project/src/main/java/com/ruoyi/project/domain/Project.java
+
+    新增字段:
+      - private String contractName; // 合同名称
+      - public String getContractName() { return contractName; }
+      - public void setContractName(String contractName) { this.contractName = contractName; }
+
+    文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+    resultMap 新增映射:
+      - <result property="contractName" column="contract_name" />
+
+    selectProjectList 查询新增字段:
+      - c.contract_name（合同名称）
+      - sr.province_name AS province_name（二级区域名称）
+
+    selectProjectList 新增表关联:
+      - LEFT JOIN pm_secondary_region sr ON p.province_id = sr.province_id
+
+公司收入确认时间显示问题修复:
+  修复日期: 2026-02-10
+  问题描述: 查看收入确认时，确认时间显示为 "-"
+
+  问题根因:
+    文件: ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+    查询: selectProjectByProjectId
+
+    问题:
+      - 查询中只包含 p.company_revenue_confirmed_by（确认人ID）
+      - 缺少 p.company_revenue_confirmed_time（确认时间）
+      - 导致前端接收到的 companyRevenueConfirmedTime 为 null
+      - 前端显示逻辑：null ? parseTime(null) : '-' → 显示 '-'
+
+  修复方案:
+    在 selectProjectByProjectId 查询中添加缺失字段
+
+    修改前:
+      p.company_revenue_confirmed_by,
+      pm.nick_name AS project_manager_name,
+
+    修改后:
+      p.company_revenue_confirmed_by, p.company_revenue_confirmed_time,
+      pm.nick_name AS project_manager_name,
+
+  影响范围:
+    受影响功能:
+      - 查看收入确认（查看模式）
+      - 编辑收入确认（编辑模式）
+
+    不受影响功能:
+      - 收入确认列表（使用 selectProjectList 查询，已包含该字段）
+      - 新增收入确认（新增时该字段为空）
+
+  测试验证:
+    前端调试:
+      文件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+      位置: 第 300-303 行
+
+      console.log('项目数据:', projectData.value);
+      console.log('确认时间:', projectData.value.companyRevenueConfirmedTime);
+      console.log('确认人ID:', projectData.value.companyRevenueConfirmedBy);
+      console.log('确认状态:', projectData.value.revenueConfirmStatus);
+
+    预期结果:
+      - 确认时间显示为实际时间: YYYY-MM-DD HH:mm:ss
+      - 确认人显示为用户昵称
+      - 仅在 revenueConfirmStatus === '1' 时显示
+
+公司收入确认功能完整性总结:
+  最后更新: 2026-02-10
+
+  功能模块:
+    1. 查询条件: 13 个筛选维度 ✅
+    2. 列表字段: 24 个显示字段 ✅
+    3. 详情抽屉: 左侧项目信息 + 右侧收入确认表单 ✅
+    4. 数据完整性: 确认时间正确显示 ✅
+
+  涉及文件:
+    前端:
+      - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+      - ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue（抽屉组件）
+      - ruoyi-ui/src/api/revenue/company.ts（API 封装）
+
+    后端:
+      - ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectController.java（控制器）
+      - ruoyi-project/src/main/java/com/ruoyi/project/domain/Project.java（实体类）
+      - ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml（MyBatis 映射）
+
+  数据库字段:
+    核心字段:
+      - revenue_confirm_year: 收入确认年度
+      - revenue_confirm_status: 收入确认状态（0=未确认, 1=已确认）
+      - confirm_amount: 确认金额（含税）
+      - tax_rate: 税率（%）
+      - after_tax_amount: 税后金额
+      - company_revenue_confirmed_by: 公司收入确认人ID
+      - company_revenue_confirmed_time: 公司收入确认时间
+
+    关联字段:
+      - province_id: 二级区域ID（关联 pm_secondary_region.province_id）
+      - contract_id: 合同ID（通过 pm_project_contract_rel 关联 pm_contract）
+
+  业务规则:
+    自动计算:
+      - 税后金额 = 确认金额 / (1 + 税率/100)
+      - 精度: 保留2位小数，四舍五入
+
+    自动设置:
+      - 保存时自动设置 revenue_confirm_status = '1'
+      - 保存时自动设置 company_revenue_confirmed_by = 当前登录用户ID
+      - 保存时自动设置 company_revenue_confirmed_time = 当前时间
+
+    显示逻辑:
+      - 确认人和确认时间仅在 revenue_confirm_status === '1' 时显示
+      - 未确认项目显示"收入确认"按钮
+      - 已确认项目显示"查看确认"按钮
+      - 查看模式下可切换到编辑模式（需权限）
+
+  权限标识:
+    - revenue:company:list: 查询列表
+    - revenue:company:view: 查看详情
+    - revenue:company:edit: 编辑/确认
+    - revenue:company:export: 导出列表
+
+  API 接口:
+    - GET /project/project/revenueList: 查询收入确认列表
+    - GET /project/project/revenue/{projectId}: 获取收入确认详情
+    - PUT /project/project/revenueConfirm: 更新收入确认信息
+    - POST /project/project/revenueExport: 导出收入确认列表
+
+公司收入确认查询条件交互优化:
+  优化日期: 2026-02-10
+  优化内容: 提升查询条件的用户交互体验
+
+  1. 项目名称自动补全:
+    优化前:
+      组件: el-input
+      功能: 普通文本输入框
+
+    优化后:
+      组件: el-autocomplete
+      功能: 支持自动补全建议
+
+    实现细节:
+      组件配置:
+        - v-model: queryParams.projectName
+        - :fetch-suggestions: queryProjectNameSuggestions
+        - placeholder: 请输入项目名称
+        - clearable: true
+        - @keyup.enter: handleQuery
+        - @select: handleQuery
+        - style: width: 200px
+
+      自动补全方法:
+        ```javascript
+        function queryProjectNameSuggestions(queryString, cb) {
+          // 如果输入为空，不显示建议
+          if (!queryString) {
+            cb([]);
+            return;
+          }
+
+          // 从当前列表数据中提取项目名称作为建议
+          const suggestions = revenueList.value
+            .filter(item => item.projectName && item.projectName.toLowerCase().includes(queryString.toLowerCase()))
+            .map(item => ({
+              value: item.projectName
+            }));
+
+          // 去重
+          const uniqueSuggestions = Array.from(
+            new Map(suggestions.map(item => [item.value, item])).values()
+          );
+
+          cb(uniqueSuggestions);
+        }
+        ```
+
+      功能特性:
+        - 大小写不敏感匹配
+        - 模糊匹配（包含关键词即可）
+        - 自动去重
+        - 基于当前列表数据（无需额外 API 请求）
+        - 回车键触发查询
+        - 点击建议项自动触发查询
+
+      使用场景:
+        - 快速查找已知项目
+        - 避免输入错误
+        - 提高输入效率
+
+  2. 项目部门选择器优化:
+    优化前:
+      组件: el-tree-select
+      数据管理: 页面内部管理 deptOptions
+      过滤逻辑: 页面内部实现 filterDeptTree
+      数据加载: 页面内部调用 getDeptTree
+      搜索功能: 不支持
+
+    优化后:
+      组件: ProjectDeptSelect（公共组件）
+      数据管理: 组件内部自动管理
+      过滤逻辑: 组件内置（只显示三级及以下机构）
+      数据加载: 组件自动加载
+      搜索功能: 支持（filterable: true）
+
+    实现细节:
+      组件配置:
+        - v-model: queryParams.projectDept
+        - :filterable: true
+        - width: 200px
+
+      组件位置:
+        - ruoyi-ui/src/components/ProjectDeptSelect/index.vue
+
+      组件特性:
+        - 自动过滤前两级部门，只显示三级及以下机构
+        - 自动加载部门树数据（从 /system/dept/treeselect）
+        - 支持部门名称搜索（filterable）
+        - 支持清空选择（clearable）
+        - 支持任意层级选择（checkStrictly）
+
+      过滤算法:
+        ```javascript
+        function filterDeptTree(depts, level = 1) {
+          if (!depts || depts.length === 0) return []
+
+          // 如果当前是第1或第2级，继续递归子节点
+          if (level < 3) {
+            let result = []
+            depts.forEach(dept => {
+              if (dept.children && dept.children.length > 0) {
+                const filtered = filterDeptTree(dept.children, level + 1)
+                result = result.concat(filtered)
+              }
+            })
+            return result
+          }
+
+          // 第3级及以下，保留当前节点及其子节点
+          return depts.map(dept => ({
+            ...dept,
+            children: dept.children && dept.children.length > 0
+              ? filterDeptTree(dept.children, level + 1)
+              : undefined
+          }))
+        }
+        ```
+
+      代码简化:
+        移除的代码:
+          - const deptOptions = ref([])
+          - import { deptTreeSelect } from "@/api/system/user"
+          - function getDeptTree() { ... }
+          - onMounted 中的 getDeptTree() 调用
+
+        新增的代码:
+          - import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
+
+        代码行数:
+          - 优化前: 约 15 行
+          - 优化后: 约 5 行
+          - 减少: 约 10 行
+
+      搜索功能:
+        - 支持输入部门名称关键词搜索
+        - 实时过滤匹配的部门
+        - 快速定位目标部门，无需逐级展开
+
+      使用场景:
+        - 部门较多时快速定位
+        - 不熟悉部门层级结构时快速查找
+        - 提高查询效率
+
+  优化效果总结:
+    1. 项目名称自动补全:
+       - 提升输入效率
+       - 减少输入错误
+       - 提供智能建议
+
+    2. 项目部门搜索:
+       - 代码简化（减少 10 行）
+       - 维护性提升（使用公共组件）
+       - 一致性保证（与其他页面统一）
+       - 支持搜索（快速定位部门）
+       - 自动过滤（只显示三级及以下机构）
+
+  涉及文件:
+    - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+    - ruoyi-ui/src/components/ProjectDeptSelect/index.vue（公共组件）
+
+  测试建议:
+    1. 测试项目名称自动补全功能
+       - 输入关键词验证建议列表
+       - 点击建议项验证自动查询
+       - 回车键验证查询功能
+
+    2. 测试项目部门搜索功能
+       - 输入部门名称关键词验证过滤
+       - 验证只显示三级及以下部门
+       - 验证选择部门后查询功能
+
+公司收入确认一级区域与二级区域联动修复:
+  日期: 2026-02-10
+
+  问题描述:
+    选择一级区域后，二级区域下拉框显示了不相关的省份数据
+    例如：选择"北京地区"（BJ），却显示了华北区域（HBQY）的所有省份
+
+  根本原因:
+    前端传递的参数名与后端期望的参数名不匹配
+    - 前端传递: regionCode
+    - 后端期望: regionDictValue（对应数据库字段 region_dict_value）
+
+  数据库结构说明:
+    表: pm_secondary_region
+    关键字段:
+      - province_id: 省份ID（主键）
+      - province_name: 省份名称（如：北京市、天津市）
+      - region_dict_value: 一级区域字典值（如：BJ、HBQY、DBQY）
+
+    一级区域字典 (sys_yjqy):
+      - BJ: 北京地区（仅包含北京市）
+      - HBQY: 华北区域（天津市、河北省、山西省、内蒙古自治区）
+      - DBQY: 东北区域（辽宁省、大连市、吉林省、黑龙江省）
+      - HDQY: 华东区域（上海市、江苏省、浙江省等）
+      - HNQY: 华南区域（广东省等）
+      - HZQY: 华中区域
+      - XNQY: 西南区域
+      - XBQY: 西北区域
+      - GWDQ: 国外地区
+
+  修复方案:
+    修改前端代码，使用正确的参数名 regionDictValue
+
+    修改位置: ruoyi-ui/src/views/revenue/company/index.vue
+    函数: handleRegionChange(value)
+
+    修改前:
+      listSecondaryRegion({ regionCode: value })
+
+    修改后:
+      listSecondaryRegion({ regionDictValue: value })
+
+  联动逻辑说明:
+    1. 选择一级区域时:
+       - 清空二级区域的值（provinceId = null）
+       - 清空二级区域选项列表（secondaryRegionOptions = []）
+       - 根据一级区域字典值查询对应的二级区域列表
+       - 二级区域选择器变为可用状态
+
+    2. 清空一级区域时:
+       - 清空二级区域的值
+       - 清空二级区域选项列表
+       - 二级区域选择器变为禁用状态（:disabled="!queryParams.region"）
+
+    3. 重置表单时:
+       - 调用 proxy.resetForm("queryRef") 清空所有查询条件
+       - 清空二级区域选项列表（secondaryRegionOptions = []）
+       - 确保下次选择一级区域时不会显示旧数据
+
+  后端接口说明:
+    Controller: SecondaryRegionController
+    接口: GET /project/secondaryRegion/list
+    参数: SecondaryRegion 对象（包含 regionDictValue 字段）
+
+    MyBatis XML: SecondaryRegionMapper.xml
+    查询条件:
+      <if test="regionDictValue != null and regionDictValue != ''">
+        and region_dict_value = #{regionDictValue}
+      </if>
+
+  涉及文件:
+    - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+    - ruoyi-ui/src/api/project/secondaryRegion.js（API 封装）
+    - ruoyi-project/.../SecondaryRegionController.java（后端控制器）
+    - ruoyi-project/.../SecondaryRegionMapper.xml（MyBatis 映射）
+
+  测试建议:
+    1. 选择"北京地区"（BJ）→ 应该只显示：北京市
+    2. 选择"华北区域"（HBQY）→ 应该显示：天津市、河北省、山西省、内蒙古自治区
+    3. 选择"东北区域"（DBQY）→ 应该显示：辽宁省、大连市、吉林省、黑龙江省
+    4. 切换一级区域 → 二级区域应该重新加载对应选项
+    5. 清空一级区域 → 二级区域应该被禁用且清空
+    6. 点击重置按钮 → 所有条件清空，二级区域选项列表清空
+
+项目详情和收入确认页面实际工作量字段显示优化:
+  日期: 2026-02-10
+
+  问题描述:
+    在以下两个页面的项目基本信息中，"预估工作量"后面缺少"实际工作量"字段的显示：
+    1. 项目管理 - 项目详情页面
+    2. 公司收入确认 - 收入确认抽屉（查看确认/编辑确认）
+
+  优化方案:
+    在"预估工作量"字段后面添加"实际工作量"字段显示
+
+  字段说明:
+    - 字段名: actualWorkload
+    - 数据库字段: actual_workload
+    - 字段类型: decimal(10,2)
+    - 显示格式: XX 人天
+    - 默认值: 0（当数据为空时）
+
+  修改位置:
+
+    1. 项目详情页面:
+       文件: ruoyi-ui/src/views/project/project/detail.vue
+       位置: 第41-46行（项目基本信息卡片）
+
+       修改前:
+         <el-descriptions-item label="预估工作量">
+           {{ form.estimatedWorkload || 0 }} 人天
+         </el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="form.projectStatus" />
+         </el-descriptions-item>
+
+       修改后:
+         <el-descriptions-item label="预估工作量">
+           {{ form.estimatedWorkload || 0 }} 人天
+         </el-descriptions-item>
+         <el-descriptions-item label="实际工作量">
+           {{ form.actualWorkload || 0 }} 人天
+         </el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="form.projectStatus" />
+         </el-descriptions-item>
+
+    2. 收入确认抽屉:
+       文件: ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue
+       位置: 第35-38行（项目基本信息卡片）
+
+       修改前:
+         <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="projectData.projectStatus" />
+         </el-descriptions-item>
+
+       修改后:
+         <el-descriptions-item label="预估工作量">{{ projectData.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+         <el-descriptions-item label="实际工作量">{{ projectData.actualWorkload || 0 }} 人天</el-descriptions-item>
+         <el-descriptions-item label="项目状态">
+           <dict-tag :options="sys_xmjd" :value="projectData.projectStatus" />
+         </el-descriptions-item>
+
+  显示效果:
+    项目基本信息部分现在显示顺序为：
+    - 预估工作量: XX 人天
+    - 实际工作量: XX 人天（新增）
+    - 项目状态: XXX
+
+  数据来源:
+    - 项目详情页面: form.actualWorkload（来自 getProject 接口）
+    - 收入确认抽屉: projectData.actualWorkload（来自 getRevenueCompany 接口）
+
+  后端接口说明:
+    两个接口都已包含 actual_workload 字段：
+    1. GET /project/project/{projectId} - 获取项目详情
+    2. GET /project/project/revenue/{projectId} - 获取收入确认详情
+
+    MyBatis XML 查询中已包含该字段：
+    - ProjectMapper.xml: selectProjectVo 包含 actual_workload
+    - 无需修改后端代码
+
+  涉及文件:
+    - ruoyi-ui/src/views/project/project/detail.vue（项目详情页）
+    - ruoyi-ui/src/views/revenue/company/components/RevenueConfirmDrawer.vue（收入确认抽屉）
+
+  测试建议:
+    1. 打开项目详情页面，验证"实际工作量"字段显示正确
+    2. 打开收入确认抽屉（查看模式），验证"实际工作量"字段显示正确
+    3. 打开收入确认抽屉（编辑模式），验证"实际工作量"字段显示正确
+    4. 验证字段显示在"预估工作量"和"项目状态"之间
+    5. 验证当实际工作量为空时显示"0 人天"
+
+公司收入确认列表合计行功能:
+  日期: 2026-02-10
+
+  需求描述:
+    在公司收入确认列表的表头和第一行数据之间添加合计行，显示数值字段的汇总
+    注意：合计行显示在表头下方第一行，不是表格最后一行
+
+  合计字段:
+    1. 项目预算（元）- projectBudget
+       - 格式：千分位分隔符，保留2位小数
+       - 示例：1,234,567.89
+
+    2. 预估工作量（人天）- estimatedWorkload
+       - 格式：保留2位小数
+       - 示例：123.45
+
+    3. 实际人天 - actualWorkload
+       - 格式：保留2位小数
+       - 示例：98.76
+
+    4. 合同金额（元）- contractAmount
+       - 格式：千分位分隔符，保留2位小数
+       - 示例：2,345,678.90
+
+    5. 确认金额（元）- confirmAmount
+       - 格式：千分位分隔符，保留2位小数
+       - 示例：1,987,654.32
+
+  显示规则:
+    - 第一列（选择框）：合计行不可选择（禁用）
+    - 第二列（序号）：显示"合计"文字（加粗）
+    - 数值列：显示合计值（加粗）
+    - 其他列（文本、日期、状态等）：显示为空
+    - 操作列：不显示任何按钮
+
+  技术实现:
+
+    1. 计算属性 revenueListWithSummary:
+       文件: ruoyi-ui/src/views/revenue/company/index.vue
+       位置: 第308-350行
+
+       功能：
+       - 遍历 revenueList 计算各数值字段的合计
+       - 创建合计行对象，标记 isSummary: true
+       - 格式化合计值（金额千分位，工作量保留2位小数）
+       - 将合计行插入到数组第一个位置
+       - 返回带合计行的新数组
+
+       代码示例：
+         const revenueListWithSummary = computed(() => {
+           if (revenueList.value.length === 0) {
+             return [];
+           }
+
+           // 计算合计
+           const summary = {
+             isSummary: true,
+             projectBudget: 0,
+             estimatedWorkload: 0,
+             actualWorkload: 0,
+             contractAmount: 0,
+             confirmAmount: 0
+           };
+
+           revenueList.value.forEach(item => {
+             summary.projectBudget += Number(item.projectBudget) || 0;
+             summary.estimatedWorkload += Number(item.estimatedWorkload) || 0;
+             summary.actualWorkload += Number(item.actualWorkload) || 0;
+             summary.contractAmount += Number(item.contractAmount) || 0;
+             summary.confirmAmount += Number(item.confirmAmount) || 0;
+           });
+
+           // 格式化合计值
+           summary.projectBudget = summary.projectBudget.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+           summary.estimatedWorkload = summary.estimatedWorkload.toFixed(2);
+           summary.actualWorkload = summary.actualWorkload.toFixed(2);
+           summary.contractAmount = summary.contractAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+           summary.confirmAmount = summary.confirmAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+           // 将合计行插入到第一行
+           return [summary, ...revenueList.value];
+         });
+
+    2. 表格数据绑定:
+       修改前：
+         <el-table :data="revenueList">
+
+       修改后：
+         <el-table :data="revenueListWithSummary">
+
+    3. 序号列特殊处理:
+       修改前：
+         <el-table-column label="序号" type="index" width="55" align="center" />
+
+       修改后：
+         <el-table-column label="序号" width="55" align="center">
+           <template #default="scope">
+             <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
+             <span v-else>{{ scope.$index }}</span>
+           </template>
+         </el-table-column>
+
+    4. 数值列特殊处理（以项目预算为例）:
+       修改前：
+         <el-table-column label="项目预算（元）" align="center" prop="projectBudget" width="120">
+           <template #default="scope">
+             <span>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+           </template>
+         </el-table-column>
+
+       修改后：
+         <el-table-column label="项目预算（元）" align="center" prop="projectBudget" width="120">
+           <template #default="scope">
+             <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
+             <span v-else>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+           </template>
+         </el-table-column>
+
+       说明：合计行的值已经在计算属性中格式化，直接显示即可
+
+    5. 选择框禁用:
+       修改前：
+         <el-table-column type="selection" width="55" align="center" />
+
+       修改后：
+         <el-table-column type="selection" width="55" align="center" :selectable="checkSelectable" />
+
+       新增方法：
+         function checkSelectable(row) {
+           return !row.isSummary;
+         }
+
+    6. 操作列特殊处理:
+       修改前：
+         <el-table-column label="操作" align="center" width="150" fixed="right">
+           <template #default="scope">
+             <el-button ... >收入确认</el-button>
+             <el-button ... >查看确认</el-button>
+           </template>
+         </el-table-column>
+
+       修改后：
+         <el-table-column label="操作" align="center" width="150" fixed="right">
+           <template #default="scope">
+             <!-- 合计行不显示操作按钮 -->
+             <template v-if="!scope.row.isSummary">
+               <el-button ... >收入确认</el-button>
+               <el-button ... >查看确认</el-button>
+             </template>
+           </template>
+         </el-table-column>
+
+  涉及文件:
+    - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+
+  修改统计:
+    - 新增代码：91行
+    - 删除代码：26行
+    - 净增加：65行
+
+  测试建议:
+    1. 打开公司收入确认列表页面
+    2. 验证合计行显示在表头下方第一行（不是最后一行）
+    3. 验证序号列显示"合计"文字（加粗）
+    4. 验证5个数值字段的合计值正确：
+       - 项目预算：千分位格式，保留2位小数
+       - 预估工作量：保留2位小数
+       - 实际人天：保留2位小数
+       - 合同金额：千分位格式，保留2位小数
+       - 确认金额：千分位格式，保留2位小数
+    5. 验证其他列（项目名称、部门、经理等）显示为空
+    6. 验证合计行的选择框不可选
+    7. 验证合计行的操作列不显示按钮
+    8. 切换查询条件，验证合计行动态更新
+    9. 翻页后，验证合计行只计算当前页数据
+    10. 验证合计行样式（加粗）正确显示
+
+  注意事项:
+    1. 合计行只计算当前页面的数据，不是全部数据的合计
+    2. 如果需要全部数据的合计，需要后端提供汇总接口
+    3. 合计行的 isSummary 标记用于区分普通数据行
+    4. 数值格式化在计算属性中完成，模板中直接显示
+    5. 合计行不参与选择、排序、操作等交互功能

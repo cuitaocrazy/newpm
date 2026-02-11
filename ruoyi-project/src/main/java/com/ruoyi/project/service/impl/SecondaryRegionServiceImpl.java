@@ -9,34 +9,34 @@ import com.ruoyi.project.domain.SecondaryRegion;
 import com.ruoyi.project.service.ISecondaryRegionService;
 
 /**
- * 省级区域Service业务层处理
- * 
+ * 二级区域Service业务层处理
+ *
  * @author ruoyi
  * @date 2026-02-04
  */
 @Service
-public class SecondaryRegionServiceImpl implements ISecondaryRegionService 
+public class SecondaryRegionServiceImpl implements ISecondaryRegionService
 {
     @Autowired
     private SecondaryRegionMapper secondaryRegionMapper;
 
     /**
-     * 查询省级区域
-     * 
-     * @param provinceId 省级区域主键
-     * @return 省级区域
+     * 查询二级区域
+     *
+     * @param regionId 二级区域主键
+     * @return 二级区域
      */
     @Override
-    public SecondaryRegion selectSecondaryRegionByProvinceId(Long provinceId)
+    public SecondaryRegion selectSecondaryRegionByRegionId(Long regionId)
     {
-        return secondaryRegionMapper.selectSecondaryRegionByProvinceId(provinceId);
+        return secondaryRegionMapper.selectSecondaryRegionByRegionId(regionId);
     }
 
     /**
-     * 查询省级区域列表
-     * 
-     * @param secondaryRegion 省级区域
-     * @return 省级区域
+     * 查询二级区域列表
+     *
+     * @param secondaryRegion 二级区域
+     * @return 二级区域
      */
     @Override
     public List<SecondaryRegion> selectSecondaryRegionList(SecondaryRegion secondaryRegion)
@@ -45,9 +45,9 @@ public class SecondaryRegionServiceImpl implements ISecondaryRegionService
     }
 
     /**
-     * 新增省级区域
-     * 
-     * @param secondaryRegion 省级区域
+     * 新增二级区域
+     *
+     * @param secondaryRegion 二级区域
      * @return 结果
      */
     @Override
@@ -58,9 +58,9 @@ public class SecondaryRegionServiceImpl implements ISecondaryRegionService
     }
 
     /**
-     * 修改省级区域
-     * 
-     * @param secondaryRegion 省级区域
+     * 修改二级区域
+     *
+     * @param secondaryRegion 二级区域
      * @return 结果
      */
     @Override
@@ -71,26 +71,26 @@ public class SecondaryRegionServiceImpl implements ISecondaryRegionService
     }
 
     /**
-     * 批量删除省级区域
-     * 
-     * @param provinceIds 需要删除的省级区域主键
+     * 批量删除二级区域
+     *
+     * @param regionIds 需要删除的二级区域主键
      * @return 结果
      */
     @Override
-    public int deleteSecondaryRegionByProvinceIds(Long[] provinceIds)
+    public int deleteSecondaryRegionByRegionIds(Long[] regionIds)
     {
-        return secondaryRegionMapper.deleteSecondaryRegionByProvinceIds(provinceIds);
+        return secondaryRegionMapper.deleteSecondaryRegionByRegionIds(regionIds);
     }
 
     /**
-     * 删除省级区域信息
-     * 
-     * @param provinceId 省级区域主键
+     * 删除二级区域信息
+     *
+     * @param regionId 二级区域主键
      * @return 结果
      */
     @Override
-    public int deleteSecondaryRegionByProvinceId(Long provinceId)
+    public int deleteSecondaryRegionByRegionId(Long regionId)
     {
-        return secondaryRegionMapper.deleteSecondaryRegionByProvinceId(provinceId);
+        return secondaryRegionMapper.deleteSecondaryRegionByRegionId(regionId);
     }
 }

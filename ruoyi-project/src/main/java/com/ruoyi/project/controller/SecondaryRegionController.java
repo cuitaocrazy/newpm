@@ -22,8 +22,8 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
- * 省级区域Controller
- * 
+ * 二级区域Controller
+ *
  * @author ruoyi
  * @date 2026-02-04
  */
@@ -35,7 +35,7 @@ public class SecondaryRegionController extends BaseController
     private ISecondaryRegionService secondaryRegionService;
 
     /**
-     * 查询省级区域列表
+     * 查询二级区域列表
      */
     @PreAuthorize("@ss.hasPermi('project:secondaryRegion:list')")
     @GetMapping("/list")
@@ -47,33 +47,33 @@ public class SecondaryRegionController extends BaseController
     }
 
     /**
-     * 导出省级区域列表
+     * 导出二级区域列表
      */
     @PreAuthorize("@ss.hasPermi('project:secondaryRegion:export')")
-    @Log(title = "省级区域", businessType = BusinessType.EXPORT)
+    @Log(title = "二级区域", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, SecondaryRegion secondaryRegion)
     {
         List<SecondaryRegion> list = secondaryRegionService.selectSecondaryRegionList(secondaryRegion);
         ExcelUtil<SecondaryRegion> util = new ExcelUtil<SecondaryRegion>(SecondaryRegion.class);
-        util.exportExcel(response, list, "省级区域数据");
+        util.exportExcel(response, list, "二级区域数据");
     }
 
     /**
-     * 获取省级区域详细信息
+     * 获取二级区域详细信息
      */
     @PreAuthorize("@ss.hasPermi('project:secondaryRegion:query')")
-    @GetMapping(value = "/{provinceId}")
-    public AjaxResult getInfo(@PathVariable("provinceId") Long provinceId)
+    @GetMapping(value = "/{regionId}")
+    public AjaxResult getInfo(@PathVariable("regionId") Long regionId)
     {
-        return success(secondaryRegionService.selectSecondaryRegionByProvinceId(provinceId));
+        return success(secondaryRegionService.selectSecondaryRegionByRegionId(regionId));
     }
 
     /**
-     * 新增省级区域
+     * 新增二级区域
      */
     @PreAuthorize("@ss.hasPermi('project:secondaryRegion:add')")
-    @Log(title = "省级区域", businessType = BusinessType.INSERT)
+    @Log(title = "二级区域", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody SecondaryRegion secondaryRegion)
     {
@@ -81,10 +81,10 @@ public class SecondaryRegionController extends BaseController
     }
 
     /**
-     * 修改省级区域
+     * 修改二级区域
      */
     @PreAuthorize("@ss.hasPermi('project:secondaryRegion:edit')")
-    @Log(title = "省级区域", businessType = BusinessType.UPDATE)
+    @Log(title = "二级区域", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody SecondaryRegion secondaryRegion)
     {
@@ -92,18 +92,18 @@ public class SecondaryRegionController extends BaseController
     }
 
     /**
-     * 删除省级区域
+     * 删除二级区域
      */
     @PreAuthorize("@ss.hasPermi('project:secondaryRegion:remove')")
-    @Log(title = "省级区域", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{provinceIds}")
-    public AjaxResult remove(@PathVariable Long[] provinceIds)
+    @Log(title = "二级区域", businessType = BusinessType.DELETE)
+	@DeleteMapping("/{regionIds}")
+    public AjaxResult remove(@PathVariable Long[] regionIds)
     {
-        return toAjax(secondaryRegionService.deleteSecondaryRegionByProvinceIds(provinceIds));
+        return toAjax(secondaryRegionService.deleteSecondaryRegionByRegionIds(regionIds));
     }
 
     /**
-     * 根据一级区域查询省份列表
+     * 根据一级区域查询二级区域列表
      */
     @GetMapping("/listByRegion")
     public AjaxResult listByRegion(String regionDictValue)

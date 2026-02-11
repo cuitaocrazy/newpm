@@ -9,10 +9,10 @@ import com.ruoyi.project.domain.ProjectApproval;
 import com.ruoyi.project.service.IProjectApprovalService;
 
 /**
- * 项目审核Service业务层处理
+ * 立项审核Service业务层处理
  * 
  * @author ruoyi
- * @date 2026-02-01
+ * @date 2026-02-11
  */
 @Service
 public class ProjectApprovalServiceImpl implements IProjectApprovalService 
@@ -21,10 +21,10 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     private ProjectApprovalMapper projectApprovalMapper;
 
     /**
-     * 查询项目审核
+     * 查询立项审核
      * 
-     * @param approvalId 项目审核主键
-     * @return 项目审核
+     * @param approvalId 立项审核主键
+     * @return 立项审核
      */
     @Override
     public ProjectApproval selectProjectApprovalByApprovalId(Long approvalId)
@@ -33,10 +33,10 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     }
 
     /**
-     * 查询项目审核列表
+     * 查询立项审核列表
      * 
-     * @param projectApproval 项目审核
-     * @return 项目审核
+     * @param projectApproval 立项审核
+     * @return 立项审核
      */
     @Override
     public List<ProjectApproval> selectProjectApprovalList(ProjectApproval projectApproval)
@@ -45,9 +45,9 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     }
 
     /**
-     * 新增项目审核
+     * 新增立项审核
      * 
-     * @param projectApproval 项目审核
+     * @param projectApproval 立项审核
      * @return 结果
      */
     @Override
@@ -58,9 +58,9 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     }
 
     /**
-     * 修改项目审核
+     * 修改立项审核
      * 
-     * @param projectApproval 项目审核
+     * @param projectApproval 立项审核
      * @return 结果
      */
     @Override
@@ -71,9 +71,9 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     }
 
     /**
-     * 批量删除项目审核
+     * 批量删除立项审核
      * 
-     * @param approvalIds 需要删除的项目审核主键
+     * @param approvalIds 需要删除的立项审核主键
      * @return 结果
      */
     @Override
@@ -83,9 +83,9 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     }
 
     /**
-     * 删除项目审核信息
+     * 删除立项审核信息
      * 
-     * @param approvalId 项目审核主键
+     * @param approvalId 立项审核主键
      * @return 结果
      */
     @Override

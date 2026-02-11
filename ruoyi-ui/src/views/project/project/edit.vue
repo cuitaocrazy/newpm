@@ -49,13 +49,13 @@
 
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="二级区域" prop="provinceCode" data-prop="provinceCode">
-                <el-select v-model="form.provinceCode" placeholder="请选择二级区域" clearable                  :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('provinceCode')">
+              <el-form-item label="二级区域" prop="regionCode" data-prop="regionCode">
+                <el-select v-model="form.regionCode" placeholder="请选择二级区域" clearable                  :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('regionCode')">
                   <el-option
                     v-for="item in secondaryRegionOptions"
-                    :key="item.provinceCode"
-                    :label="item.provinceName"
-                    :value="item.provinceCode"
+                    :key="item.regionCode"
+                    :label="item.regionName"
+                    :value="item.regionCode"
                   />
                 </el-select>
               </el-form-item>
@@ -69,13 +69,13 @@
 
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="立项年份" prop="establishedYear" data-prop="establishedYear">
-                <el-select v-model="form.establishedYear" placeholder="请选择立项年份" clearable @blur="validateOnBlur('establishedYear')">
+              <el-form-item label="立项年度" prop="establishedYear" data-prop="establishedYear">
+                <el-select v-model="form.establishedYear" placeholder="请选择立项年度" clearable @change="generateProjectCode" @blur="validateOnBlur('establishedYear')">
                   <el-option
-                    v-for="year in yearOptions"
-                    :key="year"
-                    :label="year"
-                    :value="year"
+                    v-for="dict in sys_ndgl"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
                   />
                 </el-select>
               </el-form-item>
@@ -83,9 +83,6 @@
             <el-col :span="12">
               <el-form-item label="项目编号" prop="projectCode" data-prop="projectCode">
                 <el-input v-model="form.projectCode" placeholder="自动生成" disabled />
-                <div style="color: #909399; font-size: 12px; margin-top: 5px;">
-                  格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{年份}
-                </div>
               </el-form-item>
             </el-col>
           </el-row>
@@ -119,9 +116,9 @@
           
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="项目状态" prop="projectStatus" data-prop="projectStatus">
-                <el-select v-model="form.projectStatus" placeholder="请选择项目状态" clearable @blur="validateOnBlur('projectStatus')">
-                  <el-option v-for="dict in sys_xmjd" :key="dict.value" 
+              <el-form-item label="项目阶段" prop="projectStage" data-prop="projectStage">
+                <el-select v-model="form.projectStage" placeholder="请选择项目阶段" clearable @blur="validateOnBlur('projectStage')">
+                  <el-option v-for="dict in sys_xmjd" :key="dict.value"
                     :label="dict.label" :value="dict.value" />
                 </el-select>
               </el-form-item>
@@ -400,13 +397,13 @@
           <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="备注">
-                <el-input v-model="form.remark" type="textarea" :rows="4" 
+                <el-input v-model="form.remark" type="textarea" :rows="4"
                   placeholder="请输入备注信息" />
               </el-form-item>
             </el-col>
           </el-row>
         </el-collapse-item>
-        
+
       </el-collapse>
     </el-form>
 
@@ -433,8 +430,8 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_yszt, sys_shzt, sys_qrzt, industry, sys_yjqy, sys_jdgl, sys_spzt } =
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_shzt', 'sys_qrzt', 'industry', 'sys_yjqy', 'sys_jdgl', 'sys_spzt')
+const { sys_xmfl, sys_xmjd, sys_yszt, sys_shzt, sys_qrzt, industry, sys_yjqy, sys_jdgl, sys_spzt, sys_ndgl } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_shzt', 'sys_qrzt', 'industry', 'sys_yjqy', 'sys_jdgl', 'sys_spzt', 'sys_ndgl')
 
 // 折叠面板激活状态
 const activeNames = ref(['1', '2', '3', '4', '5', '6'])
@@ -450,15 +447,15 @@ const data = reactive({
   form: {
     industry: '',
     region: '',
-    provinceCode: '',
-    provinceId: null,
+    regionCode: '',
+    regionId: null,
     shortName: '',
     establishedYear: null,
     projectCode: '',
     projectName: '',
     projectCategory: '',
     projectDept: '',
-    projectStatus: '',
+    projectStage: '',
     acceptanceStatus: '',
     estimatedWorkload: '',
     projectPlan: '',
@@ -491,14 +488,14 @@ const data = reactive({
   rules: {
     industry: [{ required: true, message: '请选择行业', trigger: 'change' }],
     region: [{ required: true, message: '请选择一级区域', trigger: 'change' }],
-    provinceCode: [{ required: true, message: '请选择二级区域', trigger: 'change' }],
+    regionCode: [{ required: true, message: '请选择二级区域', trigger: 'change' }],
     shortName: [{ required: true, message: '请输入项目简称', trigger: 'blur' }],
-    establishedYear: [{ required: true, message: '请选择立项年份', trigger: 'change' }],
+    establishedYear: [{ required: true, message: '请选择立项年度', trigger: 'change' }],
     projectCode: [{ required: true, message: '项目编号不能为空', trigger: 'blur' }],
     projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
     projectCategory: [{ required: true, message: '请选择项目分类', trigger: 'change' }],
     projectDept: [{ required: true, message: '请选择项目部门', trigger: 'change' }],
-    projectStatus: [{ required: true, message: '请选择项目状态', trigger: 'change' }],
+    projectStage: [{ required: true, message: '请选择项目阶段', trigger: 'change' }],
     acceptanceStatus: [{ required: true, message: '请选择验收状态', trigger: 'change' }],
     estimatedWorkload: [
       { required: true, message: '请输入预估工作量', trigger: 'blur' },
@@ -530,7 +527,6 @@ const { form, rules } = toRefs(data)
 const submitLoading = ref(false)
 const contractInfo = ref({})
 const secondaryRegionOptions = ref([])
-const yearOptions = ref([])
 const projectManagers = ref([])
 const marketManagers = ref([])
 const salesManagers = ref([])
@@ -544,10 +540,10 @@ const customerContactPhone = ref('')
 
 // 项目编号自动生成
 watch([() => form.value.industry, () => form.value.region,
-       () => form.value.provinceCode, () => form.value.shortName, () => form.value.establishedYear],
-  ([industry, region, provinceCode, shortName, establishedYear]) => {
-    if (industry && region && provinceCode && shortName && establishedYear) {
-      form.value.projectCode = `${industry}-${region}-${provinceCode}-${shortName}-${establishedYear}`
+       () => form.value.regionCode, () => form.value.shortName, () => form.value.establishedYear],
+  ([industry, region, regionCode, shortName, establishedYear]) => {
+    if (industry && region && regionCode && shortName && establishedYear) {
+      form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
     }
   }
 )
@@ -675,9 +671,6 @@ function submitForm() {
       if (Array.isArray(submitData.participants)) {
         submitData.participants = submitData.participants.join(',')
       }
-      // 前端 provinceCode 映射到后端 regionCode
-      submitData.regionCode = submitData.provinceCode
-      delete submitData.provinceCode
       // 转换 establishedYear 为整数
       if (submitData.establishedYear) {
         submitData.establishedYear = parseInt(submitData.establishedYear)
@@ -700,16 +693,6 @@ function cancel() {
   })
 }
 
-/** 初始化年份选项 */
-function initYearOptions() {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let i = currentYear; i >= currentYear - 10; i--) {
-    years.push(i)
-  }
-  yearOptions.value = years
-}
-
 /** 获取二级区域列表 */
 function getSecondaryRegions(regionDictValue) {
   if (!regionDictValue) {
@@ -727,21 +710,21 @@ function getSecondaryRegions(regionDictValue) {
 
 /** 一级区域变化处理 */
 function handleRegionChange(value) {
-  form.value.provinceCode = null
-  form.value.provinceId = null
+  form.value.regionCode = null
+  form.value.regionId = null
   getSecondaryRegions(value)
 }
 
 /** 二级区域变化处理 */
-function handleSecondaryRegionChange(provinceCode) {
-  if (!provinceCode) {
-    form.value.provinceId = null
+function handleSecondaryRegionChange(regionCode) {
+  if (!regionCode) {
+    form.value.regionId = null
     return
   }
-  // 根据选中的provinceCode找到对应的provinceId
-  const selectedRegion = secondaryRegionOptions.value.find(item => item.provinceCode === provinceCode)
+  // 根据选中的regionCode找到对应的regionId
+  const selectedRegion = secondaryRegionOptions.value.find(item => item.regionCode === regionCode)
   if (selectedRegion) {
-    form.value.provinceId = selectedRegion.provinceId
+    form.value.regionId = selectedRegion.regionId
   }
 }
 
@@ -757,10 +740,6 @@ function loadProjectData() {
   loading.value = true
   getProject(projectId).then(response => {
     const data = response.data
-    // 后端 regionCode 映射到前端 provinceCode
-    if (data.regionCode) {
-      data.provinceCode = data.regionCode
-    }
     // 转换参与人员格式：字符串 → 数组
     if (data.participants) {
       data.participants = data.participants.split(',').map(Number)
@@ -804,7 +783,6 @@ function loadProjectData() {
 
 // 页面加载时初始化
 onMounted(() => {
-  initYearOptions()
   loadProjectManagers()
   loadMarketManagers()
   loadSalesManagers()

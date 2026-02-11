@@ -51,13 +51,13 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="二级区域" prop="provinceCode" data-prop="provinceCode">
-            <el-select v-model="form.provinceCode" placeholder="请选择二级区域" :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('provinceCode')">
+          <el-form-item label="二级区域" prop="regionCode" data-prop="regionCode">
+            <el-select v-model="form.regionCode" placeholder="请选择二级区域" :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('regionCode')">
               <el-option
                 v-for="item in secondaryRegionOptions"
-                :key="item.provinceCode"
-                :label="item.provinceName"
-                :value="item.provinceCode"
+                :key="item.regionCode"
+                :label="item.regionName"
+                :value="item.regionCode"
               />
             </el-select>
           </el-form-item>
@@ -119,8 +119,8 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="项目状态" prop="projectStatus" data-prop="projectStatus">
-            <el-select v-model="form.projectStatus" placeholder="请选择项目状态" @blur="validateOnBlur('projectStatus')">
+          <el-form-item label="项目阶段" prop="projectStage" data-prop="projectStage">
+            <el-select v-model="form.projectStage" placeholder="请选择项目阶段" @blur="validateOnBlur('projectStage')">
               <el-option
                 v-for="dict in sys_xmjd"
                 :key="dict.value"
@@ -179,7 +179,7 @@
       <el-row :gutter="20">
         <el-col :span="24">
           <el-form-item label="项目描述" prop="projectDescription" data-prop="projectDescription">
-            <el-input v-model="form.projectDescription" type="textarea" :rows="3" placeholder="请输入项目描述（用于项目状态为服务类别，在此添加巡检相关信息）" @blur="validateOnBlur('projectDescription')" />
+            <el-input v-model="form.projectDescription" type="textarea" :rows="3" placeholder="请输入项目描述（用于项目阶段为服务类别，在此添加巡检相关信息）" @blur="validateOnBlur('projectDescription')" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -500,15 +500,15 @@ const { validateOnBlur, validateAndScroll } = useFormValidation(formRef, activeN
 const form = ref({
   industry: null,
   region: null,
-  provinceCode: null,
-  provinceId: null,
+  regionCode: null,
+  regionId: null,
   shortName: null,
   establishedYear: null,
   projectCode: null,
   projectName: null,
   projectCategory: null,
   projectDept: null,
-  projectStatus: null,
+  projectStage: null,
   acceptanceStatus: null,
   estimatedWorkload: null,
   actualWorkload: null,
@@ -540,12 +540,12 @@ const form = ref({
 const rules = ref({
   industry: [{ required: true, message: "行业不能为空", trigger: "change" }],
   region: [{ required: true, message: "一级区域不能为空", trigger: "change" }],
-  provinceCode: [{ required: true, message: "二级区域不能为空", trigger: "change" }],
+  regionCode: [{ required: true, message: "二级区域不能为空", trigger: "change" }],
   establishedYear: [{ required: true, message: "立项年度不能为空", trigger: "change" }],
   projectName: [{ required: true, message: "项目名称不能为空", trigger: "blur" }],
   projectCategory: [{ required: true, message: "项目分类不能为空", trigger: "change" }],
   projectDept: [{ required: true, message: "项目部门不能为空", trigger: "change" }],
-  projectStatus: [{ required: true, message: "项目状态不能为空", trigger: "change" }],
+  projectStage: [{ required: true, message: "项目阶段不能为空", trigger: "change" }],
   acceptanceStatus: [{ required: true, message: "验收状态不能为空", trigger: "change" }],
   estimatedWorkload: [{ required: true, message: "预估工作量不能为空", trigger: "blur" }],
   projectBudget: [{ required: true, message: "项目预算不能为空", trigger: "blur" }],
@@ -649,23 +649,23 @@ function getSecondaryRegions(regionDictValue) {
 
 /** 一级区域变化处理 */
 function handleRegionChange(value) {
-  form.value.provinceCode = null
-  form.value.provinceId = null
+  form.value.regionCode = null
+  form.value.regionId = null
   getSecondaryRegions(value)
   generateProjectCode()
 }
 
 /** 二级区域变化处理 */
-function handleSecondaryRegionChange(provinceCode) {
-  if (!provinceCode) {
-    form.value.provinceId = null
+function handleSecondaryRegionChange(regionCode) {
+  if (!regionCode) {
+    form.value.regionId = null
     generateProjectCode()
     return
   }
-  // 根据选中的provinceCode找到对应的provinceId
-  const selectedRegion = secondaryRegionOptions.value.find(item => item.provinceCode === provinceCode)
+  // 根据选中的regionCode找到对应的regionId
+  const selectedRegion = secondaryRegionOptions.value.find(item => item.regionCode === regionCode)
   if (selectedRegion) {
-    form.value.provinceId = selectedRegion.provinceId
+    form.value.regionId = selectedRegion.regionId
   }
   generateProjectCode()
 }
@@ -718,9 +718,9 @@ function handleContactChange(contactId) {
 
 /** 生成项目编号 */
 function generateProjectCode() {
-  const { industry, region, provinceCode, shortName, establishedYear } = form.value
-  if (industry && region && provinceCode && shortName && establishedYear) {
-    form.value.projectCode = `${industry}-${region}-${provinceCode}-${shortName}-${establishedYear}`
+  const { industry, region, regionCode, shortName, establishedYear } = form.value
+  if (industry && region && regionCode && shortName && establishedYear) {
+    form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
   }
 }
 
@@ -730,10 +730,8 @@ function submitForm() {
     // 验证通过后的提交逻辑
     const submitData = {
       ...form.value,
-      regionCode: form.value.provinceCode,  // 映射到后端字段
       establishedYear: parseInt(form.value.establishedYear)  // 转换为整数
     }
-    delete submitData.provinceCode  // 删除前端字段
 
     addProject(submitData).then(response => {
       proxy.$modal.msgSuccess("提交成功")

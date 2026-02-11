@@ -3,19 +3,19 @@
 # ============================
 basicInfo:
   tableName: pm_secondary_region
-  tableComment: 省级区域表
+  tableComment: 二级区域表
   className: SecondaryRegion
   functionAuthor: ruoyi
-  remark: ""
+  remark: "字段更新：province_* → region_*"
 
 # ============================
 # Tab 2: 字段信息
 # ============================
 columns:
-  province_id:
-    columnComment: 省份ID
+  region_id:
+    columnComment: 二级区域ID
     javaType: Long
-    javaField: provinceId
+    javaField: regionId
     isInsert: true
     isEdit: false
     isList: false
@@ -25,10 +25,10 @@ columns:
     htmlType: input
     dictType: ""
 
-  province_code:
-    columnComment: 省份代码（行政区划代码前2位）
+  region_code:
+    columnComment: 二级区域代码（行政区划代码前2位）
     javaType: String
-    javaField: provinceCode
+    javaField: regionCode
     isInsert: true
     isEdit: true
     isList: true
@@ -38,10 +38,10 @@ columns:
     htmlType: input
     dictType: ""
 
-  province_name:
-    columnComment: 省份名称
+  region_name:
+    columnComment: 二级区域名称
     javaType: String
-    javaField: provinceName
+    javaField: regionName
     isInsert: true
     isEdit: true
     isList: true
@@ -51,10 +51,10 @@ columns:
     htmlType: input
     dictType: ""
 
-  province_type:
-    columnComment: 省份类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）
+  region_type:
+    columnComment: 二级区域类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）
     javaType: String
-    javaField: provinceType
+    javaField: regionType
     isInsert: true
     isEdit: true
     isList: true
@@ -65,7 +65,7 @@ columns:
     dictType: "sflx"
 
   region_dict_value:
-    columnComment: 一级区域
+    columnComment: 一级区域字典值
     javaType: String
     javaField: regionDictValue
     isInsert: true
@@ -241,21 +241,21 @@ customizations:
     service: null
     notes: "删除工具栏的导出按钮和 handleExport 方法，不需要 Excel 导出功能"
 
-  province_autocomplete:
-    intent: "省份代码和省份名称查询条件支持自动完成功能"
+  region_autocomplete:
+    intent: "二级区域代码和名称查询条件支持自动完成功能"
     component:
       type: "el-autocomplete"
       props:
         fetch-suggestions: "前端过滤全量数据"
         clearable: true
         style: "width: 240px"
-    bindTo: ["province_code", "province_name"]
+    bindTo: ["region_code", "region_name"]
     service:
       endpoint: "GET /project/secondaryRegion/list?pageNum=1&pageSize=1000"
       source: "复用 SecondaryRegionService.selectSecondaryRegionList"
-      returns: "全量省份数据列表"
+      returns: "全量二级区域数据列表"
       newApi: false
-    notes: "页面加载时一次性获取全量省份数据（约37条），前端过滤匹配。省份代码支持模糊匹配，省份名称支持包含匹配。"
+    notes: "页面加载时一次性获取全量二级区域数据（约37条），前端过滤匹配。二级区域代码支持模糊匹配，二级区域名称支持包含匹配。"
 
   query_input_width:
     intent: "统一查询条件输入框宽度"

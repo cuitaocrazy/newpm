@@ -59,3 +59,11 @@ export function checkCustomerSimpleNameUnique(customerSimpleName, customerId) {
     params: { customerSimpleName, customerId }
   })
 }
+
+// 查询所有客户（不分页）
+export function listAllCustomer() {
+  return request({
+    url: '/project/customer/listAll',
+    method: 'get'
+  })
+}

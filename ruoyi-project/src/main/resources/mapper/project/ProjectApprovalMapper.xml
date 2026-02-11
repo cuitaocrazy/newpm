@@ -17,132 +17,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
         <result property="remark"    column="remark"    />
-        <!-- 关联项目信息 -->
-        <association property="project" javaType="Project">
-            <result property="projectId"    column="p_project_id"    />
-            <result property="projectCode"    column="p_project_code"    />
-            <result property="projectName"    column="p_project_name"    />
-            <result property="projectFullName"    column="p_project_full_name"    />
-            <result property="industry"    column="p_industry"    />
-            <result property="region"    column="p_region"    />
-            <result property="shortName"    column="p_short_name"    />
-            <result property="year"    column="p_year"    />
-            <result property="projectCategory"    column="p_project_category"    />
-            <result property="projectDept"    column="p_project_dept"    />
-            <result property="projectStatus"    column="p_project_status"    />
-            <result property="acceptanceStatus"    column="p_acceptance_status"    />
-            <result property="estimatedWorkload"    column="p_estimated_workload"    />
-            <result property="actualWorkload"    column="p_actual_workload"    />
-            <result property="projectAddress"    column="p_project_address"    />
-            <result property="projectPlan"    column="p_project_plan"    />
-            <result property="projectDescription"    column="p_project_description"    />
-            <result property="projectManagerId"    column="p_project_manager_id"    />
-            <result property="marketManagerId"    column="p_market_manager_id"    />
-            <result property="participants"    column="p_participants"    />
-            <result property="salesManagerId"    column="p_sales_manager_id"    />
-            <result property="salesContact"    column="p_sales_contact"    />
-            <result property="teamLeaderId"    column="p_team_leader_id"    />
-            <result property="customerId"    column="p_customer_id"    />
-            <result property="customerContactId"    column="p_customer_contact_id"    />
-            <result property="merchantContact"    column="p_merchant_contact"    />
-            <result property="merchantPhone"    column="p_merchant_phone"    />
-            <result property="startDate"    column="p_start_date"    />
-            <result property="endDate"    column="p_end_date"    />
-            <result property="productionDate"    column="p_production_date"    />
-            <result property="acceptanceDate"    column="p_acceptance_date"    />
-            <result property="implementationYear"    column="p_implementation_year"    />
-            <result property="projectBudget"    column="p_project_budget"    />
-            <result property="projectCost"    column="p_project_cost"    />
-            <result property="costBudget"    column="p_cost_budget"    />
-            <result property="budgetCost"    column="p_budget_cost"    />
-            <result property="laborCost"    column="p_labor_cost"    />
-            <result property="purchaseCost"    column="p_purchase_cost"    />
-            <result property="confirmStatus"    column="p_confirm_status"    />
-            <result property="confirmQuarter"    column="p_confirm_quarter"    />
-            <result property="confirmAmount"    column="p_confirm_amount"    />
-            <result property="afterTaxAmount"    column="p_after_tax_amount"    />
-            <result property="taxRate"    column="p_tax_rate"    />
-            <result property="approvalStatus"    column="p_approval_status"    />
-            <result property="approvalReason"    column="p_approval_reason"    />
-            <result property="industryCode"    column="p_industry_code"    />
-            <result property="regionCode"    column="p_region_code"    />
-            <result property="approvalTime"    column="p_approval_time"    />
-            <result property="approverId"    column="p_approver_id"    />
-        </association>
     </resultMap>
 
     <sql id="selectProjectApprovalVo">
-        select
-            a.approval_id, a.project_id, a.approval_status, a.approval_reason,
-            a.approver_id, a.approval_time, a.del_flag, a.create_by, a.create_time,
-            a.update_by, a.update_time, a.remark,
-            p.project_id as p_project_id,
-            p.project_code as p_project_code,
-            p.project_name as p_project_name,
-            p.project_full_name as p_project_full_name,
-            p.industry as p_industry,
-            p.region as p_region,
-            p.short_name as p_short_name,
-            p.year as p_year,
-            p.project_category as p_project_category,
-            p.project_dept as p_project_dept,
-            p.project_status as p_project_status,
-            p.acceptance_status as p_acceptance_status,
-            p.estimated_workload as p_estimated_workload,
-            p.actual_workload as p_actual_workload,
-            p.project_address as p_project_address,
-            p.project_plan as p_project_plan,
-            p.project_description as p_project_description,
-            p.project_manager_id as p_project_manager_id,
-            p.market_manager_id as p_market_manager_id,
-            p.participants as p_participants,
-            p.sales_manager_id as p_sales_manager_id,
-            p.sales_contact as p_sales_contact,
-            p.team_leader_id as p_team_leader_id,
-            p.customer_id as p_customer_id,
-            p.customer_contact_id as p_customer_contact_id,
-            p.merchant_contact as p_merchant_contact,
-            p.merchant_phone as p_merchant_phone,
-            p.start_date as p_start_date,
-            p.end_date as p_end_date,
-            p.production_date as p_production_date,
-            p.acceptance_date as p_acceptance_date,
-            p.implementation_year as p_implementation_year,
-            p.project_budget as p_project_budget,
-            p.project_cost as p_project_cost,
-            p.cost_budget as p_cost_budget,
-            p.budget_cost as p_budget_cost,
-            p.labor_cost as p_labor_cost,
-            p.purchase_cost as p_purchase_cost,
-            p.confirm_status as p_confirm_status,
-            p.confirm_quarter as p_confirm_quarter,
-            p.confirm_amount as p_confirm_amount,
-            p.after_tax_amount as p_after_tax_amount,
-            p.tax_rate as p_tax_rate,
-            p.approval_status as p_approval_status,
-            p.approval_reason as p_approval_reason,
-            p.industry_code as p_industry_code,
-            p.region_code as p_region_code,
-            p.approval_time as p_approval_time,
-            p.approver_id as p_approver_id
-        from pm_project_approval a
-        left join pm_project p on a.project_id = p.project_id
+        select approval_id, project_id, approval_status, approval_reason, approver_id, approval_time, del_flag, create_by, create_time, update_by, update_time, remark from pm_project_approval
     </sql>
 
     <select id="selectProjectApprovalList" parameterType="ProjectApproval" resultMap="ProjectApprovalResult">
         <include refid="selectProjectApprovalVo"/>
-        <where>
-            <if test="projectId != null "> and a.project_id = #{projectId}</if>
-            <if test="approvalStatus != null  and approvalStatus != ''"> and a.approval_status = #{approvalStatus}</if>
-            <if test="approvalReason != null  and approvalReason != ''"> and a.approval_reason = #{approvalReason}</if>
-            <if test="approverId != null "> and a.approver_id = #{approverId}</if>
-            <if test="approvalTime != null "> and a.approval_time = #{approvalTime}</if>
+        <where>  
+            <if test="projectId != null "> and project_id = #{projectId}</if>
+            <if test="approvalStatus != null  and approvalStatus != ''"> and approval_status = #{approvalStatus}</if>
+            <if test="approvalReason != null  and approvalReason != ''"> and approval_reason = #{approvalReason}</if>
+            <if test="approverId != null "> and approver_id = #{approverId}</if>
+            <if test="approvalTime != null "> and approval_time = #{approvalTime}</if>
         </where>
     </select>
     
     <select id="selectProjectApprovalByApprovalId" parameterType="Long" resultMap="ProjectApprovalResult">
         <include refid="selectProjectApprovalVo"/>
-        where a.approval_id = #{approvalId}
+        where approval_id = #{approvalId}
     </select>
 
     <insert id="insertProjectApproval" parameterType="ProjectApproval" useGeneratedKeys="true" keyProperty="approvalId">

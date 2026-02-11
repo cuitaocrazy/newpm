@@ -3,12 +3,12 @@
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.project.mapper.SecondaryRegionMapper">
-    
+
     <resultMap type="SecondaryRegion" id="SecondaryRegionResult">
-        <result property="provinceId"    column="province_id"    />
-        <result property="provinceCode"    column="province_code"    />
-        <result property="provinceName"    column="province_name"    />
-        <result property="provinceType"    column="province_type"    />
+        <result property="regionId"    column="region_id"    />
+        <result property="regionCode"    column="region_code"    />
+        <result property="regionName"    column="region_name"    />
+        <result property="regionType"    column="region_type"    />
         <result property="regionDictValue"    column="region_dict_value"    />
         <result property="sortOrder"    column="sort_order"    />
         <result property="status"    column="status"    />
@@ -21,31 +21,32 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectSecondaryRegionVo">
-        select province_id, province_code, province_name, province_type, region_dict_value, sort_order, status, del_flag, create_by, create_time, update_by, update_time, remark from pm_secondary_region
+        select region_id, region_code, region_name, region_type, region_dict_value, sort_order, status, del_flag, create_by, create_time, update_by, update_time, remark from pm_secondary_region
     </sql>
 
     <select id="selectSecondaryRegionList" parameterType="SecondaryRegion" resultMap="SecondaryRegionResult">
         <include refid="selectSecondaryRegionVo"/>
-        <where>  
-            <if test="provinceCode != null  and provinceCode != ''"> and province_code = #{provinceCode}</if>
-            <if test="provinceName != null  and provinceName != ''"> and province_name like concat('%', #{provinceName}, '%')</if>
-            <if test="provinceType != null  and provinceType != ''"> and province_type = #{provinceType}</if>
+        <where>
+            <if test="regionCode != null  and regionCode != ''"> and region_code = #{regionCode}</if>
+            <if test="regionName != null  and regionName != ''"> and region_name like concat('%', #{regionName}, '%')</if>
+            <if test="regionType != null  and regionType != ''"> and region_type = #{regionType}</if>
             <if test="regionDictValue != null  and regionDictValue != ''"> and region_dict_value = #{regionDictValue}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
         </where>
-    </select>
-    
-    <select id="selectSecondaryRegionByProvinceId" parameterType="Long" resultMap="SecondaryRegionResult">
-        <include refid="selectSecondaryRegionVo"/>
-        where province_id = #{provinceId}
+        order by sort_order, region_id
     </select>
 
-    <insert id="insertSecondaryRegion" parameterType="SecondaryRegion" useGeneratedKeys="true" keyProperty="provinceId">
+    <select id="selectSecondaryRegionByRegionId" parameterType="Long" resultMap="SecondaryRegionResult">
+        <include refid="selectSecondaryRegionVo"/>
+        where region_id = #{regionId}
+    </select>
+
+    <insert id="insertSecondaryRegion" parameterType="SecondaryRegion" useGeneratedKeys="true" keyProperty="regionId">
         insert into pm_secondary_region
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="provinceCode != null and provinceCode != ''">province_code,</if>
-            <if test="provinceName != null and provinceName != ''">province_name,</if>
-            <if test="provinceType != null">province_type,</if>
+            <if test="regionCode != null and regionCode != ''">region_code,</if>
+            <if test="regionName != null and regionName != ''">region_name,</if>
+            <if test="regionType != null">region_type,</if>
             <if test="regionDictValue != null and regionDictValue != ''">region_dict_value,</if>
             <if test="sortOrder != null">sort_order,</if>
             <if test="status != null">status,</if>
@@ -57,9 +58,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="provinceCode != null and provinceCode != ''">#{provinceCode},</if>
-            <if test="provinceName != null and provinceName != ''">#{provinceName},</if>
-            <if test="provinceType != null">#{provinceType},</if>
+            <if test="regionCode != null and regionCode != ''">#{regionCode},</if>
+            <if test="regionName != null and regionName != ''">#{regionName},</if>
+            <if test="regionType != null">#{regionType},</if>
             <if test="regionDictValue != null and regionDictValue != ''">#{regionDictValue},</if>
             <if test="sortOrder != null">#{sortOrder},</if>
             <if test="status != null">#{status},</if>
@@ -75,9 +76,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateSecondaryRegion" parameterType="SecondaryRegion">
         update pm_secondary_region
         <trim prefix="SET" suffixOverrides=",">
-            <if test="provinceCode != null and provinceCode != ''">province_code = #{provinceCode},</if>
-            <if test="provinceName != null and provinceName != ''">province_name = #{provinceName},</if>
-            <if test="provinceType != null">province_type = #{provinceType},</if>
+            <if test="regionCode != null and regionCode != ''">region_code = #{regionCode},</if>
+            <if test="regionName != null and regionName != ''">region_name = #{regionName},</if>
+            <if test="regionType != null">region_type = #{regionType},</if>
             <if test="regionDictValue != null and regionDictValue != ''">region_dict_value = #{regionDictValue},</if>
             <if test="sortOrder != null">sort_order = #{sortOrder},</if>
             <if test="status != null">status = #{status},</if>
@@ -88,17 +89,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
         </trim>
-        where province_id = #{provinceId}
+        where region_id = #{regionId}
     </update>
 
-    <delete id="deleteSecondaryRegionByProvinceId" parameterType="Long">
-        delete from pm_secondary_region where province_id = #{provinceId}
+    <delete id="deleteSecondaryRegionByRegionId" parameterType="Long">
+        delete from pm_secondary_region where region_id = #{regionId}
     </delete>
 
-    <delete id="deleteSecondaryRegionByProvinceIds" parameterType="String">
-        delete from pm_secondary_region where province_id in 
-        <foreach item="provinceId" collection="array" open="(" separator="," close=")">
-            #{provinceId}
+    <delete id="deleteSecondaryRegionByRegionIds" parameterType="String">
+        delete from pm_secondary_region where region_id in
+        <foreach item="regionId" collection="array" open="(" separator="," close=")">
+            #{regionId}
         </foreach>
     </delete>
 </mapper>

@@ -247,4 +247,18 @@ public class ProjectController extends BaseController
         ExcelUtil<Project> util = new ExcelUtil<Project>(Project.class);
         util.exportExcel(response, list, "收入确认数据");
     }
+
+    /**
+     * 根据部门查询项目列表（用于合同关联，可排除已关联的项目）
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @GetMapping("/listByDept")
+    public AjaxResult listByDept(Long deptId, Long excludeContractId)
+    {
+        if (deptId == null) {
+            return error("部门ID不能为空");
+        }
+        List<Project> list = projectService.selectProjectListByDept(deptId, excludeContractId);
+        return success(list);
+    }
 }
