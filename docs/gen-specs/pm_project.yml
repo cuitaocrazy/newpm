@@ -4867,3 +4867,187 @@ customizations:
     3. 打开收入确认抽屉（编辑模式），验证"实际工作量"字段显示正确
     4. 验证字段显示在"预估工作量"和"项目状态"之间
     5. 验证当实际工作量为空时显示"0 人天"
+
+公司收入确认列表合计行功能:
+  日期: 2026-02-10
+
+  需求描述:
+    在公司收入确认列表的表头和第一行数据之间添加合计行，显示数值字段的汇总
+    注意：合计行显示在表头下方第一行，不是表格最后一行
+
+  合计字段:
+    1. 项目预算（元）- projectBudget
+       - 格式：千分位分隔符，保留2位小数
+       - 示例：1,234,567.89
+
+    2. 预估工作量（人天）- estimatedWorkload
+       - 格式：保留2位小数
+       - 示例：123.45
+
+    3. 实际人天 - actualWorkload
+       - 格式：保留2位小数
+       - 示例：98.76
+
+    4. 合同金额（元）- contractAmount
+       - 格式：千分位分隔符，保留2位小数
+       - 示例：2,345,678.90
+
+    5. 确认金额（元）- confirmAmount
+       - 格式：千分位分隔符，保留2位小数
+       - 示例：1,987,654.32
+
+  显示规则:
+    - 第一列（选择框）：合计行不可选择（禁用）
+    - 第二列（序号）：显示"合计"文字（加粗）
+    - 数值列：显示合计值（加粗）
+    - 其他列（文本、日期、状态等）：显示为空
+    - 操作列：不显示任何按钮
+
+  技术实现:
+
+    1. 计算属性 revenueListWithSummary:
+       文件: ruoyi-ui/src/views/revenue/company/index.vue
+       位置: 第308-350行
+
+       功能：
+       - 遍历 revenueList 计算各数值字段的合计
+       - 创建合计行对象，标记 isSummary: true
+       - 格式化合计值（金额千分位，工作量保留2位小数）
+       - 将合计行插入到数组第一个位置
+       - 返回带合计行的新数组
+
+       代码示例：
+         const revenueListWithSummary = computed(() => {
+           if (revenueList.value.length === 0) {
+             return [];
+           }
+
+           // 计算合计
+           const summary = {
+             isSummary: true,
+             projectBudget: 0,
+             estimatedWorkload: 0,
+             actualWorkload: 0,
+             contractAmount: 0,
+             confirmAmount: 0
+           };
+
+           revenueList.value.forEach(item => {
+             summary.projectBudget += Number(item.projectBudget) || 0;
+             summary.estimatedWorkload += Number(item.estimatedWorkload) || 0;
+             summary.actualWorkload += Number(item.actualWorkload) || 0;
+             summary.contractAmount += Number(item.contractAmount) || 0;
+             summary.confirmAmount += Number(item.confirmAmount) || 0;
+           });
+
+           // 格式化合计值
+           summary.projectBudget = summary.projectBudget.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+           summary.estimatedWorkload = summary.estimatedWorkload.toFixed(2);
+           summary.actualWorkload = summary.actualWorkload.toFixed(2);
+           summary.contractAmount = summary.contractAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+           summary.confirmAmount = summary.confirmAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+           // 将合计行插入到第一行
+           return [summary, ...revenueList.value];
+         });
+
+    2. 表格数据绑定:
+       修改前：
+         <el-table :data="revenueList">
+
+       修改后：
+         <el-table :data="revenueListWithSummary">
+
+    3. 序号列特殊处理:
+       修改前：
+         <el-table-column label="序号" type="index" width="55" align="center" />
+
+       修改后：
+         <el-table-column label="序号" width="55" align="center">
+           <template #default="scope">
+             <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
+             <span v-else>{{ scope.$index }}</span>
+           </template>
+         </el-table-column>
+
+    4. 数值列特殊处理（以项目预算为例）:
+       修改前：
+         <el-table-column label="项目预算（元）" align="center" prop="projectBudget" width="120">
+           <template #default="scope">
+             <span>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+           </template>
+         </el-table-column>
+
+       修改后：
+         <el-table-column label="项目预算（元）" align="center" prop="projectBudget" width="120">
+           <template #default="scope">
+             <span v-if="scope.row.isSummary" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
+             <span v-else>{{ scope.row.projectBudget ? parseFloat(scope.row.projectBudget).toLocaleString() : '-' }}</span>
+           </template>
+         </el-table-column>
+
+       说明：合计行的值已经在计算属性中格式化，直接显示即可
+
+    5. 选择框禁用:
+       修改前：
+         <el-table-column type="selection" width="55" align="center" />
+
+       修改后：
+         <el-table-column type="selection" width="55" align="center" :selectable="checkSelectable" />
+
+       新增方法：
+         function checkSelectable(row) {
+           return !row.isSummary;
+         }
+
+    6. 操作列特殊处理:
+       修改前：
+         <el-table-column label="操作" align="center" width="150" fixed="right">
+           <template #default="scope">
+             <el-button ... >收入确认</el-button>
+             <el-button ... >查看确认</el-button>
+           </template>
+         </el-table-column>
+
+       修改后：
+         <el-table-column label="操作" align="center" width="150" fixed="right">
+           <template #default="scope">
+             <!-- 合计行不显示操作按钮 -->
+             <template v-if="!scope.row.isSummary">
+               <el-button ... >收入确认</el-button>
+               <el-button ... >查看确认</el-button>
+             </template>
+           </template>
+         </el-table-column>
+
+  涉及文件:
+    - ruoyi-ui/src/views/revenue/company/index.vue（列表页）
+
+  修改统计:
+    - 新增代码：91行
+    - 删除代码：26行
+    - 净增加：65行
+
+  测试建议:
+    1. 打开公司收入确认列表页面
+    2. 验证合计行显示在表头下方第一行（不是最后一行）
+    3. 验证序号列显示"合计"文字（加粗）
+    4. 验证5个数值字段的合计值正确：
+       - 项目预算：千分位格式，保留2位小数
+       - 预估工作量：保留2位小数
+       - 实际人天：保留2位小数
+       - 合同金额：千分位格式，保留2位小数
+       - 确认金额：千分位格式，保留2位小数
+    5. 验证其他列（项目名称、部门、经理等）显示为空
+    6. 验证合计行的选择框不可选
+    7. 验证合计行的操作列不显示按钮
+    8. 切换查询条件，验证合计行动态更新
+    9. 翻页后，验证合计行只计算当前页数据
+    10. 验证合计行样式（加粗）正确显示
+
+  注意事项:
+    1. 合计行只计算当前页面的数据，不是全部数据的合计
+    2. 如果需要全部数据的合计，需要后端提供汇总接口
+    3. 合计行的 isSummary 标记用于区分普通数据行
+    4. 数值格式化在计算属性中完成，模板中直接显示
+    5. 合计行不参与选择、排序、操作等交互功能
