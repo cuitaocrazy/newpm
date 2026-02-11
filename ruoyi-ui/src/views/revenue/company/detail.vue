@@ -176,8 +176,41 @@ const { form, rules } = toRefs(data)
 function getDetail() {
   getRevenue(projectId.value).then(response => {
     form.value = response.data
+    // 初始化税率
+    if (!form.value.taxRate) {
+      initTaxRate(form.value.projectCategory)
+    }
   })
 }
+
+/** 根据项目分类初始化税率 */
+function initTaxRate(projectCategory) {
+  if (projectCategory === '1') { // 软件开发类
+    form.value.taxRate = 6
+  } else if (projectCategory === '2') { // 硬件销售类
+    form.value.taxRate = 13
+  }
+}
+
+/** 计算税后金额 */
+function calculateAfterTax() {
+  const amount = form.value.confirmAmount
+  const rate = form.value.taxRate
+  if (amount && rate != null) {
+    const afterTax = amount / (1 + rate / 100)
+    form.value.afterTaxAmount = afterTax.toFixed(2)
+  } else {
+    form.value.afterTaxAmount = null
+  }
+}
+
+// 监听确认金额和税率变化，自动计算税后金额
+watch(
+  () => [form.value.confirmAmount, form.value.taxRate],
+  () => {
+    calculateAfterTax()
+  }
+)
 
 /** 提交表单 */
 function submitForm() {
