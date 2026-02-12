@@ -76,8 +76,8 @@
           </template>
 
           <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
-            <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
-              <el-select v-model="form.revenueConfirmStatus" placeholder="请选择收入确认状态" :disabled="isViewMode">
+            <el-form-item label="收入确认状态">
+              <el-select v-model="form.revenueConfirmStatus" placeholder="待确认" disabled>
                 <el-option
                   v-for="dict in sys_srqrzt"
                   :key="dict.value"
@@ -162,9 +162,6 @@ const pageTitle = computed(() => {
 const data = reactive({
   form: {},
   rules: {
-    revenueConfirmStatus: [
-      { required: true, message: "收入确认状态不能为空", trigger: "change" }
-    ],
     revenueConfirmYear: [
       { required: true, message: "收入确认年度不能为空", trigger: "change" }
     ],
@@ -223,6 +220,8 @@ watch(
 function submitForm() {
   proxy.$refs["formRef"].validate(valid => {
     if (valid) {
+      // 自动设置收入确认状态为"已确认"
+      form.value.revenueConfirmStatus = '1'
       updateRevenue(form.value).then(response => {
         proxy.$modal.msgSuccess("保存成功")
         goBack()

@@ -11,6 +11,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="industry"    column="industry"    />
         <result property="region"    column="region"    />
         <result property="regionId"    column="region_id"    />
+        <result property="regionName"    column="region_name"    />
         <result property="shortName"    column="short_name"    />
         <result property="establishedYear"    column="established_year"    />
         <result property="projectCategory"    column="project_category"    />
@@ -102,8 +103,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.revenue_confirm_status,
                p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
+               sr.region_name,
                c.contract_amount, c.contract_status
         FROM pm_project p
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
         <where>

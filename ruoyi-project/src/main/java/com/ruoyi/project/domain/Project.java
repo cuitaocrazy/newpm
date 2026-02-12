@@ -41,6 +41,9 @@ public class Project extends BaseEntity
     @Excel(name = "二级区域ID", readConverterExp = "关=联pm_secondary_region表")
     private Long regionId;
 
+    /** 二级区域名称（关联查询） */
+    private String regionName;
+
     /** 简称 */
     @Excel(name = "简称")
     private String shortName;
@@ -319,6 +322,16 @@ public class Project extends BaseEntity
     public Long getRegionId()
     {
         return regionId;
+    }
+
+    public void setRegionName(String regionName)
+    {
+        this.regionName = regionName;
+    }
+
+    public String getRegionName()
+    {
+        return regionName;
     }
 
     public void setShortName(String shortName) 

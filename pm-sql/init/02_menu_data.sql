@@ -283,3 +283,7 @@ VALUES ('公司收入确认编辑', @companyRevenueMenuId, 3, '#', '', 1, 0, 'F'
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('公司收入确认导出', @companyRevenueMenuId, 4, '#', '', 1, 0, 'F', '0', '0', 'revenue:company:export', '#', 'admin', sysdate(), '', NULL, '');
 
+-- 隐藏路由：收入确认详情页（挂在收入确认管理一级菜单下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('收入确认详情', @revenueMenuId, 10, 'company/detail/:projectId(\\d+)', 'revenue/company/detail', 1, 0, 'C', '1', '0', 'revenue:company:query', '#', 'admin', sysdate(), '', NULL, '收入确认详情页面', 'RevenueCompanyDetail', '/revenue/company');
+

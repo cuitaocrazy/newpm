@@ -2,8 +2,9 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.projectName"
+          :fetch-suggestions="queryProjectNames"
           placeholder="请输入项目名称"
           clearable
           @keyup.enter="handleQuery"
@@ -160,9 +161,21 @@
       </el-table-column>
       <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
       <el-table-column label="项目编码" align="center" prop="projectCode" min-width="150" show-overflow-tooltip />
-      <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip />
-      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
-      <el-table-column label="市场经理" align="center" prop="marketManagerName" min-width="100" />
+      <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ getDeptName(scope.row.projectDept) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目经理" align="center" prop="projectManagerId" min-width="100">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.projectManagerId, projectManagerList) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="市场经理" align="center" prop="marketManagerId" min-width="100">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.marketManagerId, marketManagerList) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="项目分类" align="center" prop="projectCategory" width="120">
         <template #default="scope">
           <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
@@ -266,10 +279,10 @@
 </template>
 
 <script setup name="RevenueCompany">
+import { ref, reactive, toRefs, getCurrentInstance } from 'vue'
 import { listRevenue, exportRevenue } from "@/api/revenue/company"
-import { listSecondaryRegion } from "@/api/project/secondaryRegion"
-import { listUserByPost } from "@/api/system/user"
-import { listDept } from "@/api/system/dept"
+import { getUsersByPost, getDeptTree, getSecondaryRegions } from "@/api/project/project"
+import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -286,6 +299,7 @@ const showSearch = ref(true)
 const total = ref(0)
 
 const deptTree = ref([])
+const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
 const provinceList = ref([])
 const projectManagerList = ref([])
 const marketManagerList = ref([])
@@ -375,32 +389,125 @@ function handleExport() {
 }
 
 /** 一级区域变化 */
-function handleRegionChange(value) {
+function handleRegionChange(regionCode) {
   queryParams.value.regionId = null
   provinceList.value = []
-  if (value) {
-    listSecondaryRegion({ regionCode: value }).then(response => {
-      provinceList.value = response.rows || []
+  if (regionCode) {
+    getSecondaryRegions(regionCode).then(response => {
+      provinceList.value = response.data || []
     })
   }
+}
+
+/** 加载部门树 */
+function loadDeptTree() {
+  getDeptTree().then(response => {
+    // 保存所有部门的扁平列表用于查找（包含一、二级部门，用于显示路径）
+    deptFlatList.value = response.data
+
+    // 过滤出三级及以下的部门用于下拉选择
+    // 判断规则：ancestors中逗号数量+1 >= 3（ancestors格式："0,100,101"）
+    const level3AndBelowDepts = response.data.filter(dept => {
+      if (!dept.ancestors) return false
+      const level = dept.ancestors.split(',').length
+      return level >= 3
+    })
+
+    // 转换字段名：deptId -> value, deptName -> label
+    const deptData = level3AndBelowDepts.map(dept => ({
+      ...dept,
+      value: dept.deptId,
+      label: dept.deptName
+    }))
+
+    // 将平铺数据转换为树形结构（用于下拉选择）
+    deptTree.value = handleTree(deptData, 'deptId', 'parentId', 'children')
+  })
+}
+
+/** 根据部门ID获取部门名称（显示第三级及以下机构的完整路径） */
+function getDeptName(deptId) {
+  if (!deptId) return '-'
+
+  // 确保deptId是数字类型
+  const numDeptId = typeof deptId === 'string' ? parseInt(deptId) : deptId
+
+  const dept = deptFlatList.value.find(d => d.deptId === numDeptId)
+  if (!dept) {
+    // 如果找不到部门，返回横杠
+    return '-'
+  }
+
+  // 解析 ancestors 获取所有祖先部门ID
+  // ancestors 格式：0,100,101,102 (0是顶级，后面是各级部门)
+  const ancestorIds = dept.ancestors ? dept.ancestors.split(',').filter(id => id && id !== '0') : []
+
+  // 构建完整的部门路径（从第三级开始）
+  const pathDepts = []
+
+  // 如果祖先层级 >= 2（即第三级及以下），则从第三级开始显示
+  if (ancestorIds.length >= 2) {
+    // 从第3级开始（索引为2）
+    for (let i = 2; i < ancestorIds.length; i++) {
+      const ancestorDept = deptFlatList.value.find(d => d.deptId === parseInt(ancestorIds[i]))
+      if (ancestorDept) {
+        pathDepts.push(ancestorDept.deptName)
+      }
+    }
+  }
+
+  // 添加当前部门
+  pathDepts.push(dept.deptName)
+
+  return pathDepts.length > 0 ? pathDepts.join('-') : dept.deptName
+}
+
+/** 根据用户ID获取用户名称 */
+function getUserName(userId, userList) {
+  if (!userId) return '-'
+  const user = userList.find(u => u.userId === userId)
+  return user ? user.nickName : '-'
+}
+
+/** 加载项目经理列表 */
+function loadProjectManagers() {
+  getUsersByPost('pm').then(response => {
+    projectManagerList.value = response.data
+  })
+}
+
+/** 加载市场经理列表 */
+function loadMarketManagers() {
+  getUsersByPost('scjl').then(response => {
+    marketManagerList.value = response.data
+  })
+}
+
+/** 项目名称自动完成 */
+function queryProjectNames(queryString, callback) {
+  if (!queryString) {
+    callback([])
+    return
+  }
+
+  // 从当前项目列表中过滤匹配的项目名称（排除合计行）
+  const results = revenueList.value
+    .filter(project => !project.isSummaryRow && project.projectName && project.projectName.toLowerCase().includes(queryString.toLowerCase()))
+    .map(project => ({ value: project.projectName }))
+
+  callback(results)
 }
 
 /** 初始化下拉选项 */
 function initOptions() {
   // 加载部门树
-  listDept().then(response => {
-    deptTree.value = proxy.handleTree(response.data, "deptId")
-  })
+  loadDeptTree()
 
   // 加载项目经理（岗位代码：pm）
-  listUserByPost('pm').then(response => {
-    projectManagerList.value = response.data || []
-  })
+  loadProjectManagers()
 
   // 加载市场经理（岗位代码：scjl）
-  listUserByPost('scjl').then(response => {
-    marketManagerList.value = response.data || []
-  })
+  loadMarketManagers()
 }
 
 /** 收入确认按钮 */

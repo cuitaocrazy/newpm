@@ -1942,4 +1942,185 @@ customizations:
     service: null
     notes: |
       所有页面都是独立的全屏页面，不是 Dialog
+
+  # ==================
+  # 公司收入确认（客户化定制功能）
+  # ==================
+  revenue_confirmation:
+    intent: "财务确认项目收入的定制功能模块"
+    component:
+      type: "custom"
+      spec: |
+        功能概述：
+        公司收入确认是基于项目表的扩展功能模块，用于财务人员确认项目的收入金额。
+        该功能使用项目表（pm_project）的收入确认相关字段，但有独立的列表页和详情页。
+
+        涉及字段（pm_project表）：
+        - revenue_confirm_status        收入确认状态（字典：sys_srqrzt）
+        - revenue_confirm_year          收入确认年度（字典：sys_ndgl）
+        - confirm_amount                确认金额（含税）BigDecimal
+        - after_tax_amount              税后金额（不含税）BigDecimal
+        - company_revenue_confirmed_by  公司收入确认人ID
+        - company_revenue_confirmed_time 公司收入确认时间
+        - tax_rate                      税率 BigDecimal
+
+        路由配置：
+        列表页：
+        - 路径：/revenue/company
+        - 组件：revenue/company/index.vue
+        - 菜单：收入确认管理 > 公司收入确认
+
+        详情页（动态路由）：
+        - 路径：/revenue/company/detail/:projectId
+        - 组件：revenue/company/detail.vue
+        - 类型：隐藏路由，挂在一级菜单"收入确认管理"下
+        - route_name: RevenueCompanyDetail
+        - active_menu: /revenue/company
+
+        后端接口（ProjectController）：
+        - GET  /project/project/revenue/list         收入确认列表
+        - GET  /project/project/revenue/{projectId}  收入确认详情
+        - PUT  /project/project/revenue              保存收入确认
+        - POST /project/project/revenue/export       导出收入确认数据
+
+        业务规则：
+        1. 收入确认状态自动设置
+           - 点击"保存"按钮时，自动将 revenue_confirm_status 设置为 '1'（已确认）
+           - 前端页面显示该字段，但设置为 disabled（只读）
+           - 用户无法手动修改状态
+
+        2. 税后金额自动计算
+           - 公式：afterTaxAmount = confirmAmount / (1 + taxRate/100)
+           - 触发时机：确认金额或税率变化时自动计算
+           - 精度：保留两位小数
+
+        3. 税率自动初始化
+           - 根据项目分类（project_category）自动设置默认税率：
+             * projectCategory === '1'（软件开发类）→ taxRate = 6%
+             * projectCategory === '2'（硬件销售类）→ taxRate = 13%
+           - 用户可以手动调整税率
+
+        4. 列表页合计行
+           - 在列表第一行显示合计数据
+           - 合计字段：项目预算、预估工作量、实际人天、合同金额、确认金额、税后金额
+           - 标识：isSummaryRow: true
+           - 样式：字体加粗
+
+        查询条件（与项目管理列表基本一致）：
+        - 项目名称（autocomplete自动完成）
+        - 项目部门（三级及以下机构，树形选择）
+        - 收入确认年度（字典：sys_ndgl）
+        - 项目分类（字典：sys_xmfl）
+        - 一级区域（字典：sys_yjqy）
+        - 二级区域（联动加载，filterable）
+        - 项目经理（岗位：pm）
+        - 市场经理（岗位：scjl）
+        - 立项年度（字典：sys_ndgl）
+        - 项目阶段（字典：sys_xmjd）
+        - 审核状态（字典：sys_spzt）
+        - 验收状态（字典：sys_yszt）
+        - 收入确认状态（字典：sys_srqrzt）
+
+        列表展示字段：
+        - 项目名称、项目编码
+        - 项目部门（显示完整路径：第三级-第四级-...）
+        - 项目经理、市场经理（显示昵称）
+        - 项目分类（字典标签）
+        - 一级区域、二级区域（区域名称）
+        - 项目阶段（字典标签）
+        - 创建时间
+        - 收入确认状态（字典标签）
+        - 收入确认年度
+        - 确认金额（含税）
+        - 税后金额
+        - 项目预算、预估工作量、实际人天、合同金额
+
+        详情页布局（左右分栏）：
+        左侧：项目详情信息（只读）
+        - 项目基本信息（项目名称、编号、分类等）
+        - 客户信息
+        - 项目时间
+        - 财务信息
+
+        右侧：收入确认表单（可编辑）
+        - 收入确认状态（只读显示）
+        - 收入确认年度（必填）
+        - 确认金额（含税）（必填）
+        - 税率（必填，%）
+        - 税后金额（自动计算，只读）
+
+        操作按钮：
+        列表页：
+        - 收入确认：状态为"未确认"或空时显示，跳转到详情页编辑模式
+        - 收入查看：状态为"已确认"时显示，跳转到详情页查看模式
+        - 导出：导出当前查询结果
+
+        详情页：
+        - 保存：编辑模式下显示，保存后返回列表页
+        - 编辑：查看模式下显示，切换到编辑模式
+        - 取消/关闭：返回列表页
+
+        前端实现细节：
+        1. 列表页（revenue/company/index.vue）
+           - 使用 getSecondaryRegions API 实现一级区域联动二级区域
+           - 使用 getDeptTree API 加载三级及以下部门
+           - 使用 getUsersByPost API 加载项目经理和市场经理
+           - 项目名称使用 el-autocomplete 组件
+           - 部门显示使用 getDeptName() 函数显示完整路径
+           - 经理显示使用 getUserName() 函数显示昵称
+
+        2. 详情页（revenue/company/detail.vue）
+           - mode 参数：edit（编辑）| view（查看）
+           - isViewMode 计算属性控制字段禁用状态
+           - watch 监听 confirmAmount 和 taxRate 自动计算税后金额
+           - submitForm 保存前自动设置 revenueConfirmStatus = '1'
+
+        后端实现细节：
+        1. ProjectMapper.xml
+           - selectProjectList 添加 LEFT JOIN pm_secondary_region 获取区域名称
+           - SELECT 子句添加 sr.region_name
+           - ResultMap 添加 regionName 字段映射
+
+        2. Project.java 实体类
+           - 添加临时字段：private String regionName;
+           - 添加 getter/setter 方法
+
+        3. ProjectController
+           - revenueList() 使用 selectProjectList 查询
+           - getRevenueInfo() 查询单条项目详情
+           - updateRevenue() 更新收入确认信息
+           - exportRevenue() 导出收入确认数据
+
+        菜单配置（pm-sql/init/02_menu_data.sql）：
+        一级菜单：收入确认管理（menu_id: 2074）
+        ├── 二级菜单：公司收入确认（menu_id: 2075）
+        │   ├── 按钮：查询（revenue:company:query）
+        │   ├── 按钮：查看（revenue:company:view）
+        │   ├── 按钮：编辑（revenue:company:edit）
+        │   └── 按钮：导出（revenue:company:export）
+        └── 隐藏路由：收入确认详情（menu_id: 2080，挂在一级菜单下）
+            - 路径：company/detail/:projectId(\\d+)
+            - 组件：revenue/company/detail
+            - route_name: RevenueCompanyDetail
+            - active_menu: /revenue/company
+
+        注意事项：
+        1. 详情页路由必须挂在一级菜单（收入确认管理）下，不能挂在二级菜单下
+        2. 使用动态路由从数据库加载，不要添加静态路由到 router/index.ts
+        3. 二级区域联动必须使用 getSecondaryRegions API，响应为 response.data
+        4. 部门下拉只显示三级及以下机构，但部门名称显示需要完整路径
+        5. 收入确认状态字段在详情页显示但禁用，保存时自动设置
+
+    bindTo: "revenue_confirmation_module"
+    service: null
+    notes: |
+      这是一个完全定制化的业务功能模块，基于项目表但有独立的UI和业务逻辑。
+      不要尝试通过代码生成工具生成，所有代码都是手工编写和定制的。
+
+      与项目管理的关系：
+      - 共享 pm_project 表
+      - 共享查询条件和辅助API
+      - 独立的菜单、路由和权限控制
+      - 从项目管理列表也可以进入收入确认功能
+
       使用 activeMenu 属性使侧边栏高亮正确的菜单项
