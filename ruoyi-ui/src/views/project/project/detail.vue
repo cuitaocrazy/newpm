@@ -17,8 +17,11 @@
         <el-descriptions-item label="行业">
           <dict-tag :options="industry" :value="form.industry" />
         </el-descriptions-item>
-        <el-descriptions-item label="区域">
+        <el-descriptions-item label="一级区域">
           <dict-tag :options="sys_yjqy" :value="form.region" />
+        </el-descriptions-item>
+        <el-descriptions-item label="二级区域">
+          {{ form.regionName || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="简称">
           {{ form.shortName || '-' }}

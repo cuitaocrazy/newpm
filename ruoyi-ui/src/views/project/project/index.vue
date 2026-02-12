@@ -250,7 +250,7 @@
       </el-table-column>
       <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" />
       <el-table-column label="更新时间" align="center" prop="updateTime" width="160" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="300">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="350">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
@@ -275,7 +275,8 @@
               v-hasPermi="['revenue:company:view']"
             >收入查看</el-button>
 
-            <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
+            <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:query']">附件管理</el-button>
+            <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
           </template>
         </template>
       </el-table-column>
@@ -603,6 +604,12 @@ function handleRevenueView(row) {
     path: '/revenue/company/detail/' + row.projectId,
     query: { mode: 'view' }
   })
+}
+
+/** 附件管理按钮操作 */
+function handleAttachment(row) {
+  const projectId = row.projectId
+  router.push(`/project/list/attachment/${projectId}`)
 }
 
 /** 删除按钮操作 */
