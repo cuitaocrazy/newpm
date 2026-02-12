@@ -116,4 +116,12 @@ public interface ProjectMapper
      * @return 项目列表
      */
     public List<Project> selectProjectListByDept(@Param("deptId") Long deptId, @Param("excludeContractId") Long excludeContractId);
+
+    /**
+     * 根据合同ID查询关联的项目列表
+     *
+     * @param contractId 合同ID
+     * @return 项目列表
+     */
+    public List<Project> selectProjectListByContractId(@Param("contractId") Long contractId);
 }

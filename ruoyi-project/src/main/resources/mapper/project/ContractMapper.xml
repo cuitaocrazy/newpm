@@ -83,10 +83,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_contract c
         left join sys_dept d on c.dept_id = d.dept_id
         left join pm_customer cust on c.customer_id = cust.customer_id
-        left join sys_dict_data dict1 on c.contract_type = dict1.dict_value and dict1.dict_type = 'sys_htlx'
-        left join sys_dict_data dict2 on c.contract_status = dict2.dict_value and dict2.dict_type = 'sys_htzt'
-        left join sys_user u1 on c.create_by = u1.user_name
-        left join sys_user u2 on c.update_by = u2.user_name
+        left join sys_dict_data dict1 on c.contract_type COLLATE utf8mb4_unicode_ci = dict1.dict_value and dict1.dict_type = 'sys_htlx'
+        left join sys_dict_data dict2 on c.contract_status COLLATE utf8mb4_unicode_ci = dict2.dict_value and dict2.dict_type = 'sys_htzt'
+        left join sys_user u1 on c.create_by COLLATE utf8mb4_unicode_ci = u1.user_name
+        left join sys_user u2 on c.update_by COLLATE utf8mb4_unicode_ci = u2.user_name
         <where>
             c.del_flag = '0'
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code = #{contractCode}</if>
@@ -116,10 +116,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_contract c
         left join sys_dept d on c.dept_id = d.dept_id
         left join pm_customer cust on c.customer_id = cust.customer_id
-        left join sys_dict_data dict1 on c.contract_type = dict1.dict_value and dict1.dict_type = 'sys_htlx'
-        left join sys_dict_data dict2 on c.contract_status = dict2.dict_value and dict2.dict_type = 'sys_htzt'
-        left join sys_user u1 on c.create_by = u1.user_name
-        left join sys_user u2 on c.update_by = u2.user_name
+        left join sys_dict_data dict1 on c.contract_type COLLATE utf8mb4_unicode_ci = dict1.dict_value and dict1.dict_type = 'sys_htlx'
+        left join sys_dict_data dict2 on c.contract_status COLLATE utf8mb4_unicode_ci = dict2.dict_value and dict2.dict_type = 'sys_htzt'
+        left join sys_user u1 on c.create_by COLLATE utf8mb4_unicode_ci = u1.user_name
+        left join sys_user u2 on c.update_by COLLATE utf8mb4_unicode_ci = u2.user_name
         where c.contract_id = #{contractId}
     </select>
 
@@ -289,13 +289,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_contract c
         left join sys_dept d on c.dept_id = d.dept_id
         left join pm_customer cust on c.customer_id = cust.customer_id
-        left join sys_dict_data dict1 on c.contract_type = dict1.dict_value and dict1.dict_type = 'sys_htlx'
-        left join sys_dict_data dict2 on c.contract_status = dict2.dict_value and dict2.dict_type = 'sys_htzt'
-        left join sys_user u1 on c.create_by = u1.user_name
-        left join sys_user u2 on c.update_by = u2.user_name
+        left join sys_dict_data dict1 on c.contract_type COLLATE utf8mb4_unicode_ci = dict1.dict_value and dict1.dict_type = 'sys_htlx'
+        left join sys_dict_data dict2 on c.contract_status COLLATE utf8mb4_unicode_ci = dict2.dict_value and dict2.dict_type = 'sys_htzt'
+        left join sys_user u1 on c.create_by COLLATE utf8mb4_unicode_ci = u1.user_name
+        left join sys_user u2 on c.update_by COLLATE utf8mb4_unicode_ci = u2.user_name
         left join pm_payment p on c.contract_id = p.contract_id and p.del_flag = '0'
-        left join sys_user u3 on p.create_by = u3.user_name
-        left join sys_user u4 on p.update_by = u4.user_name
+        left join sys_user u3 on p.create_by COLLATE utf8mb4_unicode_ci = u3.user_name
+        left join sys_user u4 on p.update_by COLLATE utf8mb4_unicode_ci = u4.user_name
         <where>
             c.del_flag = '0'
             <if test="contractCode != null and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>

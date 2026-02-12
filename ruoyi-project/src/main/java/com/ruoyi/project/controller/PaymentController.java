@@ -79,17 +79,19 @@ public class PaymentController extends BaseController
     @PreAuthorize("@ss.hasPermi('project:payment:export')")
     @Log(title = "款项管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Contract contract)
+    public void export(HttpServletResponse response, Payment payment)
     {
-        List<Contract> list = contractService.selectContractWithPaymentsList(contract);
-        paymentService.exportPaymentList(response, list);
+        startPage();
+        List<Payment> list = paymentService.selectPaymentList(payment);
+        ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
+        util.exportExcel(response, list, "款项管理数据");
     }
 
     /**
      * 获取款项管理详细信息
      */
     @PreAuthorize("@ss.hasPermi('project:payment:query')")
-    @GetMapping(value = "/{paymentId}")
+    @GetMapping(value = "/{paymentId:\\d+}")
     public AjaxResult getInfo(@PathVariable("paymentId") Long paymentId)
     {
         return success(paymentService.selectPaymentByPaymentId(paymentId));
@@ -122,7 +124,7 @@ public class PaymentController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:payment:remove')")
     @Log(title = "款项管理", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{paymentIds}")
+	@DeleteMapping("/{paymentIds:\\d+}")
     public AjaxResult remove(@PathVariable Long[] paymentIds)
     {
         return toAjax(paymentService.deletePaymentByPaymentIds(paymentIds));
@@ -132,7 +134,7 @@ public class PaymentController extends BaseController
      * 检查付款里程碑是否有附件
      */
     @PreAuthorize("@ss.hasPermi('project:payment:query')")
-    @GetMapping("/checkAttachments/{paymentId}")
+    @GetMapping("/checkAttachments/{paymentId:\\d+}")
     public AjaxResult checkAttachments(@PathVariable Long paymentId)
     {
         int count = paymentService.countAttachments(paymentId);

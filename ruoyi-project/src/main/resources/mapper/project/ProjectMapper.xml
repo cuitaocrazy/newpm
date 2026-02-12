@@ -566,4 +566,62 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           </if>
         ORDER BY p.create_time DESC
     </select>
+
+    <!-- 根据合同ID查询关联的项目列表 -->
+    <select id="selectProjectListByContractId" resultMap="ProjectResult">
+        SELECT
+            p.project_id,
+            p.project_code,
+            p.project_name,
+            p.industry,
+            p.region,
+            p.region_id,
+            p.short_name,
+            p.established_year,
+            p.project_category,
+            p.project_dept,
+            p.project_stage,
+            p.acceptance_status,
+            p.estimated_workload,
+            p.actual_workload,
+            p.project_address,
+            p.project_plan,
+            p.project_description,
+            p.project_manager_id,
+            p.market_manager_id,
+            p.participants,
+            p.sales_manager_id,
+            p.sales_contact,
+            p.team_leader_id,
+            p.customer_id,
+            p.customer_contact_id,
+            p.merchant_contact,
+            p.merchant_phone,
+            p.start_date,
+            p.end_date,
+            p.production_date,
+            p.acceptance_date,
+            p.project_budget,
+            p.project_cost,
+            p.expense_budget,
+            p.cost_budget,
+            p.labor_cost,
+            p.purchase_cost,
+            p.approval_status,
+            p.approval_reason,
+            p.approval_time,
+            p.approver_id,
+            p.del_flag,
+            p.create_by,
+            p.create_time,
+            p.update_by,
+            p.update_time,
+            p.remark
+        FROM pm_project p
+        INNER JOIN pm_project_contract_rel rel ON p.project_id = rel.project_id
+        WHERE rel.contract_id = #{contractId}
+          AND p.del_flag = '0'
+          AND rel.del_flag = '0'
+        ORDER BY p.create_time DESC
+    </select>
 </mapper>

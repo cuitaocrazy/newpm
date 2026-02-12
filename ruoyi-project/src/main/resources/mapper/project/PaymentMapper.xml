@@ -59,7 +59,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join pm_contract c on p.contract_id = c.contract_id
         left join pm_customer cu on c.customer_id = cu.customer_id
         left join sys_dept d on c.dept_id = d.dept_id
-        left join sys_user u on p.update_by = u.user_name
+        left join sys_user u on p.update_by COLLATE utf8mb4_unicode_ci = u.user_name
         <where>
             <if test="contractId != null"> and p.contract_id = #{contractId}</if>
             <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
