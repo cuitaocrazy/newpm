@@ -107,3 +107,12 @@ export function listProjectByDept(deptId, excludeContractId) {
     }
   })
 }
+
+// 根据项目名称搜索（用于 autocomplete）
+export function listProjectByName(query) {
+  return request({
+    url: '/project/project/listByName',
+    method: 'get',
+    params: query
+  })
+}

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.TeamRevenueConfirmationMapper">
+    
+    <resultMap type="TeamRevenueConfirmation" id="TeamRevenueConfirmationResult">
+        <result property="teamConfirmId"    column="team_confirm_id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="deptId"    column="dept_id"    />
+        <result property="confirmAmount"    column="confirm_amount"    />
+        <result property="confirmTime"    column="confirm_time"    />
+        <result property="confirmUserId"    column="confirm_user_id"    />
+        <result property="deptName"    column="dept_name"    />
+        <result property="confirmUserName"    column="confirm_user_name"    />
+        <result property="remark"    column="remark"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectTeamRevenueConfirmationVo">
+        select
+            t.team_confirm_id,
+            t.project_id,
+            t.dept_id,
+            t.confirm_amount,
+            t.confirm_time,
+            t.confirm_user_id,
+            d.dept_name,
+            u.nick_name as confirm_user_name,
+            t.remark,
+            t.del_flag,
+            t.create_by,
+            t.create_time,
+            t.update_by,
+            t.update_time
+        from pm_team_revenue_confirmation t
+        left join sys_dept d on t.dept_id = d.dept_id
+        left join sys_user u on t.confirm_user_id = u.user_id
+    </sql>
+
+    <select id="selectTeamRevenueConfirmationList" parameterType="TeamRevenueConfirmation" resultMap="TeamRevenueConfirmationResult">
+        <include refid="selectTeamRevenueConfirmationVo"/>
+        <where>  
+            <if test="projectId != null "> and project_id = #{projectId}</if>
+            <if test="deptId != null "> and dept_id = #{deptId}</if>
+            <if test="confirmAmount != null "> and confirm_amount = #{confirmAmount}</if>
+            <if test="confirmTime != null "> and confirm_time = #{confirmTime}</if>
+            <if test="confirmUserId != null "> and confirm_user_id = #{confirmUserId}</if>
+        </where>
+    </select>
+    
+    <select id="selectTeamRevenueConfirmationByTeamConfirmId" parameterType="Long" resultMap="TeamRevenueConfirmationResult">
+        <include refid="selectTeamRevenueConfirmationVo"/>
+        where team_confirm_id = #{teamConfirmId}
+    </select>
+
+    <insert id="insertTeamRevenueConfirmation" parameterType="TeamRevenueConfirmation" useGeneratedKeys="true" keyProperty="teamConfirmId">
+        insert into pm_team_revenue_confirmation
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="projectId != null">project_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="confirmAmount != null">confirm_amount,</if>
+            <if test="confirmTime != null">confirm_time,</if>
+            <if test="confirmUserId != null">confirm_user_id,</if>
+            <if test="remark != null">remark,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="projectId != null">#{projectId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="confirmAmount != null">#{confirmAmount},</if>
+            <if test="confirmTime != null">#{confirmTime},</if>
+            <if test="confirmUserId != null">#{confirmUserId},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTeamRevenueConfirmation" parameterType="TeamRevenueConfirmation">
+        update pm_team_revenue_confirmation
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
+            <if test="confirmTime != null">confirm_time = #{confirmTime},</if>
+            <if test="confirmUserId != null">confirm_user_id = #{confirmUserId},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where team_confirm_id = #{teamConfirmId}
+    </update>
+
+    <delete id="deleteTeamRevenueConfirmationByTeamConfirmId" parameterType="Long">
+        delete from pm_team_revenue_confirmation where team_confirm_id = #{teamConfirmId}
+    </delete>
+
+    <delete id="deleteTeamRevenueConfirmationByTeamConfirmIds" parameterType="String">
+        delete from pm_team_revenue_confirmation where team_confirm_id in 
+        <foreach item="teamConfirmId" collection="array" open="(" separator="," close=")">
+            #{teamConfirmId}
+        </foreach>
+    </delete>
+</mapper>

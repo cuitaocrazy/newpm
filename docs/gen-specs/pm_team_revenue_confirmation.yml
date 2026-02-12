@@ -1,0 +1,555 @@
+# ============================
+# RuoYi 代码生成配置文件
+# 表名: pm_team_revenue_confirmation
+# 生成时间: 2026-02-12
+# ============================
+
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_team_revenue_confirmation
+  tableComment: 团队收入确认表
+  className: TeamRevenueConfirmation
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  team_confirm_id:
+    columnComment: 团队确认ID
+    columnType: bigint
+    javaType: Long
+    javaField: teamConfirmId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 项目ID
+    columnType: bigint
+    javaType: Long
+    javaField: projectId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  dept_id:
+    columnComment: 部门ID
+    columnType: bigint
+    javaType: Long
+    javaField: deptId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  confirm_amount:
+    columnComment: 确认金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: confirmAmount
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  confirm_time:
+    columnComment: 确认时间
+    columnType: datetime
+    javaType: Date
+    javaField: confirmTime
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: datetime
+    dictType: ""
+
+  confirm_user_id:
+    columnComment: 确认人ID
+    columnType: bigint
+    javaType: Long
+    javaField: confirmUserId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志（0代表存在 1代表删除）
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: teamRevenueConfirmation
+  functionName: 团队收入确认
+  parentMenuId: 3
+
+# ============================
+# 定制需求（超出标准模板的组件/交互/接口需求）
+# ============================
+customizations:
+  # ========== 列表页面定制 ==========
+  list_query_conditions:
+    intent: "查询条件与公司收入确认保持一致，支持多维度筛选"
+    component:
+      type: custom
+      spec: "复用公司收入确认的查询表单，包含：项目名称（autocomplete）、项目部门（tree-select）、收入确认年度、项目分类、一级区域、二级区域、项目经理、市场经理、立项年度、项目阶段、审核状态、验收状态、收入确认状态"
+    bindTo: page
+    service:
+      endpoint: "GET /revenue/team/list"
+      source: "主表从项目表查询（pm_project），与公司收入确认逻辑一致"
+      returns: "项目列表，包含收入确认相关字段"
+      newApi: false
+    notes: "查询主表使用 IProjectService.selectProjectList()，确保数据一致性"
+    timestamp: "2026-02-12"
+
+  # ========== 新增/编辑页面定制 ==========
+  project_select_hybrid:
+    intent: "项目选择支持下拉选择和远程搜索两种方式"
+    component:
+      type: ProjectSelect
+      props:
+        remote: true
+        filterable: true
+        clearable: true
+        remoteMethod: "无搜索词时加载全部项目，有搜索词时远程搜索"
+        visibleChange: "首次打开下拉框时加载全部项目"
+    bindTo: project_id
+    service:
+      endpoint: "GET /project/project/listByName?projectName={keyword}"
+      source: "复用 IProjectService.selectProjectList()"
+      returns: "[{ projectId, projectName }]"
+      newApi: false
+    notes: "使用 ProjectSelect 组件，支持下拉和搜索双模式。表单中项目选择后，自动带出项目预算、合同金额、公司确认金额、确认年度等字段"
+    timestamp: "2026-02-12"
+
+  dept_tree_select_filtered:
+    intent: "部门选择只显示三级及以下机构，支持树形结构选择"
+    component:
+      type: el-tree-select
+      props:
+        data: "过滤后的部门树数据（ancestors.split(',').length >= 3）"
+        checkStrictly: true
+        filterable: true
+        clearable: true
+        renderAfterExpand: false
+    bindTo: dept_id
+    service:
+      endpoint: "GET /system/dept/treeselect"
+      source: "复用 SysDeptService，前端过滤三级及以下部门"
+      returns: "部门树数据，前端过滤 level >= 3 的部门"
+      newApi: false
+    notes: "参考项目管理的部门选择逻辑，loadDeptTree() 中过滤：const level = dept.ancestors.split(',').length; return level >= 3"
+    timestamp: "2026-02-12"
+
+  confirm_user_readonly:
+    intent: "确认人默认当前登录用户，只读不可编辑"
+    component:
+      type: text
+      spec: "明细表格中确认人列显示为文本，不可编辑"
+    bindTo: confirm_user_id
+    service: null
+    notes: "使用 Pinia userStore.id（注意不是 userId！）和 userStore.nickName。添加明细时自动填充当前用户，表格中只显示姓名文本"
+    timestamp: "2026-02-12"
+
+  detail_list_management:
+    intent: "明细列表的添加、删除和金额计算"
+    component:
+      type: custom
+      spec: "el-table 显示明细列表，支持添加/删除行，自动计算合计金额"
+    bindTo: form
+    service: null
+    notes: |
+      - 添加明细：handleAddDetail() 添加新行，默认 confirmUserId=userStore.id, confirmUserName=userStore.nickName, confirmAmount=0
+      - 删除明细：handleDeleteDetail(index) 删除指定行
+      - 合计金额：computed totalAmount 自动计算所有明细的 confirmAmount 总和
+      - 表单提交前验证每条明细的 deptId、confirmAmount、confirmUserId 不能为空
+    timestamp: "2026-02-12"
+
+  form_validation:
+    intent: "表单提交前的数据验证"
+    component:
+      type: custom
+      spec: "前端和后端双重验证"
+    bindTo: form
+    service: null
+    notes: |
+      前端验证（submitForm）：
+      - 至少添加一条确认明细
+      - 每条明细的部门、确认金额、确认人不能为空
+      - 过滤掉 confirmUserName（后端不需要）
+
+      后端验证（Controller.add/edit）：
+      - 检查 projectId、deptId、confirmAmount、confirmUserId 不为 null
+      - 返回友好的错误信息
+    timestamp: "2026-02-12"
+
+  # ========== 详情页面定制 ==========
+  detail_page_layout:
+    intent: "详情页面左右布局，左侧显示完整项目信息，右侧显示收入确认信息和团队明细"
+    component:
+      type: custom
+      spec: "el-row + el-col 布局，左侧 13 列，右侧 11 列"
+    bindTo: page
+    service:
+      endpoint: "GET /revenue/team/{projectId}"
+      source: "返回项目详情和团队确认明细列表"
+      returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
+      newApi: false
+    notes: "详情页面完全自定义布局和内容，参考 /revenue/team/detail.vue"
+    timestamp: "2026-02-12"
+
+  detail_project_info_complete:
+    intent: "左侧项目信息与项目管理详情页面完全一致"
+    component:
+      type: custom
+      spec: "显示项目的所有信息卡片：基本信息、人员配置、客户信息、时间规划、成本预算"
+    bindTo: project
+    service: null
+    notes: |
+      项目基本信息字段（完整列表）：
+      - 行业、一级区域、简称、二级区域
+      - 立项年份、项目编号
+      - 项目名称、项目分类、项目部门（完整路径）
+      - 预估工作量、项目预算（位置调整到预估工作量后面）
+      - 实际工作量、项目阶段
+      - 验收状态、审核状态
+      - 项目地址、项目计划、项目描述、审核意见
+
+      项目部门显示逻辑：
+      - 查询部门树，解析 ancestors 字段
+      - 只保留三级及以下部门
+      - 用"-"连接各级部门名称，如"技术中心-研发一部-项目组"
+
+      参与人员显示：
+      - 查询所有用户列表
+      - 根据 participants 字段（逗号分隔的用户ID）过滤
+      - 用 el-tag 标签形式显示
+
+      客户联系方式：
+      - 根据 customerId 和 customerContactId 查询联系人列表
+      - 显示联系人电话
+    timestamp: "2026-02-12"
+
+  detail_region_split:
+    intent: "区域字段拆分为一级区域和二级区域分别显示"
+    component:
+      type: custom
+      spec: "一级区域使用 dict-tag 显示字典值，二级区域显示 regionName"
+    bindTo: region
+    service: null
+    notes: "原来只显示'区域'，现在拆分为'一级区域'和'二级区域'两个字段"
+    timestamp: "2026-02-12"
+
+  detail_dept_path:
+    intent: "项目部门显示完整路径（三级及以下机构，用-隔开）"
+    component:
+      type: custom
+      spec: "buildDeptPath() 函数构建部门完整路径"
+    bindTo: projectDept
+    service:
+      endpoint: "GET /system/dept/treeselect"
+      source: "查询部门树，解析 ancestors 构建路径"
+      returns: "部门树数据"
+      newApi: false
+    notes: |
+      实现逻辑：
+      1. 根据 projectDept（部门ID）查询部门树
+      2. 解析 ancestors 字段（格式：0,100,101,102）
+      3. 只保留三级及以下的部门（level >= 3）
+      4. 用"-"连接各级部门名称
+      例如：技术中心-研发一部-项目组
+    timestamp: "2026-02-12"
+
+  detail_cost_budget_adjust:
+    intent: "成本预算卡片中去掉项目预算字段（避免重复）"
+    component:
+      type: custom
+      spec: "项目预算已移到项目基本信息中，成本预算卡片只显示：项目费用、费用预算、成本预算、人力费用、采购成本"
+    bindTo: costBudget
+    service: null
+    notes: "字段顺序：项目费用、费用预算、成本预算、人力费用、采购成本"
+    timestamp: "2026-02-12"
+
+  detail_revenue_info:
+    intent: "右侧显示公司收入确认信息"
+    component:
+      type: custom
+      spec: "el-descriptions 显示收入确认状态、年度、合同金额、确认金额、税率、税后金额"
+    bindTo: revenueConfirm
+    service: null
+    notes: "数据来源于项目表的收入确认相关字段"
+    timestamp: "2026-02-12"
+
+  detail_team_list:
+    intent: "右侧显示团队收入确认明细列表"
+    component:
+      type: custom
+      spec: "el-table 显示明细，包含部门、确认金额、确认时间、确认人、备注，底部显示合计金额"
+    bindTo: detailList
+    service: null
+    notes: "合计金额使用 computed totalTeamAmount 自动计算"
+    timestamp: "2026-02-12"
+
+  detail_remark_section:
+    intent: "左侧底部显示备注信息"
+    component:
+      type: custom
+      spec: "独立的备注卡片，显示项目备注，位于左侧成本预算卡片之后"
+    bindTo: remark
+    service: null
+    notes: "与项目管理详情页面保持一致，放在左侧项目信息区域"
+    timestamp: "2026-02-12"
+
+  # ========== 后端接口定制 ==========
+  backend_list_query:
+    intent: "列表查询主表从项目表查询"
+    component: null
+    bindTo: backend
+    service:
+      endpoint: "GET /revenue/team/list"
+      source: "Controller 调用 IProjectService.selectProjectList()"
+      returns: "项目列表（TableDataInfo）"
+      newApi: false
+    notes: "与公司收入确认查询逻辑一致，确保数据源统一"
+    timestamp: "2026-02-12"
+
+  backend_detail_query:
+    intent: "详情接口返回项目信息+团队明细列表"
+    component: null
+    bindTo: backend
+    service:
+      endpoint: "GET /revenue/team/{projectId}"
+      source: |
+        Controller.getInfo():
+        1. 调用 IProjectService.selectProjectByProjectId() 获取项目详情
+        2. 调用 ITeamRevenueConfirmationService.selectTeamRevenueConfirmationList() 获取团队明细
+        3. 返回 Map{ project, detailList }
+      returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
+      newApi: false
+    notes: "一次接口调用返回详情页面所需的所有数据"
+    timestamp: "2026-02-12"
+
+  backend_batch_save:
+    intent: "新增/编辑支持批量保存明细"
+    component: null
+    bindTo: backend
+    service:
+      endpoint: "POST /revenue/team 和 PUT /revenue/team"
+      source: |
+        Controller.add/edit():
+        1. 接收 Map 参数：{ projectId, detailList: [{ deptId, confirmAmount, confirmUserId, remark }] }
+        2. 验证必填字段不为空
+        3. 遍历 detailList，为每条明细设置 projectId 和 confirmTime（当前时间）
+        4. 调用 Service.insertTeamRevenueConfirmation() 逐条保存
+        5. 编辑时先删除旧明细，再保存新明细
+      returns: "AjaxResult"
+      newApi: false
+    notes: |
+      关键实现：
+      - 前端传递明细数组，后端遍历保存
+      - 自动设置 confirmTime = new Date()（修复数据库字段无默认值问题）
+      - 编辑时采用"删除后新增"策略，简化逻辑
+    timestamp: "2026-02-12"
+
+  backend_data_validation:
+    intent: "后端数据验证和错误处理"
+    component: null
+    bindTo: backend
+    service: null
+    notes: |
+      验证规则：
+      1. projectId 不能为空
+      2. detailList 不能为空，至少一条明细
+      3. 每条明细的 deptId、confirmAmount、confirmUserId 不能为空
+      4. 使用 Map.get() 前先判空，避免 NullPointerException
+      5. 返回友好的中文错误提示
+    timestamp: "2026-02-12"
+
+  backend_data_association:
+    intent: "团队确认明细关联查询部门名称和确认人姓名"
+    component: null
+    bindTo: backend
+    service:
+      endpoint: "MyBatis XML 配置"
+      source: |
+        TeamRevenueConfirmationMapper.xml:
+        LEFT JOIN sys_dept d ON t.dept_id = d.dept_id
+        LEFT JOIN sys_user u ON t.confirm_user_id = u.user_id
+
+        查询字段：
+        - d.dept_name as dept_name
+        - u.nick_name as confirm_user_name
+      returns: "TeamRevenueConfirmation（包含关联字段）"
+      newApi: false
+    notes: "实体类中添加 deptName 和 confirmUserName 扩展字段用于显示"
+    timestamp: "2026-02-12"
+
+# ============================
+# 实现总结
+# ============================
+implementation_summary:
+  description: "团队收入确认功能完整实现，支持主从表管理，与公司收入确认数据一致"
+
+  key_features:
+    - "列表查询主表从项目表查询，与公司收入确认逻辑一致"
+    - "新增/编辑页面支持批量管理明细，自动计算合计金额"
+    - "项目选择支持下拉和远程搜索双模式"
+    - "部门选择只显示三级及以下机构"
+    - "确认人默认当前用户，只读不可编辑"
+    - "详情页面左右布局，完整展示项目信息和团队明细"
+    - "项目部门显示完整路径（三级及以下，用-隔开）"
+    - "区域字段拆分为一级区域和二级区域"
+    - "后端支持批量保存明细，自动设置确认时间"
+    - "数据关联查询部门名称和确认人姓名"
+
+  technical_highlights:
+    - "使用 Pinia userStore（注意是 userStore.id 不是 userId）"
+    - "项目选择使用 ProjectSelect 组件，支持 remote 和 visibleChange"
+    - "部门过滤逻辑：ancestors.split(',').length >= 3"
+    - "部门路径构建：解析 ancestors，用'-'连接各级部门名称"
+    - "参与人员标签显示：el-tag 循环渲染"
+    - "明细列表使用 el-table，支持动态添加/删除行"
+    - "后端批量保存：遍历明细数组，逐条插入"
+    - "编辑策略：先删除旧明细，再插入新明细"
+    - "自动设置 confirmTime = new Date() 解决数据库字段无默认值问题"
+
+  bug_fixes:
+    - "修复 userStore 访问错误：使用 userStore.id 而非 userStore.userId"
+    - "修复 confirmTime 字段无默认值错误：后端自动设置为当前时间"
+    - "修复 NullPointerException：后端添加空值检查"
+    - "修复确认人字段验证：前端过滤 confirmUserName，只提交 confirmUserId"
+    - "修复详情页面布局：备注从右侧移到左侧项目信息区域"
+
+  related_files:
+    backend:
+      - "ruoyi-project/src/main/java/com/ruoyi/project/controller/TeamRevenueConfirmationController.java"
+      - "ruoyi-project/src/main/java/com/ruoyi/project/service/ITeamRevenueConfirmationService.java"
+      - "ruoyi-project/src/main/java/com/ruoyi/project/service/impl/TeamRevenueConfirmationServiceImpl.java"
+      - "ruoyi-project/src/main/java/com/ruoyi/project/mapper/TeamRevenueConfirmationMapper.java"
+      - "ruoyi-project/src/main/java/com/ruoyi/project/domain/TeamRevenueConfirmation.java"
+      - "ruoyi-project/src/main/resources/mapper/project/TeamRevenueConfirmationMapper.xml"
+    frontend:
+      - "ruoyi-ui/src/views/revenue/team/index.vue"
+      - "ruoyi-ui/src/views/revenue/team/detail.vue"
+      - "ruoyi-ui/src/api/revenue/team.js"
+      - "ruoyi-ui/src/components/ProjectSelect/index.vue"
+    sql:
+      - "pm-sql/init/00_tables_ddl.sql (pm_team_revenue_confirmation)"
+      - "pm-sql/init/02_menu_data.sql (团队收入确认菜单)"
+
+  timestamp: "2026-02-12 23:30:00"

@@ -51,6 +51,8 @@ import DictSelect from '@/components/DictSelect/index.vue'
 import UserSelect from '@/components/UserSelect/index.vue'
 // 二级区域选择组件
 import SecondaryRegionSelect from '@/components/SecondaryRegionSelect/index.vue'
+// 项目选择组件
+import ProjectSelect from '@/components/ProjectSelect/index.vue'
 
 const app = createApp(App)
 
@@ -77,6 +79,7 @@ app.component('ProjectDeptSelect', ProjectDeptSelect)
 app.component('DictSelect', DictSelect)
 app.component('UserSelect', UserSelect)
 app.component('SecondaryRegionSelect', SecondaryRegionSelect)
+app.component('ProjectSelect', ProjectSelect)
 
 app.use(router)
 app.use(store)

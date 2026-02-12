@@ -9,6 +9,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [Build & Run Commands](#build--run-commands)
 - [Module Architecture](#module-architecture)
 - [Backend Patterns](#backend-patterns)
+  - [Controller Convention](#controller-convention)
+  - [Response Types](#response-types)
+  - [Custom Annotations](#custom-annotations)
+  - [Data Permission](#data-permission)
+  - [Entity Hierarchy](#entity-hierarchy)
+  - [Naming Conventions](#naming-conventions)
+  - [Master-Detail Pattern](#master-detail-pattern)
+  - [Spring Boot 3 Specifics](#spring-boot-3-specifics)
+  - [Logging Patterns](#logging-patterns)
+  - [Exception Handling](#exception-handling)
+  - [Transaction Management](#transaction-management)
+  - [Async Processing](#async-processing)
 - [Frontend Patterns](#frontend-patterns)
 - [Configuration Files](#configuration-files)
 - [Database Schema](#database-schema)
@@ -405,6 +417,126 @@ public int insertContract(Contract contract) {
 - Druid starter: `druid-spring-boot-3-starter`
 - MySQL driver: `mysql-connector-j`
 
+### Logging Patterns
+
+**Log Files Location:** `./logs/` (60-day rotation)
+
+- `sys-info.log` - INFO level system logs
+- `sys-error.log` - ERROR level logs only
+- `sys-user.log` - User operation logs
+
+**Operation Audit Logging:**
+```java
+// Controller methods - audit logs to database
+@Log(title = "项目管理", businessType = BusinessType.INSERT)
+@PostMapping
+public AjaxResult add(@RequestBody Project project) {
+    return toAjax(projectService.insertProject(project));
+}
+```
+
+**Standard Logging:**
+```java
+// Service layer - use SLF4J Logger
+private static final Logger log = LoggerFactory.getLogger(YourClass.class);
+
+log.info("Processing project: {}", projectId);
+log.error("Failed to update contract", e);
+```
+
+**Important:**
+- `@Log` annotation → async database audit via LogAspect (operation logs viewable in UI)
+- SLF4J logger → file logs (sys-info.log, sys-error.log)
+- Sensitive fields (password, oldPassword, newPassword, confirmPassword) are auto-excluded from logs
+- Request params > 2000 chars are truncated
+
+### Exception Handling
+
+**Global Exception Handler:** `GlobalExceptionHandler` catches all exceptions with `@RestControllerAdvice`
+
+**Business Exceptions - Use ServiceException:**
+```java
+// In service layer
+if (project == null) {
+    throw new ServiceException("项目不存在");
+}
+
+// With custom error code
+throw new ServiceException("操作失败", 500);
+```
+
+**Exception Types:**
+- `ServiceException` - Business logic exceptions (caught by GlobalExceptionHandler → AjaxResult.error)
+- `AccessDeniedException` - Permission denied (returns 403)
+- `BindException` / `MethodArgumentNotValidException` - Validation errors (returns field error message)
+
+**Pattern:**
+```java
+// Service throws ServiceException
+public int updateProject(Project project) {
+    if (!checkPermission(project)) {
+        throw new ServiceException("无权限修改此项目");
+    }
+    return projectMapper.updateProject(project);
+}
+
+// Controller auto-converts to AjaxResult
+@PutMapping
+public AjaxResult edit(@RequestBody Project project) {
+    return toAjax(projectService.updateProject(project));  // Exceptions auto-handled
+}
+```
+
+**All exceptions are logged and returned as JSON with appropriate HTTP status codes.**
+
+### Transaction Management
+
+**Use @Transactional on service methods that modify data:**
+
+```java
+@Service
+public class ContractServiceImpl implements IContractService {
+
+    @Transactional  // Rollback on any RuntimeException (including ServiceException)
+    public int insertContract(Contract contract) {
+        int rows = contractMapper.insertContract(contract);
+        insertPayment(contract);  // Both operations in same transaction
+        return rows;
+    }
+}
+```
+
+**Transaction Behavior:**
+- Auto-rollback on `RuntimeException` (including `ServiceException`)
+- No rollback on checked exceptions (unless configured)
+- Transactions managed by Spring's `PlatformTransactionManager`
+
+**Master-detail operations MUST be transactional to ensure data consistency.**
+
+### Async Processing
+
+**Operation Audit Logs:** Automatically async via `AsyncManager` (used by `@Log` annotation)
+
+**Custom Async Methods:**
+```java
+@Service
+public class ProjectEmailServiceImpl {
+
+    @Async  // Runs in separate thread pool
+    public void sendNotificationEmail(Project project) {
+        // Email sending logic
+    }
+}
+```
+
+**Usage:**
+```java
+// Fire and forget - no blocking
+projectEmailService.sendNotificationEmail(project);
+```
+
+**Async operations run in Spring's task executor thread pool (configured in application.yml).**
+
 ## Frontend Patterns
 
 ### Tech Stack
@@ -541,6 +673,16 @@ The project uses a unified attachment management system:
 - `ruoyi-ui/.env.development` - Dev environment variables (`VITE_APP_BASE_API`)
 - `ruoyi-ui/.env.production` - Production environment variables
 - `ruoyi-ui/vite.config.ts` - Vite build config and dev server proxy
+
+### Redis Usage
+
+**Redis is used for:**
+- JWT token storage and validation
+- Session management
+- Dictionary cache (sys_dict_data)
+- Rate limiting (via @RateLimiter annotation)
+
+**Not used:** Spring Cache annotations (@Cacheable, @CachePut, @CacheEvict) - Redis is accessed directly via RedisTemplate/RedisCache utilities
 
 ## Ports & Monitoring
 

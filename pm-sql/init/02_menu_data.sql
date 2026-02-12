@@ -287,3 +287,38 @@ VALUES ('公司收入确认导出', @companyRevenueMenuId, 4, '#', '', 1, 0, 'F'
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
 VALUES ('收入确认详情', @revenueMenuId, 10, 'company/detail/:projectId(\\d+)', 'revenue/company/detail', 1, 0, 'C', '1', '0', 'revenue:company:query', '#', 'admin', sysdate(), '', NULL, '收入确认详情页面', 'RevenueCompanyDetail', '/revenue/company');
 
+
+-- ----------------------------
+-- 团队收入确认菜单SQL
+-- 生成时间: 2026-02-12
+-- ----------------------------
+-- 二级菜单：团队收入确认（挂在收入确认管理一级菜单下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('团队收入确认', @revenueMenuId, 2, 'team', 'revenue/team/index', 1, 0, 'C', '0', '0', 'revenue:team:list', 'peoples', 'admin', sysdate(), '', NULL, '团队收入确认菜单');
+
+-- 获取团队收入确认菜单ID
+SELECT @teamRevenueMenuId := LAST_INSERT_ID();
+
+-- 按钮权限：查询
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('团队收入确认查询', @teamRevenueMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'revenue:team:query', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：新增
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('团队收入确认新增', @teamRevenueMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'revenue:team:add', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：修改
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('团队收入确认修改', @teamRevenueMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'revenue:team:edit', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：删除
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('团队收入确认删除', @teamRevenueMenuId, 4, '#', '', 1, 0, 'F', '0', '0', 'revenue:team:remove', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 按钮权限：导出
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('团队收入确认导出', @teamRevenueMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'revenue:team:export', '#', 'admin', sysdate(), '', NULL, '');
+
+-- 隐藏路由：团队收入确认详情页（挂在收入确认管理一级菜单下）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
+VALUES ('团队收入确认详情', @revenueMenuId, 11, 'team/detail/:projectId(\\d+)', 'revenue/team/detail', 1, 0, 'C', '1', '0', 'revenue:team:query', '#', 'admin', sysdate(), '', NULL, '团队收入确认详情页面', 'TeamRevenueDetail', '/revenue/team');

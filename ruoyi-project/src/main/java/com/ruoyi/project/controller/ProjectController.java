@@ -284,4 +284,17 @@ public class ProjectController extends BaseController
         List<Project> list = projectService.selectProjectListByDept(deptId, excludeContractId);
         return success(list);
     }
+
+    /**
+     * 根据项目名称搜索（用于 autocomplete）
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @GetMapping("/listByName")
+    public AjaxResult listByName(@RequestParam(required = false) String projectName)
+    {
+        Project query = new Project();
+        query.setProjectName(projectName);
+        List<Project> list = projectService.selectProjectList(query);
+        return success(list);
+    }
 }
