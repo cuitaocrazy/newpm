@@ -45,6 +45,12 @@ import ImagePreview from "@/components/ImagePreview/index.vue"
 import DictTag from '@/components/DictTag/index.vue'
 // 项目部门选择组件
 import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
+// 字典选择组件
+import DictSelect from '@/components/DictSelect/index.vue'
+// 用户选择组件
+import UserSelect from '@/components/UserSelect/index.vue'
+// 二级区域选择组件
+import SecondaryRegionSelect from '@/components/SecondaryRegionSelect/index.vue'
 
 const app = createApp(App)
 
@@ -68,6 +74,9 @@ app.component('ImagePreview', ImagePreview)
 app.component('RightToolbar', RightToolbar)
 app.component('Editor', Editor)
 app.component('ProjectDeptSelect', ProjectDeptSelect)
+app.component('DictSelect', DictSelect)
+app.component('UserSelect', UserSelect)
+app.component('SecondaryRegionSelect', SecondaryRegionSelect)
 
 app.use(router)
 app.use(store)

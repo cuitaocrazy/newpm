@@ -19,64 +19,61 @@
         />
       </el-form-item>
       <el-form-item label="项目分类" prop="projectCategory">
-        <el-select v-model="queryParams.projectCategory" placeholder="请选择项目分类" clearable style="width: 200px">
-          <el-option
-            v-for="dict in sys_xmfl"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.projectCategory"
+          dict-type="sys_xmfl"
+          placeholder="请选择项目分类"
+          clearable
+          style="width: 200px"
+        />
       </el-form-item>
       <el-form-item label="一级区域" prop="region">
-        <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable @change="handleRegionChange" style="width: 200px">
-          <el-option
-            v-for="dict in sys_yjqy"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.region"
+          dict-type="sys_yjqy"
+          placeholder="请选择一级区域"
+          clearable
+          style="width: 200px"
+        />
       </el-form-item>
       <el-form-item label="二级区域" prop="regionId">
-        <el-select v-model="queryParams.regionId" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" style="width: 200px">
-          <el-option
-            v-for="item in secondaryRegionOptions"
-            :key="item.regionId"
-            :label="item.regionName"
-            :value="item.regionId"
-          />
-        </el-select>
+        <secondary-region-select
+          v-model="queryParams.regionId"
+          :region-dict-value="queryParams.region"
+          placeholder="请选择二级区域"
+          clearable
+          filterable
+          style="width: 200px"
+        />
       </el-form-item>
       <el-form-item label="项目经理" prop="projectManagerId">
-        <el-select v-model="queryParams.projectManagerId" placeholder="请选择项目经理" clearable filterable style="width: 200px">
-          <el-option
-            v-for="user in projectManagerOptions"
-            :key="user.userId"
-            :label="user.nickName"
-            :value="user.userId"
-          />
-        </el-select>
+        <user-select
+          v-model="queryParams.projectManagerId"
+          post-code="pm"
+          placeholder="请选择项目经理"
+          clearable
+          filterable
+          style="width: 200px"
+        />
       </el-form-item>
       <el-form-item label="市场经理" prop="marketManagerId">
-        <el-select v-model="queryParams.marketManagerId" placeholder="请选择市场经理" clearable filterable style="width: 200px">
-          <el-option
-            v-for="user in marketManagerOptions"
-            :key="user.userId"
-            :label="user.nickName"
-            :value="user.userId"
-          />
-        </el-select>
+        <user-select
+          v-model="queryParams.marketManagerId"
+          post-code="scjl"
+          placeholder="请选择市场经理"
+          clearable
+          filterable
+          style="width: 200px"
+        />
       </el-form-item>
       <el-form-item label="审核状态" prop="approvalStatus">
-        <el-select v-model="queryParams.approvalStatus" placeholder="请选择审核状态" clearable style="width: 200px">
-          <el-option
-            v-for="dict in sys_spzt"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.approvalStatus"
+          dict-type="sys_spzt"
+          placeholder="请选择审核状态"
+          clearable
+          style="width: 200px"
+        />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -106,11 +103,6 @@
       <el-table-column label="行业" align="center" prop="industry" width="100">
         <template #default="scope">
           <dict-tag :options="industry" :value="scope.row.industry"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="一级区域" align="center" prop="region" width="100">
-        <template #default="scope">
-          <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
         </template>
       </el-table-column>
       <el-table-column label="二级区域" align="center" prop="regionName" width="100" show-overflow-tooltip />
@@ -296,8 +288,6 @@
 
 <script setup name="Review">
 import { listReview, getReview, approveProject } from "@/api/project/review"
-import { listSecondaryRegion } from "@/api/project/secondaryRegion"
-import { listUserByPost } from "@/api/system/user"
 import request from '@/utils/request'
 import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
 import { WarningFilled } from '@element-plus/icons-vue'
@@ -309,9 +299,6 @@ const reviewList = ref([])
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
-const secondaryRegionOptions = ref([])
-const projectManagerOptions = ref([])
-const marketManagerOptions = ref([])
 const reviewOpen = ref(false)
 const activeNames = ref(['1', '2', '3', '4', '5', '6'])
 const isAllExpanded = ref(true)
@@ -363,17 +350,6 @@ function resetQuery() {
   handleQuery()
 }
 
-/** 一级区域变化 */
-function handleRegionChange(value) {
-  queryParams.value.regionId = null
-  secondaryRegionOptions.value = []
-  if (value) {
-    listSecondaryRegion({ regionDictValue: value }).then(response => {
-      secondaryRegionOptions.value = response.rows
-    })
-  }
-}
-
 /** 项目名称自动完成 */
 function queryProjectNames(queryString, cb) {
   if (!queryString) {
@@ -392,18 +368,6 @@ function queryProjectNames(queryString, cb) {
     cb(suggestions)
   }).catch(() => {
     cb([])
-  })
-}
-
-/** 查询用户列表 */
-function getUserOptions() {
-  // 查询项目经理（岗位代码：pm）
-  listUserByPost('pm').then(response => {
-    projectManagerOptions.value = response.data || []
-  })
-  // 查询市场经理（岗位代码：scjl）
-  listUserByPost('scjl').then(response => {
-    marketManagerOptions.value = response.data || []
   })
 }
 
@@ -482,7 +446,6 @@ function submitApprove(approvalStatus) {
 }
 
 // 初始化
-getUserOptions()
 getList()
 </script>
 

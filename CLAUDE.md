@@ -2,10 +2,34 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Quick Start](#quick-start)
+- [Build & Run Commands](#build--run-commands)
+- [Module Architecture](#module-architecture)
+- [Backend Patterns](#backend-patterns)
+- [Frontend Patterns](#frontend-patterns)
+- [Configuration Files](#configuration-files)
+- [Database Schema](#database-schema)
+- [Code Generation Workflow](#code-generation-workflow)
+- [SQL Management](#sql-management)
+- [Project Documentation](#project-documentation)
+- [Development Workflow](#development-workflow)
+- [Common Pitfalls](#common-pitfalls)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+
 ## Project Overview
 
 RuoYi-Vue v3.9.1 — Enterprise admin system with separated frontend/backend, customized for **Project Management (PM)** business.
 
+**Base Framework:** This project is built on [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue), an open-source rapid development platform. It uses the TypeScript branch of RuoYi-Vue3 for the frontend.
+- **Official Documentation:** http://doc.ruoyi.vip
+- **Demo Site:** http://vue.ruoyi.vip (credentials: admin/admin123)
+- **Framework Features:** User/role/menu/dept/dict management, audit logs, scheduled tasks, code generation, API docs, monitoring tools
+
+**Technology Stack:**
 - **Backend:** Java 17 / Spring Boot 3.5.8 / Spring Security / MyBatis / Redis / JWT
 - **Frontend:** Vue 3.5 / TypeScript 5.6 / Vite 6.4 / Element Plus 2.13 / Pinia
 - **Business Domain:** Project lifecycle management, customer management, contract management, approval workflows, daily reports, and revenue recognition
@@ -80,7 +104,7 @@ The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use t
 
 ### E2E Testing (from project root)
 
-**Note:** E2E testing infrastructure is configured. Test cases are being developed.
+**Test Strategy:** E2E testing infrastructure is configured with Playwright. Test coverage is planned for critical business workflows.
 
 ```bash
 npx playwright install                    # Install browsers (first time only)
@@ -92,13 +116,13 @@ npx playwright test --debug               # Run tests in debug mode
 npx playwright show-report                # View test report
 ```
 
-**Test Configuration**: `playwright.config.js` - Playwright E2E test configuration
+**Test Configuration:** `playwright.config.js` - Playwright E2E test configuration
 
-**Test Coverage:**
-- Project creation and approval workflow
-- Customer and contact management
-- Contract and payment tracking
-- Revenue recognition workflow
+**Planned Test Coverage:**
+- Project creation and approval workflow (立项申请与审核)
+- Customer and contact management (客户与联系人管理)
+- Contract and payment tracking (合同与款项管理)
+- Revenue recognition workflow (收入确认流程)
 
 ### Unit Testing (Backend)
 

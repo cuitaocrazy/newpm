@@ -69,6 +69,27 @@ basicInfo:
        - 审核历史对话框：时间轴展示，包含审核结果、意见、时间
        - 编辑页面：已拒绝状态显示警告提示和动态按钮
 
+    8. 选择器组件重构 (2026-02-12完成)：
+       - 审核列表页面(/project/review/index.vue)迁移到新组件：
+         * 项目分类 → DictSelect (dict-type="sys_xmfl")
+         * 一级区域 → DictSelect (dict-type="sys_yjqy")
+         * 二级区域 → SecondaryRegionSelect (自动联动一级区域)
+         * 项目经理 → UserSelect (post-code="pm")
+         * 市场经理 → UserSelect (post-code="scjl")
+         * 审核状态 → DictSelect (dict-type="sys_spzt")
+       - 通用组件位置：
+         * ruoyi-ui/src/components/DictSelect/index.vue
+         * ruoyi-ui/src/components/UserSelect/index.vue
+         * ruoyi-ui/src/components/SecondaryRegionSelect/index.vue
+       - 代码优化：
+         * 删除重复的选择器代码约78行
+         * 删除手动加载逻辑：loadProjectManagers, loadMarketManagers, handleRegionChange
+         * 删除数据refs：projectManagerList, marketManagerList, provinceList
+       - 功能增强：
+         * 二级区域自动联动一级区域
+         * 用户选择器按岗位自动筛选
+         * 字典数据自动缓存
+
 # ============================
 # Tab 2: 字段信息（立项审核涉及的 pm_project 表字段）
 # ============================

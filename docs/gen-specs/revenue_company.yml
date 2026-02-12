@@ -1,0 +1,1014 @@
+# ============================
+# 公司收入确认管理配置
+# ============================
+basicInfo:
+  pagePath: /revenue/company/index.vue
+  pageComment: 公司收入确认管理页面
+  functionAuthor: ruoyi
+  remark: |
+    公司收入确认管理功能说明：
+
+    1. 数据来源：
+       - 基于 pm_project 表，通过视图查询展示
+       - 包含项目、合同、客户等关联信息
+       - Controller: ProjectReviewController (/project/review/**)
+       - 前端页面: ruoyi-ui/src/views/revenue/company/index.vue
+
+    2. 查询条件（2026-02-12优化）：
+       - 项目名称：模糊查询
+       - 项目部门：级联选择（三级及以下部门）
+       - 收入确认年度：字典选择（sys_ndgl）
+       - 项目分类：字典选择（sys_xmfl）
+       - 一级区域：字典选择（sys_yjqy）
+       - 二级区域：联动选择（基于一级区域）
+       - 项目经理：用户选择（岗位代码：pm）
+       - 市场经理：用户选择（岗位代码：scjl）
+       - 立项年度：字典选择（sys_ndgl）
+       - 项目阶段：字典选择（sys_xmjd）
+       - 审核状态：字典选择（sys_spzt）
+       - 验收状态：字典选择（sys_yszt）
+       - 合同状态：字典选择（sys_htzt）
+       - 收入确认状态：字典选择（sys_qrzt）
+
+    3. 列表显示优化（2026-02-12完成）：
+       - 删除"项目编码"列（原位置：项目名称之后）
+       - 删除"一级区域"列（原位置：项目分类之后）
+       - 保留"二级区域"列
+       - 优化后列顺序：
+         * 项目名称
+         * 项目部门
+         * 收入确认年度
+         * 项目分类
+         * 二级区域
+         * 项目阶段
+         * 项目经理
+         * 市场经理
+         * 立项年度
+         * 审核状态
+         * 验收状态
+         * 合同状态
+         * 收入确认状态
+
+    4. 选择器组件重构（2026-02-12完成）：
+       - 迁移到通用选择器组件：
+         * 收入确认年度 → DictSelect (dict-type="sys_ndgl")
+         * 项目分类 → DictSelect (dict-type="sys_xmfl")
+         * 一级区域 → DictSelect (dict-type="sys_yjqy")
+         * 二级区域 → SecondaryRegionSelect (自动联动一级区域)
+         * 项目经理 → UserSelect (post-code="pm")
+         * 市场经理 → UserSelect (post-code="scjl")
+         * 立项年度 → DictSelect (dict-type="sys_ndgl")
+         * 项目阶段 → DictSelect (dict-type="sys_xmjd")
+         * 审核状态 → DictSelect (dict-type="sys_spzt")
+         * 验收状态 → DictSelect (dict-type="sys_yszt")
+         * 合同状态 → DictSelect (dict-type="sys_htzt")
+         * 收入确认状态 → DictSelect (dict-type="sys_qrzt")
+
+       - 通用组件位置：
+         * ruoyi-ui/src/components/DictSelect/index.vue
+           - 功能：字典选择器，自动加载字典数据
+           - 使用 Pinia store 缓存字典数据
+           - 支持单选/多选、搜索、清空等所有 el-select 功能
+
+         * ruoyi-ui/src/components/UserSelect/index.vue
+           - 功能：用户选择器，支持按岗位筛选
+           - 岗位代码：pm=项目经理, scjl=市场经理, xsfzr=销售负责人
+           - change 事件返回完整用户对象
+           - 支持多选模式
+
+         * ruoyi-ui/src/components/SecondaryRegionSelect/index.vue
+           - 功能：二级区域选择器，自动联动一级区域
+           - 一级区域变化时自动清空并重新加载
+           - 未选一级区域时自动禁用
+
+       - 代码优化成果：
+         * 删除重复代码约107行
+         * 删除手动加载逻辑：
+           - loadProjectManagers(), loadMarketManagers()
+           - handleRegionChange()
+         * 删除数据refs：
+           - projectManagerList, marketManagerList
+           - secondaryRegionOptions
+         * 表格数据显示优化：
+           - 使用 ref 访问 UserSelect 的 userOptions
+           - 表格中显示用户名：getUserName(userId, userSelectRef?.userOptions)
+
+       - 特殊处理：
+         * 表格中用户名显示使用 ref 模式
+         * 示例代码：
+           ```vue
+           <user-select ref="projectManagerSelectRef" post-code="pm" />
+
+           <el-table-column label="项目经理">
+             <template #default="scope">
+               {{ getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions) }}
+             </template>
+           </el-table-column>
+           ```
+
+    5. 一级区域联动修复（2026-02-12完成）：
+       - 问题：一级区域选择后，二级区域没有动态加载数据
+       - 原因：迁移到 DictSelect 后忘记添加 @change 事件
+       - 修复：一级区域 DictSelect 添加 @change="handleRegionChange"
+       - handleRegionChange 函数功能：
+         * 清空二级区域选择（regionId）
+         * 清空二级区域选项列表
+         * 根据新选择的一级区域加载对应的二级区域选项
+
+    6. 技术栈：
+       - 前端框架：Vue 3 Composition API
+       - UI 组件库：Element Plus
+       - 状态管理：Pinia (字典数据缓存)
+       - HTTP 请求：Axios (封装在 request.ts)
+
+    7. 权限配置：
+       - 查询权限：project:review:list
+       - 收入确认权限：project:review:confirm (如有)
+       - 菜单标识：revenue-company
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  # === 主键字段 ===
+  project_id:
+    columnComment: 项目ID
+    columnType: bigint
+    javaType: Long
+    javaField: projectId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  # === 查询条件字段 ===
+  project_name:
+    columnComment: 项目名称
+    columnType: varchar(200)
+    javaType: String
+    javaField: projectName
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: true    # 支持查询
+    queryType: LIKE  # 模糊查询
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_dept:
+    columnComment: 项目部门
+    columnType: varchar(100)
+    javaType: String
+    javaField: projectDept
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: treeselect
+    dictType: ""
+
+  revenue_confirm_year:
+    columnComment: 收入确认年度
+    columnType: varchar(20)
+    javaType: String
+    javaField: revenueConfirmYear
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_ndgl"
+
+  project_category:
+    columnComment: 项目分类
+    columnType: varchar(50)
+    javaType: String
+    javaField: projectCategory
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_xmfl"
+
+  region:
+    columnComment: 一级区域
+    columnType: varchar(50)
+    javaType: String
+    javaField: region
+    isInsert: false
+    isEdit: false
+    isList: false    # 不在列表显示（已删除）
+    isQuery: true    # 支持查询（联动二级区域）
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_yjqy"
+
+  region_id:
+    columnComment: 二级区域ID
+    columnType: bigint
+    javaType: Long
+    javaField: regionId
+    isInsert: false
+    isEdit: false
+    isList: false    # 不显示ID，显示名称
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  region_name:
+    columnComment: 二级区域名称（关联字段）
+    columnType: varchar(100)
+    javaType: String
+    javaField: regionName
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: false   # 查询用region_id
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_manager_id:
+    columnComment: 项目经理ID
+    columnType: bigint
+    javaType: Long
+    javaField: projectManagerId
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（通过getUserName显示名称）
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  market_manager_id:
+    columnComment: 市场经理ID
+    columnType: bigint
+    javaType: Long
+    javaField: marketManagerId
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（通过getUserName显示名称）
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  established_year:
+    columnComment: 立项年度
+    columnType: int
+    javaType: Integer
+    javaField: establishedYear
+    isInsert: false
+    isEdit: false
+    isList: false    # 不在列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_ndgl"
+
+  project_stage:
+    columnComment: 项目阶段
+    columnType: varchar(50)
+    javaType: String
+    javaField: projectStage
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_xmjd"
+
+  approval_status:
+    columnComment: 审核状态
+    columnType: varchar(20)
+    javaType: String
+    javaField: approvalStatus
+    isInsert: false
+    isEdit: false
+    isList: false    # 不在列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_spzt"
+
+  acceptance_status:
+    columnComment: 验收状态
+    columnType: varchar(50)
+    javaType: String
+    javaField: acceptanceStatus
+    isInsert: false
+    isEdit: false
+    isList: false    # 不在列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_yszt"
+
+  revenue_confirm_status:
+    columnComment: 收入确认状态
+    columnType: varchar(20)
+    javaType: String
+    javaField: revenueConfirmStatus
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: true    # 支持查询
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_qrzt"
+
+  # === 列表显示字段（金额和工作量） ===
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  confirm_amount:
+    columnComment: 确认金额（含税）
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: confirmAmount
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（支持合计）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  after_tax_amount:
+    columnComment: 税后金额
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: afterTaxAmount
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（支持合计）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_budget:
+    columnComment: 项目预算（万元）
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: projectBudget
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（支持合计）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  estimated_workload:
+    columnComment: 预估工作量（人天）
+    columnType: decimal(10,2)
+    javaType: BigDecimal
+    javaField: estimatedWorkload
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（支持合计）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  actual_workload:
+    columnComment: 实际人天
+    columnType: decimal(10,2)
+    javaType: BigDecimal
+    javaField: actualWorkload
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（支持合计）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  contract_amount:
+    columnComment: 合同金额（关联字段）
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: contractAmount
+    isInsert: false
+    isEdit: false
+    isList: true     # 列表显示（支持合计，来自pm_contract表）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+# =============================
+# 相关文件路径
+# ============================
+relatedFiles:
+  frontend:
+    - ruoyi-ui/src/views/revenue/company/index.vue  # 公司收入确认页面
+    - ruoyi-ui/src/components/DictSelect/index.vue  # 字典选择器组件
+    - ruoyi-ui/src/components/UserSelect/index.vue  # 用户选择器组件
+    - ruoyi-ui/src/components/SecondaryRegionSelect/index.vue  # 二级区域选择器组件
+    - ruoyi-ui/src/api/project/project.js  # 项目相关API
+
+  backend:
+    - ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectReviewController.java  # 控制器
+    - ruoyi-project/src/main/java/com/ruoyi/project/service/IProjectReviewService.java  # 服务接口
+    - ruoyi-project/src/main/java/com/ruoyi/project/service/impl/ProjectReviewServiceImpl.java  # 服务实现
+    - ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml  # MyBatis映射文件
+
+# ============================
+# 字典依赖
+# ============================
+dictionaries:
+  sys_ndgl:
+    name: 年度管理
+    usage: 收入确认年度、立项年度
+
+  sys_xmfl:
+    name: 项目分类
+    values:
+      - 软件开发类
+      - 硬件销售类
+      - 系统集成类
+      - 开发人力外包
+      - 运维人力外包
+      - 测试人力外包
+
+  sys_yjqy:
+    name: 一级区域
+    usage: 区域筛选（联动二级区域）
+
+  sys_xmjd:
+    name: 项目阶段
+    values:
+      - 需求分析
+      - 设计阶段
+      - 开发阶段
+      - 部署阶段
+      - 测试阶段
+      - 运维阶段
+
+  sys_spzt:
+    name: 审批状态
+    values:
+      - 0: 待审核
+      - 1: 已通过
+      - 2: 已拒绝
+
+  sys_yszt:
+    name: 验收状态
+    usage: 项目验收状态
+
+  sys_htzt:
+    name: 合同状态
+    values:
+      - 未签署
+      - 已签署
+
+  sys_qrzt:
+    name: 确认状态
+    values:
+      - 未确认
+      - 待确认
+      - 已确认
+      - 无法确认
+
+  sys_srqrzt:
+    name: 收入确认状态（同sys_qrzt）
+    values:
+      - 未确认
+      - 待确认
+      - 已确认
+      - 无法确认
+    notes: 用于列表显示的DictTag
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud                    # 单表CRUD（实际为视图查询）
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: review
+  functionName: 公司收入确认
+  parentMenuId: null                   # 独立菜单，不在标准生成范围
+
+# ============================
+# 定制需求（超出标准模板的组件/交互/接口需求）
+# ============================
+customizations:
+  # ==================
+  # 后端实现说明
+  # ==================
+  backend_implementation:
+    intent: "后端数据查询和统计逻辑"
+    component:
+      type: "custom"
+      spec: |
+        公司收入确认后端实现说明：
+
+        1. 数据来源（视图模式）
+           Controller: ProjectReviewController
+           Service: IProjectReviewService.selectReviewList()
+           Mapper: ProjectMapper.selectReviewList()
+           
+           查询逻辑：
+           - 基础表：pm_project
+           - 关联表：pm_secondary_region（二级区域名称）
+           - 关联表：pm_contract（合同金额）
+           - 数据权限：@DataScope(deptAlias='d', userAlias='u1')
+           
+        2. 关键字段关联查询
+           二级区域名称（regionName）：
+           - LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+           - 显示字段：sr.region_name AS regionName
+           
+           合同金额（contractAmount）：
+           - 子查询或聚合函数统计项目关联的所有合同金额
+           - SUM(c.contract_amount) FROM pm_contract c 
+             LEFT JOIN pm_project_contract_rel r ON c.contract_id = r.contract_id
+             WHERE r.project_id = p.project_id
+           
+        3. 查询条件处理
+           项目名称（LIKE查询）：
+           - WHERE p.project_name LIKE CONCAT('%', #{projectName}, '%')
+           
+           一级区域（精确匹配）：
+           - WHERE p.region = #{region}
+           
+           二级区域（通过region_id关联）：
+           - WHERE p.region_id = #{regionId}
+           
+           项目经理/市场经理（精确匹配）：
+           - WHERE p.project_manager_id = #{projectManagerId}
+           - WHERE p.market_manager_id = #{marketManagerId}
+           
+           字典字段（精确匹配）：
+           - WHERE p.project_category = #{projectCategory}
+           - WHERE p.project_stage = #{projectStage}
+           - WHERE p.approval_status = #{approvalStatus}
+           - WHERE p.acceptance_status = #{acceptanceStatus}
+           - WHERE p.revenue_confirm_status = #{revenueConfirmStatus}
+           - WHERE p.revenue_confirm_year = #{revenueConfirmYear}
+
+    bindTo: "backend_logic"
+    service:
+      endpoint: "GET /project/review/list"
+      source: "复用 ProjectReviewService.selectReviewList"
+      returns: "TableDataInfo<Project> 包含分页信息和项目列表"
+      newApi: false
+    notes: |
+      重要约定：
+      1. 使用数据权限注解 @DataScope 控制部门数据可见性
+      2. 二级区域通过 region_id 关联查询，返回 region_name
+      3. 合同金额通过子查询聚合统计
+      4. 所有字典字段存储字典值，前端通过 DictTag 组件显示标签
+
+  # ==================
+  # 前端字段绑定说明
+  # ==================
+  frontend_field_binding:
+    intent: "前端查询表单和列表显示字段绑定规范"
+    component:
+      type: "custom"
+      spec: |
+        关键字段的前后端映射关系：
+
+        1. 查询条件字段
+           项目名称：
+           - 前端绑定：v-model="queryParams.projectName"
+           - 后端字段：project_name
+           - 查询类型：LIKE 模糊查询
+           
+           项目部门：
+           - 前端绑定：v-model="queryParams.projectDept"
+           - 后端字段：project_dept
+           - 组件类型：dept-tree-select（三级及以下部门）
+           
+           一级区域：
+           - 前端绑定：v-model="queryParams.region"
+           - 后端字段：region
+           - 组件类型：DictSelect (dict-type="sys_yjqy")
+           - 特殊逻辑：联动触发二级区域加载
+           
+           二级区域：
+           - 前端绑定：v-model="queryParams.regionId"
+           - 后端字段：region_id
+           - 组件类型：SecondaryRegionSelect
+           - 依赖：queryParams.region（一级区域）
+           
+           项目经理/市场经理：
+           - 前端绑定：v-model="queryParams.projectManagerId"
+           - 前端绑定：v-model="queryParams.marketManagerId"
+           - 后端字段：project_manager_id, market_manager_id
+           - 组件类型：UserSelect (post-code="pm"|"scjl")
+
+        2. 列表显示字段
+           用户名显示（项目经理、市场经理）：
+           - 后端返回：projectManagerId (Long)
+           - 前端显示：通过 getUserName() 函数转换为昵称
+           - 数据来源：UserSelect 组件的 userOptions
+           
+           部门显示：
+           - 后端返回：projectDept (String, 部门ID)
+           - 前端显示：通过 getDeptName() 函数转换为层级路径
+           - 格式：从第三级开始，如"事业部-开发部-研发组"
+           
+           二级区域显示：
+           - 后端返回：regionName (String, 关联查询得到)
+           - 前端显示：直接显示，无需转换
+           
+           字典字段显示：
+           - 后端返回：字典值（如 '0', '1'）
+           - 前端显示：<dict-tag> 组件自动转换为标签
+
+        3. 合计行数据
+           - 前端计算：遍历 tableData 累加金额和工作量字段
+           - 显示位置：表格末尾特殊行（isSummaryRow: true）
+           - 加粗显示：style="font-weight: bold"
+
+    bindTo: "query_form_and_table"
+    service: null
+    notes: |
+      重要：区分查询字段和显示字段的数据类型
+      - 查询：使用 ID 字段（projectManagerId, regionId）
+      - 显示：使用名称字段（nickName, regionName, deptName）
+      
+      用户名显示特殊处理：
+      - 不直接查询用户表
+      - 使用 UserSelect 组件的 userOptions 缓存
+      - 通过 ref 访问组件内部数据
+
+  # ==================
+  # 查询条件组件定制
+  # ==================
+  dict_select_components:
+    intent: "字典选择器统一使用 DictSelect 组件，自动加载字典数据"
+    component:
+      type: "DictSelect"
+      props:
+        clearable: true
+        placeholder: "请选择"
+        filterable: false
+      spec: |
+        使用全局注册的 DictSelect 组件替代手动 el-select：
+        
+        优势：
+        1. 自动加载字典数据（通过 Pinia store 缓存）
+        2. 统一交互体验
+        3. 减少重复代码
+        
+        使用的字典类型：
+        - sys_ndgl: 年度管理（收入确认年度、立项年度）
+        - sys_xmfl: 项目分类
+        - sys_yjqy: 一级区域
+        - sys_xmjd: 项目阶段
+        - sys_spzt: 审批状态
+        - sys_yszt: 验收状态
+        - sys_qrzt: 收入确认状态
+    bindTo: ["revenue_confirm_year", "project_category", "region", "established_year", "project_stage", "approval_status", "acceptance_status", "revenue_confirm_status"]
+    service: null
+    notes: |
+      组件位置：ruoyi-ui/src/components/DictSelect/index.vue
+      全局注册：ruoyi-ui/src/main.ts
+      
+      示例用法：
+      <dict-select
+        v-model="queryParams.projectCategory"
+        dict-type="sys_xmfl"
+        placeholder="请选择项目分类"
+        clearable
+      />
+
+  user_select_components:
+    intent: "用户选择器统一使用 UserSelect 组件，支持按岗位筛选"
+    component:
+      type: "UserSelect"
+      props:
+        clearable: true
+        filterable: true
+        placeholder: "请选择"
+      spec: |
+        使用全局注册的 UserSelect 组件：
+        
+        功能：
+        1. 按岗位代码自动筛选用户
+        2. change 事件返回完整用户对象
+        3. 支持 ref 访问 userOptions（用于表格显示）
+        
+        岗位代码：
+        - pm: 项目经理
+        - scjl: 市场经理
+        - xsfzr: 销售负责人
+    bindTo: ["project_manager_id", "market_manager_id"]
+    service:
+      endpoint: "GET /project/project/users?postCode={pm|scjl}"
+      source: "复用 ProjectService.getUsersByPost"
+      returns: "[{ userId, nickName, userName, phonenumber, ... }]"
+      newApi: false
+    notes: |
+      组件位置：ruoyi-ui/src/components/UserSelect/index.vue
+      
+      示例用法（查询条件）：
+      <user-select
+        v-model="queryParams.projectManagerId"
+        post-code="pm"
+        placeholder="请选择项目经理"
+        filterable
+        clearable
+      />
+      
+      示例用法（表格显示 - 需要 ref）：
+      <user-select
+        ref="projectManagerSelectRef"
+        v-model="hiddenValue"
+        post-code="pm"
+        style="display: none"
+      />
+
+  region_cascade_select:
+    intent: "一级区域选择后，二级区域自动联动加载"
+    component:
+      type: "DictSelect + SecondaryRegionSelect"
+      props:
+        primary_region:
+          clearable: true
+          placeholder: "请选择一级区域"
+        secondary_region:
+          clearable: true
+          filterable: true
+          placeholder: "请选择二级区域"
+          autoDisabled: true
+      spec: |
+        联动机制：
+        
+        一级区域（DictSelect）：
+        - 绑定 @change="handleRegionChange"
+        - 字典类型：sys_yjqy
+        
+        二级区域（SecondaryRegionSelect）：
+        - 依赖 :region-dict-value="queryParams.region"
+        - 一级区域变化时自动清空并重新加载
+        - 未选一级区域时自动禁用
+        
+        handleRegionChange 函数：
+        1. 清空 queryParams.regionId
+        2. 清空 secondaryRegionOptions
+        3. 如果有新值，调用 getSecondaryRegions(value)
+    bindTo: ["region", "region_id"]
+    service:
+      endpoint: "GET /project/project/secondaryRegions?regionDictValue={region}"
+      source: "复用 ProjectService.getSecondaryRegions"
+      returns: "[{ regionId, regionCode, regionName, regionDictValue }]"
+      newApi: false
+    notes: |
+      组件位置：ruoyi-ui/src/components/SecondaryRegionSelect/index.vue
+      
+      示例代码：
+      <dict-select
+        v-model="queryParams.region"
+        dict-type="sys_yjqy"
+        @change="handleRegionChange"
+      />
+      
+      <secondary-region-select
+        v-model="queryParams.regionId"
+        :region-dict-value="queryParams.region"
+        filterable
+      />
+
+  # ==================
+  # 列表显示定制
+  # ==================
+  summary_row_calculation:
+    intent: "列表底部显示合计行，统计金额和工作量字段"
+    component:
+      type: "custom"
+      spec: |
+        合计行功能实现：
+        
+        1. 数据准备（在 getList() 成功回调中）：
+           const total = {
+             confirmAmount: 0,
+             afterTaxAmount: 0,
+             projectBudget: 0,
+             estimatedWorkload: 0,
+             actualWorkload: 0,
+             contractAmount: 0
+           }
+           
+           tableData.value.forEach(row => {
+             total.confirmAmount += Number(row.confirmAmount || 0)
+             total.afterTaxAmount += Number(row.afterTaxAmount || 0)
+             total.projectBudget += Number(row.projectBudget || 0)
+             total.estimatedWorkload += Number(row.estimatedWorkload || 0)
+             total.actualWorkload += Number(row.actualWorkload || 0)
+             total.contractAmount += Number(row.contractAmount || 0)
+           })
+           
+        2. 添加合计行：
+           const summaryRow = {
+             isSummaryRow: true,
+             confirmAmount: total.confirmAmount.toFixed(2),
+             afterTaxAmount: total.afterTaxAmount.toFixed(2),
+             projectBudget: total.projectBudget.toFixed(2),
+             estimatedWorkload: total.estimatedWorkload.toFixed(2),
+             actualWorkload: total.actualWorkload.toFixed(2),
+             contractAmount: total.contractAmount.toFixed(2)
+           }
+           tableData.value.push(summaryRow)
+           
+        3. 模板显示（每个金额列）：
+           <el-table-column label="确认金额(含税)">
+             <template #default="scope">
+               <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">
+                 {{ scope.row.confirmAmount }}
+               </span>
+               <span v-else>{{ scope.row.confirmAmount }}</span>
+             </template>
+           </el-table-column>
+    bindTo: "table"
+    service: null
+    notes: |
+      统计字段（6个）：
+      - confirmAmount: 确认金额（含税）
+      - afterTaxAmount: 税后金额
+      - projectBudget: 项目预算
+      - estimatedWorkload: 预估工作量
+      - actualWorkload: 实际人天
+      - contractAmount: 合同金额
+      
+      注意事项：
+      1. 使用 Number() 转换，处理 null/undefined
+      2. 使用 toFixed(2) 保留两位小数
+      3. 合计行字段加粗显示
+      4. 序号列显示"合计"文字
+
+  user_name_display_helper:
+    intent: "项目经理和市场经理在列表中显示昵称而非ID"
+    component:
+      type: "custom"
+      spec: |
+        用户名显示实现方案：
+        
+        1. 隐藏的 UserSelect 组件（用于提供数据源）：
+           <user-select
+             ref="projectManagerSelectRef"
+             v-model="hiddenProjectManager"
+             post-code="pm"
+             style="display: none"
+           />
+           
+           <user-select
+             ref="marketManagerSelectRef"
+             v-model="hiddenMarketManager"
+             post-code="scjl"
+             style="display: none"
+           />
+           
+        2. 辅助函数定义：
+           function getUserName(userId, userOptions) {
+             if (!userId || !userOptions) return ''
+             const user = userOptions.find(u => u.userId === userId)
+             return user ? user.nickName : ''
+           }
+           
+        3. 表格列使用：
+           <el-table-column label="项目经理">
+             <template #default="scope">
+               <span v-if="!scope.row.isSummaryRow">
+                 {{ getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions) }}
+               </span>
+             </template>
+           </el-table-column>
+    bindTo: ["project_manager_id", "market_manager_id"]
+    service:
+      endpoint: "GET /project/project/users?postCode={pm|scjl}"
+      source: "复用 ProjectService.getUsersByPost"
+      returns: "[{ userId, nickName, userName, phonenumber, ... }]"
+      newApi: false
+    notes: |
+      为什么使用隐藏 UserSelect 而不直接查询：
+      1. 复用 UserSelect 组件的数据加载逻辑
+      2. 利用组件内部缓存机制
+      3. 保持代码一致性
+      
+      注意事项：
+      1. 使用 ref 访问组件实例
+      2. 使用可选链 ?. 防止组件未加载时报错
+      3. 合计行不显示用户名
+
+  dept_path_display_helper:
+    intent: "项目部门显示完整层级路径（从第三级开始）"
+    component:
+      type: "custom"
+      spec: |
+        部门路径显示实现：
+        
+        1. 数据准备（加载部门树）：
+           import { listDept } from '@/api/system/dept'
+           
+           const deptOptions = ref([])
+           
+           function loadDeptTree() {
+             listDept({}).then(response => {
+               deptOptions.value = response.data || []
+             })
+           }
+           
+           onMounted(() => {
+             loadDeptTree()
+           })
+           
+        2. 辅助函数定义：
+           function getDeptName(deptId) {
+             if (!deptId || !deptOptions.value) return ''
+             
+             const dept = deptOptions.value.find(d => d.deptId === deptId)
+             if (!dept) return ''
+             
+             // 解析 ancestors 获取父级ID链
+             const ancestorIds = dept.ancestors ? dept.ancestors.split(',').map(Number) : []
+             
+             // 从第三级开始（索引2）
+             const pathDepts = ancestorIds.slice(2).map(id => {
+               const d = deptOptions.value.find(dept => dept.deptId === id)
+               return d ? d.deptName : ''
+             }).filter(name => name)
+             
+             // 添加当前部门
+             pathDepts.push(dept.deptName)
+             
+             // 使用 '-' 连接
+             return pathDepts.join('-')
+           }
+           
+        3. 表格列使用：
+           <el-table-column label="项目部门">
+             <template #default="scope">
+               <span v-if="!scope.row.isSummaryRow">
+                 {{ getDeptName(scope.row.projectDept) }}
+               </span>
+             </template>
+           </el-table-column>
+    bindTo: "project_dept"
+    service:
+      endpoint: "GET /system/dept/list"
+      source: "复用 SysDeptService.selectDeptList"
+      returns: "[{ deptId, deptName, ancestors, ... }]"
+      newApi: false
+    notes: |
+      ancestors 字段说明：
+      - 格式：逗号分隔的父级ID链，如 "0,100,101,102"
+      - 第一级：0（根节点）
+      - 第二级：100（顶级部门）
+      - 第三级：101（一级部门）
+      - 第四级：102（二级部门）
+      
+      显示规则：
+      - 从第三级开始（索引2）
+      - 使用 '-' 连接
+      - 示例："事业部-开发部-研发组"

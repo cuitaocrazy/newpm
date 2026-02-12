@@ -24,114 +24,108 @@
         />
       </el-form-item>
       <el-form-item label="收入确认年度" prop="revenueConfirmYear">
-        <el-select v-model="queryParams.revenueConfirmYear" placeholder="请选择收入确认年度" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_ndgl"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.revenueConfirmYear"
+          dict-type="sys_ndgl"
+          placeholder="请选择收入确认年度"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="项目分类" prop="projectCategory">
-        <el-select v-model="queryParams.projectCategory" placeholder="请选择项目分类" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_xmfl"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.projectCategory"
+          dict-type="sys_xmfl"
+          placeholder="请选择项目分类"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="一级区域" prop="region">
-        <el-select v-model="queryParams.region" placeholder="请选择一级区域" clearable @change="handleRegionChange" style="width: 240px">
-          <el-option
-            v-for="dict in sys_yjqy"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.region"
+          dict-type="sys_yjqy"
+          placeholder="请选择一级区域"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="二级区域" prop="regionId">
-        <el-select v-model="queryParams.regionId" placeholder="请选择二级区域" clearable filterable style="width: 240px">
-          <el-option
-            v-for="item in provinceList"
-            :key="item.regionId"
-            :label="item.regionName"
-            :value="item.regionId"
-          />
-        </el-select>
+        <secondary-region-select
+          v-model="queryParams.regionId"
+          :region-dict-value="queryParams.region"
+          placeholder="请选择二级区域"
+          clearable
+          filterable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="项目经理" prop="projectManagerId">
-        <el-select v-model="queryParams.projectManagerId" placeholder="请选择项目经理" clearable filterable style="width: 240px">
-          <el-option
-            v-for="user in projectManagerList"
-            :key="user.userId"
-            :label="user.nickName"
-            :value="user.userId"
-          />
-        </el-select>
+        <user-select
+          ref="projectManagerSelectRef"
+          v-model="queryParams.projectManagerId"
+          post-code="pm"
+          placeholder="请选择项目经理"
+          clearable
+          filterable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="市场经理" prop="marketManagerId">
-        <el-select v-model="queryParams.marketManagerId" placeholder="请选择市场经理" clearable filterable style="width: 240px">
-          <el-option
-            v-for="user in marketManagerList"
-            :key="user.userId"
-            :label="user.nickName"
-            :value="user.userId"
-          />
-        </el-select>
+        <user-select
+          ref="marketManagerSelectRef"
+          v-model="queryParams.marketManagerId"
+          post-code="scjl"
+          placeholder="请选择市场经理"
+          clearable
+          filterable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="立项年度" prop="establishedYear">
-        <el-select v-model="queryParams.establishedYear" placeholder="请选择立项年度" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_ndgl"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.establishedYear"
+          dict-type="sys_ndgl"
+          placeholder="请选择立项年度"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="项目阶段" prop="projectStage">
-        <el-select v-model="queryParams.projectStage" placeholder="请选择项目阶段" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_xmjd"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.projectStage"
+          dict-type="sys_xmjd"
+          placeholder="请选择项目阶段"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="审核状态" prop="approvalStatus">
-        <el-select v-model="queryParams.approvalStatus" placeholder="请选择审核状态" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_spzt"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.approvalStatus"
+          dict-type="sys_spzt"
+          placeholder="请选择审核状态"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="验收状态" prop="acceptanceStatus">
-        <el-select v-model="queryParams.acceptanceStatus" placeholder="请选择验收状态" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_yszt"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.acceptanceStatus"
+          dict-type="sys_yszt"
+          placeholder="请选择验收状态"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
-        <el-select v-model="queryParams.revenueConfirmStatus" placeholder="请选择收入确认状态" clearable style="width: 240px">
-          <el-option
-            v-for="dict in sys_srqrzt"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+        <dict-select
+          v-model="queryParams.revenueConfirmStatus"
+          dict-type="sys_srqrzt"
+          placeholder="请选择收入确认状态"
+          clearable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -160,7 +154,6 @@
         </template>
       </el-table-column>
       <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
-      <el-table-column label="项目编码" align="center" prop="projectCode" min-width="150" show-overflow-tooltip />
       <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getDeptName(scope.row.projectDept) }}</span>
@@ -168,22 +161,17 @@
       </el-table-column>
       <el-table-column label="项目经理" align="center" prop="projectManagerId" min-width="100">
         <template #default="scope">
-          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.projectManagerId, projectManagerList) }}</span>
+          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="市场经理" align="center" prop="marketManagerId" min-width="100">
         <template #default="scope">
-          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.marketManagerId, marketManagerList) }}</span>
+          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.marketManagerId, marketManagerSelectRef?.userOptions) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="项目分类" align="center" prop="projectCategory" width="120">
         <template #default="scope">
           <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="一级区域" align="center" prop="region" width="100">
-        <template #default="scope">
-          <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
         </template>
       </el-table-column>
       <el-table-column label="二级区域" align="center" prop="regionName" width="100" />
@@ -281,7 +269,7 @@
 <script setup name="RevenueCompany">
 import { ref, reactive, toRefs, getCurrentInstance } from 'vue'
 import { listRevenue, exportRevenue } from "@/api/revenue/company"
-import { getUsersByPost, getDeptTree, getSecondaryRegions } from "@/api/project/project"
+import { getDeptTree } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 
@@ -300,9 +288,10 @@ const total = ref(0)
 
 const deptTree = ref([])
 const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
-const provinceList = ref([])
-const projectManagerList = ref([])
-const marketManagerList = ref([])
+
+// 使用 UserSelect 组件的 ref 来获取用户列表
+const projectManagerSelectRef = ref(null)
+const marketManagerSelectRef = ref(null)
 
 const data = reactive({
   queryParams: {
@@ -465,22 +454,10 @@ function getDeptName(deptId) {
 /** 根据用户ID获取用户名称 */
 function getUserName(userId, userList) {
   if (!userId) return '-'
-  const user = userList.find(u => u.userId === userId)
+  // 如果 userList 是响应式对象，取其 value
+  const list = userList?.value || userList || []
+  const user = list.find(u => u.userId === userId)
   return user ? user.nickName : '-'
-}
-
-/** 加载项目经理列表 */
-function loadProjectManagers() {
-  getUsersByPost('pm').then(response => {
-    projectManagerList.value = response.data
-  })
-}
-
-/** 加载市场经理列表 */
-function loadMarketManagers() {
-  getUsersByPost('scjl').then(response => {
-    marketManagerList.value = response.data
-  })
 }
 
 /** 项目名称自动完成 */
@@ -502,12 +479,6 @@ function queryProjectNames(queryString, callback) {
 function initOptions() {
   // 加载部门树
   loadDeptTree()
-
-  // 加载项目经理（岗位代码：pm）
-  loadProjectManagers()
-
-  // 加载市场经理（岗位代码：scjl）
-  loadMarketManagers()
 }
 
 /** 收入确认按钮 */

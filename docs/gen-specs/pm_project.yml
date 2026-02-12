@@ -79,6 +79,75 @@ basicInfo:
        - 说明：审核功能代码保留在文件中，可在专门的审核列表页使用
        - 实现文件：index.vue
 
+    10. 列表显示优化 - 二级区域列 (2026-02-12完成)
+        - 项目管理列表(/project/project)：
+          * 在"项目分类"列后面添加"二级区域"列
+          * 显示字段：regionName（来自 pm_secondary_region.region_name）
+          * 列宽：min-width="120px"，支持 show-overflow-tooltip
+          * 数据来源：Mapper XML 已关联查询 pm_secondary_region 表
+        - 实现文件：ruoyi-ui/src/views/project/project/index.vue
+        - 后端支持：ProjectMapper.xml 已有 LEFT JOIN pm_secondary_region
+
+    11. 公司收入确认列表优化 (2026-02-12完成)
+        - 删除"项目编码"列（原位置：项目名称之后）
+        - 删除"一级区域"列（原位置：项目分类之后）
+        - 保留"二级区域"列
+        - 优化后列顺序：项目名称 → 项目部门 → ... → 项目分类 → 二级区域 → 项目阶段
+        - 实现文件：ruoyi-ui/src/views/revenue/company/index.vue
+
+    12. 选择器组件重构 (2026-02-12完成)
+        - 创建通用选择器组件：
+          * DictSelect - 字典选择器，自动加载字典数据
+          * UserSelect - 用户选择器，支持按岗位筛选（pm/scjl/xsfzr）
+          * SecondaryRegionSelect - 二级区域选择器，自动联动一级区域
+        - 组件位置：ruoyi-ui/src/components/
+        - 全局注册：ruoyi-ui/src/main.ts
+        - 迁移页面（5个）：
+          * /project/review/index.vue - 项目审核列表
+          * /revenue/company/index.vue - 公司收入确认
+          * /project/project/index.vue - 项目列表
+          * /project/project/apply.vue - 立项申请
+          * /project/project/edit.vue - 项目编辑
+        - 代码优化：
+          * 减少重复代码约520行
+          * 统一交互体验
+          * 简化新页面开发
+        - 特殊处理：
+          * apply.vue 和 edit.vue 的二级区域保留原实现（使用 regionCode 字段）
+          * edit.vue 的参与人员保留原实现（自定义标签展示）
+
+    13. 一级区域联动修复 (2026-02-12完成)
+        - 问题：一级区域选择后，二级区域没有动态加载数据
+        - 原因：迁移到 DictSelect 后忘记添加 @change 事件
+        - 修复内容：
+          * apply.vue：一级区域添加 @change="handleRegionChange"
+          * edit.vue：一级区域添加 @change="handleRegionChange"
+        - 实现文件：
+          * ruoyi-ui/src/views/project/project/apply.vue
+          * ruoyi-ui/src/views/project/project/edit.vue
+
+    14. 路由跳转修复 (2026-02-12完成)
+        - 问题：编辑页面点击取消按钮后出现404
+        - 原因：路由路径不一致
+          * 提交成功：router.push('/project/list') ✓
+          * 取消按钮：router.push('/project/project') ✗
+        - 修复：统一使用 /project/list
+        - 实现文件：
+          * ruoyi-ui/src/views/project/project/edit.vue - cancel()
+          * ruoyi-ui/src/views/project/project/apply.vue - cancel()
+
+    15. edit.vue 代码清理 (2026-02-12完成)
+        - 删除不再使用的代码（已被 UserSelect 组件替代）：
+          * refs：projectManagers, marketManagers, salesManagers
+          * 函数：loadProjectManagers(), loadMarketManagers(), loadSalesManagers()
+          * onMounted 调用：删除上述三个函数的调用
+        - 销售负责人自动填充优化：
+          * 从 watch 改为 @change 事件处理
+          * 新增：handleSalesManagerChange(userId, user) 函数
+          * UserSelect 添加 @change="handleSalesManagerChange"
+        - 代码减少：约30行
+        - 实现文件：ruoyi-ui/src/views/project/project/edit.vue
+
 # ============================
 # Tab 2: 字段信息
 # ============================

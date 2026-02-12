@@ -47,18 +47,25 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="行业" prop="industry" data-prop="industry">
-                <el-select v-model="form.industry" placeholder="请选择行业" clearable @blur="validateOnBlur('industry')">
-                  <el-option v-for="dict in industry" :key="dict.value"
-                    :label="dict.label" :value="dict.value" />
-                </el-select>
+                <dict-select
+                  v-model="form.industry"
+                  dict-type="industry"
+                  placeholder="请选择行业"
+                  clearable
+                  @blur="validateOnBlur('industry')"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="一级区域" prop="region" data-prop="region">
-                <el-select v-model="form.region" placeholder="请选择一级区域" clearable @change="handleRegionChange" @blur="validateOnBlur('region')">
-                  <el-option v-for="dict in sys_yjqy" :key="dict.value"
-                    :label="dict.label" :value="dict.value" />
-                </el-select>
+                <dict-select
+                  v-model="form.region"
+                  dict-type="sys_yjqy"
+                  placeholder="请选择一级区域"
+                  clearable
+                  @change="handleRegionChange"
+                  @blur="validateOnBlur('region')"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -66,7 +73,14 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="二级区域" prop="regionCode" data-prop="regionCode">
-                <el-select v-model="form.regionCode" placeholder="请选择二级区域" clearable                  :disabled="!form.region" @change="handleSecondaryRegionChange" @blur="validateOnBlur('regionCode')">
+                <el-select
+                  v-model="form.regionCode"
+                  placeholder="请选择二级区域"
+                  clearable
+                  :disabled="!form.region"
+                  @change="handleSecondaryRegionChange"
+                  @blur="validateOnBlur('regionCode')"
+                >
                   <el-option
                     v-for="item in secondaryRegionOptions"
                     :key="item.regionCode"
@@ -86,14 +100,14 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="立项年度" prop="establishedYear" data-prop="establishedYear">
-                <el-select v-model="form.establishedYear" placeholder="请选择立项年度" clearable @change="generateProjectCode" @blur="validateOnBlur('establishedYear')">
-                  <el-option
-                    v-for="dict in sys_ndgl"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                  />
-                </el-select>
+                <dict-select
+                  v-model="form.establishedYear"
+                  dict-type="sys_ndgl"
+                  placeholder="请选择立项年度"
+                  clearable
+                  @change="generateProjectCode"
+                  @blur="validateOnBlur('establishedYear')"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -114,10 +128,13 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="项目分类" prop="projectCategory" data-prop="projectCategory">
-                <el-select v-model="form.projectCategory" placeholder="请选择项目分类" clearable @blur="validateOnBlur('projectCategory')">
-                  <el-option v-for="dict in sys_xmfl" :key="dict.value" 
-                    :label="dict.label" :value="dict.value" />
-                </el-select>
+                <dict-select
+                  v-model="form.projectCategory"
+                  dict-type="sys_xmfl"
+                  placeholder="请选择项目分类"
+                  clearable
+                  @blur="validateOnBlur('projectCategory')"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -133,18 +150,24 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="项目阶段" prop="projectStage" data-prop="projectStage">
-                <el-select v-model="form.projectStage" placeholder="请选择项目阶段" clearable @blur="validateOnBlur('projectStage')">
-                  <el-option v-for="dict in sys_xmjd" :key="dict.value"
-                    :label="dict.label" :value="dict.value" />
-                </el-select>
+                <dict-select
+                  v-model="form.projectStage"
+                  dict-type="sys_xmjd"
+                  placeholder="请选择项目阶段"
+                  clearable
+                  @blur="validateOnBlur('projectStage')"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
-                <el-select v-model="form.acceptanceStatus" placeholder="请选择验收状态" clearable @blur="validateOnBlur('acceptanceStatus')">
-                  <el-option v-for="dict in sys_yszt" :key="dict.value" 
-                    :label="dict.label" :value="dict.value" />
-                </el-select>
+                <dict-select
+                  v-model="form.acceptanceStatus"
+                  dict-type="sys_yszt"
+                  placeholder="请选择验收状态"
+                  clearable
+                  @blur="validateOnBlur('acceptanceStatus')"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -213,18 +236,26 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="项目经理" prop="projectManagerId" data-prop="projectManagerId">
-                <el-select v-model="form.projectManagerId" placeholder="请选择项目经理"                  filterable clearable @blur="validateOnBlur('projectManagerId')">
-                  <el-option v-for="user in projectManagers" :key="user.userId" 
-                    :label="user.nickName" :value="user.userId" />
-                </el-select>
+                <user-select
+                  v-model="form.projectManagerId"
+                  post-code="pm"
+                  placeholder="请选择项目经理"
+                  filterable
+                  clearable
+                  @blur="validateOnBlur('projectManagerId')"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="市场经理" prop="marketManagerId" data-prop="marketManagerId">
-                <el-select v-model="form.marketManagerId" placeholder="请选择市场经理"                  filterable clearable @blur="validateOnBlur('marketManagerId')">
-                  <el-option v-for="user in marketManagers" :key="user.userId" 
-                    :label="user.nickName" :value="user.userId" />
-                </el-select>
+                <user-select
+                  v-model="form.marketManagerId"
+                  post-code="scjl"
+                  placeholder="请选择市场经理"
+                  filterable
+                  clearable
+                  @blur="validateOnBlur('marketManagerId')"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -267,10 +298,15 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="销售负责人" prop="salesManagerId" data-prop="salesManagerId">
-                <el-select v-model="form.salesManagerId" placeholder="请选择销售负责人"                  filterable clearable @blur="validateOnBlur('salesManagerId')">
-                  <el-option v-for="user in salesManagers" :key="user.userId" 
-                    :label="user.nickName" :value="user.userId" />
-                </el-select>
+                <user-select
+                  v-model="form.salesManagerId"
+                  post-code="xsfzr"
+                  placeholder="请选择销售负责人"
+                  filterable
+                  clearable
+                  @change="handleSalesManagerChange"
+                  @blur="validateOnBlur('salesManagerId')"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="12">
@@ -558,9 +594,6 @@ const { form, rules } = toRefs(data)
 const submitLoading = ref(false)
 const contractInfo = ref({})
 const secondaryRegionOptions = ref([])
-const projectManagers = ref([])
-const marketManagers = ref([])
-const salesManagers = ref([])
 const allUsers = ref([])
 const selectedParticipants = ref([])
 const participantInput = ref('')
@@ -579,22 +612,6 @@ watch([() => form.value.industry, () => form.value.region,
   }
 )
 
-// 监听销售负责人变化，自动填充手机号
-watch(() => form.value.salesManagerId, (userId) => {
-  if (userId) {
-    const salesManager = salesManagers.value.find(u => u.userId === userId)
-    if (salesManager) {
-      form.value.salesContact = salesManager.phonenumber || ''
-      // 自动填充后立即触发验证，清除错误提示
-      nextTick(() => {
-        validateOnBlur('salesContact')
-      })
-    }
-  } else {
-    form.value.salesContact = ''
-  }
-})
-
 // 监听区域变化，重新加载客户列表
 watch(() => form.value.region, (newRegion) => {
   if (newRegion) {
@@ -602,28 +619,20 @@ watch(() => form.value.region, (newRegion) => {
   }
 })
 
+// 处理销售负责人变化，自动填充手机号
+function handleSalesManagerChange(userId, user) {
+  if (user) {
+    form.value.salesContact = user.phonenumber || ''
+    // 自动填充后立即触发验证，清除错误提示
+    nextTick(() => {
+      validateOnBlur('salesContact')
+    })
+  } else {
+    form.value.salesContact = ''
+  }
+}
+
 /** 过滤部门树，只保留三级及以下机构 */
-// 加载项目经理列表
-function loadProjectManagers() {
-  listUserByPost('pm').then(response => {
-    projectManagers.value = response.data || []
-  })
-}
-
-// 加载市场经理列表
-function loadMarketManagers() {
-  listUserByPost('scjl').then(response => {
-    marketManagers.value = response.data || []
-  })
-}
-
-// 加载销售负责人列表
-function loadSalesManagers() {
-  listUserByPost('xsfzr').then(response => {
-    salesManagers.value = response.data || []
-  })
-}
-
 // 加载所有用户（用于参与人员选择）
 function loadAllUsers() {
   listUser({}).then(response => {
@@ -720,7 +729,7 @@ function submitForm() {
 // 取消
 function cancel() {
   proxy.$modal.confirm('确认取消编辑？未保存的数据将丢失').then(() => {
-    router.push('/project/project')
+    router.push('/project/list')
   })
 }
 
@@ -814,9 +823,6 @@ function loadProjectData() {
 
 // 页面加载时初始化
 onMounted(() => {
-  loadProjectManagers()
-  loadMarketManagers()
-  loadSalesManagers()
   loadAllUsers()
   loadCustomers()
   loadProjectData()
