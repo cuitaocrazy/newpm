@@ -72,6 +72,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <!-- 关联字段 -->
         <result property="contractAmount"    column="contract_amount"    />
         <result property="contractStatus"    column="contract_status"    />
+        <result property="deptName"    column="dept_name"    />
+        <result property="projectManagerName"    column="project_manager_name"    />
+        <result property="marketManagerName"    column="market_manager_name"    />
+        <result property="salesManagerName"    column="sales_manager_name"    />
+        <result property="customerName"    column="customer_name"    />
+        <result property="customerContactName"    column="customer_contact_name"    />
+        <result property="customerContactPhone"    column="customer_contact_phone"    />
     </resultMap>
 
     <sql id="selectProjectVo">
@@ -167,10 +174,37 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="companyRevenueConfirmedTime != null "> and p.company_revenue_confirmed_time = #{companyRevenueConfirmedTime}</if>
         </where>
     </select>
-    
+
     <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectResult">
-        <include refid="selectProjectVo"/>
-        where project_id = #{projectId} and del_flag = '0'
+        SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
+               p.established_year, p.project_category, p.project_dept, p.project_stage, p.acceptance_status,
+               p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description,
+               p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
+               p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
+               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
+               p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason,
+               p.approval_time, p.approver_id, p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
+               p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
+               p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.revenue_confirm_status,
+               p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
+               p.company_revenue_confirmed_time,
+               d.dept_name AS dept_name,
+               sr.region_name AS region_name,
+               u1.nick_name AS project_manager_name,
+               u2.nick_name AS market_manager_name,
+               u3.nick_name AS sales_manager_name,
+               c.customer_simple_name AS customer_name,
+               cc.contact_name AS customer_contact_name,
+               cc.contact_phone AS customer_contact_phone
+        FROM pm_project p
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+        LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
+        LEFT JOIN sys_user u2 ON p.market_manager_id = u2.user_id
+        LEFT JOIN sys_user u3 ON p.sales_manager_id = u3.user_id
+        LEFT JOIN pm_customer c ON p.customer_id = c.customer_id
+        LEFT JOIN pm_customer_contact cc ON p.customer_contact_id = cc.contact_id
+        WHERE p.project_id = #{projectId} AND p.del_flag = '0'
     </select>
 
     <insert id="insertProject" parameterType="Project" useGeneratedKeys="true" keyProperty="projectId">
@@ -461,10 +495,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
                p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.revenue_confirm_status,
                p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
-               p.company_revenue_confirmed_time
+               p.company_revenue_confirmed_time,
+               d.dept_name AS dept_name,
+               sr.region_name AS region_name,
+               u2.nick_name AS project_manager_name,
+               u3.nick_name AS market_manager_name
         FROM pm_project p
-        LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
-        LEFT JOIN sys_user u1 ON p.create_by = u1.user_name
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u1 ON p.create_by COLLATE utf8mb4_unicode_ci = u1.user_name
+        LEFT JOIN sys_user u2 ON p.project_manager_id = u2.user_id
+        LEFT JOIN sys_user u3 ON p.market_manager_id = u3.user_id
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         WHERE p.del_flag = '0'
         AND (p.approval_status = '0' OR p.approval_status IS NULL)
         <if test="projectName != null and projectName != ''">

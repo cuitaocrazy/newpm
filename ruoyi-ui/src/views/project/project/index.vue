@@ -281,11 +281,69 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 审核对话框 -->
+    <el-dialog title="项目审核" v-model="approvalDialogVisible" width="600px" append-to-body>
+      <el-form :model="approvalForm" :rules="approvalRules" ref="approvalFormRef" label-width="100px">
+        <el-form-item label="项目名称">
+          <el-input v-model="currentProject.projectName" disabled />
+        </el-form-item>
+        <el-form-item label="项目编号">
+          <el-input v-model="currentProject.projectCode" disabled />
+        </el-form-item>
+        <el-form-item label="审核结果" prop="approvalStatus">
+          <el-radio-group v-model="approvalForm.approvalStatus">
+            <el-radio label="1">通过</el-radio>
+            <el-radio label="2">拒绝</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="审核意见" prop="approvalReason">
+          <el-input
+            v-model="approvalForm.approvalReason"
+            type="textarea"
+            :rows="4"
+            :placeholder="approvalForm.approvalStatus === '2' ? '请填写拒绝原因（必填）' : '审核意见（可选）'"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="approvalDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitApproval">确定</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 审核历史对话框 -->
+    <el-dialog title="审核历史" v-model="historyDialogVisible" width="800px" append-to-body>
+      <el-timeline v-if="approvalHistory.length > 0">
+        <el-timeline-item
+          v-for="item in approvalHistory"
+          :key="item.approvalId"
+          :timestamp="item.createTime"
+          placement="top"
+        >
+          <el-card>
+            <template #header>
+              <span>审核结果：</span>
+              <dict-tag :options="sys_spzt" :value="item.approvalStatus" />
+            </template>
+            <p>审核时间：{{ item.approvalTime }}</p>
+            <p>审核人ID：{{ item.approverId }}</p>
+            <p>审核意见：{{ item.approvalReason || '无' }}</p>
+          </el-card>
+        </el-timeline-item>
+      </el-timeline>
+      <el-empty v-else description="暂无审核记录" />
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Project">
 import { listProject, delProject, getUsersByPost, getSecondaryRegions, getDeptTree } from "@/api/project/project"
+import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { listUser } from "@/api/system/user"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -301,6 +359,24 @@ const ids = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
+
+// 审核对话框
+const approvalDialogVisible = ref(false)
+const currentProject = ref({})
+const approvalForm = ref({
+  projectId: null,
+  approvalStatus: '1',
+  approvalReason: ''
+})
+const approvalRules = {
+  approvalStatus: [
+    { required: true, message: '请选择审核结果', trigger: 'change' }
+  ]
+}
+
+// 审核历史对话框
+const historyDialogVisible = ref(false)
+const approvalHistory = ref([])
 
 // 辅助数据源
 const deptTree = ref([])
@@ -566,6 +642,44 @@ function handleExport() {
   proxy.download('project/project/export', {
     ...queryParams.value
   }, `project_${new Date().getTime()}.xlsx`)
+}
+
+/** 审核按钮操作 */
+function handleApprove(row) {
+  currentProject.value = { ...row }
+  approvalForm.value = {
+    projectId: row.projectId,
+    approvalStatus: '1',
+    approvalReason: ''
+  }
+  approvalDialogVisible.value = true
+}
+
+/** 提交审核 */
+function submitApproval() {
+  proxy.$refs.approvalFormRef.validate(valid => {
+    if (valid) {
+      // 拒绝时必须填写原因
+      if (approvalForm.value.approvalStatus === '2' && !approvalForm.value.approvalReason) {
+        proxy.$modal.msgWarning('拒绝时必须填写拒绝原因')
+        return
+      }
+
+      approveProject(approvalForm.value).then(response => {
+        proxy.$modal.msgSuccess('审核成功')
+        approvalDialogVisible.value = false
+        getList()
+      })
+    }
+  })
+}
+
+/** 查看审核历史 */
+function handleHistory(row) {
+  getApprovalHistory(row.projectId).then(response => {
+    approvalHistory.value = response.data
+    historyDialogVisible.value = true
+  })
 }
 
 getList()

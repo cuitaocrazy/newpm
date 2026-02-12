@@ -2,6 +2,7 @@ package com.ruoyi.project.controller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +22,9 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.ProjectApproval;
 import com.ruoyi.project.service.IProjectService;
+import com.ruoyi.project.service.IProjectApprovalService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -37,6 +40,9 @@ public class ProjectController extends BaseController
 {
     @Autowired
     private IProjectService projectService;
+
+    @Autowired
+    private IProjectApprovalService projectApprovalService;
 
     /**
      * 查询项目管理列表
@@ -92,6 +98,23 @@ public class ProjectController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody Project project)
     {
+        // 查询原项目状态
+        Project oldProject = projectService.selectProjectByProjectId(project.getProjectId());
+
+        // 如果原状态是"已拒绝"(2)，修改后自动变为"待审核"(0)并记录重新提交
+        if ("2".equals(oldProject.getApprovalStatus())) {
+            project.setApprovalStatus("0");
+
+            // 新增重新提交审核记录
+            ProjectApproval resubmitRecord = new ProjectApproval();
+            resubmitRecord.setProjectId(project.getProjectId());
+            resubmitRecord.setApprovalStatus("0");
+            resubmitRecord.setApprovalReason("重新提交审核");
+            resubmitRecord.setApprovalTime(new Date());
+            resubmitRecord.setCreateTime(new Date());
+            projectApprovalService.insertProjectApproval(resubmitRecord);
+        }
+
         return toAjax(projectService.updateProject(project));
     }
 

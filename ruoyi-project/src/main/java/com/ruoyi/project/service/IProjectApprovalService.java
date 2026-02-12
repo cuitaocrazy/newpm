@@ -53,9 +53,27 @@ public interface IProjectApprovalService
 
     /**
      * 删除立项审核信息
-     * 
+     *
      * @param approvalId 立项审核主键
      * @return 结果
      */
     public int deleteProjectApprovalByApprovalId(Long approvalId);
+
+    /**
+     * 审核项目（通过/拒绝）
+     *
+     * @param projectId 项目ID
+     * @param approvalStatus 审核状态（1-通过/2-拒绝）
+     * @param approvalReason 审核意见（拒绝时必填）
+     * @return 结果
+     */
+    public int approveProject(Long projectId, String approvalStatus, String approvalReason);
+
+    /**
+     * 查询项目的审核历史
+     *
+     * @param projectId 项目ID
+     * @return 审核历史列表（按时间倒序）
+     */
+    public List<ProjectApproval> selectApprovalHistory(Long projectId);
 }

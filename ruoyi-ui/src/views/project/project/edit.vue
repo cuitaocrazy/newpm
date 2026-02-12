@@ -8,6 +8,22 @@
       </div>
     </el-card>
 
+    <!-- 已拒绝状态提示 -->
+    <el-alert
+      v-if="form.approvalStatus === '2'"
+      title="审核已拒绝"
+      type="warning"
+      :closable="false"
+      show-icon
+      class="mb-4"
+      style="margin-top: 20px;"
+    >
+      <template #default>
+        <p style="margin: 0;"><strong>拒绝原因：</strong>{{ form.approvalReason || '无' }}</p>
+        <p style="margin: 8px 0 0 0;">请根据审核意见修改后重新提交</p>
+      </template>
+    </el-alert>
+
     <!-- 表单主体 -->
     <el-form ref="editFormRef" :model="form" :rules="rules" label-width="140px" v-loading="loading">
       <el-collapse v-model="activeNames" class="apply-collapse">
@@ -409,8 +425,14 @@
 
     <!-- 底部操作按钮 -->
     <div class="form-footer">
-      <el-button type="primary" size="large" @click="submitForm" :loading="submitLoading">
-        保存
+      <el-button
+        type="primary"
+        size="large"
+        :icon="submitButtonIcon"
+        @click="submitForm"
+        :loading="submitLoading"
+      >
+        {{ submitButtonText }}
       </el-button>
       <el-button size="large" @click="cancel">取消</el-button>
     </div>
@@ -418,7 +440,7 @@
 </template>
 
 <script setup name="ProjectApply">
-import { ref, reactive, toRefs, watch, getCurrentInstance, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, toRefs, watch, getCurrentInstance, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getProject, updateProject } from '@/api/project/project'
 import { listUser, listUserByPost } from '@/api/system/user'
@@ -441,6 +463,15 @@ const editFormRef = ref()
 
 // 使用表单验证增强
 const { validateOnBlur, validateAndScroll } = useFormValidation(editFormRef, activeNames)
+
+// 动态按钮文字和图标
+const submitButtonText = computed(() => {
+  return form.value.approvalStatus === '2' ? '重新提交审核' : '保存'
+})
+
+const submitButtonIcon = computed(() => {
+  return form.value.approvalStatus === '2' ? 'RefreshRight' : 'Select'
+})
 
 // 表单数据
 const data = reactive({

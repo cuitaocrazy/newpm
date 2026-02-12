@@ -2,11 +2,12 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.projectName"
+          :fetch-suggestions="queryProjectNames"
           placeholder="请输入项目名称"
           clearable
-          @keyup.enter="handleQuery"
+          @select="handleQuery"
           style="width: 200px"
         />
       </el-form-item>
@@ -37,13 +38,13 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="二级区域" prop="provinceId">
-        <el-select v-model="queryParams.provinceId" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" style="width: 200px">
+      <el-form-item label="二级区域" prop="regionId">
+        <el-select v-model="queryParams.regionId" placeholder="请选择二级区域" clearable :disabled="!queryParams.region" style="width: 200px">
           <el-option
             v-for="item in secondaryRegionOptions"
-            :key="item.provinceId"
-            :label="item.provinceName"
-            :value="item.provinceId"
+            :key="item.regionId"
+            :label="item.regionName"
+            :value="item.regionId"
           />
         </el-select>
       </el-form-item>
@@ -89,14 +90,22 @@
 
     <el-table v-loading="loading" :data="reviewList">
       <el-table-column label="序号" type="index" width="55" align="center" />
-      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
-      <el-table-column label="项目编码" align="center" prop="projectCode" min-width="150" show-overflow-tooltip />
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip>
+        <template #default="scope">
+          <el-link type="primary" @click="handleReview(scope.row)" :underline="false">
+            {{ scope.row.projectName }}
+          </el-link>
+        </template>
+      </el-table-column>
       <el-table-column label="项目部门" align="center" prop="deptName" min-width="120" show-overflow-tooltip />
-      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
-      <el-table-column label="市场经理" align="center" prop="marketManagerName" min-width="100" />
-      <el-table-column label="项目分类" align="center" prop="projectCategory" width="100">
+      <el-table-column label="项目分类" align="center" prop="projectCategory" width="120">
         <template #default="scope">
           <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="行业" align="center" prop="industry" width="100">
+        <template #default="scope">
+          <dict-tag :options="industry" :value="scope.row.industry"/>
         </template>
       </el-table-column>
       <el-table-column label="一级区域" align="center" prop="region" width="100">
@@ -104,13 +113,21 @@
           <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
         </template>
       </el-table-column>
-      <el-table-column label="二级区域" align="center" prop="provinceName" width="100" />
-      <el-table-column label="项目阶段" align="center" prop="projectStatus" width="100">
+      <el-table-column label="二级区域" align="center" prop="regionName" width="100" show-overflow-tooltip />
+      <el-table-column label="项目阶段" align="center" prop="projectStage" width="100">
         <template #default="scope">
-          <dict-tag :options="sys_xmjd" :value="scope.row.projectStatus"/>
+          <dict-tag :options="sys_xmjd" :value="scope.row.projectStage"/>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
+      <el-table-column label="审核状态" align="center" prop="approvalStatus" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_spzt" :value="scope.row.approvalStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
+      <el-table-column label="市场经理" align="center" prop="marketManagerName" min-width="100" />
+      <el-table-column label="申请人" align="center" prop="createBy" width="100" />
+      <el-table-column label="申请时间" align="center" prop="createTime" width="160">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
@@ -159,26 +176,36 @@
         <!-- 基本信息 -->
         <el-collapse-item title="基本信息" name="1">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="项目名称">{{ reviewForm.projectName }}</el-descriptions-item>
-            <el-descriptions-item label="项目编码">{{ reviewForm.projectCode }}</el-descriptions-item>
-            <el-descriptions-item label="项目部门">{{ reviewForm.deptName }}</el-descriptions-item>
-            <el-descriptions-item label="项目分类">
-              <dict-tag :options="sys_xmfl" :value="reviewForm.projectCategory"/>
-            </el-descriptions-item>
-            <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload }} 人天</el-descriptions-item>
-            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload }} 人天</el-descriptions-item>
-            <el-descriptions-item label="项目阶段">
-              <dict-tag :options="sys_xmjd" :value="reviewForm.projectStatus"/>
-            </el-descriptions-item>
-            <el-descriptions-item label="验收状态">
-              <dict-tag :options="sys_yszt" :value="reviewForm.acceptanceStatus"/>
+            <el-descriptions-item label="行业">
+              <dict-tag :options="industry" :value="reviewForm.industry"/>
             </el-descriptions-item>
             <el-descriptions-item label="一级区域">
               <dict-tag :options="sys_yjqy" :value="reviewForm.region"/>
             </el-descriptions-item>
-            <el-descriptions-item label="二级区域">{{ reviewForm.provinceName }}</el-descriptions-item>
-            <el-descriptions-item label="项目地址" :span="2">{{ reviewForm.projectAddress }}</el-descriptions-item>
-            <el-descriptions-item label="项目计划" :span="2">{{ reviewForm.projectPlan }}</el-descriptions-item>
+            <el-descriptions-item label="二级区域">{{ reviewForm.regionName || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="简称">{{ reviewForm.shortName }}</el-descriptions-item>
+            <el-descriptions-item label="立项年份">{{ reviewForm.establishedYear }} 年</el-descriptions-item>
+            <el-descriptions-item label="项目编号">{{ reviewForm.projectCode }}</el-descriptions-item>
+            <el-descriptions-item label="项目名称" :span="2">{{ reviewForm.projectName }}</el-descriptions-item>
+            <el-descriptions-item label="项目分类">
+              <dict-tag :options="sys_xmfl" :value="reviewForm.projectCategory"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="项目部门">{{ reviewForm.deptName || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload || 0 }} 人天</el-descriptions-item>
+            <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget || 0 }} 元</el-descriptions-item>
+            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload || 0 }} 人天</el-descriptions-item>
+            <el-descriptions-item label="项目阶段">
+              <dict-tag :options="sys_xmjd" :value="reviewForm.projectStage"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="验收状态">
+              <dict-tag :options="sys_yszt" :value="reviewForm.acceptanceStatus"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="审核状态">
+              <dict-tag :options="sys_spzt" :value="reviewForm.approvalStatus"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="项目地址" :span="2">{{ reviewForm.projectAddress || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="项目计划" :span="2">{{ reviewForm.projectPlan || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="项目描述" :span="2">{{ reviewForm.projectDescription || '-' }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
 
@@ -217,11 +244,18 @@
         <!-- 成本预算 -->
         <el-collapse-item title="成本预算" name="5">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget }} 元</el-descriptions-item>
             <el-descriptions-item label="项目费用">{{ reviewForm.projectCost }} 元</el-descriptions-item>
+            <el-descriptions-item label="费用预算">{{ reviewForm.expenseBudget }} 元</el-descriptions-item>
             <el-descriptions-item label="成本预算">{{ reviewForm.costBudget }} 元</el-descriptions-item>
-            <el-descriptions-item label="人工成本">{{ reviewForm.laborCost }} 元</el-descriptions-item>
+            <el-descriptions-item label="人力费用">{{ reviewForm.laborCost }} 元</el-descriptions-item>
             <el-descriptions-item label="采购成本">{{ reviewForm.purchaseCost }} 元</el-descriptions-item>
+          </el-descriptions>
+        </el-collapse-item>
+
+        <!-- 备注 -->
+        <el-collapse-item title="备注" name="6">
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="备注">{{ reviewForm.remark }}</el-descriptions-item>
           </el-descriptions>
         </el-collapse-item>
       </el-collapse>
@@ -269,7 +303,7 @@ import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
 import { WarningFilled } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt')
+const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'industry')
 
 const reviewList = ref([])
 const loading = ref(true)
@@ -279,7 +313,7 @@ const secondaryRegionOptions = ref([])
 const projectManagerOptions = ref([])
 const marketManagerOptions = ref([])
 const reviewOpen = ref(false)
-const activeNames = ref(['1', '2', '3', '4', '5'])
+const activeNames = ref(['1', '2', '3', '4', '5', '6'])
 const isAllExpanded = ref(true)
 const showReasonError = ref(false)
 
@@ -291,7 +325,7 @@ const data = reactive({
     projectDept: null,
     projectCategory: null,
     region: null,
-    provinceId: null,
+    regionId: null,
     projectManagerId: null,
     marketManagerId: null,
     approvalStatus: '0'  // 默认查询待审核
@@ -331,13 +365,34 @@ function resetQuery() {
 
 /** 一级区域变化 */
 function handleRegionChange(value) {
-  queryParams.value.provinceId = null
+  queryParams.value.regionId = null
   secondaryRegionOptions.value = []
   if (value) {
-    listSecondaryRegion({ regionCode: value }).then(response => {
+    listSecondaryRegion({ regionDictValue: value }).then(response => {
       secondaryRegionOptions.value = response.rows
     })
   }
+}
+
+/** 项目名称自动完成 */
+function queryProjectNames(queryString, cb) {
+  if (!queryString) {
+    cb([])
+    return
+  }
+  // 调用API获取项目名称列表
+  request({
+    url: '/project/project/list',
+    method: 'get',
+    params: { projectName: queryString, pageNum: 1, pageSize: 10 }
+  }).then(response => {
+    const suggestions = response.rows.map(item => ({
+      value: item.projectName
+    }))
+    cb(suggestions)
+  }).catch(() => {
+    cb([])
+  })
 }
 
 /** 查询用户列表 */
@@ -360,7 +415,7 @@ function handleReview(row) {
     reviewForm.value = response.data
     reviewForm.value.approvalReason = null
     // 默认展开所有折叠面板
-    activeNames.value = ['1', '2', '3', '4', '5']
+    activeNames.value = ['1', '2', '3', '4', '5', '6']
     isAllExpanded.value = true
   })
 }
@@ -373,7 +428,7 @@ function toggleAllCollapse() {
     isAllExpanded.value = false
   } else {
     // 展开所有
-    activeNames.value = ['1', '2', '3', '4', '5']
+    activeNames.value = ['1', '2', '3', '4', '5', '6']
     isAllExpanded.value = true
   }
 }

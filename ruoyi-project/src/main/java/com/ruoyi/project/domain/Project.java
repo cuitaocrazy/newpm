@@ -264,6 +264,30 @@ public class Project extends BaseEntity
     /** 合同状态（关联字段，非数据库字段） */
     private String contractStatus;
 
+    /** 部门名称（关联字段，非数据库字段） */
+    private String deptName;
+
+    /** 项目经理名称（关联字段，非数据库字段） */
+    private String projectManagerName;
+
+    /** 市场经理名称（关联字段，非数据库字段） */
+    private String marketManagerName;
+
+    /** 销售负责人名称（关联字段，非数据库字段） */
+    private String salesManagerName;
+
+    /** 客户名称（关联字段，非数据库字段） */
+    private String customerName;
+
+    /** 客户联系人名称（关联字段，非数据库字段） */
+    private String customerContactName;
+
+    /** 客户联系方式（关联字段，非数据库字段） */
+    private String customerContactPhone;
+
+    /** 参与人员名称列表（关联字段，非数据库字段） */
+    private String participantsNames;
+
     public void setProjectId(Long projectId) 
     {
         this.projectId = projectId;
@@ -872,6 +896,86 @@ public class Project extends BaseEntity
     public String getContractStatus()
     {
         return contractStatus;
+    }
+
+    public void setDeptName(String deptName)
+    {
+        this.deptName = deptName;
+    }
+
+    public String getDeptName()
+    {
+        return deptName;
+    }
+
+    public void setProjectManagerName(String projectManagerName)
+    {
+        this.projectManagerName = projectManagerName;
+    }
+
+    public String getProjectManagerName()
+    {
+        return projectManagerName;
+    }
+
+    public void setMarketManagerName(String marketManagerName)
+    {
+        this.marketManagerName = marketManagerName;
+    }
+
+    public String getMarketManagerName()
+    {
+        return marketManagerName;
+    }
+
+    public void setSalesManagerName(String salesManagerName)
+    {
+        this.salesManagerName = salesManagerName;
+    }
+
+    public String getSalesManagerName()
+    {
+        return salesManagerName;
+    }
+
+    public void setCustomerName(String customerName)
+    {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerName()
+    {
+        return customerName;
+    }
+
+    public void setCustomerContactName(String customerContactName)
+    {
+        this.customerContactName = customerContactName;
+    }
+
+    public String getCustomerContactName()
+    {
+        return customerContactName;
+    }
+
+    public void setCustomerContactPhone(String customerContactPhone)
+    {
+        this.customerContactPhone = customerContactPhone;
+    }
+
+    public String getCustomerContactPhone()
+    {
+        return customerContactPhone;
+    }
+
+    public void setParticipantsNames(String participantsNames)
+    {
+        this.participantsNames = participantsNames;
+    }
+
+    public String getParticipantsNames()
+    {
+        return participantsNames;
     }
 
     @Override

@@ -42,3 +42,20 @@ export function delApproval(approvalId) {
     method: 'delete'
   })
 }
+
+// 审核项目
+export function approveProject(data) {
+  return request({
+    url: '/project/approval/approve',
+    method: 'post',
+    data: data
+  })
+}
+
+// 查询审核历史
+export function getApprovalHistory(projectId) {
+  return request({
+    url: '/project/approval/history/' + projectId,
+    method: 'get'
+  })
+}

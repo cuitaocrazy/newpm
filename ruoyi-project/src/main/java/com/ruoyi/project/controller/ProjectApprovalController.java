@@ -1,6 +1,7 @@
 package com.ruoyi.project.controller;
 
 import java.util.List;
+import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,5 +101,36 @@ public class ProjectApprovalController extends BaseController
     public AjaxResult remove(@PathVariable Long[] approvalIds)
     {
         return toAjax(projectApprovalService.deleteProjectApprovalByApprovalIds(approvalIds));
+    }
+
+    /**
+     * 审核项目
+     */
+    @PreAuthorize("@ss.hasPermi('project:approval:approve')")
+    @Log(title = "项目审核", businessType = BusinessType.UPDATE)
+    @PostMapping("/approve")
+    public AjaxResult approve(@RequestBody Map<String, Object> params)
+    {
+        Long projectId = Long.valueOf(params.get("projectId").toString());
+        String approvalStatus = params.get("approvalStatus").toString();
+        String approvalReason = params.get("approvalReason") != null ? params.get("approvalReason").toString() : "";
+
+        // 验证：拒绝时必须填写原因
+        if ("2".equals(approvalStatus) && (approvalReason == null || approvalReason.trim().isEmpty())) {
+            return error("拒绝时必须填写拒绝原因");
+        }
+
+        return toAjax(projectApprovalService.approveProject(projectId, approvalStatus, approvalReason));
+    }
+
+    /**
+     * 查询审核历史
+     */
+    @PreAuthorize("@ss.hasPermi('project:approval:query')")
+    @GetMapping("/history/{projectId}")
+    public AjaxResult history(@PathVariable Long projectId)
+    {
+        List<ProjectApproval> history = projectApprovalService.selectApprovalHistory(projectId);
+        return success(history);
     }
 }
