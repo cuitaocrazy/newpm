@@ -423,16 +423,18 @@ const loadProjectInfo = () => {
     const data = response.data || {}
     project.value = data
 
-    // 处理参与人员
-    if (data.participants) {
-      const participantIds = data.participants.split(',').map(Number)
-      selectedParticipants.value = allUsers.value.filter(u => participantIds.includes(u.userId))
-    }
-
     // 加载客户联系人电话
     if (data.customerId && data.customerContactId) {
       loadCustomerContactPhone(data.customerId, data.customerContactId)
     }
+
+    // 等待所有用户加载完成后，同步参与人员显示
+    setTimeout(() => {
+      if (data.participants && allUsers.value.length > 0) {
+        const participantIds = data.participants.split(',').map(Number)
+        selectedParticipants.value = allUsers.value.filter(u => participantIds.includes(u.userId))
+      }
+    }, 500)
 
     projectLoading.value = false
   }).catch(() => {
