@@ -114,7 +114,7 @@
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-        <el-button type="text" @click="showMoreSearch = !showMoreSearch">
+        <el-button link type="primary" @click="showMoreSearch = !showMoreSearch">
           {{ showMoreSearch ? '收起' : '更多' }}
           <el-icon><component :is="showMoreSearch ? 'ArrowUp' : 'ArrowDown'" /></el-icon>
         </el-button>

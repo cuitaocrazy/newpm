@@ -63,3 +63,15 @@ export function checkContractNameUnique(contractName, contractId) {
     }
   })
 }
+
+// 检查合同编号是否唯一
+export function checkContractCodeUnique(contractCode, contractId) {
+  return request({
+    url: '/project/contract/checkContractCodeUnique',
+    method: 'get',
+    params: {
+      contractCode,
+      contractId
+    }
+  })
+}

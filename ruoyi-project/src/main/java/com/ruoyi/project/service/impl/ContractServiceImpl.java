@@ -130,6 +130,16 @@ public class ContractServiceImpl implements IContractService
     @Transactional
     public int insertContract(Contract contract)
     {
+        // 检查项目是否已有关联合同（一个项目只能关联一个合同）
+        if (contract.getProjectIds() != null && !contract.getProjectIds().isEmpty()) {
+            for (Long projectId : contract.getProjectIds()) {
+                Long existingContractId = contractMapper.selectContractIdByProjectId(projectId);
+                if (existingContractId != null) {
+                    throw new ServiceException("项目已关联合同，无法重复添加");
+                }
+            }
+        }
+
         // 计算不含税金额和税金
         if (contract.getContractAmount() != null && contract.getTaxRate() != null) {
             BigDecimal taxRate = contract.getTaxRate().divide(new BigDecimal(100));
@@ -305,6 +315,45 @@ public class ContractServiceImpl implements IContractService
         }
 
         // 新增模式，找到同名合同，不唯一
+        return false;
+    }
+
+    /**
+     * 检查合同编号是否唯一
+     *
+     * @param contractCode 合同编号
+     * @param contractId 合同ID（编辑时传入，新增时为null）
+     * @return true-唯一，false-不唯一
+     */
+    @Override
+    public boolean checkContractCodeUnique(String contractCode, Long contractId)
+    {
+        if (contractCode == null || contractCode.trim().isEmpty()) {
+            return false;
+        }
+
+        Contract contract = new Contract();
+        contract.setContractCode(contractCode.trim());
+        List<Contract> list = contractMapper.selectContractList(contract);
+
+        // 如果没有找到同编号合同，则唯一
+        if (list == null || list.isEmpty()) {
+            return true;
+        }
+
+        // 如果是编辑模式，排除自己
+        if (contractId != null) {
+            for (Contract c : list) {
+                if (!contractId.equals(c.getContractId())) {
+                    // 找到其他同编号合同，不唯一
+                    return false;
+                }
+            }
+            // 只找到自己，唯一
+            return true;
+        }
+
+        // 新增模式，找到同编号合同，不唯一
         return false;
     }
 

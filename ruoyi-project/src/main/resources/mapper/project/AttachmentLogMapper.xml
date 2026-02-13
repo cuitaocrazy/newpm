@@ -37,7 +37,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             l.remark,
             d.dict_label as document_type_name
         from pm_attachment_log l
-        left join sys_dict_data d on l.document_type = d.dict_value and d.dict_type = 'sys_wdlx'
+        left join sys_dict_data d on l.document_type COLLATE utf8mb4_unicode_ci = d.dict_value and d.dict_type = 'sys_wdlx'
     </sql>
 
     <select id="selectAttachmentLogList" resultMap="AttachmentLogResult">

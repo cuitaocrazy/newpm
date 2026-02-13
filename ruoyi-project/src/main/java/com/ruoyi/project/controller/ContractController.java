@@ -131,4 +131,19 @@ public class ContractController extends BaseController
         boolean isUnique = contractService.checkContractNameUnique(contractName, contractId);
         return success(isUnique);
     }
+
+    /**
+     * 检查合同编号是否唯一
+     *
+     * @param contractCode 合同编号
+     * @param contractId 合同ID（编辑时传入，新增时为null）
+     * @return true-唯一，false-不唯一
+     */
+    @PreAuthorize("@ss.hasPermi('project:contract:query')")
+    @GetMapping("/checkContractCodeUnique")
+    public AjaxResult checkContractCodeUnique(String contractCode, Long contractId)
+    {
+        boolean isUnique = contractService.checkContractCodeUnique(contractCode, contractId);
+        return success(isUnique);
+    }
 }

@@ -344,4 +344,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
         </where>
     </select>
+
+    <!-- 根据项目ID查询关联的合同ID -->
+    <select id="selectContractIdByProjectId" parameterType="Long" resultType="Long">
+        select contract_id
+        from pm_project_contract_rel
+        where project_id = #{projectId}
+        limit 1
+    </select>
 </mapper>

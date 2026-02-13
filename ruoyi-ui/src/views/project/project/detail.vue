@@ -176,14 +176,183 @@
       </el-descriptions>
     </el-card>
 
-    <!-- 备注 -->
+    <!-- 关联合同信息 -->
     <el-card shadow="never" class="detail-card">
       <template #header>
-        <span class="card-title">备注</span>
+        <span class="card-title">关联合同信息</span>
       </template>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="备注">
+      <div v-if="contractInfo">
+        <el-descriptions :column="3" border>
+          <el-descriptions-item label="合同名称" :span="2">
+            {{ contractInfo.contractName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="合同状态">
+            <dict-tag :options="sys_htzt" :value="contractInfo.contractStatus" />
+          </el-descriptions-item>
+          <el-descriptions-item label="合同类型">
+            <dict-tag :options="sys_htlx" :value="contractInfo.contractType" />
+          </el-descriptions-item>
+          <el-descriptions-item label="合同签订日期">
+            {{ contractInfo.contractSignDate || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="合同周期">
+            {{ contractInfo.contractPeriod ? contractInfo.contractPeriod + ' 月' : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="免维期">
+            {{ contractInfo.freeMaintenancePeriod ? contractInfo.freeMaintenancePeriod + ' 月' : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="税率">
+            {{ contractInfo.taxRate ? contractInfo.taxRate + ' %' : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="合同金额">
+            {{ contractInfo.contractAmount ? contractInfo.contractAmount.toLocaleString() + ' 元' : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="不含税金额">
+            {{ contractInfo.amountNoTax ? contractInfo.amountNoTax.toLocaleString() + ' 元' : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建人">
+            {{ contractInfo.createByName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ contractInfo.createTime || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="更新人">
+            {{ contractInfo.updateByName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="最后更新时间" :span="2">
+            {{ contractInfo.updateTime || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="操作">
+            <el-button type="primary" link @click="viewContract">查看详情</el-button>
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <el-empty v-else description="暂无关联合同" :image-size="80" />
+    </el-card>
+
+    <!-- 付款里程碑信息 -->
+    <el-card shadow="never" class="detail-card" v-if="contractInfo && paymentList.length > 0">
+      <template #header>
+        <span class="card-title">付款里程碑信息</span>
+      </template>
+      <el-table :data="paymentListWithSummary" border>
+        <el-table-column label="序号" type="index" width="60" align="center">
+          <template #default="scope">
+            <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
+            <span v-else>{{ scope.$index }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="里程碑名称" align="center" prop="paymentName" show-overflow-tooltip>
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.paymentName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="付款金额（元）" align="center" prop="paymentAmount" width="150">
+          <template #default="scope">
+            <span :style="scope.row.isSummary ? 'font-weight: bold; color: #409EFF;' : ''">
+              {{ formatAmount(scope.row.paymentAmount) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="付款状态" align="center" prop="paymentStatus" width="100">
+          <template #default="scope">
+            <dict-tag v-if="!scope.row.isSummary" :options="sys_fkzt" :value="scope.row.paymentStatus"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="预计回款季度" align="center" prop="expectedQuarter" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.expectedQuarter }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="实际回款季度" align="center" prop="actualQuarter" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.actualQuarter || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="实际回款日期" align="center" prop="actualPaymentDate" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.actualPaymentDate || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="确认年份" align="center" prop="confirmYear" width="100">
+          <template #default="scope">
+            <dict-tag v-if="!scope.row.isSummary" :options="sys_ndgl" :value="scope.row.confirmYear"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="是否违约扣款" align="center" prop="hasPenalty" width="120">
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.hasPenalty === '1' ? '是' : '否' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="扣款金额（元）" align="center" prop="penaltyAmount" width="120">
+          <template #default="scope">
+            <span :style="scope.row.isSummary ? 'font-weight: bold; color: #F56C6C;' : ''">
+              {{ scope.row.penaltyAmount ? formatAmount(scope.row.penaltyAmount) : '-' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" align="center" prop="remark" show-overflow-tooltip>
+          <template #default="scope">
+            <span v-if="!scope.row.isSummary">{{ scope.row.remark || '-' }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 项目附件列表 -->
+    <el-card shadow="never" class="detail-card">
+      <template #header>
+        <span class="card-title">项目附件列表</span>
+      </template>
+      <el-table :data="attachmentList" border>
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column label="文档类型" align="center" prop="documentType" width="120">
+          <template #default="scope">
+            <dict-tag :options="sys_wdlx" :value="scope.row.documentType"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="文件名称" align="center" prop="fileName" show-overflow-tooltip>
+          <template #default="scope">
+            <el-link type="primary" @click="handleDownload(scope.row)">
+              {{ scope.row.fileName }}
+            </el-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="文件大小" align="center" prop="fileSize" width="120">
+          <template #default="scope">
+            {{ formatFileSize(scope.row.fileSize) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="文件说明" align="center" prop="fileDescription" show-overflow-tooltip>
+          <template #default="scope">
+            {{ scope.row.fileDescription || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="上传人" align="center" prop="createByName" width="100" />
+        <el-table-column label="上传时间" align="center" prop="createTime" width="180" />
+      </el-table>
+    </el-card>
+
+    <!-- 其他信息 -->
+    <el-card shadow="never" class="detail-card">
+      <template #header>
+        <span class="card-title">其他信息</span>
+      </template>
+      <el-descriptions :column="2" border>
+        <el-descriptions-item label="备注" :span="2">
           <div class="text-content">{{ form.remark || '-' }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="创建人">
+          {{ form.createBy || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">
+          {{ form.createTime || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="更新人">
+          {{ form.updateBy || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="更新时间">
+          {{ form.updateTime || '-' }}
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -196,18 +365,21 @@
 </template>
 
 <script setup name="ProjectDetail">
-import { ref, reactive, toRefs, getCurrentInstance } from 'vue'
+import { ref, reactive, toRefs, computed, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject } from '@/api/project/project'
+import { getProject, getContractByProjectId } from '@/api/project/project'
 import { listUser } from '@/api/system/user'
+import { listPayment } from '@/api/project/payment'
+import { listAttachment, downloadAttachment } from '@/api/project/attachment'
+import { saveAs } from 'file-saver'
 import request from '@/utils/request'
 
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_yszt, sys_spzt, industry, sys_yjqy } =
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy')
+const { sys_xmfl, sys_xmjd, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx')
 
 // 表单数据
 const data = reactive({
@@ -263,6 +435,35 @@ const { form } = toRefs(data)
 const allUsers = ref([])
 const selectedParticipants = ref([])
 const customerContactPhone = ref('')
+const contractInfo = ref(null)
+const paymentList = ref([])
+const attachmentList = ref([])
+
+// 付款里程碑列表（带合计行）
+const paymentListWithSummary = computed(() => {
+  if (paymentList.value.length === 0) {
+    return []
+  }
+
+  // 计算合计
+  const summary = {
+    isSummary: true,
+    paymentAmount: 0,
+    penaltyAmount: 0
+  }
+
+  paymentList.value.forEach(item => {
+    summary.paymentAmount += Number(item.paymentAmount) || 0
+    summary.penaltyAmount += Number(item.penaltyAmount) || 0
+  })
+
+  // 保留两位小数
+  summary.paymentAmount = summary.paymentAmount.toFixed(2)
+  summary.penaltyAmount = summary.penaltyAmount.toFixed(2)
+
+  // 将合计行放在第一行
+  return [summary, ...paymentList.value]
+})
 
 // 加载所有用户（用于参与人员显示）
 function loadAllUsers() {
@@ -274,6 +475,13 @@ function loadAllUsers() {
 // 返回列表
 function goBack() {
   router.push('/project/list')
+}
+
+// 查看合同详情
+function viewContract() {
+  if (contractInfo.value && contractInfo.value.contractId) {
+    router.push(`/htkx/contract/detail/${contractInfo.value.contractId}`)
+  }
 }
 
 // 加载项目数据
@@ -302,6 +510,12 @@ function loadProjectData() {
     if (data.customerId && data.customerContactId) {
       loadCustomerContactPhone(data.customerId, data.customerContactId)
     }
+
+    // 加载关联的合同信息
+    loadContractInfo(projectId)
+
+    // 加载项目附件列表
+    loadAttachmentList(projectId)
 
     // 等待所有用户加载完成后，同步参与人员显示
     setTimeout(() => {
@@ -393,6 +607,70 @@ function loadCustomerContactPhone(customerId, contactId) {
   }).catch(() => {
     // 如果加载失败，不影响页面显示
     customerContactPhone.value = ''
+  })
+}
+
+// 加载合同信息
+function loadContractInfo(projectId) {
+  getContractByProjectId(projectId).then(response => {
+    contractInfo.value = response.data
+    // 如果有合同信息，加载付款里程碑
+    if (contractInfo.value && contractInfo.value.contractId) {
+      getPaymentList(contractInfo.value.contractId)
+    }
+  }).catch(() => {
+    // 如果加载失败或没有关联合同，不影响页面显示
+    contractInfo.value = null
+  })
+}
+
+// 查询付款里程碑列表
+function getPaymentList(contractId) {
+  listPayment({ contractId: contractId }).then(response => {
+    paymentList.value = response.rows || []
+  })
+}
+
+// 格式化金额，保留2位小数
+function formatAmount(amount) {
+  if (amount === null || amount === undefined || amount === '') return ''
+  const num = parseFloat(amount)
+  if (isNaN(num)) return amount
+  return num.toFixed(2)
+}
+
+// 格式化文件大小
+function formatFileSize(size) {
+  if (!size || size === 0) return '-'
+  const kb = size / 1024
+  if (kb < 1024) {
+    return kb.toFixed(2) + ' KB'
+  }
+  const mb = kb / 1024
+  return mb.toFixed(2) + ' MB'
+}
+
+// 查询附件列表
+function loadAttachmentList(projectId) {
+  listAttachment({
+    businessType: 'project',
+    businessId: projectId
+  }).then(response => {
+    attachmentList.value = response.data || []
+  })
+}
+
+// 下载附件
+function handleDownload(row) {
+  proxy.$modal.loading('正在下载文件，请稍候...')
+  downloadAttachment(row.attachmentId).then(response => {
+    const blob = new Blob([response])
+    saveAs(blob, row.fileName)
+    proxy.$modal.closeLoading()
+    proxy.$modal.msgSuccess('下载成功')
+  }).catch(() => {
+    proxy.$modal.closeLoading()
+    proxy.$modal.msgError('下载失败')
   })
 }
 

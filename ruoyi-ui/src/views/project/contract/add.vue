@@ -6,6 +6,18 @@
 
         <!-- 面板1：合同基本信息 -->
         <el-collapse-item name="1" title="合同基本信息">
+          <!-- 从项目添加时，显示项目信息提示 -->
+          <el-alert
+            v-if="projectInfo"
+            type="info"
+            :closable="false"
+            style="margin-bottom: 16px"
+          >
+            <template #title>
+              将为项目创建合同：{{ projectInfo.projectName }} ({{ projectInfo.projectCode }})
+            </template>
+          </el-alert>
+
           <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="合同名称" prop="contractName">
@@ -77,7 +89,7 @@
           </el-row>
 
           <!-- 关联项目选择 -->
-          <el-row :gutter="20">
+          <el-row :gutter="20" v-if="!projectInfo">
             <el-col :span="24">
               <el-form-item label="关联项目" prop="projectIds">
                 <el-select
@@ -121,7 +133,7 @@
                       {{ scope.row.estimatedWorkload || '-' }}
                     </template>
                   </el-table-column>
-                  <el-table-column label="操作" width="80">
+                  <el-table-column label="操作" width="80" v-if="!projectInfo">
                     <template #default="scope">
                       <el-button link type="danger" @click="removeProject(scope.row.projectId)">
                         删除
@@ -256,16 +268,20 @@
 
 <script setup name="ContractAdd">
 import { ref, reactive, toRefs, watch, getCurrentInstance, onMounted, onActivated } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { addContract } from '@/api/project/contract'
-import { listProjectByDept } from '@/api/project/project'
+import { listProjectByDept, getProject } from '@/api/project/project'
 import { listAllCustomer } from '@/api/project/customer'
 import { listDept } from '@/api/system/dept'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
 const { sys_htlx, sys_htzt } = proxy.useDict('sys_htlx', 'sys_htzt')
+
+// 从项目列表进入时的项目信息
+const projectInfo = ref(null)
 
 // 折叠面板激活状态
 const activeNames = ref(['1', '2', '3', '4'])
@@ -446,16 +462,95 @@ function cancel() {
   })
 }
 
+/** 加载项目信息（从项目列表进入时） */
+async function loadProjectInfo(projectId) {
+  try {
+    console.log('🔍 开始加载项目信息, projectId:', projectId)
+    const response = await getProject(projectId)
+    console.log('📦 项目数据返回:', response.data)
+
+    if (!response.data) {
+      proxy.$modal.msgWarning('项目不存在')
+      router.push('/htkx/contract')
+      return
+    }
+    projectInfo.value = response.data
+    console.log('✅ projectInfo已设置:', projectInfo.value)
+
+    // 自动填充项目ID（单个项目）
+    form.value.projectIds = [Number(projectId)]
+    console.log('✅ form.projectIds已设置:', form.value.projectIds)
+
+    // 设置已选项目显示（用于提示用户已选择的项目）
+    selectedProjects.value = [{
+      projectId: response.data.projectId,
+      projectName: response.data.projectName,
+      projectBudget: response.data.projectBudget,
+      estimatedWorkload: response.data.estimatedWorkload
+    }]
+    console.log('✅ selectedProjects已设置:', selectedProjects.value)
+
+    // 自动填充部门信息
+    if (response.data.deptId) {
+      form.value.deptId = response.data.deptId
+      console.log('✅ form.deptId已设置:', form.value.deptId)
+    } else {
+      console.warn('⚠️  项目数据中没有deptId')
+    }
+
+    // 自动填充客户信息
+    if (response.data.customerId) {
+      form.value.customerId = response.data.customerId
+      console.log('✅ form.customerId已设置:', form.value.customerId)
+    } else {
+      console.warn('⚠️  项目数据中没有customerId')
+    }
+
+    console.log('🎉 loadProjectInfo完成, form最终状态:', form.value)
+  } catch (error) {
+    proxy.$modal.msgError('加载项目信息失败')
+    console.error('❌ 加载项目信息失败:', error)
+  }
+}
+
 // 页面加载时初始化
 onMounted(() => {
+  console.log('🎬 ========== ContractAdd onMounted 开始 ==========')
+  console.log('📍 当前路由:', route.path)
+  console.log('📋 query参数:', route.query)
+  console.log('🔑 projectId:', route.query.projectId)
+
   getDeptTree()
   getCustomerList()
   resetForm()
+
+  // 检查是否从项目列表进入（带projectId参数）
+  const projectId = route.query.projectId
+  if (projectId) {
+    console.log('🚀 onMounted: 检测到projectId, 开始加载项目信息...')
+    loadProjectInfo(projectId)
+  } else {
+    console.log('⚠️  onMounted: 未检测到projectId参数')
+  }
+
+  console.log('🎬 ========== ContractAdd onMounted 结束 ==========')
 })
 
-// 组件激活时重置表单（从其他页面返回时）
+// 组件激活时处理（从其他页面返回时）
 onActivated(() => {
-  resetForm()
+  console.log('🔄 onActivated: 组件被激活')
+
+  // 检查是否有projectId参数
+  const projectId = route.query.projectId
+  if (projectId) {
+    // 如果有projectId，说明是从项目列表进入，重新加载项目信息
+    console.log('🚀 onActivated: 检测到projectId, 重新加载项目信息...')
+    loadProjectInfo(projectId)
+  } else {
+    // 如果没有projectId，说明是正常的合同新增页面，重置表单
+    console.log('🔄 onActivated: 无projectId, 重置表单')
+    resetForm()
+  }
 })
 </script>
 

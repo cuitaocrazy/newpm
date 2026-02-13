@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span style="font-size: 18px; font-weight: bold;">{{ title }}</span>
-          <el-button style="float: right; padding: 3px 0" type="text" icon="Back" @click="handleBack">返回</el-button>
+          <el-button style="float: right; padding: 3px 0" link type="primary" icon="Back" @click="handleBack">返回</el-button>
         </div>
       </template>
 
@@ -80,7 +80,27 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
+
+        <!-- 从项目添加时，显示项目信息 -->
+        <template v-if="projectInfo">
+          <el-divider content-position="left">
+            <span style="font-size: 16px; font-weight: bold; color: #409EFF;">项目信息</span>
+          </el-divider>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="项目名称">
+                <el-input v-model="projectInfo.projectName" disabled style="color: #606266;" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="项目编号">
+                <el-input v-model="projectInfo.projectCode" disabled style="color: #606266;" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </template>
+
+        <el-row :gutter="20" v-if="!projectInfo">
           <el-col :span="24">
             <el-form-item label="关联项目" prop="projectIds">
               <el-select
@@ -125,9 +145,9 @@
                     {{ scope.row.actualWorkload ? Number(scope.row.actualWorkload).toFixed(2) : '0.00' }}
                   </template>
                 </el-table-column>
-                <el-table-column label="操作" width="80" align="center">
+                <el-table-column label="操作" width="80" align="center" v-if="!projectInfo">
                   <template #default="scope">
-                    <el-button type="text" icon="Delete" @click="handleRemoveProject(scope.$index)">移除</el-button>
+                    <el-button link type="danger" icon="Delete" @click="handleRemoveProject(scope.$index)">移除</el-button>
                   </template>
                 </el-table-column>
               </el-table>
@@ -262,15 +282,18 @@
 </template>
 
 <script setup name="ContractForm">
-import { getContract, addContract, updateContract, checkContractNameUnique } from "@/api/project/contract"
+import { getContract, addContract, updateContract, checkContractNameUnique, checkContractCodeUnique } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
-import { listProjectByDept } from "@/api/project/project"
+import { listProjectByDept, getProject } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
 const { sys_htlx, sys_htzt } = proxy.useDict('sys_htlx', 'sys_htzt')
 const route = useRoute()
 const router = useRouter()
+
+// 从项目列表进入时的项目信息
+const projectInfo = ref(null)
 
 const title = ref("合同新增")
 const deptOptions = ref([])
@@ -311,6 +334,10 @@ const data = reactive({
     projectIds: []
   },
   rules: {
+    contractCode: [
+      { required: true, message: "合同编号不能为空", trigger: "blur" },
+      { validator: validateContractCode, trigger: "blur" }
+    ],
     contractName: [
       { required: true, message: "合同名称不能为空", trigger: "blur" },
       { validator: validateContractName, trigger: "blur" }
@@ -335,6 +362,26 @@ const data = reactive({
 
 const { form, rules } = toRefs(data)
 
+/** 合同编号唯一性校验 */
+async function validateContractCode(rule, value, callback) {
+  if (!value || value.trim() === '') {
+    callback()
+    return
+  }
+
+  try {
+    const response = await checkContractCodeUnique(value.trim(), form.value.contractId)
+    if (response.data === true) {
+      callback()
+    } else {
+      callback(new Error('合同编号已存在，请使用其他编号'))
+    }
+  } catch (error) {
+    console.error('校验合同编号唯一性失败:', error)
+    callback()
+  }
+}
+
 /** 合同名称唯一性校验 */
 async function validateContractName(rule, value, callback) {
   if (!value || value.trim() === '') {
@@ -357,10 +404,11 @@ async function validateContractName(rule, value, callback) {
 
 /** 查询部门下拉树结构 */
 function getDeptTree() {
-  deptTreeSelect().then(response => {
+  return deptTreeSelect().then(response => {
     deptOptions.value = response.data
     // 过滤出第三级及以下部门
     filteredDeptOptions.value = filterDeptFromLevel3(response.data)
+    console.log('✅ 部门树加载完成，filteredDeptOptions:', filteredDeptOptions.value.length, '个部门')
   })
 }
 
@@ -517,9 +565,76 @@ function handleBack() {
   router.back()
 }
 
+/** 加载项目信息（从项目列表进入时） */
+async function loadProjectInfo(projectId) {
+  try {
+    console.log('🔍 开始加载项目信息, projectId:', projectId)
+    const response = await getProject(projectId)
+    console.log('📦 项目数据返回:', response.data)
+
+    if (!response.data) {
+      proxy.$modal.msgWarning('项目不存在')
+      return
+    }
+
+    projectInfo.value = response.data
+    console.log('✅ projectInfo已设置:', projectInfo.value)
+
+    // 等待部门树完全渲染后再设置部门值
+    await proxy.$nextTick()
+
+    // 自动填充部门信息 (注意：后端返回的是 projectDept，不是 deptId)
+    const deptIdValue = response.data.projectDept || response.data.deptId
+    if (deptIdValue) {
+      // 转换为数字类型
+      form.value.deptId = Number(deptIdValue)
+      console.log('✅ form.deptId已设置:', form.value.deptId, '(类型:', typeof form.value.deptId, ')')
+      console.log('📊 当前filteredDeptOptions:', filteredDeptOptions.value.length, '个部门')
+
+      // 延迟200ms确保组件完全渲染
+      setTimeout(() => {
+        console.log('🔄 再次确认 form.deptId:', form.value.deptId)
+
+        // 加载该部门的可选项目列表
+        listProjectByDept(form.value.deptId, null).then(projectResponse => {
+          filteredProjectOptions.value = projectResponse.data || []
+          updateAvailableProjects()
+          console.log('✅ 部门项目列表已加载:', filteredProjectOptions.value.length, '个项目')
+        })
+      }, 200)
+    } else {
+      console.warn('⚠️  项目数据中没有 projectDept 或 deptId 字段')
+    }
+
+    // 自动填充客户信息
+    if (response.data.customerId) {
+      form.value.customerId = response.data.customerId
+      console.log('✅ form.customerId已设置:', form.value.customerId)
+    } else {
+      console.warn('⚠️  项目数据中没有customerId')
+    }
+
+    // 自动填充项目ID并设置已选项目列表
+    form.value.projectIds = [Number(projectId)]
+    selectedProjects.value = [{
+      projectId: response.data.projectId,
+      projectName: response.data.projectName,
+      projectBudget: response.data.projectBudget,
+      estimatedWorkload: response.data.estimatedWorkload
+    }]
+    console.log('✅ 已选项目列表已设置:', selectedProjects.value)
+
+    console.log('🎉 loadProjectInfo完成, form最终状态:', JSON.stringify(form.value, null, 2))
+  } catch (error) {
+    proxy.$modal.msgError('加载项目信息失败')
+    console.error('❌ 加载项目信息失败:', error)
+  }
+}
+
 /** 初始化数据 */
-function init() {
-  getDeptTree()
+async function init() {
+  // 先加载基础数据
+  await getDeptTree()
   getCustomerList()
   getProjectList()
 
@@ -570,6 +685,15 @@ function init() {
     }
     // 重置表单数据
     resetForm()
+
+    // 检查是否从项目列表进入（带projectId参数）
+    const projectId = route.query.projectId
+    if (projectId) {
+      console.log('🚀 检测到projectId参数:', projectId, '开始加载项目信息...')
+      loadProjectInfo(projectId)
+    } else {
+      console.log('ℹ️  普通新增模式，无projectId参数')
+    }
   }
 }
 

@@ -5,7 +5,7 @@
       <template #header>
         <div class="card-header">
           <span style="font-size: 16px; font-weight: bold;">合同基本信息</span>
-          <el-button style="float: right; padding: 3px 0" type="text" icon="Back" @click="handleBack">返回</el-button>
+          <el-button style="float: right; padding: 3px 0" link type="primary" icon="Back" @click="handleBack">返回</el-button>
         </div>
       </template>
 

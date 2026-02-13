@@ -94,4 +94,12 @@ public interface ContractMapper
      * @return 付款总金额
      */
     public BigDecimal sumPaymentAmount(Contract contract);
+
+    /**
+     * 根据项目ID查询关联的合同ID
+     *
+     * @param projectId 项目ID
+     * @return 合同ID，无关联合同时返回null
+     */
+    public Long selectContractIdByProjectId(Long projectId);
 }

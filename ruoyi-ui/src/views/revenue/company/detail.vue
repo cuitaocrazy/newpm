@@ -99,30 +99,29 @@
             </el-form-item>
 
             <el-form-item label="确认金额（含税）" prop="confirmAmount">
-              <el-input-number
+              <el-input
                 v-model="form.confirmAmount"
-                :precision="2"
-                :step="100"
-                :min="0"
+                type="number"
                 placeholder="请输入确认金额"
                 :disabled="isViewMode"
                 style="width: 100%;"
-              />
-              <span style="margin-left: 8px;">元</span>
+                @blur="formatConfirmAmount"
+              >
+                <template #append>元</template>
+              </el-input>
             </el-form-item>
 
             <el-form-item label="税率" prop="taxRate">
-              <el-input-number
+              <el-input
                 v-model="form.taxRate"
-                :precision="2"
-                :step="0.1"
-                :min="0"
-                :max="100"
+                type="number"
                 placeholder="请输入税率"
                 :disabled="isViewMode"
                 style="width: 100%;"
-              />
-              <span style="margin-left: 8px;">%</span>
+                @blur="formatTaxRate"
+              >
+                <template #append>%</template>
+              </el-input>
             </el-form-item>
 
             <el-form-item label="税后金额（不含税）">
@@ -196,11 +195,37 @@ function initTaxRate(projectCategory) {
   }
 }
 
+/** 格式化确认金额，保留2位小数 */
+function formatConfirmAmount() {
+  if (form.value.confirmAmount !== null && form.value.confirmAmount !== '') {
+    const value = parseFloat(form.value.confirmAmount)
+    if (!isNaN(value) && value >= 0) {
+      form.value.confirmAmount = value.toFixed(2)
+    } else {
+      form.value.confirmAmount = null
+    }
+  }
+}
+
+/** 格式化税率，保留2位小数，限制范围0-100 */
+function formatTaxRate() {
+  if (form.value.taxRate !== null && form.value.taxRate !== '') {
+    let value = parseFloat(form.value.taxRate)
+    if (!isNaN(value)) {
+      // 限制范围 0-100
+      value = Math.max(0, Math.min(100, value))
+      form.value.taxRate = value.toFixed(2)
+    } else {
+      form.value.taxRate = null
+    }
+  }
+}
+
 /** 计算税后金额 */
 function calculateAfterTax() {
-  const amount = form.value.confirmAmount
-  const rate = form.value.taxRate
-  if (amount && rate != null) {
+  const amount = parseFloat(form.value.confirmAmount)
+  const rate = parseFloat(form.value.taxRate)
+  if (!isNaN(amount) && !isNaN(rate) && amount > 0 && rate >= 0) {
     const afterTax = amount / (1 + rate / 100)
     form.value.afterTaxAmount = afterTax.toFixed(2)
   } else {

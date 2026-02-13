@@ -87,6 +87,15 @@ public interface IContractService
     public boolean checkContractNameUnique(String contractName, Long contractId);
 
     /**
+     * 检查合同编号是否唯一
+     *
+     * @param contractCode 合同编号
+     * @param contractId 合同ID（编辑时传入，新增时为null）
+     * @return true-唯一，false-不唯一
+     */
+    public boolean checkContractCodeUnique(String contractCode, Long contractId);
+
+    /**
      * 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
      *
      * @param contract 查询条件

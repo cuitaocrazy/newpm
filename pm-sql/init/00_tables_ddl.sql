@@ -843,6 +843,7 @@ CREATE TABLE `pm_project_manager_change` (
   `project_id` bigint(20) NOT NULL COMMENT '项目ID',
   `old_manager_id` bigint(20) DEFAULT NULL COMMENT '原项目经理ID',
   `new_manager_id` bigint(20) NOT NULL COMMENT '新项目经理ID',
+  `change_reason` varchar(500) DEFAULT NULL COMMENT '变更原因',
 
   -- 通用字段
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
@@ -857,7 +858,7 @@ CREATE TABLE `pm_project_manager_change` (
   KEY `idx_old_manager_id` (`old_manager_id`),
   KEY `idx_new_manager_id` (`new_manager_id`),
   KEY `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='项目经理变更表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='项目经理变更表';
 
 -- ----------------------------
 -- 10、项目人员管理表

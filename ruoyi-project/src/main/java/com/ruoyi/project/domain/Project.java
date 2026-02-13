@@ -120,6 +120,9 @@ public class Project extends BaseEntity
     @Excel(name = "客户联系人ID")
     private Long customerContactId;
 
+    /** 关联的合同ID */
+    private Long contractId;
+
     /** 商户联系人 */
     @Excel(name = "商户联系人")
     private String merchantContact;
@@ -543,9 +546,19 @@ public class Project extends BaseEntity
         this.customerContactId = customerContactId;
     }
 
-    public Long getCustomerContactId() 
+    public Long getCustomerContactId()
     {
         return customerContactId;
+    }
+
+    public void setContractId(Long contractId)
+    {
+        this.contractId = contractId;
+    }
+
+    public Long getContractId()
+    {
+        return contractId;
     }
 
     public void setMerchantContact(String merchantContact) 
