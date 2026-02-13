@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.ProjectManagerChangeMapper">
+    
+    <resultMap type="ProjectManagerChange" id="ProjectManagerChangeResult">
+        <result property="changeId"    column="change_id"    />
+        <result property="projectId"    column="project_id"    />
+        <result property="oldManagerId"    column="old_manager_id"    />
+        <result property="newManagerId"    column="new_manager_id"    />
+        <result property="changeReason"    column="change_reason"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <!-- 项目经理变更视图结果映射 -->
+    <resultMap id="ProjectManagerChangeVoResult" type="com.ruoyi.project.domain.vo.ProjectManagerChangeVo">
+        <result property="projectId"           column="project_id"           />
+        <result property="projectName"         column="project_name"         />
+        <result property="projectCode"         column="project_code"         />
+        <result property="projectCreateTime"   column="project_create_time"  />
+        <result property="currentManagerId"    column="current_manager_id"   />
+        <result property="currentManagerName"  column="current_manager_name" />
+        <result property="oldManagerId"        column="old_manager_id"       />
+        <result property="oldManagerName"      column="old_manager_name"     />
+        <result property="changeReason"        column="change_reason"        />
+        <result property="changeBy"            column="change_by"            />
+        <result property="changeByName"        column="change_by_name"       />
+        <result property="changeTime"          column="change_time"          />
+    </resultMap>
+
+    <sql id="selectProjectManagerChangeVo">
+        select change_id, project_id, old_manager_id, new_manager_id, change_reason, del_flag, create_by, create_time, update_by, update_time, remark from pm_project_manager_change
+    </sql>
+
+    <select id="selectProjectManagerChangeList" parameterType="ProjectManagerChange" resultMap="ProjectManagerChangeVoResult">
+        SELECT
+            p.project_id,
+            p.project_name,
+            p.project_code,
+            p.create_time as project_create_time,
+            p.project_manager_id as current_manager_id,
+            u_current.nick_name as current_manager_name,
+            latest_change.old_manager_id,
+            u_old.nick_name as old_manager_name,
+            latest_change.change_reason,
+            latest_change.create_by as change_by,
+            u_changer.nick_name as change_by_name,
+            latest_change.create_time as change_time
+        FROM pm_project p
+        LEFT JOIN (
+            SELECT
+                c1.project_id,
+                c1.old_manager_id,
+                c1.new_manager_id,
+                c1.change_reason,
+                c1.create_by,
+                c1.create_time
+            FROM pm_project_manager_change c1
+            INNER JOIN (
+                SELECT project_id, MAX(create_time) as max_time
+                FROM pm_project_manager_change
+                WHERE del_flag = '0'
+                GROUP BY project_id
+            ) c2 ON c1.project_id = c2.project_id AND c1.create_time = c2.max_time
+            WHERE c1.del_flag = '0'
+        ) latest_change ON p.project_id = latest_change.project_id
+        LEFT JOIN sys_user u_current ON p.project_manager_id = u_current.user_id
+        LEFT JOIN sys_user u_old ON latest_change.old_manager_id = u_old.user_id
+        LEFT JOIN sys_user u_changer ON latest_change.create_by COLLATE utf8mb4_unicode_ci = u_changer.user_name COLLATE utf8mb4_unicode_ci
+        WHERE p.del_flag = '0'
+        <if test="projectName != null and projectName != ''">
+            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        <if test="currentManagerId != null">
+            AND p.project_manager_id = #{currentManagerId}
+        </if>
+        <if test="params.beginTime != null and params.beginTime != ''">
+            AND DATE_FORMAT(latest_change.create_time,'%Y-%m-%d') &gt;= DATE_FORMAT(#{params.beginTime},'%Y-%m-%d')
+        </if>
+        <if test="params.endTime != null and params.endTime != ''">
+            AND DATE_FORMAT(latest_change.create_time,'%Y-%m-%d') &lt;= DATE_FORMAT(#{params.endTime},'%Y-%m-%d')
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+    
+    <select id="selectProjectManagerChangeByChangeId" parameterType="Long" resultMap="ProjectManagerChangeResult">
+        <include refid="selectProjectManagerChangeVo"/>
+        where change_id = #{changeId}
+    </select>
+
+    <insert id="insertProjectManagerChange" parameterType="ProjectManagerChange" useGeneratedKeys="true" keyProperty="changeId">
+        insert into pm_project_manager_change
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="projectId != null">project_id,</if>
+            <if test="oldManagerId != null">old_manager_id,</if>
+            <if test="newManagerId != null">new_manager_id,</if>
+            <if test="changeReason != null">change_reason,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="projectId != null">#{projectId},</if>
+            <if test="oldManagerId != null">#{oldManagerId},</if>
+            <if test="newManagerId != null">#{newManagerId},</if>
+            <if test="changeReason != null">#{changeReason},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProjectManagerChange" parameterType="ProjectManagerChange">
+        update pm_project_manager_change
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="oldManagerId != null">old_manager_id = #{oldManagerId},</if>
+            <if test="newManagerId != null">new_manager_id = #{newManagerId},</if>
+            <if test="changeReason != null">change_reason = #{changeReason},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where change_id = #{changeId}
+    </update>
+
+    <delete id="deleteProjectManagerChangeByChangeId" parameterType="Long">
+        delete from pm_project_manager_change where change_id = #{changeId}
+    </delete>
+
+    <delete id="deleteProjectManagerChangeByChangeIds" parameterType="String">
+        delete from pm_project_manager_change where change_id in
+        <foreach item="changeId" collection="array" open="(" separator="," close=")">
+            #{changeId}
+        </foreach>
+    </delete>
+
+    <!-- 查询项目的所有变更记录 -->
+    <select id="selectChangeHistoryByProjectId" parameterType="Long" resultMap="ProjectManagerChangeResult">
+        SELECT
+            c.change_id,
+            c.project_id,
+            c.old_manager_id,
+            c.new_manager_id,
+            c.change_reason,
+            c.create_by,
+            c.create_time,
+            u_old.nick_name as old_manager_name,
+            u_new.nick_name as new_manager_name,
+            u_changer.nick_name as change_by_name
+        FROM pm_project_manager_change c
+        LEFT JOIN sys_user u_old ON c.old_manager_id = u_old.user_id
+        LEFT JOIN sys_user u_new ON c.new_manager_id = u_new.user_id
+        LEFT JOIN sys_user u_changer ON c.create_by COLLATE utf8mb4_unicode_ci = u_changer.user_name COLLATE utf8mb4_unicode_ci
+        WHERE c.project_id = #{projectId}
+          AND c.del_flag = '0'
+        ORDER BY c.create_time DESC
+    </select>
+</mapper>
