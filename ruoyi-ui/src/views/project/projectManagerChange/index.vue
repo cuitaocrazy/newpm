@@ -83,16 +83,16 @@
 
     <el-table v-loading="loading" :data="projectManagerChangeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="变更主键ID" align="center" prop="changeId" />
-      <el-table-column label="项目ID" align="center" prop="projectId" />
-      <el-table-column label="原项目经理ID" align="center" prop="oldManagerId" />
-      <el-table-column label="新项目经理ID" align="center" prop="newManagerId" />
-      <el-table-column label="变更原因" align="center" prop="changeReason" />
-      <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="项目编号" align="center" prop="projectCode" min-width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="180" :show-overflow-tooltip="true" />
+      <el-table-column label="当前项目经理" align="center" prop="currentManagerName" width="120" />
+      <el-table-column label="原项目经理" align="center" prop="oldManagerName" width="120" />
+      <el-table-column label="变更原因" align="center" prop="changeReason" min-width="150" :show-overflow-tooltip="true" />
+      <el-table-column label="变更人" align="center" prop="changeByName" width="100" />
+      <el-table-column label="变更时间" align="center" prop="changeTime" width="160" />
+      <el-table-column label="操作" align="center" width="100" fixed="right">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:projectManagerChange:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:projectManagerChange:remove']">删除</el-button>
+          <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:projectManagerChange:detail']">详情</el-button>
         </template>
       </el-table-column>
     </el-table>
