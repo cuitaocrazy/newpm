@@ -38,7 +38,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select change_id, project_id, old_manager_id, new_manager_id, change_reason, del_flag, create_by, create_time, update_by, update_time, remark from pm_project_manager_change
     </sql>
 
-    <select id="selectProjectManagerChangeList" parameterType="ProjectManagerChange" resultMap="ProjectManagerChangeVoResult">
+    <select id="selectProjectManagerChangeList" parameterType="com.ruoyi.project.domain.vo.ProjectManagerChangeVo" resultMap="ProjectManagerChangeVoResult">
         SELECT
             p.project_id,
             p.project_name,
