@@ -157,6 +157,12 @@ const changeDialogVisible = ref(false)
 const changeDialogTitle = ref("")
 const isBatchChange = ref(false)
 
+// 详情对话框状态
+const detailDialogVisible = ref(false)
+const detailProject = ref({})
+const detailChanges = ref([])
+const detailLoading = ref(false)
+
 const data = reactive({
   form: {},
   queryParams: {
@@ -390,6 +396,29 @@ function handleExport() {
   proxy.download('project/projectManagerChange/export', {
     ...queryParams.value
   }, `projectManagerChange_${new Date().getTime()}.xlsx`)
+}
+
+/** 查看详情按钮操作 */
+function handleDetail(row) {
+  detailLoading.value = true
+  detailDialogVisible.value = true
+  detailProject.value = {}
+  detailChanges.value = []
+
+  getChangeDetail(row.projectId).then(response => {
+    detailProject.value = response.data.project || {}
+    detailChanges.value = response.data.changes || []
+    detailLoading.value = false
+  }).catch(() => {
+    detailLoading.value = false
+  })
+}
+
+/** 关闭详情对话框 */
+function closeDetail() {
+  detailDialogVisible.value = false
+  detailProject.value = {}
+  detailChanges.value = []
 }
 
 getList()
