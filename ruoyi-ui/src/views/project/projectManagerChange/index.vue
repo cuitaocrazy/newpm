@@ -113,7 +113,7 @@
 </template>
 
 <script setup name="ProjectManagerChange">
-import { listProjectManagerChange, getProjectManagerChange, delProjectManagerChange, addProjectManagerChange, updateProjectManagerChange, searchProjects } from "@/api/project/projectManagerChange"
+import { listProjectManagerChange, getProjectManagerChange, delProjectManagerChange, addProjectManagerChange, updateProjectManagerChange, searchProjects, changeManager, batchChangeManager, getChangeDetail } from "@/api/project/projectManagerChange"
 import { listUser } from "@/api/system/user"
 
 const { proxy } = getCurrentInstance()
@@ -123,12 +123,18 @@ const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
+const projectIds = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
 const daterangeChangeTime = ref([])
 const userList = ref([])
+
+// 变更对话框状态
+const changeDialogVisible = ref(false)
+const changeDialogTitle = ref("")
+const isBatchChange = ref(false)
 
 const data = reactive({
   form: {},
@@ -137,6 +143,13 @@ const data = reactive({
     pageSize: 10,
     projectName: null,
     currentManagerId: null,
+  },
+  // 变更表单
+  changeForm: {
+    projectId: null,
+    projectIds: [],
+    newManagerId: null,
+    changeReason: null
   },
   rules: {
     changeId: [
@@ -148,10 +161,19 @@ const data = reactive({
     newManagerId: [
       { required: true, message: "新项目经理ID不能为空", trigger: "change" }
     ],
+  },
+  // 变更表单验证规则
+  changeRules: {
+    newManagerId: [
+      { required: true, message: "请选择新项目经理", trigger: "change" }
+    ],
+    changeReason: [
+      { required: true, message: "请输入变更原因", trigger: "blur" }
+    ]
   }
 })
 
-const { queryParams, form, rules } = toRefs(data)
+const { queryParams, form, rules, changeForm, changeRules } = toRefs(data)
 
 /** 自动补全查询 */
 function querySearchAsync(queryString, cb) {
@@ -228,8 +250,68 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.changeId)
+  projectIds.value = selection.map(item => item.projectId)
   single.value = selection.length != 1
   multiple.value = !selection.length
+}
+
+/** 重置变更表单 */
+function resetChangeForm() {
+  changeForm.value = {
+    projectId: null,
+    projectIds: [],
+    newManagerId: null,
+    changeReason: null
+  }
+  proxy.resetForm("changeFormRef")
+}
+
+/** 单个变更按钮操作 */
+function handleChange(row) {
+  resetChangeForm()
+  changeForm.value.projectId = row.projectId
+  changeDialogTitle.value = `变更项目经理 - ${row.projectName}`
+  isBatchChange.value = false
+  changeDialogVisible.value = true
+}
+
+/** 批量变更按钮操作 */
+function handleBatchChange() {
+  if (projectIds.value.length === 0) {
+    proxy.$modal.msgWarning("请至少选择一条记录")
+    return
+  }
+  resetChangeForm()
+  changeForm.value.projectIds = projectIds.value
+  changeDialogTitle.value = `批量变更项目经理 - 已选择 ${projectIds.value.length} 个项目`
+  isBatchChange.value = true
+  changeDialogVisible.value = true
+}
+
+/** 取消变更 */
+function cancelChange() {
+  changeDialogVisible.value = false
+  resetChangeForm()
+}
+
+/** 提交变更 */
+function submitChange() {
+  proxy.$refs["changeFormRef"].validate(valid => {
+    if (valid) {
+      const apiCall = isBatchChange.value
+        ? batchChangeManager(changeForm.value)
+        : changeManager(changeForm.value)
+
+      apiCall.then(response => {
+        proxy.$modal.msgSuccess(response.msg || "变更成功")
+        changeDialogVisible.value = false
+        resetChangeForm()
+        getList()
+      }).catch(() => {
+        // 错误已由全局拦截器处理
+      })
+    }
+  })
 }
 
 /** 新增按钮操作 */
