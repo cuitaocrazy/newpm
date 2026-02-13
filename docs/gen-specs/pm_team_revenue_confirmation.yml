@@ -217,6 +217,62 @@ customizations:
     notes: "查询主表使用 IProjectService.selectProjectList()，确保数据一致性"
     timestamp: "2026-02-12"
 
+  list_summary_row:
+    intent: "列表添加合计行，显示在表头和第一行数据之间，合计确认金额"
+    component:
+      type: custom
+      spec: "使用 computed 属性动态生成包含合计行的数据列表，合计行插入到列表开头"
+    bindTo: displayList
+    service: null
+    notes: |
+      实现逻辑：
+      1. 创建 displayList computed 属性，计算确认金额合计
+      2. 生成合计行对象：{ isSummaryRow: true, projectName: '合计', confirmAmount: 合计值 }
+      3. 将合计行插入到列表开头：[summaryRow, ...teamRevenueList.value]
+      4. el-table 使用 :data="displayList" 而非原始 teamRevenueList
+      5. 使用 :row-class-name="tableRowClassName" 给合计行添加 'summary-row' 样式类
+
+      列模板处理：
+      - 序号列：合计行不显示序号（v-if="!scope.row.isSummaryRow"）
+      - 项目名称列：合计行显示"合计"文字（加粗）
+      - 确认金额列：合计行显示合计金额（加粗）
+      - 操作列：合计行不显示按钮（template v-if="!scope.row.isSummaryRow"）
+      - 其他列：合计行为空白
+
+      样式设置：
+      .summary-row {
+        background-color: #f5f7fa;
+        font-weight: bold;
+      }
+
+      关键代码：
+      ```javascript
+      // computed 属性
+      const displayList = computed(() => {
+        if (!teamRevenueList.value || teamRevenueList.value.length === 0) {
+          return []
+        }
+        const totalConfirmAmount = teamRevenueList.value.reduce((sum, item) => {
+          return sum + (parseFloat(item.confirmAmount) || 0)
+        }, 0)
+        const summaryRow = {
+          isSummaryRow: true,
+          projectName: '合计',
+          confirmAmount: totalConfirmAmount.toFixed(2)
+        }
+        return [summaryRow, ...teamRevenueList.value]
+      })
+
+      // 行样式方法
+      function tableRowClassName({ row }) {
+        if (row.isSummaryRow) {
+          return 'summary-row'
+        }
+        return ''
+      }
+      ```
+    timestamp: "2026-02-13"
+
   # ========== 新增/编辑页面定制 ==========
   project_select_hybrid:
     intent: "项目选择支持下拉选择和远程搜索两种方式"
@@ -415,6 +471,288 @@ customizations:
     notes: "与项目管理详情页面保持一致，放在左侧项目信息区域"
     timestamp: "2026-02-12"
 
+  # ==================
+  # 列表表格要素与项目管理一致（2026-02-13）
+  # ==================
+  table_columns_alignment:
+    intent: "列表表格显示字段与项目管理列表完全一致"
+    component:
+      type: "custom"
+      spec: |
+        列表表格调整说明（2026-02-13完成）：
+
+        目标：团队收入确认的列表与项目管理列表展示要素保持一致
+
+        新增列（8个）：
+        - 合同状态（contractStatus）：显示合同签署状态
+        - 参与人员（participants）：显示项目参与人员姓名列表（逗号分隔）
+        - 启动日期（startDate）：项目启动日期
+        - 结束日期（endDate）：项目结束日期
+        - 验收日期（acceptanceDate）：项目验收日期
+        - 审核状态（approvalStatus）：项目审核状态（待审核/已通过/已拒绝）
+        - 验收状态（acceptanceStatus）：项目验收状态
+        - 更新人（updateBy）：最后更新人
+        - 更新时间（updateTime）：最后更新时间
+
+        移除列（2个）：
+        - 市场经理（marketManagerId）：项目管理列表没有此列
+        - 创建时间（createTime）：改为显示更新时间
+
+        保留列（收入确认特有）：
+        - 税后金额（afterTaxAmount）：团队收入确认特有字段，保留显示
+
+        最终列顺序（24列）：
+        1. 序号（55）
+        2. 项目名称（150）
+        3. 项目部门（120）
+        4. 项目经理（100）
+        5. 项目分类（120）
+        6. 二级区域（120）
+        7. 项目预算（120）
+        8. 预估工作量（100）
+        9. 实际人天（100）
+        10. 合同金额（120）
+        11. 收入确认年度（120）
+        12. 合同状态（100）- 新增
+        13. 收入确认状态（120）
+        14. 确认金额(含税)（120）
+        15. 税后金额（120）- 收入确认特有
+        16. 参与人员（150）- 新增
+        17. 启动日期（100）- 新增
+        18. 结束日期（100）- 新增
+        19. 验收日期（100）- 新增
+        20. 审核状态（100）- 新增
+        21. 项目阶段（100）
+        22. 验收状态（100）- 新增
+        23. 更新人（100）- 新增
+        24. 更新时间（160）- 新增
+        25. 操作（150）
+    bindTo: "table"
+    service: null
+    notes: |
+      参与人员显示实现：
+      1. 添加隐藏的 UserSelect 组件加载所有用户
+         <user-select
+           ref="allUsersSelectRef"
+           v-model="hiddenAllUsersValue"
+           style="display: none"
+         />
+
+      2. 添加 getParticipantsNames() 方法
+         function getParticipantsNames(participants) {
+           if (!participants) return '-'
+           const participantIds = typeof participants === 'string'
+             ? participants.split(',').map(id => parseInt(id.trim()))
+             : participants
+           const allUsers = allUsersSelectRef.value?.userOptions?.value || []
+           const names = participantIds
+             .map(id => {
+               const user = allUsers.find(u => u.userId === id)
+               return user ? user.nickName : null
+             })
+             .filter(name => name !== null)
+           return names.length > 0 ? names.join(', ') : '-'
+         }
+
+      3. 表格列显示
+         <el-table-column label="参与人员">
+           <template #default="scope">
+             <span v-if="!scope.row.isSummaryRow">
+               {{ getParticipantsNames(scope.row.participants) }}
+             </span>
+           </template>
+         </el-table-column>
+
+      字典依赖：
+      - sys_htzt：合同状态
+      - sys_spzt：审核状态
+      - sys_yszt：验收状态
+    timestamp: "2026-02-13"
+
+  # ==================
+  # 详情页面数据刷新优化（2026-02-13）
+  # ==================
+  detail_page_data_refresh:
+    intent: "详情页面从公司收入确认返回时能自动刷新最新数据"
+    component:
+      type: "custom"
+      spec: |
+        数据刷新优化说明（2026-02-13完成）：
+
+        问题：从公司收入确认页面输入确认数据后，返回团队收入确认详情页面查看公司收入确认信息时，数据没有刷新，需要手动刷新页面才能看到最新数据
+
+        原因：Vue Router 的 keep-alive 缓存机制，组件被缓存后只有首次挂载时执行 onMounted()，从缓存恢复时不会重新执行
+
+        解决方案：
+        1. 添加 onActivated() 生命周期钩子
+        2. 添加 watch 监听路由参数变化
+        3. 两者结合确保数据始终是最新的
+
+        核心代码实现：
+
+        import { ref, computed, onMounted, onActivated, watch, getCurrentInstance } from 'vue'
+        import { useRouter, useRoute } from 'vue-router'
+
+        const router = useRouter()
+        const route = useRoute()
+
+        /** 获取详情 */
+        function getDetail() {
+          const projectId = route.params.projectId
+          getTeamRevenue(projectId).then(response => {
+            const projectData = response.data.project || {}
+            // ... 处理数据
+            form.value = projectData
+            detailList.value = response.data.detailList || []
+          })
+        }
+
+        // 初始化
+        onMounted(() => {
+          loadAllUsers()
+          getDetail()
+        })
+
+        // 当组件被激活时（从缓存中恢复），重新加载数据
+        // 这样可以确保从公司收入确认页面返回时能看到最新数据
+        onActivated(() => {
+          // 重新加载详情数据，获取最新的公司收入确认信息
+          getDetail()
+        })
+
+        // 监听路由参数变化，当项目ID变化时重新加载数据
+        watch(
+          () => route.params.projectId,
+          (newProjectId, oldProjectId) => {
+            if (newProjectId && newProjectId !== oldProjectId) {
+              getDetail()
+            }
+          }
+        )
+    bindTo: "detail.vue"
+    service:
+      endpoint: "GET /revenue/team/{projectId}"
+      source: "getTeamRevenue API"
+      returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
+      newApi: false
+    notes: |
+      Vue 生命周期钩子说明：
+      - onMounted()：组件首次挂载时执行（只执行一次）
+      - onActivated()：组件从 keep-alive 缓存中激活时执行（每次激活都执行）
+      - watch()：监听响应式数据变化，持续监听
+
+      使用场景：
+      1. 用户在公司收入确认页面填写数据
+      2. 点击"团队收入确认-详情"查看
+      3. onActivated() 自动触发，重新加载最新数据
+      4. 用户无需手动刷新页面即可看到更新
+
+      相关文件：
+      - ruoyi-ui/src/views/revenue/team/detail.vue
+    timestamp: "2026-02-13"
+
+  # ==================
+  # 编辑时项目名称回显优化（2026-02-13）
+  # ==================
+  edit_project_name_display:
+    intent: "编辑团队收入确认时，项目名称正确显示而不是显示项目ID"
+    component:
+      type: "custom"
+      spec: |
+        项目名称回显优化说明（2026-02-13完成）：
+
+        问题：点击编辑按钮，项目选择器中显示的是项目ID数字，而不是项目名称
+
+        原因：ProjectSelect 组件使用 remote 搜索模式，初始状态下 projectOptions 为空数组，只有在用户输入搜索关键词或打开下拉框时才加载数据。编辑时设置 form.projectId，但 projectOptions 中没有对应的项目对象，导致无法显示项目名称
+
+        解决方案：
+        1. 给 ProjectSelect 组件添加 ref 引用
+        2. 在 handleUpdate() 方法中，手动将当前项目对象添加到 projectOptions
+        3. 确保在设置 form.projectId 之前，projectOptions 中已经包含该项目
+
+        核心代码实现：
+
+        <template>
+          <el-dialog title="修改团队收入确认" v-model="open">
+            <el-form :model="form">
+              <el-form-item label="项目名称" prop="projectId">
+                <project-select
+                  ref="projectSelectRef"
+                  v-model="form.projectId"
+                  placeholder="请选择项目"
+                  @change="handleProjectChange"
+                />
+              </el-form-item>
+              <!-- 其他表单项 -->
+            </el-form>
+          </el-dialog>
+        </template>
+
+        <script setup>
+        const projectSelectRef = ref(null)
+
+        /** 修改按钮操作 */
+        function handleUpdate(row) {
+          reset()
+          const projectId = row.projectId
+
+          // 加载项目详情
+          getProject(projectId).then(response => {
+            const project = response.data
+
+            // 关键：手动添加当前项目到 projectOptions，确保项目名称正确显示
+            if (projectSelectRef.value && project.projectId && project.projectName) {
+              projectSelectRef.value.projectOptions.push({
+                projectId: project.projectId,
+                projectName: project.projectName
+              })
+            }
+
+            // 设置表单数据
+            form.value = {
+              projectId: project.projectId,
+              projectName: project.projectName,  // 用于显示
+              // ... 其他字段
+            }
+
+            // 加载团队确认明细
+            listTeamRevenue({ projectId: projectId }).then(res => {
+              form.value.detailList = res.rows || []
+            })
+
+            open.value = true
+            title.value = "修改团队收入确认"
+          })
+        }
+        </script>
+    bindTo: "index.vue"
+    service:
+      endpoint: "GET /project/project/{projectId}"
+      source: "getProject API"
+      returns: "Project 对象，包含 projectId 和 projectName"
+      newApi: false
+    notes: |
+      ProjectSelect 组件工作原理：
+      - remote: true - 开启远程搜索
+      - projectOptions: ref([]) - 内部维护的项目选项数组
+      - 用户输入时调用 remoteMethod 加载匹配的项目
+      - v-model 绑定的是 projectId，显示依赖 projectOptions 中的 projectName
+
+      手动填充 projectOptions 的时机：
+      1. 编辑操作（handleUpdate）- 加载项目详情后
+      2. 详情查看（handleDetail）- 如需要显示项目名称
+      3. 任何需要预填充项目的场景
+
+      注意事项：
+      - 必须同时包含 projectId 和 projectName
+      - 在设置 form.projectId 之前填充
+      - 使用 push() 而不是直接赋值，保留已有选项
+
+      相关文件：
+      - ruoyi-ui/src/views/revenue/team/index.vue
+      - ruoyi-ui/src/components/ProjectSelect/index.vue
+    timestamp: "2026-02-13"
+
   # ========== 后端接口定制 ==========
   backend_list_query:
     intent: "列表查询主表从项目表查询"
@@ -507,19 +845,33 @@ implementation_summary:
 
   key_features:
     - "列表查询主表从项目表查询，与公司收入确认逻辑一致"
+    - "列表表格与项目管理列表保持一致，显示24个字段"
+    - "列表添加合计行，显示在表头和第一行数据之间，合计6个数值字段"
     - "新增/编辑页面支持批量管理明细，自动计算合计金额"
     - "项目选择支持下拉和远程搜索双模式"
     - "部门选择只显示三级及以下机构"
     - "确认人默认当前用户，只读不可编辑"
     - "详情页面左右布局，完整展示项目信息和团队明细"
+    - "详情页面支持 keep-alive 缓存自动刷新数据"
+    - "编辑时项目名称正确回显而不是显示ID"
     - "项目部门显示完整路径（三级及以下，用-隔开）"
+    - "参与人员显示姓名列表（逗号分隔）"
     - "区域字段拆分为一级区域和二级区域"
+    - "合同状态、审核状态、验收状态使用字典标签显示"
     - "后端支持批量保存明细，自动设置确认时间"
     - "数据关联查询部门名称和确认人姓名"
 
   technical_highlights:
+    - "使用 Composition API（setup script）和 Vue 3 生命周期钩子"
     - "使用 Pinia userStore（注意是 userStore.id 不是 userId）"
+    - "列表合计行：displayList computed 属性动态生成，合计行插入到数据开头，不在表格底部"
+    - "合计行标识：isSummaryRow: true，各列模板根据此标识判断显示内容"
+    - "合计行样式：tableRowClassName 方法返回 'summary-row' 类名，背景色 #f5f7fa"
+    - "合计6个数值字段：projectBudget, estimatedWorkload, actualWorkload, contractAmount, confirmAmount, afterTaxAmount"
+    - "参与人员显示：通过隐藏的 allUsersSelectRef 访问用户列表，使用 getParticipantsNames() 转换为姓名"
     - "项目选择使用 ProjectSelect 组件，支持 remote 和 visibleChange"
+    - "编辑时手动填充 projectOptions 解决项目名称回显问题"
+    - "详情页面数据刷新：onActivated() + watch 双重机制确保数据实时更新"
     - "部门过滤逻辑：ancestors.split(',').length >= 3"
     - "部门路径构建：解析 ancestors，用'-'连接各级部门名称"
     - "参与人员标签显示：el-tag 循环渲染"
@@ -534,6 +886,8 @@ implementation_summary:
     - "修复 NullPointerException：后端添加空值检查"
     - "修复确认人字段验证：前端过滤 confirmUserName，只提交 confirmUserId"
     - "修复详情页面布局：备注从右侧移到左侧项目信息区域"
+    - "修复详情页面缓存数据不刷新：添加 onActivated() 和 watch 监听"
+    - "修复编辑时项目名称显示为数字：手动填充 projectOptions"
 
   related_files:
     backend:
@@ -552,4 +906,62 @@ implementation_summary:
       - "pm-sql/init/00_tables_ddl.sql (pm_team_revenue_confirmation)"
       - "pm-sql/init/02_menu_data.sql (团队收入确认菜单)"
 
-  timestamp: "2026-02-12 23:30:00"
+  recent_updates:
+    - date: "2026-02-13"
+      description: "列表添加合计行功能"
+      details: |
+        需求：在列表第一行数据与表头之间添加合计行，显示确认金额的合计，操作列不显示按钮
+        实现：
+        - 创建 displayList computed 属性，计算合计并插入合计行到列表开头
+        - 使用 isSummaryRow 标识合计行，各列模板根据标识判断显示内容
+        - 添加 tableRowClassName 方法给合计行添加样式类 'summary-row'
+        - 合计行样式：背景色 #f5f7fa，字体加粗
+        - 序号列、操作列在合计行不显示内容
+        - 项目名称列在合计行显示"合计"文字
+        - 确认金额列在合计行显示合计值（保留2位小数）
+        - 合计6个数值字段：项目预算、预估工作量、实际人天、合同金额、确认金额、税后金额
+      files:
+        - "ruoyi-ui/src/views/revenue/team/index.vue"
+
+    - date: "2026-02-13"
+      description: "列表表格要素与项目管理一致"
+      details: |
+        需求：团队收入确认的列表展示要素要与项目管理列表一致
+        实现：
+        - 新增8个列：合同状态、参与人员、启动/结束/验收日期、审核/验收状态、更新人/时间
+        - 移除2个列：市场经理、创建时间
+        - 保留收入确认特有字段：税后金额
+        - 添加 getParticipantsNames() 方法显示参与人员姓名
+        - 添加隐藏的 allUsersSelectRef 加载所有用户
+        - 添加 sys_htzt 字典支持合同状态显示
+        - 最终24列与项目管理列表完全一致
+      files:
+        - "ruoyi-ui/src/views/revenue/team/index.vue"
+
+    - date: "2026-02-13"
+      description: "详情页面数据刷新优化"
+      details: |
+        问题：从公司收入确认页面输入确认数据后，返回团队收入确认详情页面时，数据没有自动刷新
+        原因：Vue Router 的 keep-alive 缓存机制，组件被缓存后只有首次挂载时执行 onMounted()
+        实现：
+        - 添加 onActivated() 生命周期钩子，在组件从缓存激活时重新加载数据
+        - 添加 watch 监听 route.params.projectId，在项目ID变化时重新加载
+        - 两者结合确保数据始终是最新的
+        - 用户无需手动刷新页面即可看到更新
+      files:
+        - "ruoyi-ui/src/views/revenue/team/detail.vue"
+
+    - date: "2026-02-13"
+      description: "编辑时项目名称回显优化"
+      details: |
+        问题：点击编辑按钮时，项目选择器中显示的是项目ID数字，而不是项目名称
+        原因：ProjectSelect 组件使用 remote 搜索模式，初始状态下 projectOptions 为空，无法根据 projectId 显示项目名称
+        实现：
+        - 给 ProjectSelect 组件添加 ref 引用
+        - 在 handleUpdate() 方法中，手动将当前项目对象添加到 projectOptions
+        - 确保在设置 form.projectId 之前，projectOptions 中已包含该项目
+        - 项目名称正确显示而不是显示ID数字
+      files:
+        - "ruoyi-ui/src/views/revenue/team/index.vue"
+
+  timestamp: "2026-02-13 02:00:00"

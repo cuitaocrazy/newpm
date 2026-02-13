@@ -178,7 +178,7 @@
 </template>
 
 <script setup name="TeamRevenueDetail">
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, onActivated, watch, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getTeamRevenue } from '@/api/revenue/team'
 import { listUser } from '@/api/system/user'
@@ -340,6 +340,23 @@ onMounted(() => {
   loadAllUsers()
   getDetail()
 })
+
+// 当组件被激活时（从缓存中恢复），重新加载数据
+// 这样可以确保从公司收入确认页面返回时能看到最新数据
+onActivated(() => {
+  // 重新加载详情数据，获取最新的公司收入确认信息
+  getDetail()
+})
+
+// 监听路由参数变化，当项目ID变化时重新加载数据
+watch(
+  () => route.params.projectId,
+  (newProjectId, oldProjectId) => {
+    if (newProjectId && newProjectId !== oldProjectId) {
+      getDetail()
+    }
+  }
+)
 </script>
 
 <style scoped lang="scss">

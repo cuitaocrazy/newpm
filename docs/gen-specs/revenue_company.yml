@@ -1012,3 +1012,277 @@ customizations:
       - 从第三级开始（索引2）
       - 使用 '-' 连接
       - 示例："事业部-开发部-研发组"
+
+  # ==================
+  # 列表表格要素与项目管理一致（2026-02-13）
+  # ==================
+  table_columns_alignment:
+    intent: "列表表格显示字段与项目管理列表完全一致"
+    component:
+      type: "custom"
+      spec: |
+        列表表格调整说明（2026-02-13完成）：
+
+        目标：公司收入确认、团队收入确认的列表与项目管理列表展示要素保持一致
+
+        新增列（8个）：
+        - 合同状态（contractStatus）：显示合同签署状态
+        - 参与人员（participants）：显示项目参与人员姓名列表（逗号分隔）
+        - 启动日期（startDate）：项目启动日期
+        - 结束日期（endDate）：项目结束日期
+        - 验收日期（acceptanceDate）：项目验收日期
+        - 审核状态（approvalStatus）：项目审核状态（待审核/已通过/已拒绝）
+        - 验收状态（acceptanceStatus）：项目验收状态
+        - 更新人（updateBy）：最后更新人
+        - 更新时间（updateTime）：最后更新时间
+
+        移除列（2个）：
+        - 市场经理（marketManagerId）：项目管理列表没有此列
+        - 创建时间（createTime）：改为显示更新时间
+
+        保留列（收入确认特有）：
+        - 税后金额（afterTaxAmount）：公司收入确认特有字段，保留显示
+
+        最终列顺序（24列）：
+        1. 序号（55）
+        2. 项目名称（150）
+        3. 项目部门（120）
+        4. 项目经理（100）
+        5. 项目分类（120）
+        6. 二级区域（120）
+        7. 项目预算（120）
+        8. 预估工作量（100）
+        9. 实际人天（100）
+        10. 合同金额（120）
+        11. 收入确认年度（120）
+        12. 合同状态（100）- 新增
+        13. 收入确认状态（120）
+        14. 确认金额(含税)（120）
+        15. 税后金额（120）- 收入确认特有
+        16. 参与人员（150）- 新增
+        17. 启动日期（100）- 新增
+        18. 结束日期（100）- 新增
+        19. 验收日期（100）- 新增
+        20. 审核状态（100）- 新增
+        21. 项目阶段（100）
+        22. 验收状态（100）- 新增
+        23. 更新人（100）- 新增
+        24. 更新时间（160）- 新增
+        25. 操作（150）
+    bindTo: "table"
+    service: null
+    notes: |
+      参与人员显示实现：
+      1. 添加隐藏的 UserSelect 组件加载所有用户
+         <user-select
+           ref="allUsersSelectRef"
+           v-model="hiddenAllUsersValue"
+           style="display: none"
+         />
+
+      2. 添加 getParticipantsNames() 方法
+         function getParticipantsNames(participants) {
+           if (!participants) return '-'
+           const participantIds = typeof participants === 'string'
+             ? participants.split(',').map(id => parseInt(id.trim()))
+             : participants
+           const allUsers = allUsersSelectRef.value?.userOptions?.value || []
+           const names = participantIds
+             .map(id => {
+               const user = allUsers.find(u => u.userId === id)
+               return user ? user.nickName : null
+             })
+             .filter(name => name !== null)
+           return names.length > 0 ? names.join(', ') : '-'
+         }
+
+      3. 表格列显示
+         <el-table-column label="参与人员">
+           <template #default="scope">
+             <span v-if="!scope.row.isSummaryRow">
+               {{ getParticipantsNames(scope.row.participants) }}
+             </span>
+           </template>
+         </el-table-column>
+
+      字典依赖：
+      - sys_htzt：合同状态
+      - sys_spzt：审核状态
+      - sys_yszt：验收状态
+    timestamp: "2026-02-13"
+
+  # ==================
+  # 列表合计行优化（2026-02-13）
+  # ==================
+  summary_row_optimization:
+    intent: "合计行显示在表头和第一行数据之间，而不是表格底部"
+    component:
+      type: "custom"
+      spec: |
+        合计行优化说明（2026-02-13完成）：
+
+        问题：Element Plus 默认的 show-summary 会将合计行放在表格底部
+        需求：合计行应该显示在表头和第一行数据之间
+
+        实现方案：
+        1. 移除 el-table 的 show-summary 和 summary-method 属性
+        2. 在数据加载成功后，手动计算合计并插入到列表开头
+        3. 使用 isSummaryRow 标识合计行，各列模板根据标识判断显示内容
+
+        核心代码实现：
+
+        // 数据加载
+        function getList() {
+          loading.value = true
+          listRevenue(queryParams.value).then(response => {
+            const list = response.rows
+            const summary = calculateSummary(list)
+            revenueList.value = [summary, ...list] // 合计行在第一行
+            total.value = response.total
+            loading.value = false
+          })
+        }
+
+        // 计算合计行
+        function calculateSummary(list) {
+          const summary = {
+            isSummaryRow: true,
+            projectBudget: 0,
+            estimatedWorkload: 0,
+            actualWorkload: 0,
+            contractAmount: 0,
+            confirmAmount: 0,
+            afterTaxAmount: 0
+          }
+
+          list.forEach(item => {
+            summary.projectBudget += (item.projectBudget || 0)
+            summary.estimatedWorkload += (item.estimatedWorkload || 0)
+            summary.actualWorkload += (item.actualWorkload || 0)
+            summary.contractAmount += (item.contractAmount || 0)
+            summary.confirmAmount += (item.confirmAmount || 0)
+            summary.afterTaxAmount += (item.afterTaxAmount || 0)
+          })
+
+          // 格式化为两位小数
+          Object.keys(summary).forEach(key => {
+            if (key !== 'isSummaryRow' && summary[key]) {
+              summary[key] = summary[key].toFixed(2)
+            }
+          })
+
+          return summary
+        }
+
+        // 模板显示
+        <el-table-column label="序号" width="55" align="center">
+          <template #default="scope">
+            <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
+            <span v-else>{{ scope.$index }}</span>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="确认金额(含税)">
+          <template #default="scope">
+            <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">
+              {{ scope.row.confirmAmount }}
+            </span>
+            <span v-else>{{ scope.row.confirmAmount }}</span>
+          </template>
+        </el-table-column>
+    bindTo: "table"
+    service: null
+    notes: |
+      合计行特点：
+      - 序号列显示"合计"文字（加粗）
+      - 所有数值列加粗显示合计值
+      - 其他列为空白（通过 v-if="!scope.row.isSummaryRow" 控制）
+      - 操作列不显示按钮
+
+      合计字段（6个）：
+      - projectBudget：项目预算
+      - estimatedWorkload：预估工作量
+      - actualWorkload：实际人天
+      - contractAmount：合同金额
+      - confirmAmount：确认金额（含税）
+      - afterTaxAmount：税后金额
+    timestamp: "2026-02-13"
+
+# ============================
+# 实现总结
+# ============================
+implementation_summary:
+  description: "公司收入确认功能完整实现，基于项目表视图查询，支持多维度筛选和数据统计"
+
+  key_features:
+    - "基于 pm_project 表视图查询，包含项目、合同、客户等关联信息"
+    - "列表表格与项目管理列表保持一致，显示24个字段"
+    - "支持12个查询条件的多维度筛选"
+    - "合计行显示在表头和第一行数据之间，统计6个数值字段"
+    - "使用通用选择器组件（DictSelect、UserSelect、SecondaryRegionSelect）"
+    - "一级区域联动二级区域，自动加载选项"
+    - "项目经理、市场经理显示昵称而非ID"
+    - "项目部门显示完整层级路径（从第三级开始）"
+    - "参与人员显示姓名列表（逗号分隔）"
+    - "合同状态、审核状态、验收状态使用字典标签显示"
+
+  technical_highlights:
+    - "使用 Composition API（setup script）"
+    - "使用 DictSelect/UserSelect/SecondaryRegionSelect 通用组件"
+    - "合计行手动计算并插入列表开头（非 Element Plus 默认合计）"
+    - "用户名显示：使用隐藏的 UserSelect 组件提供数据源"
+    - "参与人员显示：通过 allUsersSelectRef 访问用户列表"
+    - "部门路径显示：解析 ancestors 字段构建层级路径"
+    - "一级区域联动：@change 事件触发二级区域加载"
+    - "数据权限：后端使用 @DataScope 注解控制可见性"
+
+  recent_updates:
+    - date: "2026-02-13"
+      description: "列表表格要素与项目管理一致"
+      details: |
+        需求：公司收入确认、团队收入确认的列表展示要素要与项目管理列表一致
+        实现：
+        - 新增8个列：合同状态、参与人员、启动/结束/验收日期、审核/验收状态、更新人/时间
+        - 移除2个列：市场经理、创建时间
+        - 保留收入确认特有字段：税后金额
+        - 添加 getParticipantsNames() 方法显示参与人员姓名
+        - 添加隐藏的 allUsersSelectRef 加载所有用户
+        - 添加 sys_htzt 字典支持合同状态显示
+      files:
+        - "ruoyi-ui/src/views/revenue/company/index.vue"
+        - "ruoyi-ui/src/views/revenue/team/index.vue"
+
+    - date: "2026-02-13"
+      description: "列表合计行优化（表头下方显示）"
+      details: |
+        问题：Element Plus 默认合计行在表格底部
+        需求：合计行应该在表头和第一行数据之间
+        实现：
+        - 移除 show-summary 和 summary-method 属性
+        - 在 getList() 中手动计算合计并插入列表开头
+        - 使用 isSummaryRow 标识合计行
+        - 序号列在合计行显示"合计"文字
+        - 所有数值列在合计行加粗显示
+        - 操作列在合计行不显示按钮
+      files:
+        - "ruoyi-ui/src/views/revenue/company/index.vue"
+
+  related_files:
+    frontend:
+      - "ruoyi-ui/src/views/revenue/company/index.vue"
+      - "ruoyi-ui/src/views/revenue/company/detail.vue"
+      - "ruoyi-ui/src/components/DictSelect/index.vue"
+      - "ruoyi-ui/src/components/UserSelect/index.vue"
+      - "ruoyi-ui/src/components/SecondaryRegionSelect/index.vue"
+      - "ruoyi-ui/src/api/revenue/company.js"
+
+    backend:
+      - "ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectReviewController.java"
+      - "ruoyi-project/src/main/java/com/ruoyi/project/service/IProjectReviewService.java"
+      - "ruoyi-project/src/main/java/com/ruoyi/project/service/impl/ProjectReviewServiceImpl.java"
+      - "ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml"
+
+    sql:
+      - "pm-sql/init/02_menu_data.sql (公司收入确认菜单)"
+
+  timestamp: "2026-02-13 01:00:00"

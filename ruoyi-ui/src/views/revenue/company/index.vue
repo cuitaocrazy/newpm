@@ -133,6 +133,13 @@
       </el-form-item>
     </el-form>
 
+    <!-- 隐藏的 UserSelect 组件用于加载所有用户（显示参与人员需要） -->
+    <user-select
+      ref="allUsersSelectRef"
+      v-model="hiddenAllUsersValue"
+      style="display: none"
+    />
+
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
@@ -164,74 +171,88 @@
           <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="市场经理" align="center" prop="marketManagerId" min-width="100">
+      <el-table-column label="项目分类" align="center" prop="projectCategory" min-width="120">
         <template #default="scope">
-          <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.marketManagerId, marketManagerSelectRef?.userOptions) }}</span>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmfl" :value="scope.row.projectCategory"/>
         </template>
       </el-table-column>
-      <el-table-column label="项目分类" align="center" prop="projectCategory" width="120">
+      <el-table-column label="二级区域" align="center" prop="regionName" min-width="120" show-overflow-tooltip>
         <template #default="scope">
-          <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
+          <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="二级区域" align="center" prop="regionName" width="100" />
-      <el-table-column label="项目阶段" align="center" prop="projectStage" width="100">
-        <template #default="scope">
-          <dict-tag :options="sys_xmjd" :value="scope.row.projectStage"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="160">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
-        <template #default="scope">
-          <dict-tag :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
-      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120">
-        <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
-          <span v-else>{{ scope.row.confirmAmount }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120">
-        <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.afterTaxAmount }}</span>
-          <span v-else>{{ scope.row.afterTaxAmount }}</span>
-        </template>
-      </el-table-column>
-
       <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
           <span v-else>{{ scope.row.projectBudget }}</span>
         </template>
       </el-table-column>
-
       <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.estimatedWorkload }}</span>
           <span v-else>{{ scope.row.estimatedWorkload }}</span>
         </template>
       </el-table-column>
-
       <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
           <span v-else>{{ scope.row.actualWorkload }}</span>
         </template>
       </el-table-column>
-
       <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
           <span v-else>{{ scope.row.contractAmount }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
+      <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
+          <span v-else>{{ scope.row.confirmAmount }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.afterTaxAmount }}</span>
+          <span v-else>{{ scope.row.afterTaxAmount }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ getParticipantsNames(scope.row.participants) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="启动日期" align="center" prop="startDate" width="100" />
+      <el-table-column label="结束日期" align="center" prop="endDate" width="100" />
+      <el-table-column label="验收日期" align="center" prop="acceptanceDate" width="100" />
+      <el-table-column label="审核状态" align="center" prop="approvalStatus" min-width="100">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="100">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmjd" :value="scope.row.projectStage"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="验收状态" align="center" prop="acceptanceStatus" min-width="100">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" />
+      <el-table-column label="更新时间" align="center" prop="updateTime" width="160" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
@@ -292,6 +313,8 @@ const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
 // 使用 UserSelect 组件的 ref 来获取用户列表
 const projectManagerSelectRef = ref(null)
 const marketManagerSelectRef = ref(null)
+const allUsersSelectRef = ref(null)
+const hiddenAllUsersValue = ref(null)
 
 const data = reactive({
   queryParams: {
@@ -458,6 +481,32 @@ function getUserName(userId, userList) {
   const list = userList?.value || userList || []
   const user = list.find(u => u.userId === userId)
   return user ? user.nickName : '-'
+}
+
+/** 根据参与人员ID列表获取名称（逗号分隔） */
+function getParticipantsNames(participants) {
+  if (!participants) return '-'
+
+  // participants 格式可能是字符串"1,2,3"或数组[1,2,3]
+  const participantIds = typeof participants === 'string'
+    ? participants.split(',').map(id => parseInt(id.trim()))
+    : participants
+
+  if (!participantIds || participantIds.length === 0) return '-'
+
+  // 从 allUsersSelectRef 获取所有用户列表
+  const allUsers = allUsersSelectRef.value?.userOptions?.value || []
+  if (allUsers.length === 0) return '-'
+
+  // 根据ID查找用户名称
+  const names = participantIds
+    .map(id => {
+      const user = allUsers.find(u => u.userId === id)
+      return user ? user.nickName : null
+    })
+    .filter(name => name !== null)
+
+  return names.length > 0 ? names.join(', ') : '-'
 }
 
 /** 项目名称自动完成 */

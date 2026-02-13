@@ -148,6 +148,105 @@ basicInfo:
         - 代码减少：约30行
         - 实现文件：ruoyi-ui/src/views/project/project/edit.vue
 
+    16. 项目附件管理功能 (2026-02-13完成)
+        - 功能描述：为项目管理添加完整的附件管理功能
+        - 前端实现：
+          * 新增页面：ruoyi-ui/src/views/project/project/attachment.vue
+          * 页面结构：
+            - 上半部分：展示完整的6个项目详情模块
+            - 下半部分：附件上传、附件列表、操作日志
+          * 项目列表操作列添加"附件管理"按钮
+          * 路由配置：/project/list/attachment/:projectId (隐藏菜单)
+        - 后端实现：
+          * 业务类型：businessType = 'project'
+          * 控制器：AttachmentController (已支持)
+          * 服务层：AttachmentServiceImpl (已支持)
+          * 存储路径：项目/{projectId}_{projectName}/{yyyyMMdd}/{fileName}
+        - 数据库：
+          * 附件表：pm_attachment
+          * 操作日志表：pm_attachment_log
+        - 菜单配置：
+          * SQL文件：pm-sql/init/02_menu_data.sql
+          * 菜单名称：项目附件管理
+          * 可见性：hidden (visible='1')
+          * 父菜单：项目管理一级菜单
+          * 权限标识：project:project:query
+        - 实现文件：
+          * ruoyi-ui/src/views/project/project/attachment.vue
+          * ruoyi-ui/src/views/project/project/index.vue
+          * pm-sql/init/02_menu_data.sql
+
+    17. 项目详情区域显示优化 (2026-02-13完成)
+        - 问题：项目详情和附件管理页面只显示"区域"，缺少二级区域
+        - 修复内容：
+          * 将"区域"字段拆分为"一级区域"和"二级区域"
+          * 一级区域：显示字典标签 (sys_yjqy)
+          * 二级区域：显示区域名称 (regionName)
+        - 影响页面：
+          * ruoyi-ui/src/views/project/project/detail.vue
+          * ruoyi-ui/src/views/project/project/attachment.vue
+        - 同时添加审核意见字段：
+          * 在项目基本信息末尾添加"审核意见"字段
+          * 显示：approvalReason，占据3列宽度
+
+    18. 项目附件存储路径优化 (2026-02-13完成)
+        - 调整前：项目/{projectId}/{yyyyMMdd}/{fileName}
+        - 调整后：项目/{projectId}_{projectName}/{yyyyMMdd}/{fileName}
+        - 优点：路径包含项目名称，提高可读性和可维护性
+        - 实现方式：
+          * 注入 ProjectMapper 到 AttachmentServiceImpl
+          * getBusinessFolder() 方法查询项目信息
+          * 路径格式与合同保持一致
+
+    19. 文件上传路径跨平台配置 (2026-02-13完成)
+        - 配置文件：ruoyi-admin/src/main/resources/application.yml
+        - 配置项：ruoyi.profile
+        - 调整前：绝对路径（特定于操作系统）
+          * Windows: D:/ruoyi/uploadPath
+          * Linux: /home/ruoyi/uploadPath
+          * Mac: /Users/kongli/ws-claude/PM/newpm/uploadPath
+        - 调整后：使用用户主目录变量（跨平台）
+          * 配置值：${user.home}/ruoyi/uploadPath
+          * Windows 实际路径：C:\Users\用户名\ruoyi\uploadPath
+          * Linux 实际路径：/home/用户名/ruoyi/uploadPath
+          * Mac 实际路径：/Users/用户名/ruoyi/uploadPath
+        - 优势：
+          * ✅ 完全跨平台，无需修改配置
+          * ✅ 一次配置，到处运行
+          * ✅ 每个用户独立的上传空间
+          * ✅ 文件独立于项目目录，不会误提交
+          * ✅ 开发和生产环境都适用
+          * ✅ 用户目录下无需 sudo 权限
+        - 使用说明：
+          * 团队成员克隆代码后无需修改配置
+          * 只需创建目录：mkdir -p ~/ruoyi/uploadPath
+          * Spring Boot 会自动解析 ${user.home} 变量
+        - 实现文件：
+          * ruoyi-admin/src/main/resources/application.yml
+        - 相关组件：
+          * FileUploadUtils - 文件上传工具类
+          * AttachmentServiceImpl - 附件服务实现（项目、合同、款项）
+        - 注意事项：
+          * 首次使用需手动创建 ~/ruoyi/uploadPath 目录
+          * 如需修改路径，可通过环境变量覆盖：
+            export UPLOAD_PATH=/custom/path（需同时修改配置为 ${UPLOAD_PATH:/default/path}）
+        - 实现文件：
+          * ruoyi-project/src/main/java/com/ruoyi/project/service/impl/AttachmentServiceImpl.java
+        - 示例路径：
+          * uploadPath/项目/2_测试项目名称/20260213/需求文档.pdf
+
+    19. 附件日志查询 collation 修复 (2026-02-13完成)
+        - 问题：查询附件操作日志时报错
+          * 错误：Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_ci,IMPLICIT)
+          * 原因：pm_attachment_log 表使用 MySQL 8.0 默认 collation，sys_dict_data 表使用框架默认 collation
+        - 修复方案：
+          * 在 JOIN 条件中显式指定 collation
+          * 语法：l.document_type COLLATE utf8mb4_unicode_ci = d.dict_value
+        - 实现文件：
+          * ruoyi-project/src/main/resources/mapper/project/AttachmentLogMapper.xml
+        - 修复位置：
+          * selectAttachmentLogVo SQL片段中的 LEFT JOIN 条件
+
 # ============================
 # Tab 2: 字段信息
 # ============================
