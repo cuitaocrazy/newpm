@@ -130,14 +130,91 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 详情对话框 -->
+    <el-dialog title="项目经理变更详情" v-model="detailDialogVisible" width="700px" append-to-body>
+      <div v-loading="detailLoading">
+        <!-- 项目信息 -->
+        <el-descriptions title="项目信息" :column="2" border>
+          <el-descriptions-item label="项目编号">{{ detailProject.projectCode }}</el-descriptions-item>
+          <el-descriptions-item label="项目名称">{{ detailProject.projectName }}</el-descriptions-item>
+          <el-descriptions-item label="当前项目经理" :span="2">
+            <el-tag type="success">{{ detailProject.projectManagerName || '-' }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ parseTime(detailProject.createTime, '{y}-{m}-{d}') }}
+          </el-descriptions-item>
+          <el-descriptions-item label="项目状态">
+            <dict-tag :options="dict.type.sys_xmzt" :value="detailProject.projectStatus"/>
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 变更历史 -->
+        <el-divider content-position="left">变更历史</el-divider>
+        <el-empty v-if="detailChanges.length === 0" description="暂无变更记录" :image-size="100" />
+        <el-timeline v-else>
+          <el-timeline-item
+            v-for="(change, index) in detailChanges"
+            :key="change.changeId"
+            :timestamp="parseTime(change.createTime)"
+            placement="top"
+            :color="index === 0 ? '#67C23A' : '#409EFF'"
+          >
+            <el-card>
+              <template #header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-weight: bold;">
+                    变更 #{{ detailChanges.length - index }}
+                  </span>
+                  <el-tag :type="index === 0 ? 'success' : 'info'" size="small">
+                    {{ index === 0 ? '最新' : '历史' }}
+                  </el-tag>
+                </div>
+              </template>
+              <div style="line-height: 28px;">
+                <div>
+                  <el-icon style="vertical-align: middle;"><User /></el-icon>
+                  <span style="margin-left: 8px;">
+                    <strong>原经理：</strong>
+                    <el-tag size="small" type="info">{{ change.oldManagerName || '-' }}</el-tag>
+                    <el-icon style="margin: 0 8px;"><Right /></el-icon>
+                    <strong>新经理：</strong>
+                    <el-tag size="small" type="success">{{ change.newManagerName || '-' }}</el-tag>
+                  </span>
+                </div>
+                <div v-if="change.changeReason" style="margin-top: 8px;">
+                  <el-icon style="vertical-align: middle;"><Document /></el-icon>
+                  <span style="margin-left: 8px;">
+                    <strong>变更原因：</strong>{{ change.changeReason }}
+                  </span>
+                </div>
+                <div style="margin-top: 8px; color: #909399; font-size: 12px;">
+                  <el-icon style="vertical-align: middle;"><Clock /></el-icon>
+                  <span style="margin-left: 8px;">
+                    变更人：{{ change.createBy || '-' }} · {{ parseTime(change.createTime) }}
+                  </span>
+                </div>
+              </div>
+            </el-card>
+          </el-timeline-item>
+        </el-timeline>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="closeDetail">关 闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="ProjectManagerChange">
+import { User, Right, Document, Clock } from '@element-plus/icons-vue'
 import { listProjectManagerChange, getProjectManagerChange, delProjectManagerChange, addProjectManagerChange, updateProjectManagerChange, searchProjects, changeManager, batchChangeManager, getChangeDetail } from "@/api/project/projectManagerChange"
 import { listUser } from "@/api/system/user"
 
 const { proxy } = getCurrentInstance()
+const { dict } = proxy.useDict('sys_xmzt')
 
 const projectManagerChangeList = ref([])
 const open = ref(false)
