@@ -7,7 +7,9 @@ import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.project.mapper.ProjectMapper;
+import com.ruoyi.project.mapper.ContractMapper;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.service.IProjectService;
 
 /**
@@ -21,6 +23,9 @@ public class ProjectServiceImpl implements IProjectService
 {
     @Autowired
     private ProjectMapper projectMapper;
+
+    @Autowired
+    private ContractMapper contractMapper;
 
     /**
      * 查询项目管理
@@ -214,5 +219,37 @@ public class ProjectServiceImpl implements IProjectService
     public List<Project> selectProjectListByDept(Long deptId, Long excludeContractId)
     {
         return projectMapper.selectProjectListByDept(deptId, excludeContractId);
+    }
+
+    /**
+     * 根据项目ID查询关联的合同信息
+     *
+     * @param projectId 项目ID
+     * @return 合同信息，无关联合同时返回null
+     */
+    @Override
+    public Contract selectContractByProjectId(Long projectId)
+    {
+        // 1. 通过项目合同关联表查询合同ID
+        Long contractId = contractMapper.selectContractIdByProjectId(projectId);
+        if (contractId == null)
+        {
+            return null;
+        }
+
+        // 2. 根据合同ID查询合同详情
+        return contractMapper.selectContractByContractId(contractId);
+    }
+
+    /**
+     * 项目搜索（轻量接口，用于 autocomplete）
+     *
+     * @param projectName 项目名称（模糊搜索）
+     * @return 精简字段列表：projectId, projectName, projectCode
+     */
+    @Override
+    public List<Map<String, Object>> searchProjectsByName(String projectName)
+    {
+        return projectMapper.searchProjectsByName(projectName);
     }
 }

@@ -124,4 +124,12 @@ public interface ProjectMapper
      * @return 项目列表
      */
     public List<Project> selectProjectListByContractId(@Param("contractId") Long contractId);
+
+    /**
+     * 项目搜索（轻量接口，用于 autocomplete）
+     *
+     * @param projectName 项目名称（模糊搜索）
+     * @return 精简字段列表：projectId, projectName, projectCode
+     */
+    public List<Map<String, Object>> searchProjectsByName(@Param("projectName") String projectName);
 }

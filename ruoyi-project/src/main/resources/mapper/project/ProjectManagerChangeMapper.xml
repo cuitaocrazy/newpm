@@ -16,10 +16,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"    column="update_by"    />
         <result property="updateTime"    column="update_time"    />
         <result property="remark"    column="remark"    />
+        <result property="projectName"    column="project_name"    />
+        <result property="projectCode"    column="project_code"    />
+        <result property="oldManagerName"    column="old_manager_name"    />
+        <result property="newManagerName"    column="new_manager_name"    />
     </resultMap>
 
-    <!-- 项目经理变更视图结果映射 -->
-    <resultMap id="ProjectManagerChangeVoResult" type="com.ruoyi.project.domain.vo.ProjectManagerChangeVo">
+    <resultMap type="com.ruoyi.project.domain.vo.ProjectManagerChangeVO" id="ProjectManagerChangeVOResult">
         <result property="projectId"           column="project_id"           />
         <result property="projectName"         column="project_name"         />
         <result property="projectCode"         column="project_code"         />
@@ -35,63 +38,42 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectProjectManagerChangeVo">
-        select change_id, project_id, old_manager_id, new_manager_id, change_reason, del_flag, create_by, create_time, update_by, update_time, remark from pm_project_manager_change
-    </sql>
-
-    <select id="selectProjectManagerChangeList" parameterType="com.ruoyi.project.domain.vo.ProjectManagerChangeVo" resultMap="ProjectManagerChangeVoResult">
-        SELECT
-            p.project_id,
+        select
+            pmc.change_id,
+            pmc.project_id,
+            pmc.old_manager_id,
+            pmc.new_manager_id,
+            pmc.change_reason,
+            pmc.del_flag,
+            pmc.create_by,
+            pmc.create_time,
+            pmc.update_by,
+            pmc.update_time,
+            pmc.remark,
             p.project_name,
             p.project_code,
-            p.create_time as project_create_time,
-            p.project_manager_id as current_manager_id,
-            u_current.nick_name as current_manager_name,
-            latest_change.old_manager_id,
-            u_old.nick_name as old_manager_name,
-            latest_change.change_reason,
-            latest_change.create_by as change_by,
-            u_changer.nick_name as change_by_name,
-            latest_change.create_time as change_time
-        FROM pm_project p
-        LEFT JOIN (
-            SELECT
-                c1.project_id,
-                c1.old_manager_id,
-                c1.new_manager_id,
-                c1.change_reason,
-                c1.create_by,
-                c1.create_time
-            FROM pm_project_manager_change c1
-            INNER JOIN (
-                SELECT project_id, MAX(create_time) as max_time
-                FROM pm_project_manager_change
-                WHERE del_flag = '0'
-                GROUP BY project_id
-            ) c2 ON c1.project_id = c2.project_id AND c1.create_time = c2.max_time
-            WHERE c1.del_flag = '0'
-        ) latest_change ON p.project_id = latest_change.project_id
-        LEFT JOIN sys_user u_current ON p.project_manager_id = u_current.user_id
-        LEFT JOIN sys_user u_old ON latest_change.old_manager_id = u_old.user_id
-        LEFT JOIN sys_user u_changer ON latest_change.create_by COLLATE utf8mb4_unicode_ci = u_changer.user_name COLLATE utf8mb4_unicode_ci
-        WHERE p.del_flag = '0'
-        <if test="projectName != null and projectName != ''">
-            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
-        </if>
-        <if test="currentManagerId != null">
-            AND p.project_manager_id = #{currentManagerId}
-        </if>
-        <if test="params.beginTime != null and params.beginTime != ''">
-            AND DATE_FORMAT(latest_change.create_time,'%Y-%m-%d') &gt;= DATE_FORMAT(#{params.beginTime},'%Y-%m-%d')
-        </if>
-        <if test="params.endTime != null and params.endTime != ''">
-            AND DATE_FORMAT(latest_change.create_time,'%Y-%m-%d') &lt;= DATE_FORMAT(#{params.endTime},'%Y-%m-%d')
-        </if>
-        ORDER BY p.create_time DESC
+            u1.nick_name as old_manager_name,
+            u2.nick_name as new_manager_name
+        from pm_project_manager_change pmc
+        left join pm_project p on pmc.project_id = p.project_id
+        left join sys_user u1 on pmc.old_manager_id = u1.user_id
+        left join sys_user u2 on pmc.new_manager_id = u2.user_id
+    </sql>
+
+    <select id="selectProjectManagerChangeList" parameterType="ProjectManagerChange" resultMap="ProjectManagerChangeResult">
+        <include refid="selectProjectManagerChangeVo"/>
+        <where>
+            <if test="projectId != null "> and pmc.project_id = #{projectId}</if>
+            <if test="oldManagerId != null "> and pmc.old_manager_id = #{oldManagerId}</if>
+            <if test="newManagerId != null "> and pmc.new_manager_id = #{newManagerId}</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and pmc.create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
+        </where>
+        order by pmc.create_time desc
     </select>
     
     <select id="selectProjectManagerChangeByChangeId" parameterType="Long" resultMap="ProjectManagerChangeResult">
         <include refid="selectProjectManagerChangeVo"/>
-        where change_id = #{changeId}
+        where pmc.change_id = #{changeId}
     </select>
 
     <insert id="insertProjectManagerChange" parameterType="ProjectManagerChange" useGeneratedKeys="true" keyProperty="changeId">
@@ -150,25 +132,58 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
-    <!-- 查询项目的所有变更记录 -->
-    <select id="selectChangeHistoryByProjectId" parameterType="Long" resultMap="ProjectManagerChangeResult">
+    <!-- 查询项目列表（带最新变更信息） -->
+    <select id="selectProjectListWithLatestChange" parameterType="com.ruoyi.project.domain.vo.ProjectManagerChangeVO" resultMap="ProjectManagerChangeVOResult">
         SELECT
-            c.change_id,
-            c.project_id,
-            c.old_manager_id,
-            c.new_manager_id,
-            c.change_reason,
-            c.create_by,
-            c.create_time,
+            p.project_id,
+            p.project_name,
+            p.project_code,
+            p.create_time as project_create_time,
+            p.project_manager_id as current_manager_id,
+            u_current.nick_name as current_manager_name,
+            latest_change.old_manager_id,
             u_old.nick_name as old_manager_name,
-            u_new.nick_name as new_manager_name,
-            u_changer.nick_name as change_by_name
-        FROM pm_project_manager_change c
-        LEFT JOIN sys_user u_old ON c.old_manager_id = u_old.user_id
-        LEFT JOIN sys_user u_new ON c.new_manager_id = u_new.user_id
-        LEFT JOIN sys_user u_changer ON c.create_by COLLATE utf8mb4_unicode_ci = u_changer.user_name COLLATE utf8mb4_unicode_ci
-        WHERE c.project_id = #{projectId}
-          AND c.del_flag = '0'
-        ORDER BY c.create_time DESC
+            latest_change.change_reason,
+            latest_change.create_by as change_by,
+            u_changer.nick_name as change_by_name,
+            latest_change.create_time as change_time
+        FROM pm_project p
+        LEFT JOIN (
+            SELECT c1.*
+            FROM pm_project_manager_change c1
+            INNER JOIN (
+                SELECT project_id, MAX(create_time) as max_time
+                FROM pm_project_manager_change
+                WHERE del_flag = '0'
+                GROUP BY project_id
+            ) c2 ON c1.project_id = c2.project_id
+                AND c1.create_time = c2.max_time
+            WHERE c1.del_flag = '0'
+        ) latest_change ON p.project_id = latest_change.project_id
+        LEFT JOIN sys_user u_current ON p.project_manager_id = u_current.user_id
+        LEFT JOIN sys_user u_old ON latest_change.old_manager_id = u_old.user_id
+        LEFT JOIN sys_user u_changer ON latest_change.create_by = u_changer.user_name
+        WHERE p.del_flag = '0'
+        <if test="projectId != null">
+            AND p.project_id = #{projectId}
+        </if>
+        <if test="projectName != null and projectName != ''">
+            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        <if test="currentManagerId != null">
+            AND p.project_manager_id = #{currentManagerId}
+        </if>
+        <if test="changeTime != null">
+            AND latest_change.create_time BETWEEN #{params.beginChangeTime} AND #{params.endChangeTime}
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+
+    <!-- 查询项目的完整变更历史 -->
+    <select id="selectProjectChangeHistory" resultMap="ProjectManagerChangeResult">
+        <include refid="selectProjectManagerChangeVo"/>
+        WHERE pmc.project_id = #{projectId}
+        AND pmc.del_flag = '0'
+        ORDER BY pmc.create_time DESC
     </select>
 </mapper>

@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container revenue-team-container">
     <!-- 查询表单 - 复用公司收入确认的查询条件 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
@@ -164,7 +164,7 @@
     </el-row>
 
     <!-- 列表表格 - 与项目管理列表表格要素完全一致 -->
-    <el-table v-loading="loading" :data="displayList" :row-class-name="tableRowClassName">
+    <el-table v-loading="loading" :data="displayList" :height="tableHeight" :row-class-name="tableRowClassName">
       <el-table-column label="序号" width="55" align="center">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
@@ -420,6 +420,7 @@ const teamRevenueList = ref([])
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
+const tableHeight = ref(600)
 const open = ref(false)
 const title = ref("")
 
@@ -650,7 +651,7 @@ function getParticipantsNames(participants) {
   if (!participantIds || participantIds.length === 0) return '-'
 
   // 从 allUsersSelectRef 获取所有用户列表
-  const allUsers = allUsersSelectRef.value?.userOptions?.value || []
+  const allUsers = allUsersSelectRef.value?.userOptions || []
   if (allUsers.length === 0) return '-'
 
   // 根据ID查找用户名称
@@ -832,12 +833,69 @@ function submitForm() {
   })
 }
 
+/** 计算表格高度 */
+function calcTableHeight() {
+  nextTick(() => {
+    const windowHeight = window.innerHeight
+    const searchHeight = showSearch.value ? 200 : 0
+    const toolbarHeight = 50
+    const paginationHeight = 50
+    const padding = 120
+    tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding
+  })
+}
+
+// 监听窗口大小变化
+onMounted(() => {
+  calcTableHeight()
+  window.addEventListener('resize', calcTableHeight)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', calcTableHeight)
+})
+
+// 监听搜索框显示/隐藏
+watch(showSearch, () => {
+  calcTableHeight()
+})
+
 // 初始化
 loadDeptTree()
 getList()
 </script>
 
 <style scoped lang="scss">
+.revenue-team-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :deep(.el-form--inline .el-form-item) {
+    margin-right: 20px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.el-table) {
+    font-size: 13px;
+
+    .el-table__header th {
+      background-color: #f5f7fa;
+      color: #606266;
+      font-weight: 600;
+    }
+
+    .el-table__body tr:hover > td {
+      background-color: #f5f7fa !important;
+    }
+  }
+
+  :deep(.el-pagination) {
+    margin-top: 15px;
+    text-align: right;
+  }
+}
+
 ::v-deep .summary-row {
   background-color: #f5f7fa;
   font-weight: bold;

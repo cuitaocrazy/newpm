@@ -23,6 +23,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.domain.ProjectApproval;
+import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.project.service.IProjectApprovalService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -296,5 +297,28 @@ public class ProjectController extends BaseController
         query.setProjectName(projectName);
         List<Project> list = projectService.selectProjectList(query);
         return success(list);
+    }
+
+    /**
+     * 根据项目ID查询关联的合同信息
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:query')")
+    @GetMapping("/{projectId}/contract")
+    public AjaxResult getContractByProjectId(@PathVariable Long projectId)
+    {
+        Contract contract = projectService.selectContractByProjectId(projectId);
+        return success(contract);
+    }
+
+    /**
+     * 项目搜索（轻量接口，用于 autocomplete）
+     * @param projectName 项目名称（模糊搜索）
+     * @return 返回精简字段：projectId, projectName, projectCode
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @GetMapping("/search")
+    public AjaxResult searchProjects(@RequestParam(required = false) String projectName)
+    {
+        return success(projectService.searchProjectsByName(projectName));
     }
 }

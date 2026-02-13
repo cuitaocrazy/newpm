@@ -111,6 +111,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                sr.region_name,
+               pcr.contract_id as contractId,
                c.contract_amount, c.contract_status
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
@@ -624,4 +625,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           AND rel.del_flag = '0'
         ORDER BY p.create_time DESC
     </select>
+
+    <!-- 项目搜索（轻量接口，用于 autocomplete） -->
+    <select id="searchProjectsByName" resultType="java.util.Map">
+        SELECT
+            project_id as projectId,
+            project_name as projectName,
+            project_code as projectCode
+        FROM pm_project
+        WHERE del_flag = '0'
+        <if test="projectName != null and projectName != ''">
+            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        ORDER BY create_time DESC
+        LIMIT 20
+    </select>
+
 </mapper>

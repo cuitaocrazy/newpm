@@ -926,3 +926,41 @@ customizations:
       - 用于控制接口的访问权限
       - 格式：@PreAuthorize("@ss.hasPermi('project:customer:list')")
       - 无权限时返回 403 Forbidden
+
+  pagination_fixed_bottom:
+    intent: "分页组件固定在页面底部，即使数据很少也保持在底部位置"
+    date: "2026-02-14"
+    implementation:
+      container:
+        className: "customer-container"
+        styles:
+          - "height: 100%"
+          - "display: flex"
+          - "flex-direction: column"
+      table:
+        dynamicHeight: true
+        heightRef: "const tableHeight = ref(600)"
+        heightCalculation: "tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding"
+        attributes:
+          - ":height='tableHeight': 固定表格高度"
+      lifecycle:
+        onMounted:
+          - "calcTableHeight(): 初始计算表格高度"
+          - "window.addEventListener('resize', calcTableHeight): 监听窗口大小变化"
+          - "loadSalesManagers(): 加载销售经理列表"
+          - "loadCustomerSimpleNames(): 加载客户简称列表"
+        onUnmounted:
+          - "window.removeEventListener('resize', calcTableHeight): 移除resize监听"
+        watch:
+          - "showSearch: 搜索框显隐时重新计算表格高度"
+      pagination:
+        position: "紧跟el-table后，对话框之前"
+        styles:
+          - "margin-top: 15px"
+          - "text-align: right"
+      heightParameters:
+        searchHeight: "100px (showSearch为true时)"
+        toolbarHeight: "50px"
+        paginationHeight: "50px"
+        padding: "120px"
+    notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部。"

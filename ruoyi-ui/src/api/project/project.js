@@ -116,3 +116,11 @@ export function listProjectByName(query) {
     params: query
   })
 }
+
+// 根据项目ID查询关联的合同信息
+export function getContractByProjectId(projectId) {
+  return request({
+    url: `/project/project/${projectId}/contract`,
+    method: 'get'
+  })
+}

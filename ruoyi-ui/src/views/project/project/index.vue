@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container project-container">
         <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
         <el-autocomplete
@@ -154,7 +154,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="projectList" @selection-change="handleSelectionChange"
+    <el-table v-loading="loading" :data="projectList" :height="tableHeight" @selection-change="handleSelectionChange"
               :row-class-name="tableRowClassName">
       <el-table-column type="selection" width="55" align="center" :selectable="checkSelectable" />
       <el-table-column label="序号" width="55" align="center">
@@ -255,6 +255,22 @@
           <template v-if="!scope.row.isSummaryRow">
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
             <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">编辑</el-button>
+
+            <!-- 动态合同按钮：有合同显示"查看合同"，无合同显示"添加合同" -->
+            <el-button
+              v-if="scope.row.contractId"
+              link
+              type="primary"
+              icon="Document"
+              @click="handleViewContract(scope.row)"
+            >查看合同</el-button>
+            <el-button
+              v-else
+              link
+              type="primary"
+              icon="Plus"
+              @click="handleAddContract(scope.row)"
+            >添加合同</el-button>
 
             <!-- 收入确认/查看按钮 -->
             <el-button
@@ -367,6 +383,7 @@ const ids = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
+const tableHeight = ref(600)
 
 // 审核对话框
 const approvalDialogVisible = ref(false)
@@ -521,7 +538,7 @@ function getParticipantsNames(participants) {
   if (!participants) return '-'
   const userIds = participants.split(',').map(id => parseInt(id.trim()))
   // 使用 ref 访问所有用户列表
-  const allUsers = allUsersSelectRef.value?.userOptions?.value || []
+  const allUsers = allUsersSelectRef.value?.userOptions || []
   const names = userIds.map(userId => {
     const user = allUsers.find(u => u.userId === userId)
     return user ? user.nickName : userId
@@ -588,6 +605,19 @@ function handleDetail(row) {
 function handleUpdate(row) {
   const projectId = row.projectId || ids.value[0]
   router.push(`/project/list/edit/${projectId}`)
+}
+
+/** 添加合同 */
+function handleAddContract(row) {
+  router.push({
+    path: '/htkx/contract/add',
+    query: { projectId: row.projectId }
+  })
+}
+
+/** 查看合同 */
+function handleViewContract(row) {
+  router.push(`/htkx/contract/detail/${row.contractId}`)
 }
 
 /** 收入确认按钮 */
@@ -668,11 +698,68 @@ function handleHistory(row) {
   })
 }
 
+/** 计算表格高度 */
+function calcTableHeight() {
+  nextTick(() => {
+    const windowHeight = window.innerHeight
+    const searchHeight = showSearch.value ? 160 : 0
+    const toolbarHeight = 50
+    const paginationHeight = 50
+    const padding = 120
+    tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding
+  })
+}
+
+// 监听窗口大小变化
+onMounted(() => {
+  calcTableHeight()
+  window.addEventListener('resize', calcTableHeight)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', calcTableHeight)
+})
+
+// 监听搜索框显示/隐藏
+watch(showSearch, () => {
+  calcTableHeight()
+})
+
 getList()
 loadDeptTree()
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.project-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :deep(.el-form--inline .el-form-item) {
+    margin-right: 20px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.el-table) {
+    font-size: 13px;
+
+    .el-table__header th {
+      background-color: #f5f7fa;
+      color: #606266;
+      font-weight: 600;
+    }
+
+    .el-table__body tr:hover > td {
+      background-color: #f5f7fa !important;
+    }
+  }
+
+  :deep(.el-pagination) {
+    margin-top: 15px;
+    text-align: right;
+  }
+}
+
 ::v-deep .summary-row {
   background-color: #f5f7fa;
   font-weight: bold;

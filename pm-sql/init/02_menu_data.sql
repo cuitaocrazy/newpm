@@ -326,3 +326,24 @@ VALUES ('团队收入确认导出', @teamRevenueMenuId, 5, '#', '', 1, 0, 'F', '
 -- 隐藏路由：团队收入确认详情页（挂在收入确认管理一级菜单下）
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
 VALUES ('团队收入确认详情', @revenueMenuId, 11, 'team/detail/:projectId(\\d+)', 'revenue/team/detail', 1, 0, 'C', '1', '0', 'revenue:team:query', '#', 'admin', sysdate(), '', NULL, '团队收入确认详情页面', 'TeamRevenueDetail', '/revenue/team');
+
+-- ========================================
+-- 项目经理变更管理菜单数据
+-- ========================================
+
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目经理变更', '2059', '4', 'managerChange', 'project/managerChange/index', 1, 0, 'C', '0', '0', 'project:managerChange:list', 'user', 'admin', sysdate(), '', null, '项目经理变更菜单');
+
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目经理变更查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:managerChange:query',        '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('单个项目变更', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:managerChange:change',          '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('批量变更项目经理', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:managerChange:batchChange',         '#', 'admin', sysdate(), '', null, '');

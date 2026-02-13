@@ -248,6 +248,18 @@ basicInfo:
           * selectAttachmentLogVo SQL片段中的 LEFT JOIN 条件
 
     21. 项目附件管理页面参与人员显示修复 (2026-02-13完成)
+        - 问题：查询附件操作日志时报错
+          * 错误：Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_ci,IMPLICIT)
+          * 原因：pm_attachment_log 表使用 MySQL 8.0 默认 collation，sys_dict_data 表使用框架默认 collation
+        - 修复方案：
+          * 在 JOIN 条件中显式指定 collation
+          * 语法：l.document_type COLLATE utf8mb4_unicode_ci = d.dict_value
+        - 实现文件：
+          * ruoyi-project/src/main/resources/mapper/project/AttachmentLogMapper.xml
+        - 修复位置：
+          * selectAttachmentLogVo SQL片段中的 LEFT JOIN 条件
+
+    21. 项目附件管理页面参与人员显示修复 (2026-02-13完成)
         - 问题描述：项目附件管理页面的"参与人员"字段无法显示数据
         - 问题原因：异步加载时序问题
           * onMounted() 中同时执行 loadAllUsers() 和 loadProjectInfo()
@@ -283,6 +295,78 @@ basicInfo:
           * 无参与人员时显示："暂无参与人员"
         - 相关页面：
           * ruoyi-ui/src/views/revenue/team/detail.vue - 使用相同的延迟处理方案
+
+    22. 项目详情页面增强功能 (2026-02-13完成)
+        - 功能描述：在项目详情页面增加三个新模块，增强项目信息展示完整性
+        - 新增模块：
+          * 付款里程碑信息：显示关联合同的付款里程碑详情
+          * 项目附件列表：显示项目相关的附件文档信息
+          * 其他信息：整合备注、创建人、更新人等审计信息
+        - 模块布局调整：
+          * 调整前顺序：项目基本信息 → 人员配置 → 客户信息 → 时间规划 → 成本预算 → 备注
+          * 调整后顺序：项目基本信息 → 人员配置 → 客户信息 → 时间规划 → 成本预算 → 关联合同信息 → 付款里程碑信息 → 项目附件列表 → 其他信息
+          * 移除：原独立的"备注"模块（整合到"其他信息"模块中）
+        - 付款里程碑信息模块：
+          * 数据源：listPayment API，根据合同ID查询
+          * 显示字段：
+            - 序号、款项编号、款项名称
+            - 付款方式（字典：sys_fkfs）
+            - 期数、付款金额、违约金
+            - 预计付款日期、预计付款季度（字典：sys_ndgl）
+            - 实际付款日期、付款状态（字典：sys_fkzt）
+          * 合计行：显示付款金额和违约金的合计（放在表格第一行）
+          * 显示条件：只有当项目关联了合同时才显示此模块
+          * 实现函数：
+            - getPaymentList(contractId) - 加载付款里程碑数据
+            - formatAmount(amount) - 格式化金额（保留2位小数）
+            - paymentListWithSummary - computed属性，在列表首行插入合计行
+        - 项目附件列表模块：
+          * 数据源：listAttachment API，businessType='project'
+          * 显示字段：
+            - 序号、文档类型（字典：sys_wdlx）
+            - 文件名称（可点击下载）
+            - 文件大小、文件说明
+            - 上传人、上传时间
+          * 下载功能：点击文件名触发下载
+          * 实现函数：
+            - loadAttachmentList(projectId) - 加载附件列表
+            - formatFileSize(size) - 格式化文件大小（KB/MB）
+            - handleDownload(row) - 处理文件下载
+        - 其他信息模块：
+          * 显示字段：
+            - 备注（完整宽度，3列占位）
+            - 创建时间、创建人
+            - 更新时间、更新人
+          * 布局：使用 el-descriptions，2列布局
+          * 替代：原来的独立"备注"卡片
+        - 前端实现：
+          * 文件：ruoyi-ui/src/views/project/project/detail.vue
+          * 新增imports：
+            - listPayment (from '@/api/project/payment')
+            - listAttachment, downloadAttachment (from '@/api/project/attachment')
+            - saveAs (from 'file-saver')
+          * 新增字典：sys_fkzt, sys_ndgl, sys_wdlx
+          * 新增ref数据：paymentList, attachmentList
+          * 新增computed：paymentListWithSummary
+          * 修改loadContractInfo：自动调用 getPaymentList
+          * 修改loadProjectData：添加 loadAttachmentList 调用
+        - 用户体验提升：
+          * 在项目详情页即可查看完整的项目、合同、付款、附件信息
+          * 无需跳转到其他页面查看关联数据
+          * 统一的信息展示界面，提高操作效率
+
+    23. 项目列表参与人员显示修复 (2026-02-14完成)
+        - 问题描述：项目管理列表中"参与人员"列显示用户ID而非昵称
+        - 问题原因：错误地访问 allUsersSelectRef.value?.userOptions?.value（多了一层.value）
+        - 修复内容：
+          * 文件：ruoyi-ui/src/views/project/project/index.vue
+          * 函数：getParticipantsNames()
+          * 修改：const allUsers = allUsersSelectRef.value?.userOptions || []
+          * 说明：UserSelect 组件通过 defineExpose 暴露的是 userOptions（ref本身），不需要再访问 .value
+        - 显示效果：
+          * 修复前：显示 "1, 2, 3"（用户ID）
+          * 修复后：显示 "张三, 李四, 王五"（用户昵称）
+        - 关联修复：同时修复了公司收入确认和团队收入确认的相同问题
 
 # ============================
 # Tab 2: 字段信息
@@ -2359,3 +2443,41 @@ customizations:
       - 从项目管理列表也可以进入收入确认功能
 
       使用 activeMenu 属性使侧边栏高亮正确的菜单项
+
+  pagination_fixed_bottom:
+    intent: "分页组件固定在页面底部，即使数据很少也保持在底部位置"
+    date: "2026-02-14"
+    implementation:
+      container:
+        className: "project-container"
+        styles:
+          - "height: 100%"
+          - "display: flex"
+          - "flex-direction: column"
+      table:
+        dynamicHeight: true
+        heightRef: "const tableHeight = ref(600)"
+        heightCalculation: "tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding"
+        attributes:
+          - "border: 添加表格边框"
+          - "stripe: 添加斑马纹效果"
+          - "style='width: 100%': 确保表格占满容器宽度"
+      lifecycle:
+        onMounted:
+          - "calcTableHeight(): 初始计算表格高度"
+          - "window.addEventListener('resize', calcTableHeight): 监听窗口大小变化"
+        onUnmounted:
+          - "window.removeEventListener('resize', calcTableHeight): 移除resize监听"
+        watch:
+          - "showSearch: 搜索框显隐时重新计算表格高度"
+      pagination:
+        position: "紧跟el-table后，对话框之前"
+        styles:
+          - "margin-top: 15px"
+          - "text-align: right"
+      heightParameters:
+        searchHeight: "160px (showSearch为true时)"
+        toolbarHeight: "50px"
+        paginationHeight: "50px"
+        padding: "120px"
+    notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部，提升用户体验。关键是表格设置固定高度而不是自适应内容高度。"

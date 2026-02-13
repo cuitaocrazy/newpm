@@ -3,6 +3,7 @@ package com.ruoyi.project.service;
 import java.util.List;
 import java.util.Map;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.Contract;
 
 /**
  * 项目管理Service接口
@@ -119,4 +120,20 @@ public interface IProjectService
      * @return 项目列表
      */
     public List<Project> selectProjectListByDept(Long deptId, Long excludeContractId);
+
+    /**
+     * 根据项目ID查询关联的合同信息
+     *
+     * @param projectId 项目ID
+     * @return 合同信息，无关联合同时返回null
+     */
+    public Contract selectContractByProjectId(Long projectId);
+
+    /**
+     * 项目搜索（轻量接口，用于 autocomplete）
+     *
+     * @param projectName 项目名称（模糊搜索）
+     * @return 精简字段列表：projectId, projectName, projectCode
+     */
+    public List<Map<String, Object>> searchProjectsByName(String projectName);
 }

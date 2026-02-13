@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="app-container customer-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="90px">
       <el-form-item label="客户简称" prop="customerSimpleName">
         <el-autocomplete
@@ -89,7 +89,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="customerList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="customerList" :height="tableHeight" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column type="index" label="序号" width="55" align="center" />
       <el-table-column label="客户简称" align="center" prop="customerSimpleName" />
@@ -273,6 +273,7 @@ const checkedCustomerContact = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
+const tableHeight = ref(600)
 const title = ref("")
 
 const data = reactive({
@@ -531,10 +532,66 @@ function querySearchCustomer(queryString, cb) {
   cb(results)
 }
 
+/** 计算表格高度 */
+function calcTableHeight() {
+  nextTick(() => {
+    const windowHeight = window.innerHeight
+    const searchHeight = showSearch.value ? 100 : 0
+    const toolbarHeight = 50
+    const paginationHeight = 50
+    const padding = 120
+    tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding
+  })
+}
+
+// 监听窗口大小变化
 onMounted(() => {
+  calcTableHeight()
+  window.addEventListener('resize', calcTableHeight)
   loadSalesManagers()
   loadCustomerSimpleNames()
 })
 
+onUnmounted(() => {
+  window.removeEventListener('resize', calcTableHeight)
+})
+
+// 监听搜索框显示/隐藏
+watch(showSearch, () => {
+  calcTableHeight()
+})
+
 getList()
 </script>
+
+<style scoped lang="scss">
+.customer-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :deep(.el-form--inline .el-form-item) {
+    margin-right: 20px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.el-table) {
+    font-size: 13px;
+
+    .el-table__header th {
+      background-color: #f5f7fa;
+      color: #606266;
+      font-weight: 600;
+    }
+
+    .el-table__body tr:hover > td {
+      background-color: #f5f7fa !important;
+    }
+  }
+
+  :deep(.el-pagination) {
+    margin-top: 15px;
+    text-align: right;
+  }
+}
+</style>

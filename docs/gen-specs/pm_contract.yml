@@ -6,7 +6,81 @@ basicInfo:
   tableComment: 合同管理表
   className: Contract
   functionAuthor: ruoyi
-  remark: ""
+  remark: |
+    功能更新记录：
+
+    1. 从项目列表添加合同功能 (2026-02-13完成)
+       - 功能描述：在项目管理列表的操作列添加"添加合同"按钮，点击后跳转到合同新增页面并自动填充项目信息
+       - 路由跳转：
+         * 跳转URL：/contract/contract/add?projectId={projectId}
+         * 路由参数：通过 query 参数传递 projectId
+         * 目标页面：ruoyi-ui/src/views/contract/contract/add.vue
+       - 自动填充逻辑：
+         * 在 onMounted 中检测 route.query.projectId
+         * 如果存在 projectId，则调用后端接口获取项目详情
+         * 自动填充字段：
+           - form.projectId = project.projectId（用于提交）
+           - form.projectName = project.projectName（用于显示）
+           - form.deptId = project.projectDept（项目部门ID）
+           - form.customerId = project.customerId（客户ID）
+       - 项目信息展示区域：
+         * 位置：合同基本信息模块的第一个字段区域
+         * 显示内容：只读展示项目名称和项目部门
+         * 显示条件：v-if="form.projectId"（仅当从项目列表跳转时显示）
+         * 布局：使用 el-alert 组件，类型为 info，不可关闭
+         * 内容格式："关联项目：{projectName} | 项目部门：{deptName}"
+       - 实现文件：
+         * 前端：ruoyi-ui/src/views/contract/contract/add.vue
+         * 后端API：GET /project/project/{projectId}（复用现有接口）
+       - 用户体验优化：
+         * 避免手动选择项目和客户，减少操作步骤
+         * 自动关联项目和合同，确保数据一致性
+         * 明确展示关联的项目信息，提高信息透明度
+
+    2. 合同编号唯一性校验功能 (2026-02-13实现)
+       - 功能描述：在合同新增和编辑页面，对合同编号进行唯一性校验
+       - 校验时机：
+         * 用户输入合同编号后失去焦点时触发（@blur事件）
+         * 实时校验，无需等待表单提交
+       - 校验逻辑：
+         * 前端：调用 checkContractCodeUnique API
+         * 后端：ContractServiceImpl.checkContractCodeUnique 方法
+         * 编辑模式：排除当前合同自身（传入 contractId）
+         * 新增模式：检查所有合同（contractId 为 null）
+       - 校验提示：
+         * 重复提示：显示红色错误提示"合同编号已存在"
+         * 可用提示：显示绿色成功提示"合同编号可用"
+         * 清空提示：清空合同编号时，清除所有提示
+       - 表单验证：
+         * 集成到 el-form 验证规则中
+         * 阻止提交：如果合同编号重复，表单提交时会阻止
+       - 实现文件：
+         * 前端：ruoyi-ui/src/views/contract/contract/add.vue, edit.vue
+         * 后端API：GET /project/contract/checkContractCodeUnique
+         * 后端Service：ContractServiceImpl.checkContractCodeUnique
+       - 注意事项：
+         * 虽然数据库没有唯一约束，但通过应用层校验保证唯一性
+         * 校验是精确匹配（EQ），不是模糊匹配（LIKE）
+         * 支持编辑模式下排除自身的逻辑
+
+    3. Element Plus 按钮类型废弃警告修复 (2026-02-13完成)
+       - 问题描述：控制台出现警告 "[Element Warn][ElButton] type 'link' is deprecated, use 'text' instead."
+       - 废弃原因：Element Plus 升级后，按钮类型 type="link" 已被废弃，推荐使用 type="text"
+       - 修复内容：
+         * 文件：ruoyi-ui/src/views/contract/contract/index.vue
+         * 修改位置：操作列的所有按钮
+         * 修改前：<el-button type="link">
+         * 修改后：<el-button type="text" link>
+       - 注意事项：
+         * 新语法需要两个属性：type="text" + link
+         * type="text"：定义按钮为文本按钮
+         * link：应用链接样式（颜色和悬停效果）
+       - 影响范围：
+         * 合同列表页面的所有操作按钮
+         * 详情、编辑、款项、附件、删除按钮
+       - 视觉效果：
+         * 外观和交互效果与之前完全一致
+         * 仅修复了底层实现，消除了废弃警告
 
 # ============================
 # Tab 2: 字段信息

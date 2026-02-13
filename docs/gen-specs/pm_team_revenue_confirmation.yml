@@ -12,7 +12,21 @@ basicInfo:
   tableComment: 团队收入确认表
   className: TeamRevenueConfirmation
   functionAuthor: ruoyi
-  remark: ""
+  remark: |
+    团队收入确认功能修改记录：
+
+    1. 列表参与人员显示修复 (2026-02-14完成)：
+       - 问题描述：团队收入确认列表中"参与人员"列显示为"-"，无法正确显示用户昵称
+       - 问题原因：错误地访问 allUsersSelectRef.value?.userOptions?.value（多了一层.value）
+       - 修复内容：
+         * 文件：ruoyi-ui/src/views/revenue/team/index.vue
+         * 函数：getParticipantsNames()
+         * 修改：const allUsers = allUsersSelectRef.value?.userOptions || []
+         * 说明：UserSelect 组件通过 defineExpose 暴露的是 userOptions（ref本身），不需要再访问 .value
+       - 显示效果：
+         * 修复前：显示 "-"（无法获取用户列表）
+         * 修复后：显示 "张三, 李四, 王五"（正确显示用户昵称）
+       - 关联修复：同时修复了项目管理和公司收入确认的相同问题
 
 # ============================
 # Tab 2: 字段信息
@@ -965,3 +979,39 @@ implementation_summary:
         - "ruoyi-ui/src/views/revenue/team/index.vue"
 
   timestamp: "2026-02-13 02:00:00"
+
+  pagination_fixed_bottom:
+    intent: "分页组件固定在页面底部，即使数据很少也保持在底部位置"
+    date: "2026-02-14"
+    implementation:
+      container:
+        className: "revenue-team-container"
+        styles:
+          - "height: 100%"
+          - "display: flex"
+          - "flex-direction: column"
+      table:
+        dynamicHeight: true
+        heightRef: "const tableHeight = ref(600)"
+        heightCalculation: "tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding"
+        attributes:
+          - ":height='tableHeight': 固定表格高度"
+      lifecycle:
+        onMounted:
+          - "calcTableHeight(): 初始计算表格高度"
+          - "window.addEventListener('resize', calcTableHeight): 监听窗口大小变化"
+        onUnmounted:
+          - "window.removeEventListener('resize', calcTableHeight): 移除resize监听"
+        watch:
+          - "showSearch: 搜索框显隐时重新计算表格高度"
+      pagination:
+        position: "紧跟el-table后，对话框之前"
+        styles:
+          - "margin-top: 15px"
+          - "text-align: right"
+      heightParameters:
+        searchHeight: "200px (showSearch为true时，复用公司收入确认的查询条件)"
+        toolbarHeight: "50px"
+        paginationHeight: "50px"
+        padding: "120px"
+    notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部。"
