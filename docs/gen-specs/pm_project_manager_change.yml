@@ -1,0 +1,508 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_project_manager_change
+  tableComment: 项目经理变更表
+  className: ProjectManagerChange
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  change_id:
+    columnComment: 变更主键ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: changeId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 项目ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: projectId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  old_manager_id:
+    columnComment: 原项目经理ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: oldManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+
+  new_manager_id:
+    columnComment: 新项目经理ID
+    columnType: bigint(20)
+    javaType: Long
+    javaField: newManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  change_reason:
+    columnComment: 变更原因
+    columnType: varchar(500)
+    javaType: String
+    javaField: changeReason
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: LIKE
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: true
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: projectManagerChange
+  functionName: 项目经理变更
+  parentMenuId: 2059
+
+# ============================
+# 定制需求（超出标准模板的组件/交互/接口需求）
+# ============================
+customizations:
+  # 1. 查询条件改造：项目名称自动补全
+  project_name_autocomplete:
+    intent: "项目名称搜索，远程模糊查询，数据量中等（500-5000个）"
+    component:
+      type: el-autocomplete
+      props:
+        fetchSuggestions: "后端远程搜索"
+        valueKey: "projectName"
+        debounce: 300
+        triggerOnFocus: false
+        minLength: 2
+    bindTo: queryForm.projectName
+    service:
+      endpoint: "GET /project/projectManagerChange/searchProjects?keyword={input}"
+      source: "新增，复用 ProjectService.selectProjectList，返回轻量数据"
+      returns: "[{ projectId, projectName, projectCode }]"
+      newApi: true
+    notes: "用户输入≥2字符触发搜索，返回最多20条匹配项"
+
+  # 2. 查询条件改造：当前项目经理下拉框
+  current_manager_select:
+    intent: "当前项目经理筛选，下拉框选择，只显示岗位为'pm'的用户"
+    component:
+      type: el-select
+      props:
+        options: "项目经理列表"
+        valueKey: "userId"
+        labelKey: "nickName"
+    bindTo: queryForm.currentManagerId
+    service:
+      endpoint: "GET /system/user/listByPost?postCode=pm"
+      source: "复用 SysUserService.selectUserListByPostCode，已存在"
+      returns: "[{ userId, nickName, userName }]"
+      newApi: false
+    notes: "页面加载时获取项目经理列表，岗位编码：pm"
+
+  # 3. 列表数据源改造：项目列表 + 最新变更记录
+  project_list_with_change_history:
+    intent: "显示项目列表并关联最新变更记录，需要多表JOIN查询"
+    component:
+      type: custom
+      spec: "列表查询需要关联 pm_project、pm_project_manager_change（最新一条）、sys_user（3次关联：当前经理、原经理、变更人）"
+    bindTo: tableData
+    service:
+      endpoint: "GET /project/projectManagerChange/list"
+      source: "改造现有 selectProjectManagerChangeList 方法"
+      returns: |
+        [{
+          projectId, projectName, projectCode, projectCreateTime,
+          currentManagerId, currentManagerName,
+          oldManagerId, oldManagerName,
+          changeReason, changeBy, changeByName, changeTime
+        }]
+      newApi: false
+    notes: |
+      SQL改造要点：
+      - 主查询：pm_project（所有项目）
+      - LEFT JOIN：子查询获取每个项目的最新变更记录
+      - LEFT JOIN：sys_user（3次，分别关联当前经理、原经理、变更人）
+      - 查询条件：projectName LIKE、currentManagerId =
+      - 按项目创建时间倒序排列
+
+  # 4. 变更对话框：单个/批量变更项目经理
+  change_dialog:
+    intent: "变更对话框，选择新经理 + 输入变更原因，支持单个和批量变更"
+    component:
+      type: el-dialog
+      props:
+        title: "变更项目经理 / 批量变更项目经理"
+        width: "500px"
+      spec: |
+        表单字段：
+        - 项目名称（单个变更时显示，禁用）
+        - 选中项目列表（批量变更时显示为标签列表）
+        - 当前经理（显示，禁用）
+        - 新项目经理（下拉选择，必填，岗位=pm）
+        - 变更原因（文本域，必填，最多500字）
+    bindTo: dialog
+    service:
+      endpoint: |
+        POST /project/projectManagerChange/change
+        POST /project/projectManagerChange/batchChange
+      source: "新增业务方法，需要事务保证"
+      returns: "AjaxResult"
+      newApi: true
+    notes: |
+      业务逻辑（事务）：
+      1. 查询项目当前经理（oldManagerId）
+      2. 更新 pm_project.project_manager_id = newManagerId
+      3. 插入 pm_project_manager_change 记录
+      批量变更：循环处理每个项目，事务保证原子性
+
+  # 5. 操作按钮改造：移除增删改，新增变更/批量变更/详情
+  operation_buttons:
+    intent: "操作按钮改造：移除新增/修改/删除，保留导出，新增详情/变更/批量变更"
+    component:
+      type: custom
+      spec: |
+        列表行操作：
+        - 详情按钮（权限：project:projectManagerChange:detail）
+        - 变更按钮（权限：project:projectManagerChange:change）
+        工具栏操作：
+        - 批量变更按钮（权限：project:projectManagerChange:batchChange，需要勾选≥1个项目）
+        - 导出按钮（保留原有功能）
+        移除：新增、修改、删除按钮
+    bindTo: toolbar + tableActions
+    service: null
+    notes: "纯前端改造，调整按钮显示和权限控制"
+
+  # 6. 详情对话框：显示项目信息和完整变更历史
+  detail_dialog:
+    intent: "详情对话框，显示项目基本信息和完整变更历史"
+    component:
+      type: el-dialog
+      props:
+        title: "项目经理变更详情"
+        width: "800px"
+      spec: |
+        显示内容：
+        - 项目基本信息（名称、编号、当前经理）
+        - 变更历史时间线（所有变更记录，倒序）
+        每条记录显示：变更时间、原经理→新经理、变更原因、变更人
+    bindTo: detailDialog
+    service:
+      endpoint: "GET /project/projectManagerChange/detail/{projectId}"
+      source: "新增查询方法，查询该项目的所有变更记录"
+      returns: |
+        {
+          project: { projectId, projectName, projectCode, currentManagerName },
+          changes: [{ changeTime, oldManagerName, newManagerName, changeReason, changeByName }]
+        }
+      newApi: true
+    notes: "按时间倒序显示变更历史，使用时间线组件展示"
+
+# ============================
+# 实施记录
+# ============================
+implementation:
+  date: 2026-02-13
+  version: v1.0.0
+  developer: Claude Code
+  
+  summary: |
+    项目经理变更功能完整实现，包括前后端代码、数据库索引优化、权限控制等。
+    实现了单个变更、批量变更、变更历史查看等核心功能。
+  
+  git_commits:
+    - hash: c2f628d
+      message: "feat(project): 添加项目经理变更VO和请求对象"
+      files: ["VO类", "Request对象"]
+    
+    - hash: 5d4200a
+      message: "feat(project): 修改Mapper XML支持关联查询和变更历史"
+      files: ["ProjectManagerChangeMapper.xml"]
+    
+    - hash: ade22dd
+      message: "feat(project): 修改Mapper接口支持VO查询和历史记录查询"
+      files: ["ProjectManagerChangeMapper.java"]
+    
+    - hash: 5ce58ba
+      message: "feat(project): Service接口添加变更和详情查询方法"
+      files: ["IProjectManagerChangeService.java"]
+    
+    - hash: e845397
+      message: "feat(project): 实现变更和详情查询业务逻辑"
+      files: ["ProjectManagerChangeServiceImpl.java"]
+    
+    - hash: e0acab9
+      message: "feat(project): Controller添加搜索、变更、详情接口"
+      files: ["ProjectManagerChangeController.java"]
+    
+    - hash: f488bf6
+      message: "feat(ui): 添加项目经理变更API函数"
+      files: ["projectManagerChange.js"]
+    
+    - hash: 8c80cee
+      message: "feat(ui): 修改查询表单支持项目名称搜索和项目经理筛选"
+      files: ["index.vue"]
+    
+    - hash: cfc9cca
+      message: "feat(ui): 修改列表表格显示项目和变更信息"
+      files: ["index.vue"]
+    
+    - hash: 766cbe3
+      message: "feat(ui): 修改工具栏保留批量变更和导出按钮"
+      files: ["index.vue"]
+    
+    - hash: b7d368c
+      message: "feat(ui): 添加变更对话框状态和方法"
+      files: ["index.vue"]
+    
+    - hash: 052fbce
+      message: "feat(ui): 添加变更对话框模板和样式"
+      files: ["index.vue"]
+    
+    - hash: dfd4490
+      message: "feat(ui): 添加详情对话框状态和方法"
+      files: ["index.vue"]
+    
+    - hash: 45c9a86
+      message: "feat(ui): 添加详情对话框模板和时间线展示"
+      files: ["index.vue"]
+    
+    - hash: 480e245
+      message: "perf(db): 添加项目经理变更查询索引优化"
+      files: ["fix_project_manager_change_index.sql"]
+  
+  backend_changes:
+    新增类:
+      - "com.ruoyi.project.domain.vo.ProjectManagerChangeVo"
+      - "com.ruoyi.project.domain.request.ChangeRequest"
+      - "com.ruoyi.project.domain.request.BatchChangeRequest"
+    
+    修改类:
+      - "com.ruoyi.project.mapper.ProjectManagerChangeMapper"
+      - "com.ruoyi.project.service.IProjectManagerChangeService"
+      - "com.ruoyi.project.service.impl.ProjectManagerChangeServiceImpl"
+      - "com.ruoyi.project.controller.ProjectManagerChangeController"
+    
+    修改XML:
+      - "mapper/project/ProjectManagerChangeMapper.xml"
+    
+    新增接口:
+      - "GET /project/projectManagerChange/searchProjects - 项目名称自动补全"
+      - "POST /project/projectManagerChange/change - 单个变更"
+      - "POST /project/projectManagerChange/batchChange - 批量变更"
+      - "GET /project/projectManagerChange/detail/{projectId} - 查询详情"
+    
+    业务逻辑:
+      - "使用 @Transactional 保证变更操作的原子性"
+      - "变更时检查新旧经理是否相同"
+      - "批量变更采用容错设计，单个失败不影响其他"
+      - "完整的异常处理和日志记录"
+  
+  frontend_changes:
+    修改文件:
+      - "src/api/project/projectManagerChange.js"
+      - "src/views/project/projectManagerChange/index.vue"
+    
+    新增API函数:
+      - "searchProjects() - 项目搜索"
+      - "changeManager() - 单个变更"
+      - "batchChangeManager() - 批量变更"
+      - "getChangeDetail() - 查询详情"
+    
+    UI改造:
+      查询表单:
+        - "项目名称自动补全（el-autocomplete，≥2字符触发，300ms防抖）"
+        - "当前项目经理下拉筛选（el-select）"
+        - "变更日期范围查询（el-date-picker）"
+      
+      列表表格:
+        - "显示项目编号、项目名称、当前经理、原经理、变更原因、变更人、变更时间"
+        - "操作列：详情按钮"
+      
+      工具栏:
+        - "保留：批量变更、导出"
+        - "移除：新增、修改、删除"
+      
+      变更对话框:
+        - "新项目经理下拉选择（必填）"
+        - "变更原因文本域（必填，最多500字）"
+        - "批量变更时显示警告提示"
+      
+      详情对话框:
+        - "项目信息展示（el-descriptions）"
+        - "变更历史时间线（el-timeline + el-card）"
+        - "最新记录绿色高亮"
+  
+  database_changes:
+    索引优化:
+      pm_project:
+        - "idx_project_manager_id (project_manager_id) - 项目经理筛选查询"
+      
+      pm_project_manager_change:
+        - "idx_project_create_time (project_id, create_time DESC, del_flag) - 复合索引，查询最新变更"
+        - "idx_old_manager_id (old_manager_id) - 关联查询优化"
+        - "idx_new_manager_id (new_manager_id) - 关联查询优化"
+    
+    性能提升:
+      - "项目经理筛选查询：避免全表扫描"
+      - "最新变更记录查询：利用复合索引排序"
+      - "关联查询优化：减少JOIN开销"
+  
+  permissions:
+    新增权限:
+      - "project:projectManagerChange:query - 查询权限"
+      - "project:projectManagerChange:change - 变更权限"
+      - "project:projectManagerChange:batchChange - 批量变更权限"
+      - "project:projectManagerChange:detail - 详情查询权限"
+      - "project:projectManagerChange:export - 导出权限"
+  
+  testing:
+    功能测试:
+      - "查询功能：项目名称自动补全、项目经理筛选、日期范围查询"
+      - "单个变更：选择新经理、填写原因、提交验证"
+      - "批量变更：多选项目、批量变更、容错处理"
+      - "详情查看：项目信息、变更历史时间线"
+      - "导出功能：Excel导出验证"
+    
+    异常测试:
+      - "新旧经理相同：后端拦截并提示"
+      - "变更原因为空：前端表单验证"
+      - "未选择项目：按钮禁用或警告提示"
+      - "权限控制：未授权操作拦截"
+  
+  notes: |
+    实施要点：
+    1. 后端使用 VO 对象扁平化复杂查询结果
+    2. Request 对象统一参数验证
+    3. 事务管理保证数据一致性
+    4. 前端自动补全优化用户体验
+    5. 时间线组件清晰展示变更历史
+    6. 数据库索引显著提升查询性能
+    
+    已知限制：
+    1. 批量变更采用循环处理，大批量操作（>100）可能较慢
+    2. 自动补全限制返回20条记录，超大项目数量需考虑分页
+    3. 变更历史无限制，项目变更次数过多可能影响详情页加载速度
+    
+    建议优化：
+    1. 批量变更可改为批量SQL操作提升性能
+    2. 自动补全可增加分页或虚拟滚动
+    3. 变更历史可增加分页加载
