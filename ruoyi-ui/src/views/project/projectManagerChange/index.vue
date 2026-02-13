@@ -86,26 +86,47 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改项目经理变更对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="projectManagerChangeRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="项目ID" prop="projectId">
-          <el-input v-model="form.projectId" placeholder="请输入项目ID" />
+    <!-- 变更项目经理对话框 -->
+    <el-dialog :title="changeDialogTitle" v-model="changeDialogVisible" width="500px" append-to-body>
+      <el-form ref="changeFormRef" :model="changeForm" :rules="changeRules" label-width="120px">
+        <el-form-item label="新项目经理" prop="newManagerId">
+          <el-select v-model="changeForm.newManagerId" placeholder="请选择新项目经理" clearable style="width: 100%">
+            <el-option
+              v-for="user in userList"
+              :key="user.userId"
+              :label="user.nickName"
+              :value="user.userId"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="变更原因" prop="changeReason">
-          <el-input v-model="form.changeReason" type="textarea" placeholder="请输入内容" />
+          <el-input
+            v-model="changeForm.changeReason"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入变更原因"
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
-        <el-form-item label="删除标志" prop="delFlag">
-          <el-input v-model="form.delFlag" placeholder="请输入删除标志" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
+        <el-alert
+          v-if="isBatchChange"
+          title="批量变更提示"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 15px"
+        >
+          <template #default>
+            <div>将批量变更 <strong>{{ changeForm.projectIds.length }}</strong> 个项目的项目经理</div>
+            <div style="font-size: 12px; margin-top: 5px">如果某个项目的新旧经理相同，该项目将被跳过</div>
+          </template>
+        </el-alert>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitChange">确 定</el-button>
+          <el-button @click="cancelChange">取 消</el-button>
         </div>
       </template>
     </el-dialog>
