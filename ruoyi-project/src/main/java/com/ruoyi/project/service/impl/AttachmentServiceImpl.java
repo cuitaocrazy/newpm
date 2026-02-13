@@ -43,6 +43,9 @@ public class AttachmentServiceImpl implements IAttachmentService
     @Autowired
     private ContractMapper contractMapper;
 
+    @Autowired
+    private com.ruoyi.project.mapper.ProjectMapper projectMapper;
+
     /** 允许的文件扩展名 */
     private static final String[] ALLOWED_EXTENSIONS = {
         ".doc", ".docx", ".xls", ".xlsx", ".pdf", ".csv",
@@ -302,8 +305,12 @@ public class AttachmentServiceImpl implements IAttachmentService
         }
         else if ("project".equals(businessType))
         {
-            // 项目附件路径，可以根据需要扩展
-            return "项目" + File.separator + businessId;
+            com.ruoyi.project.domain.Project project = projectMapper.selectProjectByProjectId(businessId);
+            if (project == null)
+            {
+                return null;
+            }
+            return "项目" + File.separator + businessId + "_" + project.getProjectName();
         }
         else if ("payment".equals(businessType))
         {
