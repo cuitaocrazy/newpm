@@ -1632,6 +1632,13 @@ insert into sys_dict_data values(207,2,'自治区','2','sflx','','','N','0','adm
 insert into sys_dict_data values(208,3,'特别行政区','3','sflx','','','N','0','admin',sysdate(),'',NULL,'特别行政区');
 insert into sys_dict_data values(209,4,'计划单列市','4','sflx','','','N','0','admin',sysdate(),'',NULL,'计划单列市');
 
+-- 收入确认状态字典
+insert into sys_dict_type values(116,'收入确认状态','sys_srqrzt','0','admin',sysdate(),'',NULL,'收入确认状态');
+
+-- 收入确认状态字典数据
+insert into sys_dict_data values(210,0,'未确认','0','sys_srqrzt','','','Y','0','admin',sysdate(),'',NULL,'未确认');
+insert into sys_dict_data values(211,1,'已确认','1','sys_srqrzt','','','N','0','admin',sysdate(),'',NULL,'已确认');
+
 -- =============================================
 -- 合同状态字典颜色优化
 -- 日期: 2026-02-06
