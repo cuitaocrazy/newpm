@@ -53,10 +53,10 @@ RuoYi-Vue v3.9.1 — Enterprise admin system with separated frontend/backend, cu
 ```bash
 # 1. Ensure MySQL 8.x and Redis are running
 # 2. Create database and import schema
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS ry_vue CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p ry_vue < pm-sql/init/00_tables_ddl.sql
-mysql -u root -p ry_vue < pm-sql/init/01_tables_data.sql
-mysql -u root -p ry_vue < pm-sql/init/02_menu_data.sql
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS \`ry-vue\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p ry-vue < pm-sql/init/00_tables_ddl.sql
+mysql -u root -p ry-vue < pm-sql/init/01_tables_data.sql
+mysql -u root -p ry-vue < pm-sql/init/02_menu_data.sql
 
 # 3. Build and run backend
 mvn clean package -Dmaven.test.skip=true
@@ -116,7 +116,7 @@ The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use t
 
 ### E2E Testing (from project root)
 
-**Test Strategy:** E2E testing infrastructure is configured with Playwright. Test coverage is planned for critical business workflows.
+**Test Configuration:** `playwright.config.js` — Chromium, 30s timeout, 2 retries, screenshots/video/trace on failure, zh-CN locale, Asia/Shanghai timezone.
 
 ```bash
 npx playwright install                    # Install browsers (first time only)
@@ -128,13 +128,10 @@ npx playwright test --debug               # Run tests in debug mode
 npx playwright show-report                # View test report
 ```
 
-**Test Configuration:** `playwright.config.js` - Playwright E2E test configuration
-
-**Planned Test Coverage:**
-- Project creation and approval workflow (立项申请与审核)
-- Customer and contact management (客户与联系人管理)
-- Contract and payment tracking (合同与款项管理)
-- Revenue recognition workflow (收入确认流程)
+**Test Files (in `tests/`):**
+- `project-management.spec.js` - Full project lifecycle (apply → list → edit → approval)
+- `contract-add-from-project.spec.ts` - Contract creation from project list; validates auto-population of project info, dept, and customer
+- `network-request-debug.spec.js` - Network debugging utilities
 
 ### Unit Testing (Backend)
 
@@ -157,7 +154,7 @@ mvn clean package -Dmaven.test.skip=true
 - **Java 17** - Required for Spring Boot 3.x
 - **Maven 3.6+** - Build tool
 - **MySQL 8.x** - Database (charset: `utf8mb4`, collation: `utf8mb4_unicode_ci`)
-  - Database name: `ry_vue`
+  - Database name: `ry-vue`
   - Default port: 3306
   - Init scripts: `pm-sql/init/00_tables_ddl.sql`, `01_tables_data.sql`, `02_menu_data.sql`
 - **Redis 6.x+** - Cache and session storage
@@ -202,6 +199,9 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations (upload/download/delete) |
 | `SecondaryRegion` | `pm_secondary_region` | 二级区域 - Secondary region management for hierarchical region classification |
 | `ProjectReview` | (view-based) | 公司收入确认 - Revenue recognition view with comprehensive project and contract data |
+| `ProjectManagerChange` | `pm_project_manager_change` | 项目经理变更 - Track project manager changes with old/new manager, reason, and timestamp |
+| `TeamRevenueConfirmation` | `pm_team_revenue_confirmation` | 团队收入确认 - Team-level revenue confirmation (separate from company-wide) |
+| `ProjectMember` | `pm_project_member` | 项目成员 - Project team member management |
 
 **Key Features:**
 
@@ -284,6 +284,16 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
    - Hierarchical region classification (primary region → secondary region)
    - Used for detailed geographical organization of projects and customers
 
+7. **Project Manager Change (项目经理变更):**
+   - Record and track project manager changes with change reason
+   - Fields: oldManagerId/Name, newManagerId/Name, changeReason, changeTime
+   - Supports single and batch change operations
+   - DTOs: `ChangeRequest` (single), `BatchChangeRequest` (batch), `ProjectManagerChangeVO` (view)
+
+8. **Team Revenue Confirmation (团队收入确认):**
+   - Department-level revenue confirmation (distinct from company-wide ProjectReview)
+   - Fields: teamConfirmId, projectId, deptId, confirmAmount, confirmTime, confirmUserId
+
 **Dictionary Dependencies:**
 
 - `industry` - 行业分类
@@ -302,7 +312,9 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 
 - `ProjectController` - `/project/project/**` - Project CRUD and approval operations
 - `ProjectApprovalController` - `/project/approval/**` - Approval workflow management
-- `ProjectReviewController` - `/project/review/**` - Revenue recognition and comprehensive project review
+- `ProjectReviewController` - `/project/review/**` - Company-wide revenue recognition
+- `ProjectManagerChangeController` - `/project/managerChange/**` - Project manager change records
+- `TeamRevenueConfirmationController` - `/project/teamRevenue/**` - Team-level revenue confirmation
 - `CustomerController` - `/project/customer/**` - Customer management
 - `CustomerContactController` - `/project/contact/**` - Contact management
 - `ContractController` - `/project/contract/**` - Contract CRUD with amount summary
@@ -312,14 +324,17 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 
 **Frontend Routes:**
 
-- `/project/project` - 项目列表 (Project list with approval actions)
+- `/project/project` - 项目列表 (Project list with approval actions and contract buttons)
 - `/project/apply` - 项目立项申请 (Project initiation application)
 - `/project/approval` - 项目审核 (Project approval workflow)
-- `/project/review` - 公司收入确认 (Revenue recognition with comprehensive filtering)
+- `/project/review` - 公司收入确认 (Company-wide revenue recognition with comprehensive filtering)
 - `/project/contract` - 合同列表 (Contract list with amount tracking)
 - `/project/payment` - 款项列表 (Payment list with installment tracking)
 - `/project/customer` - 客户管理 (Customer management)
 - `/project/secondaryRegion` - 二级区域管理 (Secondary region management)
+- `/project/managerChange` - 项目经理变更 (Project manager change records)
+- `/revenue/company` - 公司收入确认详情 (Company revenue confirmation detail view)
+- `/revenue/team` - 团队收入确认 (Team-level revenue confirmation)
 
 ## Backend Patterns
 
@@ -517,14 +532,14 @@ public class ContractServiceImpl implements IContractService {
 
 **Operation Audit Logs:** Automatically async via `AsyncManager` (used by `@Log` annotation)
 
-**Custom Async Methods:**
+**Custom Async Methods (implemented in `ProjectEmailServiceImpl`):**
 ```java
 @Service
 public class ProjectEmailServiceImpl {
 
     @Async  // Runs in separate thread pool
     public void sendNotificationEmail(Project project) {
-        // Email sending logic
+        // Sends approval result notification (approved/rejected with reason) to project creator
     }
 }
 ```
@@ -700,7 +715,7 @@ Database initialization scripts are in `pm-sql/init/`:
 - `01_tables_data.sql` - Initial data and dictionary entries
 - `02_menu_data.sql` - Menu and permission data for UI navigation
 
-**Database name:** `ry_vue` (MySQL 8.x, charset: `utf8mb4`, collation: `utf8mb4_unicode_ci`)
+**Database name:** `ry-vue` (MySQL 8.x, charset: `utf8mb4`, collation: `utf8mb4_unicode_ci`)
 
 When adding new business modules, place DDL files in `pm-sql/init/00_tables_ddl.sql` for the `/ruoyi-gen` skill to discover.
 
@@ -947,9 +962,9 @@ kubectl get pods -n ruoyi
 
 ### Backend Won't Start
 
-1. **Check MySQL connection**: Ensure MySQL is running on port 3306 with database `ry_vue`
+1. **Check MySQL connection**: Ensure MySQL is running on port 3306 with database `ry-vue`
    ```bash
-   mysql -u root -p -e "SHOW DATABASES LIKE 'ry_vue';"
+   mysql -u root -p -e "SHOW DATABASES LIKE 'ry-vue';"
    ```
 2. **Check Redis connection**: Ensure Redis is running on port 6379
    ```bash
@@ -961,9 +976,9 @@ kubectl get pods -n ruoyi
    ```
 4. **Database not initialized**: Run SQL scripts in `pm-sql/init/` in order (00, 01, 02)
    ```bash
-   mysql -u root -p ry_vue < pm-sql/init/00_tables_ddl.sql
-   mysql -u root -p ry_vue < pm-sql/init/01_tables_data.sql
-   mysql -u root -p ry_vue < pm-sql/init/02_menu_data.sql
+   mysql -u root -p ry-vue < pm-sql/init/00_tables_ddl.sql
+   mysql -u root -p ry-vue < pm-sql/init/01_tables_data.sql
+   mysql -u root -p ry-vue < pm-sql/init/02_menu_data.sql
    ```
 5. **Java version mismatch**: Ensure Java 17 is installed
    ```bash

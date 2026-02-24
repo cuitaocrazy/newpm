@@ -361,7 +361,7 @@ function handleBack() {
 
 /** 查看项目详情 */
 function handleViewProject(projectId) {
-  router.push({ path: `/project/project/detail/${projectId}` })
+  router.push({ path: `/project/list/detail/${projectId}` })
 }
 
 /** 下载附件 */

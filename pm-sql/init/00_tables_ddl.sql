@@ -760,7 +760,7 @@ CREATE TABLE `pm_project` (
   `approval_status` varchar(20) DEFAULT '0' COMMENT '审核状态(0待审核/1已通过/2已拒绝)',
   `approval_reason` varchar(500) DEFAULT NULL COMMENT '审核意见',
   `industry_code` varchar(50) DEFAULT NULL COMMENT '行业代码',
-  `region_code` varchar(50) DEFAULT NULL COMMENT '区域代码(字典:sys_yjqy)',
+  `region_code` varchar(50) DEFAULT NULL COMMENT '二级区域代码',
   `remark` text COMMENT '备注',
   `tax_rate` decimal(5,2) DEFAULT NULL COMMENT '税率(%)',
   `confirm_user_id` bigint DEFAULT NULL COMMENT '确认人ID',

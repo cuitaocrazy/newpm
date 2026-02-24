@@ -2,12 +2,15 @@
   <div class="app-container contract-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="合同名称" prop="contractName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.contractName"
+          :fetch-suggestions="fetchContractNameSuggestions"
           placeholder="请输入合同名称"
           clearable
-          @keyup.enter="handleQuery"
+          value-key="contractName"
           style="width: 200px"
+          @select="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="部门" prop="deptId">
@@ -338,7 +341,7 @@
 </template>
 
 <script setup name="Contract">
-import { listContract, getContract, delContract } from "@/api/project/contract"
+import { listContract, getContract, delContract, searchContracts } from "@/api/project/contract"
 import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
@@ -567,6 +570,14 @@ function indexMethod(index) {
 function handleQuery() {
   queryParams.value.pageNum = 1
   getList()
+}
+
+/** 合同名称 autocomplete */
+function fetchContractNameSuggestions(queryStr, cb) {
+  if (!queryStr) { cb([]); return }
+  searchContracts({ keyword: queryStr }).then(res => {
+    cb(res.data || [])
+  }).catch(() => cb([]))
 }
 
 /** 重置按钮操作 */
