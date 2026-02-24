@@ -41,6 +41,8 @@ COPY ruoyi-framework/pom.xml ruoyi-framework/pom.xml
 COPY ruoyi-generator/pom.xml ruoyi-generator/pom.xml
 COPY ruoyi-quartz/pom.xml    ruoyi-quartz/pom.xml
 COPY ruoyi-system/pom.xml    ruoyi-system/pom.xml
+COPY ruoyi-project/pom.xml   ruoyi-project/pom.xml
+COPY ruoyi-gen-cli/pom.xml   ruoyi-gen-cli/pom.xml
 
 RUN mvn dependency:go-offline -B || true
 
