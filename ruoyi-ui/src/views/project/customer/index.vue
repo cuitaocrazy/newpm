@@ -104,7 +104,11 @@
           <dict-tag :options="sys_yjqy" :value="scope.row.region"/>
         </template>
       </el-table-column>
-      <el-table-column label="销售负责人" align="center" prop="salesManagerName" />
+      <el-table-column label="销售负责人" align="center" prop="salesManagerName">
+        <template #default="scope">
+          {{ scope.row.salesManagerName || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="办公地址" align="center" prop="officeAddress" show-overflow-tooltip />
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template #default="scope">
