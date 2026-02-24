@@ -189,6 +189,20 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="销售负责人" prop="salesManagerId">
+              <user-select
+                v-model="form.salesManagerId"
+                post-code="xsfzr"
+                placeholder="请选择销售负责人"
+                clearable
+                filterable
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="办公地址" prop="officeAddress">
               <el-input v-model="form.officeAddress" type="textarea" placeholder="请输入内容" />

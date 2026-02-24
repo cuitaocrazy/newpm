@@ -76,9 +76,28 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <select id="selectCustomerByCustomerId" parameterType="Long" resultMap="CustomerCustomerContactResult">
-        select customer_id, customer_simple_name, customer_all_name, industry, region, sales_manager_id, office_address, del_flag, create_by, create_time, update_by, update_time, remark
-        from pm_customer
-        where customer_id = #{customerId}
+        select
+            c.customer_id,
+            c.customer_simple_name,
+            c.customer_all_name,
+            c.industry,
+            c.region,
+            c.sales_manager_id,
+            c.office_address,
+            c.del_flag,
+            c.create_by,
+            c.create_time,
+            c.update_by,
+            c.update_time,
+            c.remark,
+            d1.dict_label as industry_name,
+            d2.dict_label as region_name,
+            u.nick_name as sales_manager_name
+        from pm_customer c
+        left join sys_dict_data d1 on c.industry COLLATE utf8mb4_unicode_ci = d1.dict_value and d1.dict_type = 'industry'
+        left join sys_dict_data d2 on c.region COLLATE utf8mb4_unicode_ci = d2.dict_value and d2.dict_type = 'sys_yjqy'
+        left join sys_user u on c.sales_manager_id = u.user_id
+        where c.customer_id = #{customerId}
     </select>
 
     <select id="selectCustomerContactList" resultMap="CustomerContactResult">
