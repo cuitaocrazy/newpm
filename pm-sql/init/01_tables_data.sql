@@ -91,11 +91,14 @@ insert into sys_dict_data values(102,3,'2026年','2026','sys_ndgl',NULL,'success
 insert into sys_dict_data values(103,4,'2027年','2027','sys_ndgl',NULL,'success','N','0','admin','2026-01-15 16:52:08','admin','2026-01-15 17:03:11',NULL);
 insert into sys_dict_data values(104,1,'1-未开未付','WKWF','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:55:40','admin','2026-01-15 16:59:03',NULL);
 insert into sys_dict_data values(105,2,'2-已提交验收材料','YTJYS','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:55:57','',NULL,NULL);
-insert into sys_dict_data values(106,3,'3-验收材料已审核','	YSYSH','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:59:19','',NULL,NULL);
-insert into sys_dict_data values(107,4,'4-待通知开票','DTZKP		','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:59:33','',NULL,NULL);
-insert into sys_dict_data values(108,5,'5-已通知开票','	YTZKP','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:59:46','',NULL,NULL);
-insert into sys_dict_data values(109,6,'6-已提交发票','YTJFP		','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 17:00:01','',NULL,NULL);
+insert into sys_dict_data values(106,3,'3-验收材料已审核','YSYSH','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:59:19','',NULL,NULL);
+insert into sys_dict_data values(107,4,'4-待通知开票','DTZKP','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:59:33','',NULL,NULL);
+insert into sys_dict_data values(108,5,'5-已通知开票','YTZKP','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 16:59:46','',NULL,NULL);
+insert into sys_dict_data values(109,6,'6-已提交发票','YTJFP','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 17:00:01','',NULL,NULL);
 insert into sys_dict_data values(110,7,'7-已收到回款','YSDHK','sys_fkzt',NULL,'default','N','0','admin','2026-01-15 17:00:28','admin','2026-01-15 17:34:51',NULL);
+insert into sys_dict_data values(350,10,'已开全款发票-未付款','YKQK','sys_fkzt',NULL,'warning','N','0','admin',sysdate(),'',NULL,'旧库迁移保留值');
+insert into sys_dict_data values(351,11,'付款未知-待确认','FKWZ','sys_fkzt',NULL,'danger','N','0','admin',sysdate(),'',NULL,'旧库迁移保留值');
+insert into sys_dict_data values(352,12,'不再回款','BZHK','sys_fkzt',NULL,'warning','N','0','admin',sysdate(),'',NULL,'旧库迁移保留值');
 insert into sys_dict_data values(111,5,'2028年','2028','sys_ndgl',NULL,'warning','N','0','admin','2026-01-15 17:02:15','admin','2026-01-15 17:03:20',NULL);
 insert into sys_dict_data values(112,0,'待定','dd','sys_ndgl',NULL,'warning','N','0','admin','2026-01-15 17:02:31','admin','2026-01-15 17:02:41',NULL);
 insert into sys_dict_data values(113,1,'1-未确认','1','sys_qrzt',NULL,'primary','N','0','admin','2026-01-15 17:04:12','admin','2026-01-15 17:04:55',NULL);
@@ -118,6 +121,7 @@ insert into sys_dict_data values(129,3,'系统集成类','XTJC','sys_xmfl',NULL,
 insert into sys_dict_data values(130,4,'开发人力外包','RLWB','sys_xmfl',NULL,'default','N','0','admin','2026-01-15 17:13:06','',NULL,NULL);
 insert into sys_dict_data values(131,5,'运维人力外包','YWWB','sys_xmfl',NULL,'default','N','0','admin','2026-01-15 17:13:23','',NULL,NULL);
 insert into sys_dict_data values(132,6,'测试人力外包','CSWB','sys_xmfl',NULL,'default','N','0','admin','2026-01-15 17:13:43','',NULL,NULL);
+insert into sys_dict_data values(353,0,'0-谈判签署中','0','sys_htzt',NULL,'success','N','0','admin',sysdate(),'',NULL,'旧库迁移保留值');
 insert into sys_dict_data values(133,1,'1-已签','1','sys_htzt',NULL,'default','N','0','admin','2026-01-15 17:20:46','admin','2026-01-15 17:22:33',NULL);
 insert into sys_dict_data values(134,2,'2-未签','2','sys_htzt',NULL,'default','N','0','admin','2026-01-15 17:21:44','admin','2026-01-15 17:22:40',NULL);
 insert into sys_dict_data values(135,3,'3-待变更','3','sys_htzt',NULL,'default','N','0','admin','2026-01-15 17:22:13','',NULL,NULL);
@@ -128,7 +132,7 @@ insert into sys_dict_data values(139,3,'3-验收材料','3','sys_wdlx',NULL,'def
 insert into sys_dict_data values(140,4,'4-项目过程材料','4','sys_wdlx',NULL,'default','N','0','admin','2026-01-15 17:26:42','',NULL,NULL);
 insert into sys_dict_data values(141,6,'6-其他','6','sys_wdlx',NULL,'default','N','0','admin','2026-01-15 17:26:56','admin','2026-01-15 17:27:36',NULL);
 insert into sys_dict_data values(142,5,'5-发票','5','sys_wdlx',NULL,'default','N','0','admin','2026-01-15 17:27:28','',NULL,NULL);
-insert into sys_dict_data values(142,0,'0-其他','0','sys_xmjd',NULL,'default','N','0','admin',sysdate(),'',NULL,'其他阶段');
+insert into sys_dict_data values(358,0,'0-其他','0','sys_xmjd',NULL,'default','N','0','admin',sysdate(),'',NULL,'其他阶段');
 insert into sys_dict_data values(143,1,'1-售前支持','1','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:28:45','admin','2026-01-15 17:30:12',NULL);
 insert into sys_dict_data values(144,2,'2-需求及设计','2','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:29:00','admin','2026-01-15 17:31:14',NULL);
 insert into sys_dict_data values(145,3,'3-开发及自测','3','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:29:13','',NULL,NULL);
@@ -148,6 +152,8 @@ insert into sys_dict_data values(161,7,'7-项目结项','7','sys_xmjd',NULL,'def
 insert into sys_dict_data values(162,0,'北京地区','BJ','sys_yjqy',NULL,'default','N','0','qiu.zhang','2026-01-16 17:25:15','',NULL,NULL);
 insert into sys_dict_data values(163,10,'国外地区','GWDQ','sys_yjqy',NULL,'default','N','0','qiu.zhang','2026-01-16 17:25:48','',NULL,NULL);
 insert into sys_dict_data values(164,5,'5-合同作废','5','sys_htzt',NULL,'default','N','0','qiu.zhang','2026-01-21 13:16:42','',NULL,NULL);
+insert into sys_dict_data values(354,6,'6-全款已回','6','sys_htzt',NULL,'warning','N','0','admin',sysdate(),'',NULL,'合同工作已做完，全款已回');
+insert into sys_dict_data values(355,7,'7-已签-无需回款','7','sys_htzt',NULL,'danger','N','0','admin',sysdate(),'',NULL,NULL);
 insert into sys_dict_data values(165,7,'日常内部工作','NBGZ','sys_xmfl',NULL,'default','N','0','qiu.zhang','2026-01-22 10:56:12','qiu.zhang','2026-01-22 10:57:14',NULL);
 insert into sys_dict_data values(166,8,'内部项目类','NBXM','sys_xmfl',NULL,'default','N','0','qiu.zhang','2026-01-22 11:02:46','qiu.zhang','2026-01-22 11:03:00',NULL);
 insert into sys_dict_data values(185,1,'未验收','0','sys_yszt','','warning','Y','0','admin','2026-01-26 14:14:46','',NULL,'项目未验收');
@@ -155,9 +161,9 @@ insert into sys_dict_data values(186,2,'已验收','1','sys_yszt','','success','
 insert into sys_dict_data values(197,0,'dsh','待审核','xmzt',NULL,'default','N','0','admin','2026-01-27 14:28:53','',NULL,NULL);
 insert into sys_dict_data values(198,1,'shtg','审核通过','xmzt',NULL,'default','N','0','admin','2026-01-27 14:29:08','',NULL,NULL);
 insert into sys_dict_data values(199,2,'shjj','审核拒绝','xmzt',NULL,'default','N','0','admin','2026-01-27 14:29:25','',NULL,NULL);
-insert into sys_dict_data values(200,2,'待审核','0','sys_shzt',NULL,'default','N','0','admin','2026-01-27 14:37:37','admin','2026-01-27 17:41:35',NULL);
-insert into sys_dict_data values(201,3,'审核通过','1','sys_shzt',NULL,'default','N','0','admin','2026-01-27 14:43:20','admin','2026-01-27 17:41:56',NULL);
-insert into sys_dict_data values(202,4,'审核拒绝','2','sys_shzt','','default','N','0','admin','2026-01-27 14:43:41','admin','2026-01-27 17:41:51',NULL);
+insert into sys_dict_data values(200,2,'待审核','0','sys_spzt',NULL,'default','N','0','admin','2026-01-27 14:37:37','admin','2026-01-27 17:41:35',NULL);
+insert into sys_dict_data values(201,3,'审核通过','1','sys_spzt',NULL,'default','N','0','admin','2026-01-27 14:43:20','admin','2026-01-27 17:41:56',NULL);
+insert into sys_dict_data values(202,4,'审核拒绝','2','sys_spzt','','default','N','0','admin','2026-01-27 14:43:41','admin','2026-01-27 17:41:51',NULL);
 insert into sys_dict_data values(204,1,'未确认','0','sys_qrzt','','warning','Y','0','admin','2026-01-28 11:44:41','',NULL,'未确认状态');
 
 -- ----------------------------
@@ -184,7 +190,7 @@ insert into sys_dict_type values(107,'项目阶段','sys_xmjd','0','admin','2026
 insert into sys_dict_type values(108,'合同类型','sys_htlx','0','admin','2026-01-15 17:32:13','qiu.zhang','2026-01-16 17:23:51','合同类型列表');
 insert into sys_dict_type values(109,'一级区域管理','sys_yjqy','0','admin','2026-01-16 15:50:08','qiu.zhang','2026-01-16 17:24:45','一级区域列表');
 insert into sys_dict_type values(113,'验收状态','sys_yszt','0','admin','2026-01-26 14:14:46','',NULL,'项目验收状态列表');
-insert into sys_dict_type values(114,'审核状态','sys_shzt','0','admin','2026-01-27 14:26:51','admin','2026-01-28 13:42:30',NULL);
+insert into sys_dict_type values(114,'审核状态','sys_spzt','0','admin','2026-01-27 14:26:51','admin','2026-01-28 13:42:30',NULL);
 
 -- ----------------------------
 -- 5、sys_job表数据
