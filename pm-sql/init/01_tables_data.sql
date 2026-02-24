@@ -128,6 +128,7 @@ insert into sys_dict_data values(139,3,'3-验收材料','3','sys_wdlx',NULL,'def
 insert into sys_dict_data values(140,4,'4-项目过程材料','4','sys_wdlx',NULL,'default','N','0','admin','2026-01-15 17:26:42','',NULL,NULL);
 insert into sys_dict_data values(141,6,'6-其他','6','sys_wdlx',NULL,'default','N','0','admin','2026-01-15 17:26:56','admin','2026-01-15 17:27:36',NULL);
 insert into sys_dict_data values(142,5,'5-发票','5','sys_wdlx',NULL,'default','N','0','admin','2026-01-15 17:27:28','',NULL,NULL);
+insert into sys_dict_data values(142,0,'0-其他','0','sys_xmjd',NULL,'default','N','0','admin',sysdate(),'',NULL,'其他阶段');
 insert into sys_dict_data values(143,1,'1-售前支持','1','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:28:45','admin','2026-01-15 17:30:12',NULL);
 insert into sys_dict_data values(144,2,'2-需求及设计','2','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:29:00','admin','2026-01-15 17:31:14',NULL);
 insert into sys_dict_data values(145,3,'3-开发及自测','3','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:29:13','',NULL,NULL);
@@ -1636,8 +1637,10 @@ insert into sys_dict_data values(209,4,'计划单列市','4','sflx','','','N','0
 insert into sys_dict_type values(116,'收入确认状态','sys_srqrzt','0','admin',sysdate(),'',NULL,'收入确认状态');
 
 -- 收入确认状态字典数据
-insert into sys_dict_data values(210,0,'未确认','0','sys_srqrzt','','','Y','0','admin',sysdate(),'',NULL,'未确认');
-insert into sys_dict_data values(211,1,'已确认','1','sys_srqrzt','','','N','0','admin',sysdate(),'',NULL,'已确认');
+insert into sys_dict_data values(210,0,'未确认','0','sys_srqrzt','','warning','Y','0','admin',sysdate(),'',NULL,'未确认');
+insert into sys_dict_data values(211,1,'已确认','1','sys_srqrzt','','success','N','0','admin',sysdate(),'',NULL,'已确认');
+insert into sys_dict_data values(212,2,'待确认','2','sys_srqrzt','','','N','0','admin',sysdate(),'',NULL,'待确认收入');
+insert into sys_dict_data values(213,3,'已确认收入','3','sys_srqrzt','','success','N','0','admin',sysdate(),'',NULL,'已确认收入');
 
 -- =============================================
 -- 合同状态字典颜色优化
