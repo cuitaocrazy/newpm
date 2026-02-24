@@ -46,4 +46,4 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             kubectl rollout restart deployment/ruoyi-app -n newpm
-            kubectl rollout status deployment/ruoyi-app -n newpm --timeout=120s
+            kubectl rollout status deployment/ruoyi-app -n newpm --timeout=360s
