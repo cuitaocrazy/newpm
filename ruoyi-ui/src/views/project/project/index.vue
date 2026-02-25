@@ -134,105 +134,105 @@
           v-hasPermi="['project:project:export']"
         >导出</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="projectList" :height="tableHeight"
               :row-class-name="tableRowClassName">
-      <el-table-column label="序号" width="55" align="center">
+      <el-table-column label="序号" width="55" align="center" v-if="columns.index.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
           <span v-else>{{ scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip />
-      <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip>
+      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip v-if="columns.projectName.visible" />
+      <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip v-if="columns.projectDept.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getDeptName(scope.row.projectDept) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目经理" align="center" prop="projectManagerId" min-width="100">
+      <el-table-column label="项目经理" align="center" prop="projectManagerId" min-width="100" v-if="columns.projectManagerId.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目分类" align="center" prop="projectCategory" min-width="120">
+      <el-table-column label="项目分类" align="center" prop="projectCategory" min-width="120" v-if="columns.projectCategory.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmfl" :value="scope.row.projectCategory" />
         </template>
       </el-table-column>
-      <el-table-column label="二级区域" align="center" prop="regionName" min-width="120" show-overflow-tooltip>
+      <el-table-column label="二级区域" align="center" prop="regionName" min-width="120" show-overflow-tooltip v-if="columns.regionName.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120">
+      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120" v-if="columns.projectBudget.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.projectBudget) }}</span>
           <span v-else>{{ formatAmount(scope.row.projectBudget) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
+      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100" v-if="columns.estimatedWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.estimatedWorkload }}</span>
           <span v-else>{{ scope.row.estimatedWorkload }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100">
+      <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100" v-if="columns.actualWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
           <span v-else>{{ scope.row.actualWorkload }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120">
+      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120" v-if="columns.contractAmount.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.contractAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
-      <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100">
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" v-if="columns.revenueConfirmYear.visible" />
+      <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100" v-if="columns.contractStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120" v-if="columns.revenueConfirmStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="确认金额" align="center" prop="confirmAmount" min-width="120">
+      <el-table-column label="确认金额" align="center" prop="confirmAmount" min-width="120" v-if="columns.confirmAmount.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.confirmAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.confirmAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
+      <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip v-if="columns.participants.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getParticipantsNames(scope.row.participants) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="启动日期" align="center" prop="startDate" width="100" />
-      <el-table-column label="结束日期" align="center" prop="endDate" width="100" />
-      <el-table-column label="验收日期" align="center" prop="acceptanceDate" width="100" />
-      <el-table-column label="审核状态" align="center" prop="approvalStatus" min-width="100">
+      <el-table-column label="启动日期" align="center" prop="startDate" width="100" v-if="columns.startDate.visible" />
+      <el-table-column label="结束日期" align="center" prop="endDate" width="100" v-if="columns.endDate.visible" />
+      <el-table-column label="验收日期" align="center" prop="acceptanceDate" width="100" v-if="columns.acceptanceDate.visible" />
+      <el-table-column label="审核状态" align="center" prop="approvalStatus" min-width="100" v-if="columns.approvalStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="100">
+      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="100" v-if="columns.projectStage.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmjd" :value="scope.row.projectStage" />
         </template>
       </el-table-column>
-      <el-table-column label="验收状态" align="center" prop="acceptanceStatus" min-width="100">
+      <el-table-column label="验收状态" align="center" prop="acceptanceStatus" min-width="100" v-if="columns.acceptanceStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" />
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="160" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="350">
+      <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" v-if="columns.updateBy.visible" />
+      <el-table-column label="更新时间" align="center" prop="updateTime" width="160" v-if="columns.updateTime.visible" />
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="350" v-if="columns.actions.visible">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
@@ -363,7 +363,34 @@ const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
 const tableHeight = ref(600)
-// 审核对话框
+
+// 列显隐信息
+const columns = ref({
+  index: { label: '序号', visible: true },
+  projectName: { label: '项目名称', visible: true },
+  projectDept: { label: '项目部门', visible: true },
+  projectManagerId: { label: '项目经理', visible: true },
+  projectCategory: { label: '项目分类', visible: true },
+  regionName: { label: '二级区域', visible: true },
+  projectBudget: { label: '项目预算', visible: true },
+  estimatedWorkload: { label: '预估工作量', visible: true },
+  actualWorkload: { label: '实际人天', visible: true },
+  contractAmount: { label: '合同金额', visible: true },
+  revenueConfirmYear: { label: '收入确认年度', visible: true },
+  contractStatus: { label: '合同状态', visible: true },
+  revenueConfirmStatus: { label: '收入确认状态', visible: true },
+  confirmAmount: { label: '确认金额', visible: true },
+  participants: { label: '参与人员', visible: true },
+  startDate: { label: '启动日期', visible: true },
+  endDate: { label: '结束日期', visible: true },
+  acceptanceDate: { label: '验收日期', visible: true },
+  approvalStatus: { label: '审核状态', visible: true },
+  projectStage: { label: '项目阶段', visible: true },
+  acceptanceStatus: { label: '验收状态', visible: true },
+  updateBy: { label: '更新人', visible: false },
+  updateTime: { label: '更新时间', visible: false },
+  actions: { label: '操作', visible: true }
+})
 const approvalDialogVisible = ref(false)
 const currentProject = ref({})
 const approvalForm = ref({
