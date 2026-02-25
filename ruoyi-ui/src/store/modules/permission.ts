@@ -73,6 +73,12 @@ function filterAsyncRouter(asyncRouterMap: any[], lastRouter = false, type = fal
         route.component = loadView(route.component)
       }
     }
+
+    // 自动设置隐藏路由的 activeMenu（菜单高亮）
+    if (route.hidden && route.path) {
+      setActiveMenu(route)
+    }
+
     if (route.children != null && route.children && route.children.length) {
       route.children = filterAsyncRouter(route.children, route, type)
     } else {
@@ -94,6 +100,42 @@ function filterChildren(childrenMap: any[], lastRouter: any = false) {
     }
   })
   return children
+}
+
+// 自动设置隐藏路由的 activeMenu（菜单高亮）
+function setActiveMenu(route: any) {
+  // 确保 meta 对象存在
+  if (!route.meta) {
+    route.meta = {}
+  }
+
+  // 如果已经设置了 activeMenu，则不覆盖
+  if (route.meta.activeMenu) {
+    return
+  }
+
+  const path = route.path
+
+  // 付款里程碑相关页面
+  if (path.includes('payment/add') ||
+      path.includes('payment/edit') ||
+      path.includes('payment/detail') ||
+      path.includes('payment/attachment')) {
+    route.meta.activeMenu = '/htkx/payment'
+  }
+  // 合同相关页面
+  else if (path.includes('contract/add') ||
+           path.includes('contract/edit') ||
+           path.includes('contract/detail') ||
+           path.includes('contract/attachment')) {
+    route.meta.activeMenu = '/htkx/contract'
+  }
+  // 项目相关页面
+  else if (path.includes('list/edit') ||
+           path.includes('list/detail') ||
+           path.includes('list/apply')) {
+    route.meta.activeMenu = '/project/list'
+  }
 }
 
 // 动态路由遍历，验证是否具备权限

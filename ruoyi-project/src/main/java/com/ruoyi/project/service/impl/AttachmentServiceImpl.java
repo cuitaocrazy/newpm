@@ -20,9 +20,11 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.Attachment;
 import com.ruoyi.project.domain.AttachmentLog;
 import com.ruoyi.project.domain.Contract;
+import com.ruoyi.project.domain.Payment;
 import com.ruoyi.project.mapper.AttachmentMapper;
 import com.ruoyi.project.mapper.AttachmentLogMapper;
 import com.ruoyi.project.mapper.ContractMapper;
+import com.ruoyi.project.mapper.PaymentMapper;
 import com.ruoyi.project.service.IAttachmentService;
 
 /**
@@ -45,6 +47,9 @@ public class AttachmentServiceImpl implements IAttachmentService
 
     @Autowired
     private com.ruoyi.project.mapper.ProjectMapper projectMapper;
+
+    @Autowired
+    private PaymentMapper paymentMapper;
 
     /** 允许的文件扩展名 */
     private static final String[] ALLOWED_EXTENSIONS = {
@@ -314,8 +319,12 @@ public class AttachmentServiceImpl implements IAttachmentService
         }
         else if ("payment".equals(businessType))
         {
-            // 款项附件路径，可以根据需要扩展
-            return "款项" + File.separator + businessId;
+            Payment payment = paymentMapper.selectPaymentByPaymentId(businessId);
+            if (payment == null)
+            {
+                return null;
+            }
+            return "款项" + File.separator + businessId + "_" + payment.getPaymentMethodName();
         }
         return null;
     }

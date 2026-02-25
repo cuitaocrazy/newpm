@@ -437,6 +437,8 @@ relations:
     - relatedTable: pm_attachment
       relationType: business_type='payment'
       description: 款项附件管理
+      storagePath: "款项\\{payment_id}_{payment_method_name}\\yyyyMMdd\\{file_name}"
+      example: "款项\\5_预付款10%\\20260211\\6019899602.pdf"
     - relatedTable: pm_attachment_log
       relationType: business_type='payment'
       description: 附件操作日志
@@ -1090,22 +1092,69 @@ customizations:
       fullPath: /htkx/payment
 
     routes:
-      - path: /project/payment/add
+      - path: /htkx/payment/add
+        routeName: PaymentAdd
+        component: project/payment/form
+        hidden: true
         meta:
           title: 新增款项
           activeMenu: /htkx/payment
-      - path: /project/payment/edit/:paymentId(\\d+)
+        description: 新增款项页面，隐藏菜单通过 activeMenu 高亮父级"付款里程碑"菜单
+
+      - path: /htkx/payment/edit/:paymentId(\\d+)
+        routeName: PaymentEdit
+        component: project/payment/form
+        hidden: true
         meta:
           title: 编辑款项
           activeMenu: /htkx/payment
-      - path: /project/payment/detail/:paymentId(\\d+)
+        description: 编辑款项页面，隐藏菜单通过 activeMenu 高亮父级"付款里程碑"菜单
+
+      - path: /htkx/payment/detail/:paymentId(\\d+)
+        routeName: PaymentDetail
+        component: project/payment/detail
+        hidden: true
         meta:
           title: 款项详情
           activeMenu: /htkx/payment
-      - path: /project/payment/attachment/:paymentId(\\d+)
+        description: 款项详情页面，隐藏菜单通过 activeMenu 高亮父级"付款里程碑"菜单
+
+      - path: /htkx/payment/attachment/:paymentId(\\d+)
+        routeName: PaymentAttachment
+        component: project/payment/attachment
+        hidden: true
         meta:
           title: 款项附件
           activeMenu: /htkx/payment
+        description: 款项附件页面，隐藏菜单通过 activeMenu 高亮父级"付款里程碑"菜单
+
+    activeMenuSupport:
+      enabled: true
+      description: 隐藏路由访问时，侧边栏菜单自动高亮
+      implementation:
+        approach: 前端自动设置方案（无需修改数据库）
+        location: ruoyi-ui/src/store/modules/permission.ts
+        function: setActiveMenu(route)
+        mechanism: |
+          在动态路由生成时，自动检测隐藏路由路径，为特定模块的路由自动设置 meta.activeMenu：
+          - 付款里程碑模块：payment/add|edit|detail|attachment → /htkx/payment
+          - 合同管理模块：contract/add|edit|detail|attachment → /htkx/contract
+          - 项目管理模块：list/edit|detail|apply → /project/list
+        advantages:
+          - 无需修改数据库表结构
+          - 无需修改后端代码（实体类、Mapper）
+          - 配置集中管理，易于维护
+          - 部署简单，只需重启前端
+          - 支持优先级：后端配置 > 前端自动设置
+      example:
+        scenario: 用户点击"编辑"按钮，跳转到 /htkx/payment/edit/123
+        process: |
+          1. 前端从后端获取路由数据
+          2. filterAsyncRouter 处理路由，检测到 hidden=true
+          3. setActiveMenu 检测路径包含 'payment/edit'
+          4. 自动设置 route.meta.activeMenu = '/htkx/payment'
+          5. Vue Router 渲染时高亮 /htkx/payment 菜单
+        result: 左侧"付款里程碑"菜单保持高亮状态
 
   # 列表页交互功能
   listPageInteractions:
@@ -1805,6 +1854,7 @@ customizations:
       - 附件列表管理：下载、删除、查看操作日志
       - 金额格式化：合同金额使用千分位格式
       - 字典标签：自动转换字典值为标签显示
+      - 智能存储路径：附件按照"款项\{payment_id}_{payment_method_name}\yyyyMMdd\{file_name}"格式存储，便于文件管理和识别
 
     # 后端支持
     backend:
@@ -1818,6 +1868,19 @@ customizations:
         - contract_amount: 合同金额
         - payment_method_name: 付款方式名称
         - payment_status: 付款状态
+
+      # 附件存储路径配置
+      attachmentStorage:
+        pathPattern: "款项\\{payment_id}_{payment_method_name}\\yyyyMMdd\\{file_name}"
+        example: "款项\\5_预付款10%\\20260211\\6019899602.pdf"
+        description: 付款里程碑附件按照里程碑ID、付款方式名称和日期分层存储
+        implementation: AttachmentServiceImpl.getBusinessFolder("payment", businessId)
+        basePath: D:/ruoyi/uploadPath (配置于 application.yml)
+        components:
+          - payment_id: 付款里程碑ID，用于唯一标识
+          - payment_method_name: 付款方式名称，便于文件管理识别
+          - yyyyMMdd: 上传日期，按日期归档
+          - file_name: 原始文件名
 
 # ============================
 # 实现说明
@@ -1835,6 +1898,8 @@ implementation:
     - 合同名称可点击：跳转到合同详情页，智能返回
     - 详情页面优化：三部分卡片式布局，集成附件列表，动态列宽显示
     - 附件管理页面：展示付款里程碑基本信息，支持附件上传、下载、删除、日志查看
+    - 附件存储优化：附件按照"款项\{payment_id}_{payment_method_name}\yyyyMMdd\{file_name}"格式存储
+    - 菜单高亮支持：新增/编辑/详情/附件页面访问时，左侧"付款里程碑"菜单自动高亮（前端自动设置，无需修改数据库）
     - 表单优化：所有下拉选和日期选择器支持清除，去掉重置按钮简化操作
     - 删除业务规则：有附件时禁止删除，确保数据完整性和可追溯性
     - 导出功能：
@@ -1867,6 +1932,7 @@ implementation:
       - ruoyi-project/src/main/java/com/ruoyi/project/service/IContractService.java（合同服务接口）
       - ruoyi-project/src/main/java/com/ruoyi/project/mapper/ContractMapper.java（合同 Mapper）
       - ruoyi-project/src/main/resources/mapper/project/ContractMapper.xml（主子表查询 SQL）
+      - ruoyi-project/src/main/java/com/ruoyi/project/service/impl/AttachmentServiceImpl.java（附件服务实现，包含存储路径逻辑）
     frontend:
       - ruoyi-ui/src/views/project/payment/index.vue（列表页，包含 handleExport 方法）
       - ruoyi-ui/src/views/project/payment/form.vue（新增/编辑页）
@@ -1875,3 +1941,6 @@ implementation:
       - ruoyi-ui/src/api/project/payment.js（API 函数）
       - ruoyi-ui/src/router/index.ts（路由配置）
       - ruoyi-ui/src/utils/request.ts（download 方法实现）
+      - ruoyi-ui/src/store/modules/permission.ts（动态路由生成，包含 setActiveMenu 函数实现菜单高亮）
+    database:
+      - pm-sql/init/02_menu_data.sql（菜单数据，包含付款里程碑菜单配置）

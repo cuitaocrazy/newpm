@@ -51,7 +51,7 @@ test.describe('项目管理功能测试', () => {
 
     // 等待登录成功，跳转到首页
     await page.waitForURL(`${BASE_URL}/index`);
-    await expect(page).toHaveTitle(/若依管理系统/);
+    await expect(page).toHaveTitle(/项目管理系统/);
   });
 
   test('场景1：立项申请 - 创建新项目', async ({ page }) => {
