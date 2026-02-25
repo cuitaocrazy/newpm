@@ -51,8 +51,9 @@ COPY . .
 
 # --- Build-time source modifications for one-jar deployment ---
 
-# 1. SecurityConfig: add static resource patterns to permitAll
-RUN sed -i '/requestMatchers(HttpMethod\.GET/c\                    .requestMatchers(HttpMethod.GET, "/", "/*.html", "/***.html", "/***.css", "/***.js", "/***.ico", "/***.png", "/***.jpg", "/***.svg", "/***.woff", "/***.woff2", "/***.ttf", "/***.eot", "/assets/**", "/static/**", "/profile/**").permitAll()' \
+# 1. SecurityConfig: permit all GET requests so SPA routes reach SpaController;
+#    API data endpoints remain protected by @PreAuthorize method-level security
+RUN sed -i '/requestMatchers(HttpMethod\.GET/c\                    .requestMatchers(HttpMethod.GET, "/**").permitAll()' \
     ruoyi-framework/src/main/java/com/ruoyi/framework/config/SecurityConfig.java
 
 # 2. Remove SysIndexController (its "/" mapping conflicts with index.html)
