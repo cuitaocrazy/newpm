@@ -347,7 +347,7 @@
   </div>
 </template>
 
-<script setup name="Project">
+<script setup name="ProjectList">
 import { listProject, delProject, getDeptTree } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { listUser } from "@/api/system/user"
