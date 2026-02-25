@@ -115,7 +115,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                c.contract_amount, c.contract_status
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
-        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id
+        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id AND pcr.del_flag = '0' AND pcr.rel_status = '有效'
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
         <where>
             p.del_flag = '0'
