@@ -124,24 +124,7 @@
       </el-form-item>
     </el-form>
 
-    <!-- 隐藏的 UserSelect 组件用于加载所有用户（显示参与人员需要） -->
-    <user-select
-      ref="allUsersSelectRef"
-      v-model="hiddenAllUsersValue"
-      style="display: none"
-    />
-
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['project:project:remove']"
-        >删除</el-button>
-      </el-col>
       <el-col :span="1.5">
         <el-button
           type="warning"
@@ -154,9 +137,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="projectList" :height="tableHeight" @selection-change="handleSelectionChange"
+    <el-table v-loading="loading" :data="projectList" :height="tableHeight"
               :row-class-name="tableRowClassName">
-      <el-table-column type="selection" width="55" align="center" :selectable="checkSelectable" />
       <el-table-column label="序号" width="55" align="center">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
@@ -186,8 +168,8 @@
       </el-table-column>
       <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
-          <span v-else>{{ scope.row.projectBudget }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.projectBudget) }}</span>
+          <span v-else>{{ formatAmount(scope.row.projectBudget) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
@@ -204,8 +186,8 @@
       </el-table-column>
       <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
-          <span v-else>{{ scope.row.contractAmount }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.contractAmount) }}</span>
+          <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
@@ -221,8 +203,8 @@
       </el-table-column>
       <el-table-column label="确认金额" align="center" prop="confirmAmount" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
-          <span v-else>{{ scope.row.confirmAmount }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.confirmAmount) }}</span>
+          <span v-else>{{ formatAmount(scope.row.confirmAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
@@ -379,12 +361,8 @@ const { industry, sys_yjqy, sys_ndgl, sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sy
 const projectList = ref([])
 const loading = ref(true)
 const showSearch = ref(true)
-const ids = ref([])
-const single = ref(true)
-const multiple = ref(true)
 const total = ref(0)
 const tableHeight = ref(600)
-
 // 审核对话框
 const approvalDialogVisible = ref(false)
 const currentProject = ref({})
@@ -410,8 +388,7 @@ const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
 // 使用 UserSelect 组件的 ref 来获取用户列表
 const projectManagerSelectRef = ref(null)
 const marketManagerSelectRef = ref(null)
-const allUsersSelectRef = ref(null)  // 用于显示参与人员
-const hiddenAllUsersValue = ref(null)  // 隐藏的 UserSelect 绑定值
+const allUsersList = ref([])  // 所有用户列表，用于显示参与人员
 
 const data = reactive({
   queryParams: {
@@ -537,13 +514,19 @@ function getUserName(userId, userList) {
 function getParticipantsNames(participants) {
   if (!participants) return '-'
   const userIds = participants.split(',').map(id => parseInt(id.trim()))
-  // 使用 ref 访问所有用户列表
-  const allUsers = allUsersSelectRef.value?.userOptions || []
   const names = userIds.map(userId => {
-    const user = allUsers.find(u => u.userId === userId)
-    return user ? user.nickName : userId
+    const user = allUsersList.value.find(u => u.userId === userId)
+    return user ? user.nickName : String(userId)
   }).filter(name => name)
   return names.length > 0 ? names.join(', ') : '-'
+}
+
+/** 金额千分位格式化 */
+function formatAmount(value) {
+  if (value === null || value === undefined || value === '') return '-'
+  const num = Number(value)
+  if (isNaN(num)) return '-'
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 /** 项目名称自动完成 */
@@ -571,20 +554,6 @@ function handleQuery() {
 function resetQuery() {
   proxy.resetForm("queryRef")
   handleQuery()
-}
-
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  // 过滤掉合计行
-  const validSelection = selection.filter(item => !item.isSummaryRow)
-  ids.value = validSelection.map(item => item.projectId)
-  single.value = validSelection.length != 1
-  multiple.value = !validSelection.length
-}
-
-/** 判断行是否可选 */
-function checkSelectable(row) {
-  return !row.isSummaryRow
 }
 
 /** 表格行类名 */
@@ -644,9 +613,8 @@ function handleAttachment(row) {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const projectIds = row.projectId || ids.value
-  proxy.$modal.confirm('是否确认删除项目管理编号为"' + projectIds + '"的数据项？').then(function() {
-    return delProject(projectIds)
+  proxy.$modal.confirm('是否确认删除项目管理编号为"' + row.projectId + '"的数据项？').then(function() {
+    return delProject(row.projectId)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
@@ -714,6 +682,10 @@ function calcTableHeight() {
 onMounted(() => {
   calcTableHeight()
   window.addEventListener('resize', calcTableHeight)
+  // 加载所有用户用于参与人员名称显示
+  listUser({ pageNum: 1, pageSize: 1000 }).then(res => {
+    allUsersList.value = res.rows || []
+  })
 })
 
 onUnmounted(() => {

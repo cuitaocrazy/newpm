@@ -21,8 +21,8 @@ RUN npm ci
 
 COPY ruoyi-ui/ ./
 
-# For one-jar deployment, API calls go to the same origin (no prefix)
-RUN sed -i "s|VITE_APP_BASE_API = '/prod-api'|VITE_APP_BASE_API = ''|" .env.production
+# For one-jar deployment, API calls go to the same origin (no /prod-api prefix)
+RUN sed -i "s|VITE_APP_BASE_API = '/prod-api'|VITE_APP_BASE_API = '/'|" .env.production
 
 RUN npm run build:prod
 

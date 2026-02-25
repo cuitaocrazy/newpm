@@ -105,6 +105,8 @@ npm run build:prod       # Production build → dist/
 npm run build:stage      # Staging build
 ```
 
+> **Shortcut**: From the project root, `npm run dev`, `npm run build`, and `npm run preview` are also available (npm workspaces proxy to `ruoyi-ui/`).
+
 ### Code Generation CLI (ruoyi-gen-cli)
 
 ```bash
@@ -299,14 +301,15 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `industry` - 行业分类
 - `sys_yjqy` - 区域分类 (一级区域, 二级区域)
 - `sys_xmfl` - 项目分类 (软件开发类, 硬件销售类, 系统集成类, 开发人力外包, 运维人力外包, 测试人力外包)
-- `sys_xmjd` - 项目阶段 (需求分析, 设计阶段, 开发阶段, 部署阶段, 测试阶段, 运维阶段)
+- `sys_xmjd` - 项目阶段 (0=其他, 1=售前支持, 2=需求及设计, 3=开发及自测, 4=验收测试, 5=系统投产, 6=免维期维护, 7=项目结项)
 - `sys_yszt` - 验收状态
 - `sys_xmzt` - 项目状态 (未启动, 已启动, 已测试, 已投产, 已结项, 已关闭)
 - `sys_htlx` - 合同类型
 - `sys_htzt` - 合同状态 (未签署, 已签署)
 - `sys_fkzt` - 付款状态 (未开未付, 已提交验收材料, 验收材料已审核, 待通知开票, 已通知)
 - `sys_wdlx` - 文档类型
-- `sys_qrzt` - 确认状态 (未确认, 待确认, 已确认, 无法确认)
+- `sys_qrzt` - 确认状态 (1=1-未确认, 2=2-待确认收入, 3=3-已确认收入, 4=4-无法确认)
+- `sys_srqrzt` - 收入确认状态 (0=未确认, 1=已确认, 2=待确认, 3=已确认收入)
 
 **Controllers:**
 
@@ -781,7 +784,7 @@ Please confirm if you want me to update the configuration file."
 
 This ensures the configuration file stays synchronized with the actual implementation and serves as accurate documentation for future code generation.
 
-## Code Generation Workflow (ruoyi-gen-cli)
+## Code Generation CLI Details (ruoyi-gen-cli)
 
 This project includes a custom CLI-based code generator that generates CRUD scaffolding from DDL without requiring a running database.
 
