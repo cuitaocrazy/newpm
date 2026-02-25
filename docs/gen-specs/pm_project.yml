@@ -368,6 +368,51 @@ basicInfo:
           * 修复后：显示 "张三, 李四, 王五"（用户昵称）
         - 关联修复：同时修复了公司收入确认和团队收入确认的相同问题
 
+    24. 项目列表批量删除功能移除 (2026-02-24完成)
+        - 移除工具栏"删除"按钮（批量删除）
+        - 移除表格 checkbox 选择列
+        - 移除 @selection-change 事件绑定和 handleSelectionChange()、checkSelectable() 函数
+        - 移除 ids、single、multiple refs
+        - 保留操作列中的行级"删除"按钮（单行删除，带确认弹框）
+        - 实现文件：ruoyi-ui/src/views/project/project/index.vue
+
+    25. 参与人员显示方案重构 (2026-02-24完成)
+        - 问题描述：隐藏 UserSelect 组件方案不可靠（display:none 时组件可能未正常挂载）
+        - 方案变更：
+          * 旧方案：放置隐藏 <user-select> 组件，通过 allUsersSelectRef.value?.userOptions 获取用户列表
+          * 新方案：onMounted 直接调用 listUser({ pageNum: 1, pageSize: 1000 }) API 加载全量用户
+        - 修改内容：
+          * 移除隐藏的 <user-select ref="allUsersSelectRef" style="display:none"> 组件
+          * 移除 allUsersSelectRef、hiddenAllUsersValue refs
+          * 新增 allUsersList ref（存储 API 返回的用户数组 SysUser[]）
+          * onMounted 中调用 listUser API 填充 allUsersList
+          * getParticipantsNames() 改为从 allUsersList.value 中查昵称
+        - 实现文件：ruoyi-ui/src/views/project/project/index.vue
+
+    26. 项目列表金额千分位格式化 (2026-02-24完成)
+        - 需求：列表页金额字段显示千分位分隔符
+        - 新增函数 formatAmount(value)：
+          * 实现：num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          * 示例：1234567.89 → "1,234,567.89"；空值/非数字返回 '-'
+        - 应用字段：项目预算 (projectBudget)、合同金额 (contractAmount)、确认金额 (confirmAmount)
+        - 合计行（isSummaryRow）同样格式化显示
+        - 预估工作量/实际人天（人天单位）不格式化
+        - 实现文件：ruoyi-ui/src/views/project/project/index.vue
+
+    27. 生产部署 Dockerfile 关键修复 (2026-02-24完成)
+        - 修复1：导出接口 URL 路径三重重复问题
+          * 问题：VITE_APP_BASE_API='' 时，axios 以相对路径解析 'project/project/export'，
+                  浏览器在 /project/project 页面下将其解析为 /project/project/project/export
+          * 修复：将构建时注入改为 VITE_APP_BASE_API = '/'，axios 正确拼出绝对路径
+        - 修复2：token 超时后前端路由返回 401 JSON 而非登录页
+          * 问题：GET /index 等 SPA 前端路由无 token 时被 Spring Security 拦截，
+                  unauthorizedHandler 返回 JSON {"code":401} 而非转发 index.html
+          * 修复：SecurityConfig 中将 GET 请求改为 GET /** permitAll()，
+                  SpaController 接管所有无扩展名 GET 请求并转发到 index.html，
+                  Vue 加载后在客户端检查 token 并跳转到 /login；
+                  API 接口数据安全由 @PreAuthorize 方法级注解独立保护
+        - 实现文件：Dockerfile
+
 # ============================
 # Tab 2: 字段信息
 # ============================
@@ -2481,3 +2526,92 @@ customizations:
         paginationHeight: "50px"
         padding: "120px"
     notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部，提升用户体验。关键是表格设置固定高度而不是自适应内容高度。"
+
+  list_batch_delete_removal:
+    intent: "移除项目列表工具栏批量删除功能，仅保留行级删除"
+    date: "2026-02-24"
+    component:
+      type: "custom"
+      spec: |
+        移除内容：
+        1. 工具栏 el-button（type="danger" :disabled="multiple" @click="handleDelete"）
+        2. 表格 el-table-column（type="selection" :selectable="checkSelectable"）
+        3. el-table 上的 @selection-change="handleSelectionChange" 绑定
+
+        移除的 JS 代码：
+        - refs: ids, single, multiple
+        - functions: handleSelectionChange(), checkSelectable()
+        - handleDelete() 简化：直接使用 row.projectId，去掉 ids.value 回退逻辑
+
+        保留内容：
+        - 操作列"删除"按钮（单行）：@click="handleDelete(scope.row)"
+        - handleDelete(row) 函数（仅处理单行）
+    bindTo: "list_toolbar"
+    service: null
+    notes: "避免误操作批量删除重要项目数据；如需恢复批量删除，参照 git 历史还原上述代码"
+
+  list_participants_display:
+    intent: "参与人员昵称显示：onMounted 直接调用 listUser API，替代不可靠的隐藏 UserSelect 方案"
+    date: "2026-02-24"
+    component:
+      type: "custom"
+      spec: |
+        当前实现（2026-02-24）：
+        const allUsersList = ref([])
+
+        onMounted(() => {
+          listUser({ pageNum: 1, pageSize: 1000 }).then(res => {
+            allUsersList.value = res.rows || []
+          })
+        })
+
+        function getParticipantsNames(participants) {
+          if (!participants) return '-'
+          const userIds = participants.split(',').map(id => parseInt(id.trim()))
+          const names = userIds.map(userId => {
+            const user = allUsersList.value.find(u => u.userId === userId)
+            return user ? user.nickName : String(userId)
+          }).filter(name => name)
+          return names.length > 0 ? names.join(', ') : '-'
+        }
+
+        废弃方案（勿恢复）：
+        - 放置 <user-select ref="allUsersSelectRef" style="display:none">
+        - 通过 allUsersSelectRef.value?.userOptions 访问用户列表
+        - 问题：隐藏组件在某些情况下未完成挂载，userOptions 为空导致显示 ID
+    bindTo: "participants_column"
+    service:
+      endpoint: "GET /system/user/list"
+      source: "SysUserController.list"
+      params: ["pageNum: 1", "pageSize: 1000"]
+      returns: "{ rows: SysUser[], total: number }"
+      newApi: false
+    notes: "pageSize=1000 覆盖绝大多数企业规模；超过1000人时需调大或改为分批加载"
+
+  list_amount_formatting:
+    intent: "列表页金额字段千分位格式化"
+    date: "2026-02-24"
+    component:
+      type: "custom"
+      spec: |
+        新增工具函数 formatAmount(value)：
+        function formatAmount(value) {
+          if (value === null || value === undefined || value === '') return '-'
+          const num = Number(value)
+          if (isNaN(num)) return '-'
+          return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        }
+
+        应用字段（列表页 index.vue）：
+        - 项目预算 (projectBudget)
+        - 合同金额 (contractAmount)
+        - 确认金额 (confirmAmount)
+
+        合计行（isSummaryRow=true）同样通过 formatAmount() 格式化。
+
+        不格式化字段：
+        - 预估工作量 (estimatedWorkload) — 单位：人天
+        - 实际人天 (actualWorkload) — 单位：人天
+    bindTo: ["project_budget", "contract_amount", "confirm_amount"]
+    service: null
+    notes: "使用 en-US locale 确保跨浏览器/操作系统输出一致的逗号千分位格式"
