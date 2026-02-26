@@ -352,9 +352,8 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
-import { listUser } from "@/api/system/user"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
 
@@ -714,8 +713,8 @@ onMounted(() => {
   calcTableHeight()
   window.addEventListener('resize', calcTableHeight)
   // 加载所有用户用于参与人员名称显示
-  listUser({ pageNum: 1, pageSize: 1000 }).then(res => {
-    allUsersList.value = res.rows || []
+  getUsersByPost().then(res => {
+    allUsersList.value = res.data || []
   })
 })
 
