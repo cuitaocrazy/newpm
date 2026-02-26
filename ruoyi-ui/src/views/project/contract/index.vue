@@ -164,9 +164,9 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="客户名称" align="center" prop="customerId" min-width="140" show-overflow-tooltip v-if="columns.customerId.visible">
+      <el-table-column label="客户名称" align="center" prop="customerName" min-width="140" show-overflow-tooltip v-if="columns.customerId.visible">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ getCustomerName(scope.row.customerId) }}</span>
+          <span v-if="!scope.row.isSummary">{{ scope.row.customerName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip v-if="columns.deptId.visible">
@@ -533,7 +533,7 @@ function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === '') return ''
   const num = parseFloat(amount)
   if (isNaN(num)) return amount
-  return num.toFixed(2)
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 /** 序号计算方法 */

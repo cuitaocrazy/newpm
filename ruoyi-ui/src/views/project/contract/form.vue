@@ -132,7 +132,7 @@
                 <el-table-column prop="projectName" label="项目名称" min-width="200" />
                 <el-table-column prop="projectBudget" label="预算金额（元）" width="150" align="right">
                   <template #default="scope">
-                    {{ scope.row.projectBudget ? Number(scope.row.projectBudget).toFixed(2) : '0.00' }}
+                    {{ formatAmount(scope.row.projectBudget) || '0.00' }}
                   </template>
                 </el-table-column>
                 <el-table-column prop="estimatedWorkload" label="预估工作量（人天）" width="160" align="right">
@@ -212,14 +212,14 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="不含税金额" prop="amountNoTax">
-              <el-input v-model="form.amountNoTax" placeholder="自动计算" :disabled="true">
+              <el-input :value="formatAmount(form.amountNoTax)" placeholder="自动计算" :disabled="true">
                 <template #append>元</template>
               </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="税金" prop="taxAmount">
-              <el-input v-model="form.taxAmount" placeholder="自动计算" :disabled="true">
+              <el-input :value="formatAmount(form.taxAmount)" placeholder="自动计算" :disabled="true">
                 <template #append>元</template>
               </el-input>
             </el-form-item>
@@ -361,6 +361,14 @@ const data = reactive({
 })
 
 const { form, rules } = toRefs(data)
+
+/** 格式化金额为千分位，保留2位小数（仅用于显示） */
+function formatAmount(amount) {
+  if (amount === null || amount === undefined || amount === '') return ''
+  const num = parseFloat(amount)
+  if (isNaN(num)) return ''
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 /** 合同编号唯一性校验 */
 async function validateContractCode(rule, value, callback) {

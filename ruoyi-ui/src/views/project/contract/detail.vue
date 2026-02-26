@@ -346,7 +346,7 @@ function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === '') return ''
   const num = parseFloat(amount)
   if (isNaN(num)) return amount
-  return num.toFixed(2)
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 /** 返回按钮 */
