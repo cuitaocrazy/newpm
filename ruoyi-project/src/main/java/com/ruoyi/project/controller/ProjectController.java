@@ -48,7 +48,7 @@ public class ProjectController extends BaseController
     /**
      * 查询项目管理列表
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:query')")
     @GetMapping("/list")
     public TableDataInfo list(Project project)
     {
@@ -134,7 +134,7 @@ public class ProjectController extends BaseController
      * 获取用户列表（按岗位过滤）
      * @param postCode 岗位编码：pm-项目经理, scjl-市场经理, xsfzr-销售负责人
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:contract:list,revenue:team:list')")
     @GetMapping("/users")
     public AjaxResult getUsersByPost(@RequestParam(required = false) String postCode)
     {
@@ -156,7 +156,7 @@ public class ProjectController extends BaseController
      * 获取客户列表（支持搜索）
      * @param customerSimpleName 客户简称（模糊搜索）
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:payment:list')")
     @GetMapping("/customers")
     public AjaxResult getCustomers(@RequestParam(required = false) String customerSimpleName)
     {
@@ -177,7 +177,7 @@ public class ProjectController extends BaseController
     /**
      * 获取部门树（三级及以下机构）
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:payment:list,revenue:company:list,revenue:team:query')")
     @GetMapping("/deptTree")
     public AjaxResult getDeptTree()
     {
@@ -275,7 +275,7 @@ public class ProjectController extends BaseController
     /**
      * 根据部门查询项目列表（用于合同关联，可排除已关联的项目）
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:add,project:contract:edit')")
     @GetMapping("/listByDept")
     public AjaxResult listByDept(Long deptId, Long excludeContractId)
     {
@@ -315,7 +315,7 @@ public class ProjectController extends BaseController
      * @param projectName 项目名称（模糊搜索）
      * @return 返回精简字段：projectId, projectName, projectCode
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list')")
     @GetMapping("/search")
     public AjaxResult searchProjects(@RequestParam(required = false) String projectName)
     {
