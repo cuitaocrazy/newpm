@@ -139,8 +139,11 @@ insert into sys_dict_data values(145,3,'3-开发及自测','3','sys_xmjd',NULL,'
 insert into sys_dict_data values(146,4,'4-验收测试','4','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:29:33','',NULL,NULL);
 insert into sys_dict_data values(147,5,'5-系统投产','5','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:29:42','admin','2026-01-15 17:30:59',NULL);
 insert into sys_dict_data values(148,6,'6-免维期维护','6','sys_xmjd',NULL,'default','N','0','admin','2026-01-15 17:30:05','',NULL,NULL);
-insert into sys_dict_data values(149,1,'主合同','1','sys_htlx',NULL,'primary','N','0','admin','2026-01-15 17:32:37','',NULL,NULL);
-insert into sys_dict_data values(150,2,'补充协议','2','sys_htlx',NULL,'info','N','0','admin','2026-01-15 17:32:46','',NULL,NULL);
+insert into sys_dict_data values(149,1,'1-开发项目类','1','sys_htlx',NULL,'default','N','0','admin','2026-01-15 17:32:37','admin',sysdate(),NULL);
+insert into sys_dict_data values(150,2,'5-订购类','5','sys_htlx',NULL,'default','N','0','admin','2026-01-15 17:32:46','admin',sysdate(),NULL);
+insert into sys_dict_data values(151,3,'3-框架协议类','3','sys_htlx',NULL,'default','N','0','admin',sysdate(),'',NULL,NULL);
+insert into sys_dict_data values(152,4,'4-资源池合同','4','sys_htlx',NULL,'default','N','0','admin',sysdate(),'',NULL,NULL);
+insert into sys_dict_data values(236,5,'2-应用维护类','2','sys_htlx',NULL,'default','N','0','admin',sysdate(),'',NULL,NULL);
 insert into sys_dict_data values(154,3,'华中区域','HZQY','sys_yjqy',NULL,'default','N','0','admin','2026-01-16 15:50:55','admin','2026-01-16 15:53:06',NULL);
 insert into sys_dict_data values(155,4,'华南区域','HNQY','sys_yjqy',NULL,'default','N','0','admin','2026-01-16 15:51:11','',NULL,NULL);
 insert into sys_dict_data values(156,5,'华东区域','HDQY','sys_yjqy',NULL,'default','N','0','admin','2026-01-16 15:51:28','',NULL,NULL);
