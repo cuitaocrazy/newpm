@@ -59,7 +59,7 @@ public class AttachmentController extends BaseController
     /**
      * 上传附件
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:attachment:add,project:contract:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:add,project:contract:add,project:contract:edit')")
     @Log(title = "附件管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult upload(
@@ -86,7 +86,7 @@ public class AttachmentController extends BaseController
     /**
      * 删除附件
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:attachment:remove,project:contract:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:remove,project:contract:edit')")
     @Log(title = "附件管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{attachmentId}")
     public AjaxResult remove(@PathVariable Long attachmentId)
@@ -97,7 +97,7 @@ public class AttachmentController extends BaseController
     /**
      * 查询附件操作日志
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:attachment:log,project:contract:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:log,project:contract:query')")
     @GetMapping("/log")
     public AjaxResult log(
             @RequestParam("businessType") String businessType,
