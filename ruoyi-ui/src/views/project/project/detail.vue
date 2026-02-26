@@ -343,13 +343,13 @@
           <div class="text-content">{{ form.remark || '-' }}</div>
         </el-descriptions-item>
         <el-descriptions-item label="创建人">
-          {{ form.createBy || '-' }}
+          {{ getUserNickName(form.createBy) }}
         </el-descriptions-item>
         <el-descriptions-item label="创建时间">
           {{ form.createTime || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="更新人">
-          {{ form.updateBy || '-' }}
+          {{ getUserNickName(form.updateBy) }}
         </el-descriptions-item>
         <el-descriptions-item label="更新时间">
           {{ form.updateTime || '-' }}
@@ -467,9 +467,16 @@ const paymentListWithSummary = computed(() => {
 
 // 加载所有用户（用于参与人员显示）
 function loadAllUsers() {
-  listUser({}).then(response => {
+  listUser({ pageNum: 1, pageSize: 1000 }).then(response => {
     allUsers.value = response.rows || []
   })
+}
+
+// 根据登录名获取昵称
+function getUserNickName(loginName) {
+  if (!loginName) return '-'
+  const user = allUsers.value.find(u => u.userName === loginName)
+  return user ? user.nickName : loginName
 }
 
 // 返回列表
