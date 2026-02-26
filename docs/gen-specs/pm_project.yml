@@ -2669,3 +2669,28 @@ customizations:
     bindTo: ["project_budget", "contract_amount", "confirm_amount"]
     service: null
     notes: "使用 en-US locale 确保跨浏览器/操作系统输出一致的逗号千分位格式"
+
+# =============================================
+# 2026-02-26 改动记录
+# =============================================
+changes_2026_02_26:
+  - feature: 项目详情页创建人/更新人显示昵称
+    description: >
+      后端 ProjectMapper.xml 中通过 LEFT JOIN sys_user 查询 create_by/update_by 对应的 nick_name。
+      前端 detail.vue 展示 createByName/updateByName 字段而非原始登录名。
+
+  - feature: 项目详情页部门名称层级显示
+    description: >
+      前端 detail.vue 中 getDeptName() 函数遍历部门树拼接上级名称，
+      格式为"一级/二级/三级"，通过 deptOptions（lazyTree）动态构建。
+
+  - feature: 项目列表按更新时间降序排列
+    description: >
+      ProjectMapper.xml 的 selectProjectList 查询末尾改为：
+      ORDER BY COALESCE(p.update_time, p.create_time) DESC
+      无更新时间的记录回退使用创建时间，保证列表始终有序。
+
+  - feature: 项目名称列换行显示
+    description: >
+      index.vue 项目名称列改为 align=left, min-width=220，
+      单元格内容加 style="word-break:break-all;white-space:normal" 实现自动换行。

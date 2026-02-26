@@ -1036,3 +1036,32 @@ implementation_summary:
         paginationHeight: "50px"
         padding: "120px"
     notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部。"
+
+# =============================================
+# 2026-02-26 改动记录
+# =============================================
+changes_2026_02_26:
+  - feature: 列表显示优化（金额格式、更新人昵称、项目名称换行）
+    description: >
+      index.vue 中金额字段统一 formatAmount() 千分位+2位小数格式；
+      更新人改为显示昵称（后端 JOIN sys_user 取 nick_name）；
+      项目名称列改为 align=left, min-width=220，自动换行显示。
+
+  - feature: 收入确认状态字典简化
+    description: >
+      sys_srqrzt 字典由4个值精简为2个：未确认(0)、已确认(1)。
+      删除多余的待确认(2)和已确认收入(3)，并对存量数据执行迁移：'2'→'0'，'3'→'1'。
+      同步更新 pm-sql/init/01_tables_data.sql 及运行数据库。
+
+  - bugfix: 编辑弹窗项目名称显示为ID
+    description: >
+      handleUpdate() 在对话框未打开时 projectSelectRef.value 为 null，
+      导致项目选项无法注入，组件显示原始 projectId 而非项目名称。
+      修复方案：先执行 open.value = true 打开对话框，
+      再通过 nextTick(() => { projectSelectRef.value.projectOptions.push(...) }) 等组件挂载后注入。
+
+  - bugfix: ORDER BY 字段歧义报错
+    description: >
+      TeamRevenueConfirmationMapper.xml 中 selectTeamRevenueConfirmationList 的
+      ORDER BY COALESCE(update_time, create_time) DESC 未加表别名，
+      多表 JOIN 后产生歧义报错，修正为 ORDER BY COALESCE(t.update_time, t.create_time) DESC。

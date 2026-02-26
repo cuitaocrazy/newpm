@@ -1379,3 +1379,22 @@ implementation_summary:
         paginationHeight: "50px"
         padding: "120px"
     notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部。"
+
+# =============================================
+# 2026-02-26 改动记录
+# =============================================
+changes_2026_02_26:
+  - feature: 金额字段统一千分位+2位小数格式
+    description: >
+      index.vue 中公司收入确认列表的金额字段（confirmAmount、contractAmount 等）
+      统一通过 formatAmount() 函数展示，格式同合同管理。
+
+  - feature: 更新人显示昵称
+    description: >
+      后端 ProjectMapper.xml（收入确认视图查询）中 LEFT JOIN sys_user 取 nick_name
+      作为 updateByName 字段返回，前端列表页展示昵称而非登录名。
+
+  - feature: 项目名称列换行显示
+    description: >
+      index.vue 项目名称列改为 align=left, min-width=220，
+      单元格内容加 style="word-break:break-all;white-space:normal" 实现自动换行。

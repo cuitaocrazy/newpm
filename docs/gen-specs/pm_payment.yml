@@ -1944,3 +1944,32 @@ implementation:
       - ruoyi-ui/src/store/modules/permission.ts（动态路由生成，包含 setActiveMenu 函数实现菜单高亮）
     database:
       - pm-sql/init/02_menu_data.sql（菜单数据，包含付款里程碑菜单配置）
+
+# =============================================
+# 2026-02-26 改动记录
+# =============================================
+changes_2026_02_26:
+  - feature: 付款里程碑查询条件优化
+    description: >
+      index.vue 主查询区前4个条件调整为：合同编号、合同状态、合同所属团队、预计回款季度。
+      新增合同所属团队（el-tree-select，过滤三级及以下部门，调用 listDept API）。
+      预计回款季度从"更多"折叠区提升至主查询区。
+      客户名称改为 el-autocomplete 支持模糊匹配（调用 listCustomer API）。
+
+  - bugfix: 付款里程碑列表按更新时间降序排列
+    description: >
+      PaymentMapper.xml 的 selectPaymentList 查询末尾改为：
+      ORDER BY COALESCE(p.update_time, p.create_time) DESC
+
+  - bugfix: 项目详情/合同详情页里程碑名称字段名错误
+    description: >
+      project/project/detail.vue 和 project/contract/detail.vue 中，
+      付款里程碑表格的"里程碑名称"列 prop 从错误的 paymentName 修正为 paymentMethodName，
+      与后端 Payment.java 字段名一致。
+
+  - bugfix: 项目详情/合同详情页预计回款季度格式不一致
+    description: >
+      detail.vue 中预计回款季度列原用 {{ scope.row.expectedQuarter }} 显示原始值，
+      改为 <dict-tag :options="sys_jdgl" :value="scope.row.expectedQuarter"/>，
+      与付款里程碑管理列表页显示格式一致。
+      同步在 useDict 中引入 sys_jdgl 字典。

@@ -2422,3 +2422,38 @@ implementation:
       - deptId: 不导出ID，导出 deptName
       - reservedField1~5: 不导出备用域字段
 
+
+# =============================================
+# 2026-02-26 改动记录
+# =============================================
+changes_2026_02_26:
+  - feature: 合同金额字段统一千分位+2位小数格式
+    description: >
+      index.vue / detail.vue 中合同金额(contractAmount)、已收款(receivedAmount)、
+      剩余金额(remainingAmount)等金额字段，统一通过 formatAmount() 函数展示，
+      格式：num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })。
+
+  - feature: 合同编号改为非必填
+    description: >
+      form.vue 中 contractCode 字段移除 required 校验规则。
+      后端 Contract.java 中 @NotBlank 注解同步移除。
+
+  - feature: 移除合同签订日期必填校验
+    description: >
+      form.vue 中 contractSignDate 字段的 rules 中 required: true 改为 required: false。
+
+  - feature: 合同名称列换行显示
+    description: >
+      index.vue 合同名称列改为 align=left, min-width=260，
+      el-link 外层 div 加 style="word-break:break-all;white-space:normal" 实现自动换行。
+
+  - feature: 合同列表按更新时间降序排列
+    description: >
+      ContractMapper.xml 的 selectContractList 查询末尾改为：
+      ORDER BY COALESCE(c.update_time, c.create_time) DESC
+
+  - feature: 合同类型字典数据修复
+    description: >
+      sys_htlx 字典原只有2个值导致合同类型显示空白，补全旧库5个类型值：
+      1=1-开发项目类, 2=2-应用维护类, 3=3-框架协议类, 4=4-资源池合同, 5=5-订购类。
+      同步更新 pm-sql/init/01_tables_data.sql。
