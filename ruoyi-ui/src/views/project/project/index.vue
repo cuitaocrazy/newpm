@@ -145,7 +145,11 @@
           <span v-else>{{ scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip v-if="columns.projectName.visible" />
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="220" v-if="columns.projectName.visible">
+        <template #default="scope">
+          <div v-if="!scope.row.isSummaryRow" class="project-name-cell">{{ scope.row.projectName }}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip v-if="columns.projectDept.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getDeptName(scope.row.projectDept) }}</span>
@@ -766,5 +770,12 @@ loadDeptTree()
 
 ::v-deep .summary-row:hover > td {
   background-color: #f5f7fa !important;
+}
+
+.project-name-cell {
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.5;
+  text-align: left;
 }
 </style>

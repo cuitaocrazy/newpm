@@ -141,15 +141,17 @@
           <span v-else>{{ (queryParams.pageNum - 1) * queryParams.pageSize + scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同名称" align="center" prop="contractName" min-width="180" show-overflow-tooltip fixed="left" v-if="columns.contractName.visible">
+      <el-table-column label="合同名称" align="left" header-align="center" prop="contractName" min-width="260" fixed="left" v-if="columns.contractName.visible">
         <template #default="scope">
-          <el-link
-            v-if="!scope.row.isSummary"
-            type="primary"
-            @click="handleView(scope.row)"
-            @contextmenu.prevent="handleContextMenu($event, scope.row)">
-            {{ scope.row.contractName }}
-          </el-link>
+          <div v-if="!scope.row.isSummary" class="contract-name-cell">
+            <el-link
+              class="contract-name-link"
+              type="primary"
+              @click="handleView(scope.row)"
+              @contextmenu.prevent="handleContextMenu($event, scope.row)">
+              {{ scope.row.contractName }}
+            </el-link>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="关联项目" align="left" prop="projectList" min-width="160" v-if="columns.projectList.visible">
@@ -806,6 +808,16 @@ getList()
   :deep(.el-pagination) {
     margin-top: 15px;
     text-align: right;
+  }
+
+  .contract-name-cell {
+    .contract-name-link {
+      word-break: break-all;
+      white-space: normal;
+      line-height: 1.5;
+      text-align: left;
+      display: inline-block;
+    }
   }
 }
 </style>
