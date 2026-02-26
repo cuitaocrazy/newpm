@@ -133,7 +133,7 @@ public class CustomerController extends BaseController
     /**
      * 查询所有客户列表（用于下拉选择）
      */
-    @PreAuthorize("@ss.hasPermi('project:customer:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:customer:list,project:contract:list,project:contract:add,project:contract:edit,project:contract:query,project:payment:list')")
     @GetMapping("/listAll")
     public AjaxResult listAll()
     {
