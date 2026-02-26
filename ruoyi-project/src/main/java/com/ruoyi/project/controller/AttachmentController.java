@@ -36,7 +36,7 @@ public class AttachmentController extends BaseController
     /**
      * 查询附件列表
      */
-    @PreAuthorize("@ss.hasPermi('project:attachment:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:list,project:project:query,project:contract:list,project:contract:query')")
     @GetMapping("/list")
     public AjaxResult list(
             @RequestParam("businessType") String businessType,
@@ -49,7 +49,7 @@ public class AttachmentController extends BaseController
     /**
      * 获取附件详细信息
      */
-    @PreAuthorize("@ss.hasPermi('project:attachment:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:query,project:project:query,project:contract:query')")
     @GetMapping(value = "/{attachmentId}")
     public AjaxResult getInfo(@PathVariable("attachmentId") Long attachmentId)
     {
@@ -59,7 +59,7 @@ public class AttachmentController extends BaseController
     /**
      * 上传附件
      */
-    @PreAuthorize("@ss.hasPermi('project:attachment:add')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:add,project:contract:list')")
     @Log(title = "附件管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult upload(
@@ -75,7 +75,7 @@ public class AttachmentController extends BaseController
     /**
      * 下载附件
      */
-    @PreAuthorize("@ss.hasPermi('project:attachment:download')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:download,project:project:query,project:contract:list,project:contract:query')")
     @Log(title = "附件管理", businessType = BusinessType.OTHER)
     @GetMapping("/download/{attachmentId}")
     public void download(@PathVariable Long attachmentId, HttpServletResponse response)
@@ -86,7 +86,7 @@ public class AttachmentController extends BaseController
     /**
      * 删除附件
      */
-    @PreAuthorize("@ss.hasPermi('project:attachment:remove')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:remove,project:contract:list')")
     @Log(title = "附件管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{attachmentId}")
     public AjaxResult remove(@PathVariable Long attachmentId)
@@ -97,7 +97,7 @@ public class AttachmentController extends BaseController
     /**
      * 查询附件操作日志
      */
-    @PreAuthorize("@ss.hasPermi('project:attachment:log')")
+    @PreAuthorize("@ss.hasAnyPermi('project:attachment:log,project:contract:list')")
     @GetMapping("/log")
     public AjaxResult log(
             @RequestParam("businessType") String businessType,
