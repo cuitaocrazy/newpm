@@ -478,9 +478,7 @@
 <script setup name="ProjectApply">
 import { ref, reactive, computed, toRefs, watch, getCurrentInstance, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, updateProject } from '@/api/project/project'
-import { listUser, listUserByPost } from '@/api/system/user'
-import { listDept } from '@/api/system/dept'
+import { getProject, updateProject, getUsersByPost } from '@/api/project/project'
 import request from '@/utils/request'
 import { useFormValidation } from '@/composables/useFormValidation'
 
@@ -635,8 +633,8 @@ function handleSalesManagerChange(userId, user) {
 /** 过滤部门树，只保留三级及以下机构 */
 // 加载所有用户（用于参与人员选择）
 function loadAllUsers() {
-  listUser({}).then(response => {
-    allUsers.value = response.rows || []
+  getUsersByPost().then(response => {
+    allUsers.value = response.data || []
   })
 }
 
