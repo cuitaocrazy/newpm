@@ -368,8 +368,7 @@
 <script setup name="ProjectDetail">
 import { ref, reactive, toRefs, computed, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, getContractByProjectId, getDeptTree } from '@/api/project/project'
-import { listUser } from '@/api/system/user'
+import { getProject, getContractByProjectId, getDeptTree, getUsersByPost } from '@/api/project/project'
 import { listPayment } from '@/api/project/payment'
 import { listAttachment, downloadAttachment } from '@/api/project/attachment'
 import { saveAs } from 'file-saver'
@@ -469,8 +468,8 @@ const paymentListWithSummary = computed(() => {
 
 // 加载所有用户（用于参与人员显示）
 function loadAllUsers() {
-  listUser({ pageNum: 1, pageSize: 1000 }).then(response => {
-    allUsers.value = response.rows || []
+  getUsersByPost().then(response => {
+    allUsers.value = response.data || []
   })
 }
 
