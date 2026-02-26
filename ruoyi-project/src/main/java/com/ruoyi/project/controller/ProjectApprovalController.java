@@ -126,7 +126,7 @@ public class ProjectApprovalController extends BaseController
     /**
      * 查询审核历史
      */
-    @PreAuthorize("@ss.hasPermi('project:approval:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:approval:query,project:project:list,project:project:query')")
     @GetMapping("/history/{projectId}")
     public AjaxResult history(@PathVariable Long projectId)
     {
