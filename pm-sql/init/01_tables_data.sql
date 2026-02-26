@@ -1646,10 +1646,8 @@ insert into sys_dict_data values(209,4,'计划单列市','4','sflx','','','N','0
 insert into sys_dict_type values(116,'收入确认状态','sys_srqrzt','0','admin',sysdate(),'',NULL,'收入确认状态');
 
 -- 收入确认状态字典数据
-insert into sys_dict_data values(210,0,'未确认','0','sys_srqrzt','','warning','Y','0','admin',sysdate(),'',NULL,'未确认');
-insert into sys_dict_data values(211,1,'已确认','1','sys_srqrzt','','success','N','0','admin',sysdate(),'',NULL,'已确认');
-insert into sys_dict_data values(212,2,'待确认','2','sys_srqrzt','','','N','0','admin',sysdate(),'',NULL,'待确认收入');
-insert into sys_dict_data values(213,3,'已确认收入','3','sys_srqrzt','','success','N','0','admin',sysdate(),'',NULL,'已确认收入');
+insert into sys_dict_data values(210,1,'未确认','0','sys_srqrzt','','warning','Y','0','admin',sysdate(),'',NULL,'收入未确认');
+insert into sys_dict_data values(211,2,'已确认','1','sys_srqrzt','','success','N','0','admin',sysdate(),'',NULL,'收入已确认');
 
 -- =============================================
 -- 合同状态字典颜色优化
