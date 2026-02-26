@@ -51,7 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="confirmTime != null "> and confirm_time = #{confirmTime}</if>
             <if test="confirmUserId != null "> and confirm_user_id = #{confirmUserId}</if>
         </where>
-        ORDER BY COALESCE(update_time, create_time) DESC
+        ORDER BY COALESCE(t.update_time, t.create_time) DESC
     </select>
     
     <select id="selectTeamRevenueConfirmationByTeamConfirmId" parameterType="Long" resultMap="TeamRevenueConfirmationResult">

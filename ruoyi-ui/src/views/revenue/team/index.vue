@@ -405,7 +405,7 @@
 </template>
 
 <script setup name="RevenueTeam">
-import { ref, reactive, toRefs, getCurrentInstance, computed } from 'vue'
+import { ref, reactive, toRefs, getCurrentInstance, computed, nextTick } from 'vue'
 import { listTeamRevenue, getTeamRevenue, getProjectInfo, addTeamRevenue, updateTeamRevenue, exportTeamRevenue } from "@/api/revenue/team"
 import { getDeptTree, listProjectByName } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
@@ -718,16 +718,18 @@ function handleUpdate(row) {
       }))
     }
 
-    // 将当前项目添加到 ProjectSelect 的选项列表中，确保能正确显示项目名称
-    if (projectSelectRef.value && project.projectId && project.projectName) {
-      projectSelectRef.value.projectOptions.push({
-        projectId: project.projectId,
-        projectName: project.projectName
-      })
-    }
-
     open.value = true
     title.value = "修改团队收入确认"
+
+    // 等对话框挂载后，将当前项目注入 ProjectSelect 选项，确保能正确回显项目名称
+    nextTick(() => {
+      if (projectSelectRef.value && project.projectId && project.projectName) {
+        projectSelectRef.value.projectOptions.push({
+          projectId: project.projectId,
+          projectName: project.projectName
+        })
+      }
+    })
   })
 }
 
