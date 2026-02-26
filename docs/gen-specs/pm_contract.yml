@@ -82,6 +82,37 @@ basicInfo:
          * 外观和交互效果与之前完全一致
          * 仅修复了底层实现，消除了废弃警告
 
+    4. 合同金额列千分位格式化 (2026-02-25完成)
+       - 功能描述：合同列表页面的金额列（合同金额、已收款金额、剩余金额）改为千分位格式显示
+       - 修改内容：
+         * 文件：ruoyi-ui/src/views/contract/contract/index.vue
+         * 新增 formatAmount() 工具函数
+         * 使用 toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) 格式化
+         * 金额列对齐方式改为 align="right"（右对齐）
+       - 显示效果：如 "1,234,567.89" 替代 "1234567.89"
+       - 合计行金额同样使用千分位格式
+
+    5. 合同类型字典 sys_htlx 修复 (2026-02-25完成)
+       - 问题描述：合同列表和表单中的合同类型（contractType）字段无法正确显示字典标签
+       - 问题原因：字典类型字段名配置错误，实际字段应使用 sys_htlx 字典
+       - 修复内容：
+         * 文件：ruoyi-ui/src/views/contract/contract/index.vue
+         * 合同类型列从使用 el-select 改为使用 DictTag 组件
+         * dict-type 修正为 "sys_htlx"
+       - 影响范围：合同列表页面的合同类型显示、查询条件的合同类型下拉框
+
+    6. 合同编号改为非必填 (2026-02-25完成)
+       - 功能描述：合同编号字段由必填改为非必填，允许创建无编号的合同
+       - 修改内容：
+         * 文件：ruoyi-ui/src/views/contract/contract/add.vue, edit.vue
+         * 移除合同编号的 required 规则：删除 { required: true, message: '请输入合同编号', trigger: 'blur' }
+         * 保留 @blur 的唯一性校验（仅在填写时触发校验）
+         * 数据库层面：删除 UNIQUE KEY uk_contract_code，改为普通索引 idx_contract_code（允许重复）
+       - 业务原因：部分合同在签署时尚未分配编号，允许先录入后补充编号
+       - 注意事项：
+         * 合同名称（contractName）仍为必填
+         * 合同编号填写后仍进行唯一性校验提示（非阻止性）
+
 # ============================
 # Tab 2: 字段信息
 # ============================

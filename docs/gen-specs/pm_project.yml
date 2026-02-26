@@ -421,6 +421,31 @@ basicInfo:
                     合同金额、不含税金额、付款金额、扣款金额
         - 实现文件：ruoyi-ui/src/views/project/project/detail.vue
 
+    32. 项目列表显隐列功能 (2026-02-25完成)
+        - 功能：在刷新按钮右侧添加显隐列图标，可控制各列的显示/隐藏
+        - 实现方式：参照合同管理页面，right-toolbar 增加 :columns 绑定
+        - 列控制范围：24个表格列均添加 v-if="columns.xxx.visible" 控制
+        - 默认隐藏列：更新人、更新时间（减少信息密度）
+        - 实现文件：ruoyi-ui/src/views/project/project/index.vue
+
+    33. 项目列表排序规则统一 (2026-02-26完成)
+        - 需求：列表统一按更新时间降序排列，无更新时间的按创建时间排序
+        - 修改：selectProjectList 末尾 ORDER BY 改为 COALESCE(p.update_time, p.create_time) DESC
+        - 实现文件：ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+
+    34. 更新人关联用户昵称 (2026-02-26完成)
+        - 需求：列表页更新人列显示用户昵称，而非存储的登录名
+        - 实现：selectProjectList 新增 LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        - 新增查询字段：u_upd.nick_name AS update_by_name
+        - resultMap 新增：<result property="updateByName" column="update_by_name"/>
+        - 实体类新增：Project.java 增加 updateByName 字段及 getter/setter
+        - 前端：公司收入确认/团队收入确认列表 prop 由 updateBy 改为 updateByName
+        - 实现文件：
+          * ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml
+          * ruoyi-project/src/main/java/com/ruoyi/project/domain/Project.java
+          * ruoyi-ui/src/views/revenue/company/index.vue
+          * ruoyi-ui/src/views/revenue/team/index.vue
+
     31. 详情页项目部门显示层级路径 (2026-02-26完成)
         - 问题：项目部门直接显示部门 ID 数字
         - 修复：引入 getDeptTree API，新增 loadDeptTree/getDeptName 函数

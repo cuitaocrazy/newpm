@@ -28,6 +28,27 @@ basicInfo:
          * 修复后：显示 "张三, 李四, 王五"（正确显示用户昵称）
        - 关联修复：同时修复了项目管理和公司收入确认的相同问题
 
+    2. 列表显示全面优化 (2026-02-26完成)
+       - 功能描述：团队收入确认列表显示优化，与公司收入确认保持一致
+       - 修改内容：
+         * 文件：ruoyi-ui/src/views/revenue/team/index.vue
+         * 表头单位添加(元)：
+           - 项目预算列表头：改为"项目预算(元)"，align 改为 right
+           - 合同金额列表头：改为"合同金额(元)"，align 改为 right
+           - 确认金额(含税)列表头：改为"确认金额(含税)(元)"，align 改为 right
+         * 金额千分位格式化：新增 formatAmount() 函数，使用 toLocaleString('en-US') 格式化所有金额列
+         * 工作量取整显示：新增 formatWorkload() 函数，使用 parseInt() 去除小数（预估工作量、实际人天不显示小数）
+         * 更新人改为显示昵称：prop 从 "updateBy" 改为 "updateByName"（依赖 ProjectMapper.xml 的 update_by_name 关联字段）
+         * 修复合计行 bug：
+           - 原 computed displayList 中使用 `&& summary[key]` 导致值为0时被跳过
+           - 修复后分别处理金额字段（toFixed(2)）和工作量字段（Math.round()）
+           - 金额字段：confirmAmount, afterTaxAmount, projectBudget, contractAmount
+           - 工作量字段：estimatedWorkload, actualWorkload
+       - 显示效果：
+         * 金额显示格式：如 "1,234,567.89 元"
+         * 工作量显示：如 "10"（取整，不显示 "10.00"）
+         * 更新人显示：显示中文昵称而非登录名
+
 # ============================
 # Tab 2: 字段信息
 # ============================

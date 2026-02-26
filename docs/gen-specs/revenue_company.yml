@@ -156,6 +156,33 @@ basicInfo:
          * 修复后：显示 "张三, 李四, 王五"（正确显示用户昵称）
        - 关联修复：同时修复了项目管理和团队收入确认的相同问题
 
+    10. 列表金额列表头添加(元)单位及右对齐 (2026-02-26完成)
+        - 修改内容：
+          * 文件：ruoyi-ui/src/views/revenue/company/index.vue
+          * 项目预算列表头：从"项目预算"改为"项目预算(元)"，align 改为 right
+          * 合同金额列表头：从"合同金额"改为"合同金额(元)"，align 改为 right
+          * 确认金额列表头：保持"确认金额(含税)"，align 改为 right
+          * 税后金额列表头：align 改为 right
+
+    11. 列表金额列千分位格式化 (2026-02-26完成)
+        - 修改内容：
+          * 文件：ruoyi-ui/src/views/revenue/company/index.vue
+          * 新增 formatAmount() 函数：使用 toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+          * 金额列（项目预算、合同金额、确认金额含税、税后金额）统一使用 formatAmount 格式化显示
+          * 合计行金额同样使用 formatAmount 格式化
+        - 修复合计行 bug：原代码中使用 `&& summary[key]` 判断导致值为0时被跳过
+          * 修复前：if (key !== 'isSummaryRow' && summary[key]) { summary[key] = summary[key].toFixed(2) }
+          * 修复后：if (key !== 'isSummaryRow') { summary[key] = Number(summary[key] || 0).toFixed(2) }
+
+    12. 列表更新人改为显示用户昵称 (2026-02-26完成)
+        - 修改内容：
+          * 文件：ruoyi-ui/src/views/revenue/company/index.vue
+          * 更新人列：prop 从 "updateBy" 改为 "updateByName"
+          * 后端：ProjectMapper.xml selectProjectList 新增 LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+          * 后端：SELECT 新增 u_upd.nick_name AS update_by_name
+          * 后端：Project.java 新增 updateByName 字段和对应 getter/setter
+        - 显示效果：从显示登录名（如 admin）改为显示中文昵称（如 张三）
+
 # ============================
 # Tab 2: 字段信息
 # ============================
