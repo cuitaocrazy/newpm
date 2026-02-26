@@ -274,7 +274,7 @@
 
 <script setup name="Customer">
 import { listCustomer, getCustomer, delCustomer, addCustomer, updateCustomer, checkCustomerSimpleNameUnique } from "@/api/project/customer"
-import { listUserByPost } from "@/api/system/user"
+import { getUsersByPost } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
 const { contact_tag, sys_yjqy, industry } = proxy.useDict('contact_tag', 'sys_yjqy', 'industry')
@@ -526,7 +526,7 @@ function handleExport() {
 
 /** 加载销售负责人列表 */
 function loadSalesManagers() {
-  listUserByPost('xsfzr').then(response => {
+  getUsersByPost('xsfzr').then(response => {
     salesManagerList.value = response.data
   })
 }
