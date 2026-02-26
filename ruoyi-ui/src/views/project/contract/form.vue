@@ -335,7 +335,6 @@ const data = reactive({
   },
   rules: {
     contractCode: [
-      { required: true, message: "合同编号不能为空", trigger: "blur" },
       { validator: validateContractCode, trigger: "blur" }
     ],
     contractName: [
