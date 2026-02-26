@@ -242,9 +242,9 @@
             <span v-else>{{ scope.$index }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="里程碑名称" align="center" prop="paymentName" show-overflow-tooltip>
+        <el-table-column label="里程碑名称" align="center" prop="paymentMethodName" show-overflow-tooltip>
           <template #default="scope">
-            <span v-if="!scope.row.isSummary">{{ scope.row.paymentName }}</span>
+            <span v-if="!scope.row.isSummary">{{ scope.row.paymentMethodName }}</span>
           </template>
         </el-table-column>
         <el-table-column label="付款金额（元）" align="center" prop="paymentAmount" width="150">
@@ -261,7 +261,8 @@
         </el-table-column>
         <el-table-column label="预计回款季度" align="center" prop="expectedQuarter" width="120">
           <template #default="scope">
-            <span v-if="!scope.row.isSummary">{{ scope.row.expectedQuarter }}</span>
+            <dict-tag v-if="!scope.row.isSummary && scope.row.expectedQuarter" :options="sys_jdgl" :value="scope.row.expectedQuarter"/>
+            <span v-else-if="!scope.row.isSummary">-</span>
           </template>
         </el-table-column>
         <el-table-column label="实际回款季度" align="center" prop="actualQuarter" width="120">
@@ -378,8 +379,8 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx } =
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx')
+const { sys_xmfl, sys_xmjd, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl')
 
 // 表单数据
 const data = reactive({

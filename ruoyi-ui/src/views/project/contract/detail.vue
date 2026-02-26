@@ -104,7 +104,8 @@
         </el-table-column>
         <el-table-column label="预计回款季度" align="center" prop="expectedQuarter" width="120">
           <template #default="scope">
-            <span v-if="!scope.row.isSummary">{{ scope.row.expectedQuarter }}</span>
+            <dict-tag v-if="!scope.row.isSummary && scope.row.expectedQuarter" :options="sys_jdgl" :value="scope.row.expectedQuarter"/>
+            <span v-else-if="!scope.row.isSummary">-</span>
           </template>
         </el-table-column>
         <el-table-column label="实际回款季度" align="center" prop="actualQuarter" width="120">
@@ -249,7 +250,7 @@ import { listProject } from "@/api/project/project"
 import { saveAs } from 'file-saver'
 
 const { proxy } = getCurrentInstance()
-const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx')
+const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx, sys_jdgl } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx', 'sys_jdgl')
 const route = useRoute()
 const router = useRouter()
 

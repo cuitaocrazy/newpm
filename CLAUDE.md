@@ -296,6 +296,12 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
    - Department-level revenue confirmation (distinct from company-wide ProjectReview)
    - Fields: teamConfirmId, projectId, deptId, confirmAmount, confirmTime, confirmUserId
 
+9. **Add Contract from Project (项目列表添加合同):**
+   - Project list row shows a contextual button: "添加合同" (no contract yet) or "查看合同" (contract exists)
+   - Clicking "添加合同" navigates to contract creation with auto-populated: projectId, project dept, customer info
+   - Alert displays: "将为项目创建合同：{projectName} ({projectCode})"
+   - Revenue confirmation fields on `Project`: `confirmAmount`, `taxRate`, `afterTaxAmount` (after-tax = confirmAmount / (1 + taxRate/100)), `revenueConfirmStatus`, `revenueConfirmYear`, `companyRevenueConfirmedBy`, `companyRevenueConfirmedTime`
+
 **Dictionary Dependencies:**
 
 - `industry` - 行业分类
@@ -566,6 +572,8 @@ Vue 3 + TypeScript + Vite + Element Plus + Pinia + Vue Router 4
 ```
 src/
 ├── api/              → API functions (typed with interfaces from types/)
+│   ├── project/      → Project business APIs (project, contract, payment, customer, etc.)
+│   └── revenue/      → Revenue module APIs (company.js/ts, team.js)
 ├── assets/           → Static assets (images, styles)
 ├── components/       → Reusable Vue components
 ├── directive/        → Custom directives (v-hasPermi, v-hasRole, etc.)
@@ -579,7 +587,7 @@ src/
 └── views/            → Page components
     ├── system/       → System management pages
     ├── project/      → Project management pages (custom business)
-    └── ...
+    └── revenue/      → Revenue confirmation module (company/ and team/ subdirectories)
 ```
 
 ### API Layer
@@ -738,10 +746,11 @@ The skill handles menu generation, SQL file management, and database imports aut
 
 ### Configuration File Maintenance
 
-**IMPORTANT**: When making changes to contract-related features, always check and confirm whether the configuration file needs to be updated:
+**IMPORTANT**: When making changes to any business module, always check and confirm whether the corresponding spec file needs to be updated:
 
-- **File**: `docs/gen-specs/pm_contract.yml`
-- **Purpose**: This file documents all customizations, business rules, and implementation details for the contract module
+- **Files**: `docs/gen-specs/<module>.yml` (e.g., `pm_contract.yml`, `pm_project.yml`, `revenue_company.yml`)
+- **Purpose**: Each spec file documents all customizations, business rules, and implementation details for that module
+- **Special focus**: `pm_contract.yml` is the most actively maintained — always review it after contract changes
 - **Workflow**:
   1. After any contract feature optimization or adjustment, review the changes
   2. Analyze which changes need to be documented in pm_contract.yml:
