@@ -181,10 +181,10 @@
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算(元)" align="center" prop="projectBudget" min-width="120">
+      <el-table-column label="项目预算(元)" align="right" prop="projectBudget" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
-          <span v-else>{{ scope.row.projectBudget }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.projectBudget) }}</span>
+          <span v-else>{{ formatAmount(scope.row.projectBudget) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
@@ -199,10 +199,10 @@
           <span v-else>{{ scope.row.actualWorkload }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额(元)" align="center" prop="contractAmount" min-width="120">
+      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
-          <span v-else>{{ scope.row.contractAmount }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.contractAmount) }}</span>
+          <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
@@ -216,16 +216,16 @@
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120">
+      <el-table-column label="确认金额(含税)" align="right" prop="confirmAmount" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.confirmAmount }}</span>
-          <span v-else>{{ scope.row.confirmAmount }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.confirmAmount) }}</span>
+          <span v-else>{{ formatAmount(scope.row.confirmAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120">
+      <el-table-column label="税后金额" align="right" prop="afterTaxAmount" min-width="120">
         <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.afterTaxAmount }}</span>
-          <span v-else>{{ scope.row.afterTaxAmount }}</span>
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.afterTaxAmount) }}</span>
+          <span v-else>{{ formatAmount(scope.row.afterTaxAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
@@ -380,6 +380,14 @@ function calculateSummary(list) {
   })
 
   return summary
+}
+
+/** 格式化金额为千分位，保留2位小数 */
+function formatAmount(amount) {
+  if (amount === null || amount === undefined || amount === '') return ''
+  const num = parseFloat(amount)
+  if (isNaN(num)) return ''
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 /** 搜索按钮操作 */
