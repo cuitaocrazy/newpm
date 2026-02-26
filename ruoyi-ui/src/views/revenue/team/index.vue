@@ -192,24 +192,24 @@
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120">
+      <el-table-column label="项目预算(元)" align="right" prop="projectBudget" min-width="130">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ scope.row.projectBudget }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ formatAmount(scope.row.projectBudget) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ scope.row.estimatedWorkload }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ formatWorkload(scope.row.estimatedWorkload) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ scope.row.actualWorkload }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ formatWorkload(scope.row.actualWorkload) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120">
+      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="130">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ scope.row.contractAmount }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
@@ -223,14 +223,14 @@
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="确认金额(含税)" align="center" prop="confirmAmount" min-width="120">
+      <el-table-column label="确认金额(含税)(元)" align="right" prop="confirmAmount" min-width="140">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ scope.row.confirmAmount }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ formatAmount(scope.row.confirmAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="税后金额" align="center" prop="afterTaxAmount" min-width="120">
+      <el-table-column label="税后金额" align="right" prop="afterTaxAmount" min-width="120">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ scope.row.afterTaxAmount }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold;' : ''">{{ formatAmount(scope.row.afterTaxAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
@@ -256,7 +256,7 @@
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" />
+      <el-table-column label="更新人" align="center" prop="updateByName" min-width="100" />
       <el-table-column label="更新时间" align="center" prop="updateTime" width="160" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180" fixed="right">
         <template #default="scope">
@@ -493,12 +493,14 @@ const displayList = computed(() => {
     summary.contractAmount += (parseFloat(item.contractAmount) || 0)
   })
 
-  // 格式化为两位小数
-  Object.keys(summary).forEach(key => {
-    if (key !== 'isSummaryRow' && summary[key]) {
-      summary[key] = summary[key].toFixed(2)
-    }
+  // 格式化为两位小数（金额字段）
+  const amountKeys = ['confirmAmount', 'afterTaxAmount', 'projectBudget', 'contractAmount']
+  amountKeys.forEach(key => {
+    summary[key] = Number(summary[key] || 0).toFixed(2)
   })
+  // 工作量字段取整
+  summary.estimatedWorkload = Math.round(summary.estimatedWorkload || 0)
+  summary.actualWorkload = Math.round(summary.actualWorkload || 0)
 
   // 返回合计行 + 数据列表
   return [summary, ...teamRevenueList.value]
@@ -514,6 +516,21 @@ const totalAmount = computed(() => {
   }, 0)
   return total.toFixed(2)
 })
+
+/** 格式化金额为千分位，保留2位小数 */
+function formatAmount(amount) {
+  if (amount === null || amount === undefined || amount === '') return ''
+  const num = parseFloat(amount)
+  if (isNaN(num)) return ''
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/** 格式化工作量（取整，不显示小数） */
+function formatWorkload(value) {
+  if (value === null || value === undefined || value === '') return ''
+  const num = parseInt(value)
+  return isNaN(num) ? '' : num
+}
 
 /** 查询列表 */
 function getList() {
