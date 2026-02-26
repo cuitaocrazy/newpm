@@ -121,7 +121,7 @@ insert into sys_dict_data values(129,3,'系统集成类','XTJC','sys_xmfl',NULL,
 insert into sys_dict_data values(130,4,'开发人力外包','RLWB','sys_xmfl',NULL,'default','N','0','admin','2026-01-15 17:13:06','',NULL,NULL);
 insert into sys_dict_data values(131,5,'运维人力外包','YWWB','sys_xmfl',NULL,'default','N','0','admin','2026-01-15 17:13:23','',NULL,NULL);
 insert into sys_dict_data values(132,6,'测试人力外包','CSWB','sys_xmfl',NULL,'default','N','0','admin','2026-01-15 17:13:43','',NULL,NULL);
-insert into sys_dict_data values(353,0,'0-谈判签署中','0','sys_htzt',NULL,'success','N','0','admin',sysdate(),'',NULL,'旧库迁移保留值');
+insert into sys_dict_data values(353,0,'0-谈判签署中','0','sys_htzt',NULL,'warning','N','0','admin',sysdate(),'',NULL,'旧库迁移保留值');
 insert into sys_dict_data values(133,1,'1-已签','1','sys_htzt',NULL,'default','N','0','admin','2026-01-15 17:20:46','admin','2026-01-15 17:22:33',NULL);
 insert into sys_dict_data values(134,2,'2-未签','2','sys_htzt',NULL,'default','N','0','admin','2026-01-15 17:21:44','admin','2026-01-15 17:22:40',NULL);
 insert into sys_dict_data values(135,3,'3-待变更','3','sys_htzt',NULL,'default','N','0','admin','2026-01-15 17:22:13','',NULL,NULL);
@@ -155,8 +155,8 @@ insert into sys_dict_data values(161,7,'7-项目结项','7','sys_xmjd',NULL,'def
 insert into sys_dict_data values(162,0,'北京地区','BJ','sys_yjqy',NULL,'default','N','0','qiu.zhang','2026-01-16 17:25:15','',NULL,NULL);
 insert into sys_dict_data values(163,10,'国外地区','GWDQ','sys_yjqy',NULL,'default','N','0','qiu.zhang','2026-01-16 17:25:48','',NULL,NULL);
 insert into sys_dict_data values(164,5,'5-合同作废','5','sys_htzt',NULL,'default','N','0','qiu.zhang','2026-01-21 13:16:42','',NULL,NULL);
-insert into sys_dict_data values(354,6,'6-全款已回','6','sys_htzt',NULL,'warning','N','0','admin',sysdate(),'',NULL,'合同工作已做完，全款已回');
-insert into sys_dict_data values(355,7,'7-已签-无需回款','7','sys_htzt',NULL,'danger','N','0','admin',sysdate(),'',NULL,NULL);
+insert into sys_dict_data values(354,6,'6-全款已回','6','sys_htzt',NULL,'success','N','0','admin',sysdate(),'',NULL,'合同工作已做完，全款已回');
+insert into sys_dict_data values(355,7,'7-已签-无需回款','7','sys_htzt',NULL,'success','N','0','admin',sysdate(),'',NULL,NULL);
 insert into sys_dict_data values(165,7,'日常内部工作','NBGZ','sys_xmfl',NULL,'default','N','0','qiu.zhang','2026-01-22 10:56:12','qiu.zhang','2026-01-22 10:57:14',NULL);
 insert into sys_dict_data values(166,8,'内部项目类','NBXM','sys_xmfl',NULL,'default','N','0','qiu.zhang','2026-01-22 11:02:46','qiu.zhang','2026-01-22 11:03:00',NULL);
 insert into sys_dict_data values(185,1,'未验收','0','sys_yszt','','warning','Y','0','admin','2026-01-26 14:14:46','',NULL,'项目未验收');
@@ -1670,10 +1670,19 @@ UPDATE sys_dict_data SET list_class = 'primary' WHERE dict_type = 'sys_htzt' AND
 -- 5-合同作废：危险（红色）
 UPDATE sys_dict_data SET list_class = 'danger' WHERE dict_type = 'sys_htzt' AND dict_value = '5';
 
+-- 0-谈判签署中：警告（橙色）
+UPDATE sys_dict_data SET list_class = 'warning' WHERE dict_type = 'sys_htzt' AND dict_value = '0';
+
+-- 6-全款已回：成功（绿色）
+UPDATE sys_dict_data SET list_class = 'success' WHERE dict_type = 'sys_htzt' AND dict_value = '6';
+
+-- 7-已签-无需回款：成功（绿色）
+UPDATE sys_dict_data SET list_class = 'success' WHERE dict_type = 'sys_htzt' AND dict_value = '7';
+
 -- =============================================
 -- 颜色说明：
--- success (绿色)  - 已签：表示合同已正式签订，状态正常
--- warning (橙色)  - 未签：表示合同尚未签订，需要关注
+-- success (绿色)  - 已签/全款已回/已签无需回款：合同状态正常或完结
+-- warning (橙色)  - 未签/谈判签署中：合同尚未签订，需要关注
 -- info (蓝色)     - 待变更：表示合同需要变更，处于待处理状态
 -- primary (深蓝色) - 已变更：表示合同已完成变更
 -- danger (红色)   - 合同作废：表示合同已作废，需要特别注意
