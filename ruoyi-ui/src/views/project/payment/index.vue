@@ -1,16 +1,7 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="140px">
-      <!-- 主要查询条件 -->
-      <el-form-item label="合同名称" prop="contractName">
-        <el-input
-          v-model="queryParams.contractName"
-          placeholder="请输入合同名称"
-          clearable
-          @keyup.enter="handleQuery"
-          style="width: 200px"
-        />
-      </el-form-item>
+      <!-- 主要查询条件：前四个固定为合同编号、合同状态、合同所属团队、预计回款季度 -->
       <el-form-item label="合同编号" prop="contractCode">
         <el-input
           v-model="queryParams.contractCode"
@@ -30,12 +21,45 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="客户名称" prop="customerName">
+      <el-form-item label="合同所属团队" prop="deptId">
+        <el-tree-select
+          v-model="queryParams.deptId"
+          :data="deptTree"
+          :props="{ label: 'label', value: 'value', children: 'children' }"
+          placeholder="请选择合同所属团队"
+          check-strictly
+          clearable
+          filterable
+          style="width: 200px"
+        />
+      </el-form-item>
+      <el-form-item label="预计回款季度" prop="expectedQuarter">
+        <el-select v-model="queryParams.expectedQuarter" placeholder="请选择预计回款季度" clearable style="width: 200px">
+          <el-option
+            v-for="dict in sys_jdgl"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="合同名称" prop="contractName">
         <el-input
-          v-model="queryParams.customerName"
-          placeholder="请输入客户名称"
+          v-model="queryParams.contractName"
+          placeholder="请输入合同名称"
           clearable
           @keyup.enter="handleQuery"
+          style="width: 200px"
+        />
+      </el-form-item>
+      <el-form-item label="客户名称" prop="customerName">
+        <el-autocomplete
+          v-model="queryParams.customerName"
+          :fetch-suggestions="queryCustomerNames"
+          placeholder="请选择客户名称"
+          clearable
+          @keyup.enter="handleQuery"
+          @select="handleQuery"
           style="width: 200px"
         />
       </el-form-item>
@@ -52,16 +76,6 @@
 
       <!-- 折叠的查询条件（在按钮上方） -->
       <template v-if="showMoreSearch">
-        <el-form-item label="预计回款季度" prop="expectedQuarter">
-          <el-select v-model="queryParams.expectedQuarter" placeholder="请选择预计回款季度" clearable style="width: 200px">
-            <el-option
-              v-for="dict in sys_jdgl"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="款项确认年份" prop="paymentConfirmYear">
           <el-select v-model="queryParams.paymentConfirmYear" placeholder="请选择款项确认年份" clearable style="width: 200px">
             <el-option
@@ -299,6 +313,9 @@
 
 <script setup name="Payment">
 import { listPaymentWithContracts, delPayment, checkAttachments, sumPaymentAmount } from "@/api/project/payment"
+import { getDeptTree } from "@/api/project/project"
+import { listAllCustomer } from "@/api/project/customer"
+import { handleTree } from '@/utils/ruoyi'
 import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -314,6 +331,13 @@ const showSearch = ref(true)
 const showMoreSearch = ref(false)
 const total = ref(0)
 const totalAmount = ref(0)
+
+// 部门树
+const deptTree = ref([])
+
+// 客户选项列表（用于autocomplete）
+const customerOptions = ref([])
+
 const tableDataWithSummary = computed(() => {
   if (displayList.value.length === 0) {
     return []
@@ -366,6 +390,7 @@ const data = reactive({
     expectedQuarter: null,
     actualQuarter: null,
     paymentConfirmYear: null,
+    deptId: null,
     actualPaymentDateStart: null,
     actualPaymentDateEnd: null,
   }
@@ -551,6 +576,40 @@ function resetQuery() {
   handleQuery()
 }
 
+/** 加载部门树（只显示三级及以下） */
+function loadDeptTree() {
+  getDeptTree().then(response => {
+    const level3Depts = response.data.filter(dept => {
+      if (!dept.ancestors) return false
+      return dept.ancestors.split(',').length >= 3
+    })
+    const deptData = level3Depts.map(dept => ({
+      ...dept,
+      value: dept.deptId,
+      label: dept.deptName
+    }))
+    deptTree.value = handleTree(deptData, 'deptId', 'parentId', 'children')
+  })
+}
+
+/** 加载所有客户（用于autocomplete） */
+function loadCustomers() {
+  listAllCustomer().then(response => {
+    customerOptions.value = (response.data || []).map(c => ({
+      value: c.customerSimpleName,
+      label: c.customerSimpleName
+    }))
+  })
+}
+
+/** 客户名称autocomplete过滤 */
+function queryCustomerNames(queryString, callback) {
+  const results = queryString
+    ? customerOptions.value.filter(c => c.label.toLowerCase().includes(queryString.toLowerCase()))
+    : customerOptions.value
+  callback(results)
+}
+
 /** 新增按钮操作 */
 function handleAdd() {
   router.push('/htkx/payment/add')
@@ -628,6 +687,8 @@ function handleExport() {
 }
 
 // 初始化
+loadDeptTree()
+loadCustomers()
 getList()
 
 // 监听路由变化，刷新列表
