@@ -79,6 +79,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="customerName"    column="customer_name"    />
         <result property="customerContactName"    column="customer_contact_name"    />
         <result property="customerContactPhone"    column="customer_contact_phone"    />
+        <result property="updateByName"    column="update_by_name"    />
     </resultMap>
 
     <sql id="selectProjectVo">
@@ -112,11 +113,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.company_revenue_confirmed_time,
                sr.region_name,
                pcr.contract_id as contractId,
-               c.contract_amount, c.contract_status
+               c.contract_amount, c.contract_status,
+               u_upd.nick_name AS update_by_name
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id AND pcr.del_flag = '0' AND pcr.rel_status = '有效'
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
+        LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
         <where>
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>

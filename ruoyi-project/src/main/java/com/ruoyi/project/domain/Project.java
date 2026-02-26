@@ -291,6 +291,12 @@ public class Project extends BaseEntity
     /** 参与人员名称列表（关联字段，非数据库字段） */
     private String participantsNames;
 
+    /** 更新人昵称（关联字段，非数据库字段） */
+    private String updateByName;
+
+    public void setUpdateByName(String updateByName) { this.updateByName = updateByName; }
+    public String getUpdateByName() { return updateByName; }
+
     public void setProjectId(Long projectId) 
     {
         this.projectId = projectId;

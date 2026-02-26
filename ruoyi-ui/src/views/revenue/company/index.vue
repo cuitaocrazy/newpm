@@ -251,7 +251,7 @@
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" />
+      <el-table-column label="更新人" align="center" prop="updateByName" min-width="100" />
       <el-table-column label="更新时间" align="center" prop="updateTime" width="160" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
         <template #default="scope">
