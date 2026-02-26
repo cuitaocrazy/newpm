@@ -270,9 +270,8 @@
 import { ref, reactive, toRefs, watch, getCurrentInstance, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addContract } from '@/api/project/contract'
-import { listProjectByDept, getProject } from '@/api/project/project'
+import { listProjectByDept, getProject, getDeptTree as fetchDeptTree } from '@/api/project/project'
 import { listAllCustomer } from '@/api/project/customer'
-import { listDept } from '@/api/system/dept'
 
 const router = useRouter()
 const route = useRoute()
@@ -363,8 +362,8 @@ function resetForm() {
 
 // 加载部门树
 function getDeptTree() {
-  listDept().then(response => {
-    const deptData = response.data.map(dept => ({
+  fetchDeptTree().then(response => {
+    const deptData = response.data.map((dept: any) => ({
       ...dept,
       id: dept.deptId,
       label: dept.deptName
