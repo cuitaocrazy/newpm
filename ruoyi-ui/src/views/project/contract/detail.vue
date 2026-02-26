@@ -244,9 +244,8 @@
 import { getContract } from "@/api/project/contract"
 import { listPayment } from "@/api/project/payment"
 import { listAttachment, downloadAttachment } from "@/api/project/attachment"
-import { deptTreeSelect } from "@/api/system/user"
 import { listCustomer } from "@/api/project/customer"
-import { listProject } from "@/api/project/project"
+import { listProject, getDeptTree as fetchDeptTree } from '@/api/project/project'
 import { saveAs } from 'file-saver'
 
 const { proxy } = getCurrentInstance()
@@ -290,8 +289,13 @@ const paymentListWithSummary = computed(() => {
 
 /** 查询部门下拉树结构 */
 function getDeptTree() {
-  deptTreeSelect().then(response => {
-    deptOptions.value = response.data
+  fetchDeptTree().then(response => {
+    const deptData = response.data.map((dept: any) => ({
+      ...dept,
+      id: dept.deptId,
+      label: dept.deptName
+    }))
+    deptOptions.value = proxy.handleTree(deptData, "id")
   })
 }
 
