@@ -181,8 +181,7 @@
 import { ref, computed, onMounted, onActivated, watch, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getTeamRevenue } from '@/api/revenue/team'
-import { listUser } from '@/api/system/user'
-import { getDeptTree } from '@/api/project/project'
+import { getDeptTree, getUsersByPost } from '@/api/project/project'
 import request from '@/utils/request'
 
 const router = useRouter()
@@ -220,8 +219,8 @@ function goBack() {
 
 /** 加载所有用户（用于参与人员显示） */
 function loadAllUsers() {
-  listUser({}).then(response => {
-    allUsers.value = response.rows || []
+  getUsersByPost().then(response => {
+    allUsers.value = response.data || []
   })
 }
 
