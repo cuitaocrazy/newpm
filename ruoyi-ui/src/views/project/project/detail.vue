@@ -39,13 +39,13 @@
           <dict-tag :options="sys_xmfl" :value="form.projectCategory" />
         </el-descriptions-item>
         <el-descriptions-item label="项目部门">
-          {{ form.projectDept || '-' }}
+          {{ getDeptName(form.projectDept) }}
         </el-descriptions-item>
         <el-descriptions-item label="预估工作量">
           {{ form.estimatedWorkload || 0 }} 人天
         </el-descriptions-item>
         <el-descriptions-item label="项目预算">
-          {{ form.projectBudget || 0 }} 元
+          {{ formatAmount(form.projectBudget) }} 元
         </el-descriptions-item>
         <el-descriptions-item label="实际工作量">
           {{ form.actualWorkload || 0 }} 人天
@@ -156,22 +156,22 @@
       </template>
       <el-descriptions :column="3" border>
         <el-descriptions-item label="项目预算">
-          {{ form.projectBudget || 0 }} 元
+          {{ formatAmount(form.projectBudget) }} 元
         </el-descriptions-item>
         <el-descriptions-item label="项目费用">
-          {{ form.projectCost || 0 }} 元
+          {{ formatAmount(form.projectCost) }} 元
         </el-descriptions-item>
         <el-descriptions-item label="费用预算">
-          {{ form.costBudget || 0 }} 元
+          {{ formatAmount(form.costBudget) }} 元
         </el-descriptions-item>
         <el-descriptions-item label="成本预算">
-          {{ form.budgetCost || 0 }} 元
+          {{ formatAmount(form.budgetCost) }} 元
         </el-descriptions-item>
         <el-descriptions-item label="人力费用">
-          {{ form.laborCost || 0 }} 元
+          {{ formatAmount(form.laborCost) }} 元
         </el-descriptions-item>
         <el-descriptions-item label="采购成本">
-          {{ form.purchaseCost || 0 }} 元
+          {{ formatAmount(form.purchaseCost) }} 元
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -205,10 +205,10 @@
             {{ contractInfo.taxRate ? contractInfo.taxRate + ' %' : '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="合同金额">
-            {{ contractInfo.contractAmount ? contractInfo.contractAmount.toLocaleString() + ' 元' : '-' }}
+            {{ contractInfo.contractAmount !== null && contractInfo.contractAmount !== undefined ? formatAmount(contractInfo.contractAmount) + ' 元' : '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="不含税金额">
-            {{ contractInfo.amountNoTax ? contractInfo.amountNoTax.toLocaleString() + ' 元' : '-' }}
+            {{ contractInfo.amountNoTax !== null && contractInfo.amountNoTax !== undefined ? formatAmount(contractInfo.amountNoTax) + ' 元' : '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="创建人">
             {{ contractInfo.createByName || '-' }}
@@ -367,7 +367,7 @@
 <script setup name="ProjectDetail">
 import { ref, reactive, toRefs, computed, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, getContractByProjectId } from '@/api/project/project'
+import { getProject, getContractByProjectId, getDeptTree } from '@/api/project/project'
 import { listUser } from '@/api/system/user'
 import { listPayment } from '@/api/project/payment'
 import { listAttachment, downloadAttachment } from '@/api/project/attachment'
@@ -438,6 +438,7 @@ const customerContactPhone = ref('')
 const contractInfo = ref(null)
 const paymentList = ref([])
 const attachmentList = ref([])
+const deptFlatList = ref([])
 
 // 付款里程碑列表（带合计行）
 const paymentListWithSummary = computed(() => {
@@ -638,12 +639,37 @@ function getPaymentList(contractId) {
   })
 }
 
-// 格式化金额，保留2位小数
+// 加载部门树（用于部门名称显示）
+function loadDeptTree() {
+  getDeptTree().then(response => {
+    deptFlatList.value = response.data
+  })
+}
+
+// 根据部门ID获取部门名称（显示第三级及以下完整路径，用 - 隔开）
+function getDeptName(deptId) {
+  if (!deptId) return '-'
+  const numDeptId = typeof deptId === 'string' ? parseInt(deptId) : deptId
+  const dept = deptFlatList.value.find(d => d.deptId === numDeptId)
+  if (!dept) return '-'
+  const ancestorIds = dept.ancestors ? dept.ancestors.split(',').filter(id => id && id !== '0') : []
+  const pathDepts = []
+  if (ancestorIds.length >= 2) {
+    for (let i = 2; i < ancestorIds.length; i++) {
+      const ancestorDept = deptFlatList.value.find(d => d.deptId === parseInt(ancestorIds[i]))
+      if (ancestorDept) pathDepts.push(ancestorDept.deptName)
+    }
+  }
+  pathDepts.push(dept.deptName)
+  return pathDepts.join('-')
+}
+
+// 格式化金额（千分位，保留两位小数）
 function formatAmount(amount) {
-  if (amount === null || amount === undefined || amount === '') return ''
-  const num = parseFloat(amount)
-  if (isNaN(num)) return amount
-  return num.toFixed(2)
+  if (amount === null || amount === undefined || amount === '') return '-'
+  const num = Number(amount)
+  if (isNaN(num)) return '-'
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 // 格式化文件大小
@@ -683,6 +709,7 @@ function handleDownload(row) {
 
 // 初始化
 loadAllUsers()
+loadDeptTree()
 loadProjectData()
 </script>
 
