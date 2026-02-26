@@ -350,9 +350,6 @@ const data = reactive({
     contractType: [
       { required: true, message: "合同类型不能为空", trigger: "change" }
     ],
-    contractSignDate: [
-      { required: true, message: "合同签订日期不能为空", trigger: "change" }
-    ],
     contractAmount: [
       { required: true, message: "合同金额(含税)不能为空", trigger: "blur" }
     ],

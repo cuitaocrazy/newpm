@@ -337,9 +337,6 @@ const data = reactive({
     contractType: [
       { required: true, message: '请选择合同类型', trigger: 'change' }
     ],
-    contractSignDate: [
-      { required: true, message: '请选择合同签订日期', trigger: 'change' }
-    ],
     contractAmount: [
       { required: true, message: '请输入合同金额', trigger: 'blur' },
       { pattern: /^\d+(\.\d+)?$/, message: '请输入有效的数字', trigger: 'blur' }
