@@ -148,6 +148,10 @@ VALUES ('项目审核查询', @reviewMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'p
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('项目审核操作', @reviewMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:review:approve', '#', 'admin', sysdate(), '', NULL, '');
 
+-- 按钮权限：项目审核
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('项目审核', @reviewMenuId, 6, '#', '', 1, 0, 'F', '0', '0', 'project:approval:approve', '#', 'admin', sysdate(), '', NULL, '项目审核权限');
+
 -- ============================
 -- 合同款项模块菜单数据
 -- ============================
