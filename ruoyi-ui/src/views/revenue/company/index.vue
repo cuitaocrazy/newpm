@@ -181,7 +181,7 @@
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120">
+      <el-table-column label="项目预算(元)" align="center" prop="projectBudget" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
           <span v-else>{{ scope.row.projectBudget }}</span>
@@ -199,7 +199,7 @@
           <span v-else>{{ scope.row.actualWorkload }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120">
+      <el-table-column label="合同金额(元)" align="center" prop="contractAmount" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.contractAmount }}</span>
           <span v-else>{{ scope.row.contractAmount }}</span>
@@ -374,8 +374,8 @@ function calculateSummary(list) {
 
   // 格式化为两位小数
   Object.keys(summary).forEach(key => {
-    if (key !== 'isSummaryRow' && summary[key]) {
-      summary[key] = summary[key].toFixed(2)
+    if (key !== 'isSummaryRow') {
+      summary[key] = Number(summary[key] || 0).toFixed(2)
     }
   })
 
