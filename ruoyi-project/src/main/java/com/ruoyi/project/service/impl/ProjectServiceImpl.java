@@ -1,14 +1,22 @@
 package com.ruoyi.project.service.impl;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.project.mapper.ProjectMapper;
+import com.ruoyi.project.mapper.ProjectMemberMapper;
 import com.ruoyi.project.mapper.ContractMapper;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.ProjectMember;
 import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.service.IProjectService;
 
@@ -26,6 +34,9 @@ public class ProjectServiceImpl implements IProjectService
 
     @Autowired
     private ContractMapper contractMapper;
+
+    @Autowired
+    private ProjectMemberMapper projectMemberMapper;
 
     /**
      * 查询项目管理
@@ -57,11 +68,14 @@ public class ProjectServiceImpl implements IProjectService
      * @param project 项目管理
      * @return 结果
      */
+    @Transactional
     @Override
     public int insertProject(Project project)
     {
         project.setCreateTime(DateUtils.getNowDate());
-        return projectMapper.insertProject(project);
+        int rows = projectMapper.insertProject(project);
+        syncProjectMembers(project);
+        return rows;
     }
 
     /**
@@ -70,11 +84,14 @@ public class ProjectServiceImpl implements IProjectService
      * @param project 项目管理
      * @return 结果
      */
+    @Transactional
     @Override
     public int updateProject(Project project)
     {
         project.setUpdateTime(DateUtils.getNowDate());
-        return projectMapper.updateProject(project);
+        int rows = projectMapper.updateProject(project);
+        syncProjectMembers(project);
+        return rows;
     }
 
     /**
@@ -251,5 +268,83 @@ public class ProjectServiceImpl implements IProjectService
     public List<Map<String, Object>> searchProjectsByName(String projectName)
     {
         return projectMapper.searchProjectsByName(projectName);
+    }
+
+    /**
+     * 同步项目成员到 pm_project_member 表
+     * 从项目的项目经理、市场经理、团队负责人、参与人字段中收集所有用户ID，
+     * 先删除旧成员再批量插入新成员。
+     *
+     * @param project 项目对象
+     */
+    private void syncProjectMembers(Project project)
+    {
+        Long projectId = project.getProjectId();
+        if (projectId == null)
+        {
+            return;
+        }
+
+        // 1. 删除该项目的旧成员记录
+        projectMemberMapper.deleteByProjectId(projectId);
+
+        // 2. 收集所有关联的用户ID（使用LinkedHashSet去重并保持顺序）
+        Set<Long> userIds = new LinkedHashSet<>();
+
+        if (project.getProjectManagerId() != null)
+        {
+            userIds.add(project.getProjectManagerId());
+        }
+        if (project.getMarketManagerId() != null)
+        {
+            userIds.add(project.getMarketManagerId());
+        }
+        if (project.getTeamLeaderId() != null)
+        {
+            userIds.add(project.getTeamLeaderId());
+        }
+
+        // 解析参与人（逗号分隔的用户ID字符串，如 "1,2,3"）
+        String participants = project.getParticipants();
+        if (StringUtils.isNotEmpty(participants))
+        {
+            String[] parts = participants.split(",");
+            for (String part : parts)
+            {
+                String trimmed = part.trim();
+                if (StringUtils.isNotEmpty(trimmed))
+                {
+                    try
+                    {
+                        userIds.add(Long.parseLong(trimmed));
+                    }
+                    catch (NumberFormatException ignored)
+                    {
+                        // 跳过非法的用户ID
+                    }
+                }
+            }
+        }
+
+        // 3. 构建成员列表并批量插入
+        if (!userIds.isEmpty())
+        {
+            List<ProjectMember> members = new ArrayList<>();
+            Date now = new Date();
+            String createBy = SecurityUtils.getUsername();
+
+            for (Long userId : userIds)
+            {
+                ProjectMember member = new ProjectMember();
+                member.setProjectId(projectId);
+                member.setUserId(userId);
+                member.setJoinDate(now);
+                member.setIsActive("1");
+                member.setCreateBy(createBy);
+                members.add(member);
+            }
+
+            projectMemberMapper.batchInsert(members);
+        }
     }
 }

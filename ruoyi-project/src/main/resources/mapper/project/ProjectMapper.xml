@@ -646,4 +646,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LIMIT 20
     </select>
 
+    <!-- 根据用户ID查询关联的项目列表（用于工作日报） -->
+    <select id="selectProjectsByUserId" parameterType="Long" resultType="java.util.HashMap">
+        select distinct p.project_id as projectId,
+               p.project_name as projectName,
+               p.project_code as projectCode,
+               p.project_stage as projectStage,
+               dict.dict_label as projectStageName
+        from pm_project p
+        left join sys_dict_data dict on p.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value
+            and dict.dict_type = 'sys_xmjd'
+        where p.del_flag = '0'
+          and p.approval_status = '1'
+          and (
+              p.project_manager_id = #{userId}
+              or p.market_manager_id = #{userId}
+              or p.team_leader_id = #{userId}
+              or FIND_IN_SET(#{userId}, p.participants)
+              or p.project_id in (
+                  select pm.project_id from pm_project_member pm
+                  where pm.user_id = #{userId} and pm.is_active = '1' and pm.del_flag = '0'
+              )
+          )
+        order by p.project_name
+    </select>
+
 </mapper>

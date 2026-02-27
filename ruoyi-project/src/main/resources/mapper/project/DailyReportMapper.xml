@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.DailyReportMapper">
+
+    <!-- 基础结果映射（列表查询用，不含明细） -->
+    <resultMap type="DailyReport" id="DailyReportResult">
+        <result property="reportId"        column="report_id"        />
+        <result property="reportDate"      column="report_date"      />
+        <result property="userId"          column="user_id"          />
+        <result property="deptId"          column="dept_id"          />
+        <result property="totalWorkHours"  column="total_work_hours" />
+        <result property="delFlag"         column="del_flag"         />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="updateBy"        column="update_by"        />
+        <result property="updateTime"      column="update_time"      />
+        <result property="remark"          column="remark"           />
+        <result property="nickName"        column="nick_name"        />
+        <result property="deptName"        column="dept_name"        />
+    </resultMap>
+
+    <!-- 带明细的结果映射（详情/月报查询用） -->
+    <resultMap type="DailyReport" id="DailyReportWithDetailResult" extends="DailyReportResult">
+        <collection property="detailList" ofType="DailyReportDetail">
+            <result property="detailId"          column="detail_detail_id"      />
+            <result property="reportId"          column="detail_report_id"      />
+            <result property="projectId"         column="detail_project_id"     />
+            <result property="projectStage"      column="detail_project_stage"  />
+            <result property="workHours"         column="detail_work_hours"     />
+            <result property="workContent"       column="detail_work_content"   />
+            <result property="delFlag"           column="detail_del_flag"       />
+            <result property="createBy"          column="detail_create_by"      />
+            <result property="createTime"        column="detail_create_time"    />
+            <result property="updateBy"          column="detail_update_by"      />
+            <result property="updateTime"        column="detail_update_time"    />
+            <result property="remark"            column="detail_remark"         />
+            <result property="projectName"       column="detail_project_name"   />
+            <result property="projectCode"       column="detail_project_code"   />
+            <result property="projectStageName"  column="detail_stage_name"     />
+        </collection>
+    </resultMap>
+
+    <!-- 列表查询公共字段（不含明细） -->
+    <sql id="selectReportBase">
+        select
+            r.report_id, r.report_date, r.user_id, r.dept_id,
+            r.total_work_hours, r.del_flag,
+            r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+            u.nick_name,
+            d.dept_name
+        from pm_daily_report r
+        left join sys_user u on r.user_id = u.user_id
+        left join sys_dept d on r.dept_id = d.dept_id
+    </sql>
+
+    <!-- 带明细查询公共字段 -->
+    <sql id="selectReportWithDetail">
+        select
+            r.report_id, r.report_date, r.user_id, r.dept_id,
+            r.total_work_hours, r.del_flag,
+            r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
+            u.nick_name,
+            d.dept_name,
+            dd.detail_id     as detail_detail_id,
+            dd.report_id     as detail_report_id,
+            dd.project_id    as detail_project_id,
+            dd.project_stage as detail_project_stage,
+            dd.work_hours    as detail_work_hours,
+            dd.work_content  as detail_work_content,
+            dd.del_flag      as detail_del_flag,
+            dd.create_by     as detail_create_by,
+            dd.create_time   as detail_create_time,
+            dd.update_by     as detail_update_by,
+            dd.update_time   as detail_update_time,
+            dd.remark        as detail_remark,
+            p.project_name   as detail_project_name,
+            p.project_code   as detail_project_code,
+            dict.dict_label  as detail_stage_name
+        from pm_daily_report r
+        left join sys_user u on r.user_id = u.user_id
+        left join sys_dept d on r.dept_id = d.dept_id
+        left join pm_daily_report_detail dd on r.report_id = dd.report_id and dd.del_flag = '0'
+        left join pm_project p on dd.project_id = p.project_id
+        left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
+    </sql>
+
+    <!-- 公共查询条件 -->
+    <sql id="queryConditions">
+        <if test="userId != null"> and r.user_id = #{userId}</if>
+        <if test="deptId != null"> and r.dept_id = #{deptId}</if>
+        <if test="reportDate != null"> and r.report_date = #{reportDate}</if>
+        <if test="reportDateStart != null"> and r.report_date &gt;= #{reportDateStart}</if>
+        <if test="reportDateEnd != null"> and r.report_date &lt;= #{reportDateEnd}</if>
+        <if test="yearMonth != null and yearMonth != ''"> and DATE_FORMAT(r.report_date, '%Y-%m') = #{yearMonth}</if>
+        <if test="params.nickName != null and params.nickName != ''"> and u.nick_name like concat('%', #{params.nickName}, '%')</if>
+    </sql>
+
+    <!-- 查询日报列表（不含明细） -->
+    <select id="selectDailyReportList" parameterType="DailyReport" resultMap="DailyReportResult">
+        <include refid="selectReportBase"/>
+        <where>
+            r.del_flag = '0'
+            <include refid="queryConditions"/>
+        </where>
+        order by r.report_date desc, r.user_id
+    </select>
+
+    <!-- 查询月度日报列表（含明细） -->
+    <select id="selectMonthlyReports" parameterType="DailyReport" resultMap="DailyReportWithDetailResult">
+        <include refid="selectReportWithDetail"/>
+        <where>
+            r.del_flag = '0'
+            <include refid="queryConditions"/>
+        </where>
+        order by r.report_date desc, r.user_id
+    </select>
+
+    <!-- 根据ID查询日报详情（含明细） -->
+    <select id="selectDailyReportById" parameterType="Long" resultMap="DailyReportWithDetailResult">
+        <include refid="selectReportWithDetail"/>
+        where r.report_id = #{reportId} and r.del_flag = '0'
+    </select>
+
+    <!-- 根据用户ID和日期查询日报（含明细） -->
+    <select id="selectByUserAndDate" resultMap="DailyReportWithDetailResult">
+        <include refid="selectReportWithDetail"/>
+        where r.user_id = #{userId} and r.report_date = #{reportDate} and r.del_flag = '0'
+    </select>
+
+    <!-- 新增日报 -->
+    <insert id="insertDailyReport" parameterType="DailyReport" useGeneratedKeys="true" keyProperty="reportId">
+        insert into pm_daily_report
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="reportDate != null">report_date,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="totalWorkHours != null">total_work_hours,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="remark != null">remark,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="reportDate != null">#{reportDate},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="totalWorkHours != null">#{totalWorkHours},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="remark != null">#{remark},</if>
+        </trim>
+    </insert>
+
+    <!-- 修改日报 -->
+    <update id="updateDailyReport" parameterType="DailyReport">
+        update pm_daily_report
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="reportDate != null">report_date = #{reportDate},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="totalWorkHours != null">total_work_hours = #{totalWorkHours},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+        </trim>
+        where report_id = #{reportId}
+    </update>
+
+    <!-- 软删除日报 -->
+    <update id="deleteDailyReportById" parameterType="Long">
+        update pm_daily_report set del_flag = '1' where report_id = #{reportId}
+    </update>
+
+    <!-- 批量软删除日报 -->
+    <update id="deleteDailyReportByIds" parameterType="String">
+        update pm_daily_report set del_flag = '1' where report_id in
+        <foreach item="reportId" collection="array" open="(" separator="," close=")">
+            #{reportId}
+        </foreach>
+    </update>
+
+</mapper>

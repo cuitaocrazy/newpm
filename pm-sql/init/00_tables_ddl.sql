@@ -998,6 +998,82 @@ CREATE TABLE `pm_attachment_log` (
   KEY `idx_operation_time` (`operation_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='附件操作日志表';
 
+-- ----------------------------
+-- 15. 日报主表
+-- ----------------------------
+-- 表说明：员工每日工作日报主表，一个员工一天一条记录。
+-- 业务场景：
+-- 一个员工一天填写一份日报（主表）
+-- 一份日报可以包含多个项目的工作明细（子表）
+-- 支持一天内跨多个项目工作的场景
+DROP TABLE IF EXISTS `pm_daily_report`;
+CREATE TABLE `pm_daily_report` (
+  `report_id` bigint NOT NULL AUTO_INCREMENT COMMENT '日报主键ID',
+  `report_date` date NOT NULL COMMENT '日报日期',
+  `user_id` bigint NOT NULL COMMENT '用户ID',
+  `dept_id` bigint DEFAULT NULL COMMENT '部门ID',
+  `total_work_hours` decimal(5,2) DEFAULT 0.00 COMMENT '当日总工时(小时,由明细自动汇总)',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`report_id`),
+  UNIQUE KEY `uk_user_date` (`user_id`, `report_date`),
+  KEY `idx_report_date` (`report_date`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_dept_id` (`dept_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='日报主表';
+
+-- ----------------------------
+-- 16. 日报明细表
+-- ----------------------------
+-- 表说明：日报的项目工时明细，一个日报可以包含多个项目的工作记录。
+DROP TABLE IF EXISTS `pm_daily_report_detail`;
+CREATE TABLE `pm_daily_report_detail` (
+  `detail_id` bigint NOT NULL AUTO_INCREMENT COMMENT '明细主键ID',
+  `report_id` bigint NOT NULL COMMENT '日报ID(外键)',
+  `project_id` bigint NOT NULL COMMENT '项目ID',
+  `project_stage` varchar(50) DEFAULT NULL COMMENT '项目阶段(字典:sys_xmjd)',
+  `work_hours` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT '工时(小时)',
+  `work_content` text NOT NULL COMMENT '工作内容',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`detail_id`),
+  KEY `idx_report_id` (`report_id`),
+  KEY `idx_project_id` (`project_id`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='日报明细表';
+
+
+-- ----------------------------
+-- 17. 工作日历表
+-- ----------------------------
+
+CREATE TABLE `pm_work_calendar` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `calendar_date` date NOT NULL COMMENT '日期',
+  `day_type` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'holiday=节假日 / workday=调休上班日',
+  `day_name` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '名称，如 春节、元旦调休',
+  `year` int NOT NULL COMMENT '年份（冗余字段，便于按年查询）',
+  `del_flag` char(1) COLLATE utf8mb4_unicode_ci DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
+  `create_by` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_calendar_date` (`calendar_date`),
+  KEY `idx_year` (`year`),
+  CONSTRAINT `pm_work_calendar_chk_1` CHECK ((`day_type` in (_utf8mb4'holiday',_utf8mb4'workday')))
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作日历（节假日 & 调休上班日）';
+
 
 
 

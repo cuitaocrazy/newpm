@@ -111,22 +111,6 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="项目编号" prop="projectCode" data-prop="projectCode">
-                <el-input v-model="form.projectCode" placeholder="自动生成" disabled />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
-                <el-input v-model="form.projectName" placeholder="请输入项目名称" @blur="validateOnBlur('projectName')" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          
-          <el-row :gutter="20">
-            <el-col :span="12">
               <el-form-item label="项目分类" prop="projectCategory" data-prop="projectCategory">
                 <dict-select
                   v-model="form.projectCategory"
@@ -137,6 +121,9 @@
                 />
               </el-form-item>
             </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="项目部门" prop="projectDept" data-prop="projectDept">
                 <project-dept-select
@@ -145,9 +132,6 @@
                 />
               </el-form-item>
             </el-col>
-          </el-row>
-          
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="项目阶段" prop="projectStage" data-prop="projectStage">
                 <dict-select
@@ -159,6 +143,9 @@
                 />
               </el-form-item>
             </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
                 <dict-select
@@ -170,8 +157,13 @@
                 />
               </el-form-item>
             </el-col>
+            <el-col :span="12">
+              <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
+                <el-input v-model="form.projectAddress" placeholder="请输入项目地址"  @blur="validateOnBlur('projectAddress')" />
+              </el-form-item>
+            </el-col>
           </el-row>
-          
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="预估工作量" prop="estimatedWorkload" data-prop="estimatedWorkload">
@@ -195,14 +187,6 @@
                 <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
                   <template #append>人天</template>
                 </el-input>
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="12">
-              <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
-                <el-input v-model="form.projectAddress" placeholder="请输入项目地址"  @blur="validateOnBlur('projectAddress')" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -522,17 +506,17 @@ const data = reactive({
     projectCode: '',
     projectName: '',
     projectCategory: '',
-    projectDept: '',
+    projectDept: null,
     projectStage: '',
     acceptanceStatus: '',
     estimatedWorkload: '',
     projectPlan: '',
     projectDescription: '',
     projectAddress: '',
-    projectManagerId: '',
-    marketManagerId: '',
+    projectManagerId: null,
+    marketManagerId: null,
     participants: [],
-    salesManagerId: '',
+    salesManagerId: null,
     salesContact: '',
     customerId: '',
     customerContactId: '',
@@ -769,6 +753,13 @@ function handleSecondaryRegionChange(regionCode) {
   }
 }
 
+function generateProjectCode() {
+  const { industry, region, regionCode, shortName, establishedYear } = form.value
+  if (industry && region && regionCode && shortName && establishedYear) {
+    form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+  }
+}
+
 // 加载项目数据
 function loadProjectData() {
   const projectId = route.params.projectId
@@ -791,6 +782,11 @@ function loadProjectData() {
 
     // 填充表单
     Object.assign(form.value, data)
+
+    // 项目部门：后端返回字符串，tree-select 需要数字
+    if (form.value.projectDept) {
+      form.value.projectDept = Number(form.value.projectDept)
+    }
 
     // 如果有一级区域，加载对应的二级区域列表
     if (data.region) {

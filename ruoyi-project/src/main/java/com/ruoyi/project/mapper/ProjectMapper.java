@@ -132,4 +132,13 @@ public interface ProjectMapper
      * @return 精简字段列表：projectId, projectName, projectCode
      */
     public List<Map<String, Object>> searchProjectsByName(@Param("projectName") String projectName);
+
+    /**
+     * 根据用户ID查询关联的项目列表（用于工作日报）
+     * 查询用户作为项目经理、市场经理、团队负责人、参与人或项目成员的所有已审核项目
+     *
+     * @param userId 用户ID
+     * @return 项目列表（projectId, projectName, projectCode, projectStage, projectStageName）
+     */
+    public List<Map<String, Object>> selectProjectsByUserId(@Param("userId") Long userId);
 }

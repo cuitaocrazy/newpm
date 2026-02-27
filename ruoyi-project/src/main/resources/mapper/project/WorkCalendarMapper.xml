@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.WorkCalendarMapper">
+
+    <resultMap type="com.ruoyi.project.domain.WorkCalendar" id="WorkCalendarResult">
+        <result property="id"            column="id"            />
+        <result property="calendarDate"  column="calendar_date" />
+        <result property="dayType"       column="day_type"      />
+        <result property="dayName"       column="day_name"      />
+        <result property="year"          column="year"          />
+        <result property="delFlag"       column="del_flag"      />
+        <result property="createBy"      column="create_by"     />
+        <result property="createTime"    column="create_time"   />
+        <result property="updateBy"      column="update_by"     />
+        <result property="updateTime"    column="update_time"   />
+        <result property="remark"        column="remark"        />
+    </resultMap>
+
+    <sql id="selectWorkCalendarVo">
+        select id, calendar_date, day_type, day_name, year, del_flag,
+               create_by, create_time, update_by, update_time, remark
+        from pm_work_calendar
+    </sql>
+
+    <select id="selectWorkCalendarById" parameterType="Long" resultMap="WorkCalendarResult">
+        <include refid="selectWorkCalendarVo"/>
+        where id = #{id} and del_flag = '0'
+    </select>
+
+    <select id="selectWorkCalendarList" parameterType="com.ruoyi.project.domain.WorkCalendar" resultMap="WorkCalendarResult">
+        <include refid="selectWorkCalendarVo"/>
+        <where>
+            del_flag = '0'
+            <if test="year != null"> and year = #{year}</if>
+            <if test="dayType != null and dayType != ''"> and day_type = #{dayType}</if>
+            <if test="dayName != null and dayName != ''"> and day_name like concat('%', #{dayName}, '%')</if>
+            <if test="calendarDateStr != null and calendarDateStr != ''"> and calendar_date = #{calendarDateStr}</if>
+        </where>
+        order by calendar_date
+    </select>
+
+    <select id="selectByYear" parameterType="Integer" resultMap="WorkCalendarResult">
+        <include refid="selectWorkCalendarVo"/>
+        where del_flag = '0' and year = #{year}
+        order by calendar_date
+    </select>
+
+    <insert id="insertWorkCalendar" parameterType="com.ruoyi.project.domain.WorkCalendar" useGeneratedKeys="true" keyProperty="id">
+        insert into pm_work_calendar (
+            calendar_date, day_type, day_name, year,
+            create_by, create_time, remark
+        ) values (
+            #{calendarDate}, #{dayType}, #{dayName}, #{year},
+            #{createBy}, sysdate(), #{remark}
+        )
+    </insert>
+
+    <update id="updateWorkCalendar" parameterType="com.ruoyi.project.domain.WorkCalendar">
+        update pm_work_calendar
+        <set>
+            <if test="calendarDate != null">calendar_date = #{calendarDate},</if>
+            <if test="dayType != null and dayType != ''">day_type = #{dayType},</if>
+            <if test="dayName != null">day_name = #{dayName},</if>
+            <if test="year != null">year = #{year},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = sysdate(),
+            <if test="remark != null">remark = #{remark},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteWorkCalendarByIds" parameterType="String">
+        update pm_work_calendar set del_flag = '1' where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteWorkCalendarById" parameterType="Long">
+        update pm_work_calendar set del_flag = '1' where id = #{id}
+    </delete>
+
+</mapper>
