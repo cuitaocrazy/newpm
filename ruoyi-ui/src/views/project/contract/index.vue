@@ -451,7 +451,7 @@ function getList() {
 function getDeptTree() {
   fetchDeptTree().then(response => {
     // 平铺列表先构建树，再过滤只保留第三级及以下的部门
-    const deptData = response.data.map((dept: any) => ({
+    const deptData = response.data.map((dept) => ({
       ...dept,
       id: dept.deptId,
       label: dept.deptName
