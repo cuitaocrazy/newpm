@@ -224,13 +224,13 @@
           {{ detailData.remark || '无' }}
         </el-descriptions-item>
         <el-descriptions-item label="创建人" label-class-name="label-bold">
-          {{ detailData.createByName || detailData.createBy }}
+          {{ detailData.createByName || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="创建时间" label-class-name="label-bold">
           {{ parseTime(detailData.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
         </el-descriptions-item>
         <el-descriptions-item label="更新人" label-class-name="label-bold">
-          {{ detailData.updateByName || detailData.updateBy }}
+          {{ detailData.updateByName || detailData.createByName }}
         </el-descriptions-item>
         <el-descriptions-item label="更新时间" label-class-name="label-bold">
           {{ parseTime(detailData.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}

@@ -175,7 +175,7 @@
           <div v-if="!scope.row.isSummary" class="contract-name-cell">
             <el-link
               type="primary"
-              :underline="false"
+              underline="never"
               @click="handleViewContract(scope.row)"
               class="contract-name-link"
               :title="scope.row.contractName">

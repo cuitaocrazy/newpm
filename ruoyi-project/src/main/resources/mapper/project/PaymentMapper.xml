@@ -35,6 +35,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="freeMaintenancePeriod"    column="free_maintenance_period"    />
         <result property="deptId"    column="dept_id"    />
         <result property="deptName"    column="dept_name"    />
+        <result property="createByName"    column="create_by_name"    />
         <result property="updateByName"    column="update_by_name"    />
     </resultMap>
 
@@ -54,12 +55,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             c.dept_id,
             cu.customer_simple_name as customer_name,
             d.dept_name,
-            u.nick_name as update_by_name
+            u1.nick_name as create_by_name,
+            u2.nick_name as update_by_name
         from pm_payment p
         left join pm_contract c on p.contract_id = c.contract_id
         left join pm_customer cu on c.customer_id = cu.customer_id
         left join sys_dept d on c.dept_id = d.dept_id
-        left join sys_user u on p.update_by COLLATE utf8mb4_unicode_ci = u.user_name
+        left join sys_user u1 on p.create_by = u1.user_name COLLATE utf8mb4_0900_ai_ci
+        left join sys_user u2 on p.update_by = u2.user_name COLLATE utf8mb4_0900_ai_ci
         <where>
             <if test="contractId != null"> and p.contract_id = #{contractId}</if>
             <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
@@ -89,9 +92,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.actual_quarter, p.submit_acceptance_date, p.actual_payment_date,
             p.confirm_year, p.del_flag, p.create_by, p.create_time,
             p.update_by, p.update_time, p.remark,
-            c.contract_name, c.contract_code, c.contract_amount
+            c.contract_name, c.contract_code, c.contract_amount,
+            u1.nick_name as create_by_name,
+            u2.nick_name as update_by_name
         from pm_payment p
         left join pm_contract c on p.contract_id = c.contract_id
+        left join sys_user u1 on p.create_by = u1.user_name COLLATE utf8mb4_0900_ai_ci
+        left join sys_user u2 on p.update_by = u2.user_name COLLATE utf8mb4_0900_ai_ci
         where p.payment_id = #{paymentId}
     </select>
 

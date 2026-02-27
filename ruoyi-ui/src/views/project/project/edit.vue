@@ -181,6 +181,16 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
+              <el-form-item label="项目预算" prop="projectBudget" data-prop="projectBudget">
+                <el-input v-model="form.projectBudget" placeholder="请输入项目预算" @blur="validateOnBlur('projectBudget')">
+                  <template #append>元</template>
+                </el-input>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
               <el-form-item label="实际工作量" prop="actualWorkload" data-prop="actualWorkload">
                 <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
                   <template #append>人天</template>
@@ -394,13 +404,6 @@
         <el-collapse-item name="5" title="五、成本预算">
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="项目预算" prop="projectBudget" data-prop="projectBudget">
-                <el-input v-model="form.projectBudget" placeholder="请输入项目预算" @blur="validateOnBlur('projectBudget')">
-                  <template #append>元</template>
-                </el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
               <el-form-item label="项目费用">
                 <el-input v-model="form.projectCost" placeholder="请输入项目费用">
                   <template #append>元</template>
@@ -408,7 +411,7 @@
               </el-form-item>
             </el-col>
           </el-row>
-          
+
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="费用预算">

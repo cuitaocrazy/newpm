@@ -303,8 +303,8 @@
         </el-form-item>
         <el-form-item label="审核结果" prop="approvalStatus">
           <el-radio-group v-model="approvalForm.approvalStatus">
-            <el-radio label="1">通过</el-radio>
-            <el-radio label="2">拒绝</el-radio>
+            <el-radio value="1">通过</el-radio>
+            <el-radio value="2">拒绝</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="审核意见" prop="approvalReason">

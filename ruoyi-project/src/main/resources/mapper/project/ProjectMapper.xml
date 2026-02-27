@@ -422,6 +422,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectUsersByPost" resultType="map">
         SELECT DISTINCT
             u.user_id AS userId,
+            u.user_name AS userName,
             u.nick_name AS nickName,
             u.phonenumber AS phonenumber
         FROM sys_user u

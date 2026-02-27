@@ -30,8 +30,7 @@
 
 <script setup name="UserSelect">
 import { ref, watch, onMounted } from 'vue'
-import { listUserByPost } from '@/api/system/user'
-import { listUser } from '@/api/system/user'
+import { getUsersByPost } from '@/api/project/project'
 
 // Props
 const props = defineProps({
@@ -94,16 +93,8 @@ const userOptions = ref([])
 /** 加载用户列表 */
 async function loadUsers() {
   try {
-    let response
-    if (props.postCode) {
-      // 按岗位筛选
-      response = await listUserByPost(props.postCode)
-      userOptions.value = response.data || []
-    } else {
-      // 查询所有用户
-      response = await listUser({})
-      userOptions.value = response.rows || []
-    }
+    const response = await getUsersByPost(props.postCode || null)
+    userOptions.value = response.data || []
   } catch (error) {
     console.error('加载用户列表失败:', error)
     userOptions.value = []

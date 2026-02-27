@@ -350,7 +350,7 @@
           {{ form.createTime || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="更新人">
-          {{ getUserNickName(form.updateBy) }}
+          {{ getUserNickName(form.updateBy || form.createBy) }}
         </el-descriptions-item>
         <el-descriptions-item label="更新时间">
           {{ form.updateTime || '-' }}
@@ -541,38 +541,8 @@ function loadProjectData() {
   })
 }
 
-// 加载关联的名称数据
+// 加载关联的名称数据（projectManagerName/marketManagerName/salesManagerName 由后端 JOIN 返回，无需单独请求）
 function loadRelatedNames(projectData) {
-  // 加载项目经理名称
-  if (projectData.projectManagerId) {
-    request({
-      url: `/system/user/${projectData.projectManagerId}`,
-      method: 'get'
-    }).then(res => {
-      form.value.projectManagerName = res.data.nickName || ''
-    }).catch(() => {})
-  }
-
-  // 加载市场经理名称
-  if (projectData.marketManagerId) {
-    request({
-      url: `/system/user/${projectData.marketManagerId}`,
-      method: 'get'
-    }).then(res => {
-      form.value.marketManagerName = res.data.nickName || ''
-    }).catch(() => {})
-  }
-
-  // 加载销售负责人名称
-  if (projectData.salesManagerId) {
-    request({
-      url: `/system/user/${projectData.salesManagerId}`,
-      method: 'get'
-    }).then(res => {
-      form.value.salesManagerName = res.data.nickName || ''
-    }).catch(() => {})
-  }
-
   // 加载客户名称
   if (projectData.customerId) {
     request({
@@ -664,11 +634,11 @@ function getDeptName(deptId) {
   return pathDepts.join('-')
 }
 
-// 格式化金额（千分位，保留两位小数）
+// 格式化金额（千分位，保留两位小数）；null/undefined/空字符串/0 均显示 '-'
 function formatAmount(amount) {
-  if (amount === null || amount === undefined || amount === '') return '-'
+  if (amount === null || amount === undefined || amount === '' || amount === 0) return '-'
   const num = Number(amount)
-  if (isNaN(num)) return '-'
+  if (isNaN(num) || num === 0) return '-'
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 

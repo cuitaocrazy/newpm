@@ -319,8 +319,7 @@
 <script setup name="ProjectAttachment">
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject } from '@/api/project/project'
-import { listUser } from '@/api/system/user'
+import { getProject, getUsersByPost } from '@/api/project/project'
 import { listContactByCustomer } from '@/api/project/contact'
 import {
   listAttachment,
@@ -392,8 +391,8 @@ const formatFileSize = (size) => {
 
 // 加载所有用户（用于参与人员显示）
 function loadAllUsers() {
-  listUser({}).then(response => {
-    allUsers.value = response.rows || []
+  getUsersByPost().then(response => {
+    allUsers.value = response.data || []
   })
 }
 

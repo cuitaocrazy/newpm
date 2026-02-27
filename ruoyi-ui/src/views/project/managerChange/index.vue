@@ -210,7 +210,7 @@
 
 <script setup name="ManagerChange">
 import { listManagerChange, getProjectChangeHistory, changeManager, batchChangeManager } from "@/api/project/managerChange"
-import { listUserByPost } from "@/api/system/user"
+import { getUsersByPost } from "@/api/project/project"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
@@ -275,7 +275,7 @@ function getList() {
 
 /** 加载项目经理列表 */
 function loadManagerList() {
-  listUserByPost('pm').then(response => {
+  getUsersByPost('pm').then(response => {
     managerList.value = response.data
   })
 }

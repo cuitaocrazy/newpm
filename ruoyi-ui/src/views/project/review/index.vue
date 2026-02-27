@@ -89,7 +89,7 @@
       <el-table-column label="序号" type="index" width="55" align="center" />
       <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip>
         <template #default="scope">
-          <el-link type="primary" @click="handleReview(scope.row)" :underline="false">
+          <el-link type="primary" @click="handleReview(scope.row)" underline="never">
             {{ scope.row.projectName }}
           </el-link>
         </template>
@@ -158,7 +158,7 @@
       <template #header>
         <div class="drawer-header">
           <span class="drawer-title">审核项目 - {{ reviewForm.projectName }}</span>
-          <el-link type="primary" :underline="false" @click="toggleAllCollapse">
+          <el-link type="primary" underline="never" @click="toggleAllCollapse">
             {{ isAllExpanded ? '全部收起' : '全部展开' }}
           </el-link>
         </div>

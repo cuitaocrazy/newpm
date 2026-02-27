@@ -137,17 +137,31 @@
             />
           </el-form-item>
         </el-col>
+      </el-row>
+
+      <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="预估工作量(人天)" prop="estimatedWorkload" data-prop="estimatedWorkload">
-            <el-input-number v-model="form.estimatedWorkload" :min="0" :precision="2" placeholder="请输入预估工作量" style="width: 100%" @blur="validateOnBlur('estimatedWorkload')" />
+          <el-form-item label="预估工作量" prop="estimatedWorkload" data-prop="estimatedWorkload">
+            <el-input v-model="form.estimatedWorkload" placeholder="请输入预估工作量" @blur="validateOnBlur('estimatedWorkload')">
+              <template #append>人天</template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="项目预算" prop="projectBudget" data-prop="projectBudget">
+            <el-input v-model="form.projectBudget" placeholder="请输入项目预算" @blur="validateOnBlur('projectBudget')">
+              <template #append>元</template>
+            </el-input>
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="项目预算(元)" prop="projectBudget" data-prop="projectBudget">
-            <el-input-number v-model="form.projectBudget" :min="0" :precision="2" placeholder="请输入项目预算" style="width: 100%" @blur="validateOnBlur('projectBudget')" />
+          <el-form-item label="实际工作量" prop="actualWorkload" data-prop="actualWorkload">
+            <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
+              <template #append>人天</template>
+            </el-input>
           </el-form-item>
         </el-col>
       </el-row>

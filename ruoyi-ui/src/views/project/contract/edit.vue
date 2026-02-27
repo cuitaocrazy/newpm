@@ -458,7 +458,7 @@ function loadContractData() {
       remark: data.remark,
       createByName: data.createByName || data.createBy || '-',
       createTime: data.createTime || '-',
-      updateByName: data.updateByName || data.updateBy || '-',
+      updateByName: data.updateByName || data.createByName || '-',
       updateTime: data.updateTime || '-'
     })
 

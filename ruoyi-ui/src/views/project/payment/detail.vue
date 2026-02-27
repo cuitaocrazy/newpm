@@ -59,7 +59,7 @@
 
           <!-- 第七行：创建人、创建时间 -->
           <el-descriptions-item label="创建人">
-            {{ form.createBy || '-' }}
+            {{ form.createByName || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">
             {{ form.createTime ? parseTime(form.createTime) : '-' }}
@@ -67,7 +67,7 @@
 
           <!-- 第八行：更新人、更新时间 -->
           <el-descriptions-item label="更新人">
-            {{ form.updateBy || '-' }}
+            {{ form.updateByName || form.createByName || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="更新时间">
             {{ form.updateTime ? parseTime(form.updateTime) : '-' }}
@@ -191,8 +191,10 @@ const form = reactive({
   confirmYear: '',
   remark: '',
   createBy: '',
+  createByName: '',
   createTime: '',
   updateBy: '',
+  updateByName: '',
   updateTime: ''
 })
 

@@ -199,7 +199,7 @@ VALUES ('新增合同', @htkxMenuId, 10, 'contract/add', 'project/contract/form'
 
 -- 隐藏菜单：编辑合同（挂在合同款项根目录下）
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('编辑合同', @htkxMenuId, 11, 'contract/edit/:contractId(\\d+)', 'project/contract/form', 1, 0, 'C', '1', '0', 'project:contract:edit', '#', 'admin', sysdate(), '', NULL, '编辑合同页面', 'ContractEdit', '/htkx/contract');
+VALUES ('编辑合同', @htkxMenuId, 11, 'contract/edit/:contractId(\\d+)', 'project/contract/edit', 1, 0, 'C', '1', '0', 'project:contract:edit', '#', 'admin', sysdate(), '', NULL, '编辑合同页面', 'ContractEdit', '/htkx/contract');
 
 -- 隐藏菜单：合同详情（挂在合同款项根目录下）
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
