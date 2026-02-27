@@ -72,6 +72,7 @@ public class CustomerController extends BaseController
     /**
      * 检查客户简称是否唯一
      */
+    @PreAuthorize("@ss.hasPermi('project:customer:list')")
     @GetMapping("/checkSimpleNameUnique")
     public AjaxResult checkSimpleNameUnique(String customerSimpleName, Long customerId)
     {
@@ -115,6 +116,7 @@ public class CustomerController extends BaseController
     /**
      * 根据客户ID查询联系人列表
      */
+    @PreAuthorize("@ss.hasPermi('project:customer:list')")
     @GetMapping("/contact/listByCustomer")
     public AjaxResult listContactByCustomer(Long customerId)
     {

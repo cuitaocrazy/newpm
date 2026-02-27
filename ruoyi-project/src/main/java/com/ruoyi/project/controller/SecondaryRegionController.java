@@ -105,6 +105,7 @@ public class SecondaryRegionController extends BaseController
     /**
      * 根据一级区域查询二级区域列表
      */
+    @PreAuthorize("@ss.hasPermi('project:secondaryRegion:list')")
     @GetMapping("/listByRegion")
     public AjaxResult listByRegion(String regionDictValue)
     {
