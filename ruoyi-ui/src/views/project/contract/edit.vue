@@ -355,7 +355,7 @@ const selectedProjects = ref([])
 // 加载部门树
 function getDeptTree() {
   fetchDeptTree().then(response => {
-    const deptData = response.data.map((dept: any) => ({
+    const deptData = response.data.map((dept) => ({
       ...dept,
       id: dept.deptId,
       label: dept.deptName
