@@ -344,7 +344,7 @@
 
 <script setup name="Contract">
 import { listContract, getContract, delContract, searchContracts } from "@/api/project/contract"
-import { deptTreeSelect } from "@/api/system/user"
+import { getDeptTree as fetchDeptTree } from "@/api/project/project"
 import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, listAttachmentLog } from "@/api/project/attachment"
@@ -449,9 +449,15 @@ function getList() {
 
 /** 查询部门下拉树结构 */
 function getDeptTree() {
-  deptTreeSelect().then(response => {
-    // 过滤部门树，只保留第三级及以下的部门
-    deptOptions.value = filterDeptFromLevel3(response.data)
+  fetchDeptTree().then(response => {
+    // 平铺列表先构建树，再过滤只保留第三级及以下的部门
+    const deptData = response.data.map((dept: any) => ({
+      ...dept,
+      id: dept.deptId,
+      label: dept.deptName
+    }))
+    const tree = proxy.handleTree(deptData, "id")
+    deptOptions.value = filterDeptFromLevel3(tree)
   })
 }
 
