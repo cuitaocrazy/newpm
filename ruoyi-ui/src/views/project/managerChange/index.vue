@@ -77,11 +77,11 @@
       style="width: 100%">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" type="index" width="55" align="center" />
-      <el-table-column label="项目名称" align="left" prop="projectName" min-width="180" show-overflow-tooltip>
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220">
         <template #default="scope">
-          <el-button link type="primary" @click="handleDetail(scope.row)">
+          <div class="project-name-cell" @click="handleDetail(scope.row)" style="cursor: pointer; color: #409eff;">
             {{ scope.row.projectName }}
-          </el-button>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="项目编号" align="center" prop="projectCode" width="150" />
@@ -485,5 +485,12 @@ watch(showSearch, () => {
   margin-bottom: 10px;
   font-size: 16px;
   font-weight: bold;
+}
+
+.project-name-cell {
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.5;
+  text-align: left;
 }
 </style>

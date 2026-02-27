@@ -353,6 +353,24 @@ insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 values('批量变更项目经理', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:managerChange:batchChange',         '#', 'admin', sysdate(), '', null, '');
 
 -- ========================================
+-- 项目人员管理菜单数据
+-- ========================================
+
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目人员管理', '2059', '5', 'projectMember', 'project/projectMember/index', 1, 0, 'C', '0', '0', 'project:member:list', 'peoples', 'admin', sysdate(), '', null, '项目人员管理菜单');
+
+-- 按钮父菜单ID
+SELECT @memberMenuId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目人员查询', @memberMenuId, '1', '#', '', 1, 0, 'F', '0', '0', 'project:member:query', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目人员编辑', @memberMenuId, '2', '#', '', 1, 0, 'F', '0', '0', 'project:member:edit', '#', 'admin', sysdate(), '', null, '');
+
+-- ========================================
 -- 日报管理模块菜单数据
 -- ========================================
 

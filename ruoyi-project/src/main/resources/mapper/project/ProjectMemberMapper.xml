@@ -89,4 +89,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 
+    <select id="selectProjectWithMembers" parameterType="java.util.Map" resultType="java.util.LinkedHashMap">
+        SELECT p.project_id AS projectId, p.project_name AS projectName, p.project_code AS projectCode,
+               d.dept_name AS deptName, p.project_dept AS deptId,
+               GROUP_CONCAT(u.nick_name ORDER BY u.nick_name SEPARATOR '、') AS memberNames
+        FROM pm_project p
+        LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
+        LEFT JOIN pm_project_member m ON p.project_id = m.project_id AND m.is_active = '1' AND m.del_flag = '0'
+        LEFT JOIN sys_user u ON m.user_id = u.user_id
+        WHERE p.del_flag = '0'
+        <if test="projectName != null and projectName != ''">
+            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+        <if test="deptId != null">
+            AND p.project_dept = #{deptId}
+        </if>
+        GROUP BY p.project_id, p.project_name, p.project_code, d.dept_name, p.project_dept
+        ORDER BY p.create_time DESC
+    </select>
+
 </mapper>
