@@ -115,6 +115,19 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
+          <el-form-item label="项目状态" prop="projectStatus" data-prop="projectStatus">
+            <dict-select
+              v-model="form.projectStatus"
+              dict-type="sys_xmzt"
+              placeholder="请选择项目状态"
+              @blur="validateOnBlur('projectStatus')"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
           <el-form-item label="项目阶段" prop="projectStage" data-prop="projectStage">
             <dict-select
               v-model="form.projectStage"
@@ -124,9 +137,6 @@
             />
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
             <dict-select
@@ -550,6 +560,7 @@ const rules = ref({
   projectName: [{ required: true, message: "项目名称不能为空", trigger: "blur" }],
   projectCategory: [{ required: true, message: "项目分类不能为空", trigger: "change" }],
   projectDept: [{ required: true, message: "项目部门不能为空", trigger: "change" }],
+  projectStatus: [{ required: true, message: "项目状态不能为空", trigger: "change" }],
   projectStage: [{ required: true, message: "项目阶段不能为空", trigger: "change" }],
   acceptanceStatus: [{ required: true, message: "验收状态不能为空", trigger: "change" }],
   estimatedWorkload: [{ required: true, message: "预估工作量不能为空", trigger: "blur" }],

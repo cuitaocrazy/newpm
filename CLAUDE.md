@@ -29,6 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - [Project Documentation](#project-documentation)
 - [Development Workflow](#development-workflow)
 - [Common Pitfalls](#common-pitfalls)
+- [CI/CD Pipeline](#cicd-pipeline)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
 
@@ -204,6 +205,9 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `ProjectManagerChange` | `pm_project_manager_change` | 项目经理变更 - Track project manager changes with old/new manager, reason, and timestamp |
 | `TeamRevenueConfirmation` | `pm_team_revenue_confirmation` | 团队收入确认 - Team-level revenue confirmation (separate from company-wide) |
 | `ProjectMember` | `pm_project_member` | 项目成员 - Project team member management |
+| `DailyReport` | `pm_daily_report` | 工作日报 - Daily work report management |
+| `DailyReportDetail` | `pm_daily_report_detail` | 工作日报明细 - Daily report detail items linked to projects |
+| `WorkCalendar` | `pm_work_calendar` | 工作日历 - Work calendar for tracking working days and holidays |
 
 **Key Features:**
 
@@ -271,7 +275,10 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 
 4. **Daily Reports (工作日报):**
    - Employees submit daily work reports linked to projects
-   - Track actual workload (person-days) per project
+   - Master-detail: `pm_daily_report` (header with date) → `pm_daily_report_detail` (items per project)
+   - Track actual workload (person-days) per project per day
+   - Two views: write/edit page (`write.vue`) and activity feed (`activity.vue`)
+   - Work calendar integration (`pm_work_calendar`) for tracking working/non-working days
    - Calendar view for team daily reports
    - Statistics: project person-day aggregation, team reports
 
@@ -330,6 +337,9 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `PaymentController` - `/project/payment/**` - Payment management
 - `AttachmentController` - `/project/attachment/**` - File upload/download/delete with audit logging
 - `SecondaryRegionController` - `/project/secondaryRegion/**` - Secondary region management
+- `DailyReportController` - `/project/dailyReport/**` - Daily work report CRUD and monthly summary
+- `WorkCalendarController` - `/project/workCalendar/**` - Work calendar management
+- `ProjectMemberController` - `/project/member/**` - Project member management
 
 **Frontend Routes:**
 
@@ -342,6 +352,9 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `/project/customer` - 客户管理 (Customer management)
 - `/project/secondaryRegion` - 二级区域管理 (Secondary region management)
 - `/project/managerChange` - 项目经理变更 (Project manager change records)
+- `/project/dailyReport` - 工作日报 (Daily work report writing and activity feed)
+- `/project/workCalendar` - 工作日历 (Work calendar management)
+- `/project/projectMember` - 项目成员 (Project member management)
 - `/revenue/company` - 公司收入确认详情 (Company revenue confirmation detail view)
 - `/revenue/team` - 团队收入确认 (Team-level revenue confirmation)
 
@@ -938,37 +951,51 @@ public TableDataInfo list(Entity entity) {
 }
 ```
 
+## CI/CD Pipeline
+
+**GitHub Actions** (`.github/workflows/deploy.yml`): Pushes to `main` auto-deploy to K3s.
+
+- **Trigger**: Push to `main` (ignores `k8s/`, `sql/`, `*.md`, `.github/`, `docker-compose*.yml`)
+- **Steps**: Docker build → push to Docker Hub (`cuitaocrazy/newpm:latest`) → SSH to server → `kubectl rollout restart deployment/ruoyi-app -n newpm`
+- **Secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`
+
 ## Deployment
 
-### Docker Deployment
+### Docker One-JAR Deployment
+
+The `Dockerfile` uses a 3-stage multi-stage build that bundles Vue frontend into the Spring Boot JAR. **Source code is modified at build time** (not in the repo):
+
+1. **Stage 1 (Node 20)**: Build Vue frontend, change `VITE_APP_BASE_API` from `/prod-api` to `/` (same-origin)
+2. **Stage 2 (Maven + JDK 17)**: Apply build-time patches, then `mvn clean package`:
+   - `SecurityConfig`: Permit all GET requests (SPA routes reach `SpaController`; API data protected by `@PreAuthorize`)
+   - Remove `SysIndexController` (its `/` mapping conflicts with `index.html`)
+   - Create `SpaController` for Vue Router history mode fallback (`forward:/index.html`)
+   - Fix upload path for Linux: `D:/ruoyi/uploadPath` → `/app/uploadPath`
+   - Replace logback config with console-only output (K8s-friendly)
+   - Copy Vue `dist/` into `src/main/resources/static/`
+3. **Stage 3 (JRE Alpine)**: Runtime with `java -Xms256m -Xmx1024m -jar app.jar`
 
 ```bash
-# Build Docker image
-docker build -t ruoyi-pm:latest .
-
-# Run with docker-compose
+# Build and run locally with docker-compose (includes MySQL 8.0 + Redis 7)
 docker-compose up -d
 ```
 
-**Configuration files:**
-- `Dockerfile` - Backend container configuration
-- `docker-compose.yml` - Multi-container orchestration (backend + MySQL + Redis)
-
 ### Kubernetes Deployment
 
+Namespace: `newpm`. Configuration in `k8s/`:
+
+- `namespace.yml` - Namespace definition
+- `app.yml` - Backend deployment (image: `cuitaocrazy/newpm:latest`)
+- `config.yml` - ConfigMap with Spring application config (profiles: `druid,k8s`)
+- `mysql.yml` - MySQL 8.0 StatefulSet
+- `redis.yml` - Redis deployment
+- `ingress.yml` - Traefik IngressRoute
+
 ```bash
-# Apply K8s configurations
 kubectl apply -f k8s/
-
-# Check deployment status
-kubectl get pods -n ruoyi
+kubectl get pods -n newpm
+kubectl logs -f deployment/ruoyi-app -n newpm
 ```
-
-**Configuration files in `k8s/`:**
-- Deployment manifests for backend and frontend
-- Service definitions
-- ConfigMaps and Secrets
-- Ingress rules
 
 ## Troubleshooting
 

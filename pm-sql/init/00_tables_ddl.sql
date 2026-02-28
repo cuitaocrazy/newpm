@@ -730,6 +730,7 @@ CREATE TABLE `pm_project` (
   `established_year` int DEFAULT NULL COMMENT '立项年度',
   `project_category` varchar(50) DEFAULT NULL COMMENT '项目分类',
   `project_dept` varchar(100) DEFAULT NULL COMMENT '项目部门',
+  `project_status` varchar(10) DEFAULT NULL COMMENT '项目状态',
   `project_stage` varchar(50) DEFAULT NULL COMMENT '项目阶段',
   `acceptance_status` varchar(50) DEFAULT NULL COMMENT '验收状态',
   `estimated_workload` decimal(10,2) DEFAULT NULL COMMENT '预估工作量(人天)',

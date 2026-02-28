@@ -60,6 +60,10 @@ public class Project extends BaseEntity
     @Excel(name = "项目部门")
     private String projectDept;
 
+    /** 项目状态 */
+    @Excel(name = "项目状态")
+    private String projectStatus;
+
     /** 项目阶段 */
     @Excel(name = "项目阶段")
     private String projectStage;
@@ -412,9 +416,19 @@ public class Project extends BaseEntity
         this.projectStage = projectStage;
     }
 
-    public String getProjectStage() 
+    public String getProjectStage()
     {
         return projectStage;
+    }
+
+    public void setProjectStatus(String projectStatus)
+    {
+        this.projectStatus = projectStatus;
+    }
+
+    public String getProjectStatus()
+    {
+        return projectStatus;
     }
 
     public void setAcceptanceStatus(String acceptanceStatus) 
@@ -1010,6 +1024,7 @@ public class Project extends BaseEntity
             .append("establishedYear", getEstablishedYear())
             .append("projectCategory", getProjectCategory())
             .append("projectDept", getProjectDept())
+            .append("projectStatus", getProjectStatus())
             .append("projectStage", getProjectStage())
             .append("acceptanceStatus", getAcceptanceStatus())
             .append("estimatedWorkload", getEstimatedWorkload())

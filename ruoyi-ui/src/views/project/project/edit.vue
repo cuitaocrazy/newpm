@@ -133,6 +133,20 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
+              <el-form-item label="项目状态" prop="projectStatus" data-prop="projectStatus">
+                <dict-select
+                  v-model="form.projectStatus"
+                  dict-type="sys_xmzt"
+                  placeholder="请选择项目状态"
+                  clearable
+                  @blur="validateOnBlur('projectStatus')"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
               <el-form-item label="项目阶段" prop="projectStage" data-prop="projectStage">
                 <dict-select
                   v-model="form.projectStage"
@@ -143,9 +157,6 @@
                 />
               </el-form-item>
             </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
                 <dict-select
@@ -155,11 +166,6 @@
                   clearable
                   @blur="validateOnBlur('acceptanceStatus')"
                 />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
-                <el-input v-model="form.projectAddress" placeholder="请输入项目地址"  @blur="validateOnBlur('projectAddress')" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -190,7 +196,15 @@
               </el-form-item>
             </el-col>
           </el-row>
-          
+
+          <el-row :gutter="20">
+            <el-col :span="24">
+              <el-form-item label="项目地址" prop="projectAddress" data-prop="projectAddress">
+                <el-input v-model="form.projectAddress" placeholder="请输入项目地址" @blur="validateOnBlur('projectAddress')" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
           <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="项目计划" prop="projectPlan" data-prop="projectPlan">
@@ -547,6 +561,7 @@ const data = reactive({
     projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
     projectCategory: [{ required: true, message: '请选择项目分类', trigger: 'change' }],
     projectDept: [{ required: true, message: '请选择项目部门', trigger: 'change' }],
+    projectStatus: [{ required: true, message: '请选择项目状态', trigger: 'change' }],
     projectStage: [{ required: true, message: '请选择项目阶段', trigger: 'change' }],
     acceptanceStatus: [{ required: true, message: '请选择验收状态', trigger: 'change' }],
     estimatedWorkload: [

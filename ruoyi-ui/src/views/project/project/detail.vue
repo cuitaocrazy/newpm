@@ -41,6 +41,9 @@
         <el-descriptions-item label="项目部门">
           {{ getDeptName(form.projectDept) }}
         </el-descriptions-item>
+        <el-descriptions-item label="项目状态">
+          <dict-tag :options="sys_xmzt" :value="form.projectStatus" />
+        </el-descriptions-item>
         <el-descriptions-item label="预估工作量">
           {{ form.estimatedWorkload || 0 }} 人天
         </el-descriptions-item>
@@ -378,8 +381,8 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl } =
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl')
+const { sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl')
 
 // 表单数据
 const data = reactive({
