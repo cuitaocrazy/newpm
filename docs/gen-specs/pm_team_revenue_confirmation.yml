@@ -1,7 +1,6 @@
 # ============================
 # RuoYi 代码生成配置文件
 # 表名: pm_team_revenue_confirmation
-# 生成时间: 2026-02-12
 # ============================
 
 # ============================
@@ -12,42 +11,7 @@ basicInfo:
   tableComment: 团队收入确认表
   className: TeamRevenueConfirmation
   functionAuthor: ruoyi
-  remark: |
-    团队收入确认功能修改记录：
-
-    1. 列表参与人员显示修复 (2026-02-14完成)：
-       - 问题描述：团队收入确认列表中"参与人员"列显示为"-"，无法正确显示用户昵称
-       - 问题原因：错误地访问 allUsersSelectRef.value?.userOptions?.value（多了一层.value）
-       - 修复内容：
-         * 文件：ruoyi-ui/src/views/revenue/team/index.vue
-         * 函数：getParticipantsNames()
-         * 修改：const allUsers = allUsersSelectRef.value?.userOptions || []
-         * 说明：UserSelect 组件通过 defineExpose 暴露的是 userOptions（ref本身），不需要再访问 .value
-       - 显示效果：
-         * 修复前：显示 "-"（无法获取用户列表）
-         * 修复后：显示 "张三, 李四, 王五"（正确显示用户昵称）
-       - 关联修复：同时修复了项目管理和公司收入确认的相同问题
-
-    2. 列表显示全面优化 (2026-02-26完成)
-       - 功能描述：团队收入确认列表显示优化，与公司收入确认保持一致
-       - 修改内容：
-         * 文件：ruoyi-ui/src/views/revenue/team/index.vue
-         * 表头单位添加(元)：
-           - 项目预算列表头：改为"项目预算(元)"，align 改为 right
-           - 合同金额列表头：改为"合同金额(元)"，align 改为 right
-           - 确认金额(含税)列表头：改为"确认金额(含税)(元)"，align 改为 right
-         * 金额千分位格式化：新增 formatAmount() 函数，使用 toLocaleString('en-US') 格式化所有金额列
-         * 工作量取整显示：新增 formatWorkload() 函数，使用 parseInt() 去除小数（预估工作量、实际人天不显示小数）
-         * 更新人改为显示昵称：prop 从 "updateBy" 改为 "updateByName"（依赖 ProjectMapper.xml 的 update_by_name 关联字段）
-         * 修复合计行 bug：
-           - 原 computed displayList 中使用 `&& summary[key]` 导致值为0时被跳过
-           - 修复后分别处理金额字段（toFixed(2)）和工作量字段（Math.round()）
-           - 金额字段：confirmAmount, afterTaxAmount, projectBudget, contractAmount
-           - 工作量字段：estimatedWorkload, actualWorkload
-       - 显示效果：
-         * 金额显示格式：如 "1,234,567.89 元"
-         * 工作量显示：如 "10"（取整，不显示 "10.00"）
-         * 更新人显示：显示中文昵称而非登录名
+  remark: ""
 
 # ============================
 # Tab 2: 字段信息
@@ -237,76 +201,141 @@ genInfo:
 # 定制需求（超出标准模板的组件/交互/接口需求）
 # ============================
 customizations:
+
   # ========== 列表页面定制 ==========
   list_query_conditions:
     intent: "查询条件与公司收入确认保持一致，支持多维度筛选"
     component:
       type: custom
-      spec: "复用公司收入确认的查询表单，包含：项目名称（autocomplete）、项目部门（tree-select）、收入确认年度、项目分类、一级区域、二级区域、项目经理、市场经理、立项年度、项目阶段、审核状态、验收状态、收入确认状态"
+      spec: "复用公司收入确认的查询表单"
     bindTo: page
     service:
       endpoint: "GET /revenue/team/list"
       source: "主表从项目表查询（pm_project），与公司收入确认逻辑一致"
       returns: "项目列表，包含收入确认相关字段"
       newApi: false
-    notes: "查询主表使用 IProjectService.selectProjectList()，确保数据一致性"
-    timestamp: "2026-02-12"
+    notes: |
+      查询条件字段：
+      - 项目名称（autocomplete）
+      - 项目部门（tree-select）
+      - 收入确认年度、项目分类、一级区域、二级区域
+      - 项目经理、市场经理、立项年度
+      - 项目阶段、审核状态、验收状态、收入确认状态
+      查询主表使用 IProjectService.selectProjectList()，确保与公司收入确认数据一致
 
-  list_summary_row:
-    intent: "列表添加合计行，显示在表头和第一行数据之间，合计确认金额"
+  list_table_columns:
+    intent: "列表表格显示字段与项目管理列表保持一致，共25列（24数据列+1操作列）"
     component:
       type: custom
-      spec: "使用 computed 属性动态生成包含合计行的数据列表，合计行插入到列表开头"
+      spec: "表格列与项目管理列表对齐，额外保留收入确认特有字段"
+    bindTo: table
+    service: null
+    notes: |
+      列顺序（25列）：
+      1. 序号（55px）
+      2. 项目名称（min-width=220, align=left, 自动换行）
+      3. 项目部门（120px）
+      4. 项目经理（100px）
+      5. 项目分类（120px）
+      6. 二级区域（120px）
+      7. 项目预算(元)（120px, align=right）
+      8. 预估工作量（100px）
+      9. 实际人天（100px）
+      10. 合同金额(元)（120px, align=right）
+      11. 收入确认年度（120px）
+      12. 合同状态（100px）
+      13. 收入确认状态（120px）
+      14. 确认金额(含税)(元)（120px, align=right）
+      15. 税后金额（120px）- 收入确认特有字段
+      16. 参与人员（150px）
+      17. 启动日期（100px）
+      18. 结束日期（100px）
+      19. 验收日期（100px）
+      20. 审核状态（100px）
+      21. 项目阶段（100px）
+      22. 验收状态（100px）
+      23. 更新人（100px, prop="updateByName"）
+      24. 更新时间（160px）
+      25. 操作（150px, fixed=right）
+
+      字典依赖：sys_htzt（合同状态）、sys_spzt（审核状态）、sys_yszt（验收状态）、sys_srqrzt（收入确认状态）、sys_xmfl（项目分类）、sys_xmjd（项目阶段）
+
+  list_participants_display:
+    intent: "参与人员列通过隐藏的 UserSelect 组件加载所有用户，将用户ID转为姓名显示"
+    component:
+      type: UserSelect
+      spec: "隐藏的 UserSelect 组件 (style='display: none')，通过 ref 访问 userOptions"
+    bindTo: participants
+    service: null
+    notes: |
+      实现方式：
+      1. 添加隐藏的 UserSelect 组件：
+         <user-select ref="allUsersSelectRef" v-model="hiddenAllUsersValue" style="display: none" />
+      2. getParticipantsNames(participants) 函数：
+         - 解析 participants 字段（逗号分隔的用户ID字符串或数组）
+         - 通过 allUsersSelectRef.value?.userOptions || [] 获取用户列表（注意：不需要额外 .value）
+         - 根据 userId 匹配 nickName，返回逗号分隔的姓名字符串
+         - 无匹配时返回 '-'
+      3. 合计行（isSummaryRow）不显示参与人员
+
+  list_amount_format:
+    intent: "金额字段千分位格式化，工作量字段取整显示"
+    component:
+      type: custom
+      spec: "formatAmount() 和 formatWorkload() 格式化函数"
+    bindTo: table
+    service: null
+    notes: |
+      formatAmount(amount)：
+      - 使用 toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      - null/undefined/'' 返回空字符串
+      - 金额列表头标注单位(元)，align=right
+
+      formatWorkload(value)：
+      - 使用 parseInt() 取整，不显示小数
+      - null/undefined/'' 返回空字符串
+
+      更新人列：
+      - prop="updateByName"，后端 JOIN sys_user 取 nick_name 作为关联字段
+
+  list_summary_row:
+    intent: "列表添加合计行，显示在表头和第一行数据之间"
+    component:
+      type: custom
+      spec: "displayList computed 属性动态生成包含合计行的数据列表"
     bindTo: displayList
     service: null
     notes: |
       实现逻辑：
-      1. 创建 displayList computed 属性，计算确认金额合计
-      2. 生成合计行对象：{ isSummaryRow: true, projectName: '合计', confirmAmount: 合计值 }
-      3. 将合计行插入到列表开头：[summaryRow, ...teamRevenueList.value]
-      4. el-table 使用 :data="displayList" 而非原始 teamRevenueList
-      5. 使用 :row-class-name="tableRowClassName" 给合计行添加 'summary-row' 样式类
+      1. displayList computed 遍历 teamRevenueList 累加6个数值字段
+      2. 合计行对象：{ isSummaryRow: true, ...各字段合计值 }
+      3. 金额字段（confirmAmount, afterTaxAmount, projectBudget, contractAmount）使用 .toFixed(2) 格式化
+      4. 工作量字段（estimatedWorkload, actualWorkload）使用 Math.round() 取整
+      5. 合计行插入列表开头：[summaryRow, ...teamRevenueList.value]
+      6. el-table 使用 :data="displayList"
 
-      列模板处理：
-      - 序号列：合计行不显示序号（v-if="!scope.row.isSummaryRow"）
-      - 项目名称列：合计行显示"合计"文字（加粗）
-      - 确认金额列：合计行显示合计金额（加粗）
-      - 操作列：合计行不显示按钮（template v-if="!scope.row.isSummaryRow"）
-      - 其他列：合计行为空白
+      合计行样式：
+      - :row-class-name="tableRowClassName" 给合计行添加 'summary-row' 类
+      - .summary-row { background-color: #f5f7fa; font-weight: bold; }
+      - 序号列、操作列在合计行不显示
+      - 项目名称列在合计行显示"合计"文字（加粗）
 
-      样式设置：
-      .summary-row {
-        background-color: #f5f7fa;
-        font-weight: bold;
-      }
-
-      关键代码：
-      ```javascript
-      // computed 属性
-      const displayList = computed(() => {
-        if (!teamRevenueList.value || teamRevenueList.value.length === 0) {
-          return []
-        }
-        const totalConfirmAmount = teamRevenueList.value.reduce((sum, item) => {
-          return sum + (parseFloat(item.confirmAmount) || 0)
-        }, 0)
-        const summaryRow = {
-          isSummaryRow: true,
-          projectName: '合计',
-          confirmAmount: totalConfirmAmount.toFixed(2)
-        }
-        return [summaryRow, ...teamRevenueList.value]
-      })
-
-      // 行样式方法
-      function tableRowClassName({ row }) {
-        if (row.isSummaryRow) {
-          return 'summary-row'
-        }
-        return ''
-      }
-      ```
-    timestamp: "2026-02-13"
+  list_pagination_fixed:
+    intent: "分页组件固定在页面底部，表格高度动态计算"
+    component:
+      type: custom
+      spec: "flex 布局 + 动态表格高度计算"
+    bindTo: page
+    service: null
+    notes: |
+      容器：className="revenue-team-container", height: 100%, display: flex, flex-direction: column
+      表格高度：tableHeight = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding
+      - searchHeight: 200px（showSearch 为 true 时）
+      - toolbarHeight: 50px, paginationHeight: 50px, padding: 120px
+      生命周期：
+      - onMounted: calcTableHeight() + window.addEventListener('resize', calcTableHeight)
+      - onUnmounted: window.removeEventListener('resize', calcTableHeight)
+      - watch showSearch: 搜索框显隐时重新计算表格高度
 
   # ========== 新增/编辑页面定制 ==========
   project_select_hybrid:
@@ -325,8 +354,14 @@ customizations:
       source: "复用 IProjectService.selectProjectList()"
       returns: "[{ projectId, projectName }]"
       newApi: false
-    notes: "使用 ProjectSelect 组件，支持下拉和搜索双模式。表单中项目选择后，自动带出项目预算、合同金额、公司确认金额、确认年度等字段"
-    timestamp: "2026-02-12"
+    notes: |
+      表单中项目选择后，自动带出项目预算、合同金额、公司确认金额、确认年度等字段
+
+      编辑时项目名称回显：
+      - handleUpdate() 中先 open.value = true 打开对话框
+      - 再通过 nextTick(() => { projectSelectRef.value.projectOptions.push({...}) }) 注入当前项目
+      - 必须先打开对话框再 nextTick，否则 projectSelectRef.value 为 null（组件未挂载）
+      - 注入对象需包含 projectId 和 projectName
 
   dept_tree_select_filtered:
     intent: "部门选择只显示三级及以下机构，支持树形结构选择"
@@ -342,10 +377,9 @@ customizations:
     service:
       endpoint: "GET /system/dept/treeselect"
       source: "复用 SysDeptService，前端过滤三级及以下部门"
-      returns: "部门树数据，前端过滤 level >= 3 的部门"
+      returns: "部门树数据"
       newApi: false
-    notes: "参考项目管理的部门选择逻辑，loadDeptTree() 中过滤：const level = dept.ancestors.split(',').length; return level >= 3"
-    timestamp: "2026-02-12"
+    notes: "loadDeptTree() 中过滤：const level = dept.ancestors.split(',').length; return level >= 3"
 
   confirm_user_readonly:
     intent: "确认人默认当前登录用户，只读不可编辑"
@@ -355,7 +389,6 @@ customizations:
     bindTo: confirm_user_id
     service: null
     notes: "使用 Pinia userStore.id（注意不是 userId！）和 userStore.nickName。添加明细时自动填充当前用户，表格中只显示姓名文本"
-    timestamp: "2026-02-12"
 
   detail_list_management:
     intent: "明细列表的添加、删除和金额计算"
@@ -365,116 +398,95 @@ customizations:
     bindTo: form
     service: null
     notes: |
-      - 添加明细：handleAddDetail() 添加新行，默认 confirmUserId=userStore.id, confirmUserName=userStore.nickName, confirmAmount=0
+      - 添加明细：handleAddDetail() 新行默认 confirmUserId=userStore.id, confirmUserName=userStore.nickName, confirmAmount=0
       - 删除明细：handleDeleteDetail(index) 删除指定行
       - 合计金额：computed totalAmount 自动计算所有明细的 confirmAmount 总和
       - 表单提交前验证每条明细的 deptId、confirmAmount、confirmUserId 不能为空
-    timestamp: "2026-02-12"
+      - 提交时过滤 confirmUserName（后端不需要）
 
   form_validation:
-    intent: "表单提交前的数据验证"
+    intent: "表单提交前的前端和后端双重验证"
     component:
       type: custom
-      spec: "前端和后端双重验证"
+      spec: "前端验证 + 后端验证"
     bindTo: form
     service: null
     notes: |
       前端验证（submitForm）：
       - 至少添加一条确认明细
       - 每条明细的部门、确认金额、确认人不能为空
-      - 过滤掉 confirmUserName（后端不需要）
 
       后端验证（Controller.add/edit）：
-      - 检查 projectId、deptId、confirmAmount、confirmUserId 不为 null
-      - 返回友好的错误信息
-    timestamp: "2026-02-12"
+      - projectId、deptId、confirmAmount、confirmUserId 不为 null
+      - 使用 Map.get() 前先判空
+      - 返回友好的中文错误提示
 
   # ========== 详情页面定制 ==========
   detail_page_layout:
-    intent: "详情页面左右布局，左侧显示完整项目信息，右侧显示收入确认信息和团队明细"
+    intent: "详情页面左右布局，左侧13列显示完整项目信息，右侧11列显示收入确认和团队明细"
     component:
       type: custom
-      spec: "el-row + el-col 布局，左侧 13 列，右侧 11 列"
+      spec: "el-row + el-col 布局，左侧 span=13，右侧 span=11"
     bindTo: page
     service:
       endpoint: "GET /revenue/team/{projectId}"
       source: "返回项目详情和团队确认明细列表"
       returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
       newApi: false
-    notes: "详情页面完全自定义布局和内容，参考 /revenue/team/detail.vue"
-    timestamp: "2026-02-12"
+    notes: |
+      左侧（span=13）6个卡片：
+      1. 项目基本信息（el-descriptions, 2列）
+      2. 人员配置（参与人员用 el-tag 标签显示）
+      3. 客户信息
+      4. 时间规划
+      5. 成本预算（不含项目预算，已移至基本信息卡片）
+      6. 备注
+
+      右侧（span=11）2个卡片：
+      1. 公司收入确认信息（el-descriptions, 1列）
+      2. 团队收入确认明细（el-table + 合计金额 footer）
 
   detail_project_info_complete:
     intent: "左侧项目信息与项目管理详情页面完全一致"
     component:
       type: custom
-      spec: "显示项目的所有信息卡片：基本信息、人员配置、客户信息、时间规划、成本预算"
+      spec: "完整显示项目信息卡片：基本信息、人员配置、客户信息、时间规划、成本预算、备注"
     bindTo: project
     service: null
     notes: |
-      项目基本信息字段（完整列表）：
-      - 行业、一级区域、简称、二级区域
+      项目基本信息字段：
+      - 行业、一级区域（dict-tag）、简称、二级区域（regionName）
       - 立项年份、项目编号
       - 项目名称、项目分类、项目部门（完整路径）
-      - 预估工作量、项目预算（位置调整到预估工作量后面）
+      - 预估工作量、项目预算
       - 实际工作量、项目阶段
       - 验收状态、审核状态
       - 项目地址、项目计划、项目描述、审核意见
 
-      项目部门显示逻辑：
-      - 查询部门树，解析 ancestors 字段
-      - 只保留三级及以下部门
-      - 用"-"连接各级部门名称，如"技术中心-研发一部-项目组"
+      项目部门显示：查询部门树，解析 ancestors，只保留三级及以下部门，用"-"连接各级名称
 
-      参与人员显示：
-      - 查询所有用户列表
-      - 根据 participants 字段（逗号分隔的用户ID）过滤
-      - 用 el-tag 标签形式显示
+      参与人员显示：detail.vue 直接调用 getUsersByPost() 加载用户列表（非隐藏 UserSelect），
+      根据 participants 字段过滤并用 el-tag 标签显示
 
-      客户联系方式：
-      - 根据 customerId 和 customerContactId 查询联系人列表
-      - 显示联系人电话
-    timestamp: "2026-02-12"
+      客户联系方式：根据 customerId + customerContactId 查询联系人电话
 
-  detail_region_split:
-    intent: "区域字段拆分为一级区域和二级区域分别显示"
+  detail_data_refresh:
+    intent: "详情页面从公司收入确认返回时自动刷新最新数据"
     component:
       type: custom
-      spec: "一级区域使用 dict-tag 显示字典值，二级区域显示 regionName"
-    bindTo: region
-    service: null
-    notes: "原来只显示'区域'，现在拆分为'一级区域'和'二级区域'两个字段"
-    timestamp: "2026-02-12"
-
-  detail_dept_path:
-    intent: "项目部门显示完整路径（三级及以下机构，用-隔开）"
-    component:
-      type: custom
-      spec: "buildDeptPath() 函数构建部门完整路径"
-    bindTo: projectDept
+      spec: "onActivated + watch 双重机制确保数据实时更新"
+    bindTo: detail.vue
     service:
-      endpoint: "GET /system/dept/treeselect"
-      source: "查询部门树，解析 ancestors 构建路径"
-      returns: "部门树数据"
+      endpoint: "GET /revenue/team/{projectId}"
+      source: "getTeamRevenue API"
+      returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
       newApi: false
     notes: |
-      实现逻辑：
-      1. 根据 projectDept（部门ID）查询部门树
-      2. 解析 ancestors 字段（格式：0,100,101,102）
-      3. 只保留三级及以下的部门（level >= 3）
-      4. 用"-"连接各级部门名称
-      例如：技术中心-研发一部-项目组
-    timestamp: "2026-02-12"
-
-  detail_cost_budget_adjust:
-    intent: "成本预算卡片中去掉项目预算字段（避免重复）"
-    component:
-      type: custom
-      spec: "项目预算已移到项目基本信息中，成本预算卡片只显示：项目费用、费用预算、成本预算、人力费用、采购成本"
-    bindTo: costBudget
-    service: null
-    notes: "字段顺序：项目费用、费用预算、成本预算、人力费用、采购成本"
-    timestamp: "2026-02-12"
+      Vue keep-alive 缓存场景下的数据刷新：
+      - onMounted()：首次加载数据
+      - onActivated()：从缓存恢复时重新加载（解决 keep-alive 缓存不刷新问题）
+      - watch(route.params.projectId)：路由参数变化时重新加载
+      使用场景：用户在公司收入确认页面填写数据后返回团队详情，无需手动刷新
 
   detail_revenue_info:
     intent: "右侧显示公司收入确认信息"
@@ -484,7 +496,6 @@ customizations:
     bindTo: revenueConfirm
     service: null
     notes: "数据来源于项目表的收入确认相关字段"
-    timestamp: "2026-02-12"
 
   detail_team_list:
     intent: "右侧显示团队收入确认明细列表"
@@ -494,303 +505,10 @@ customizations:
     bindTo: detailList
     service: null
     notes: "合计金额使用 computed totalTeamAmount 自动计算"
-    timestamp: "2026-02-12"
-
-  detail_remark_section:
-    intent: "左侧底部显示备注信息"
-    component:
-      type: custom
-      spec: "独立的备注卡片，显示项目备注，位于左侧成本预算卡片之后"
-    bindTo: remark
-    service: null
-    notes: "与项目管理详情页面保持一致，放在左侧项目信息区域"
-    timestamp: "2026-02-12"
-
-  # ==================
-  # 列表表格要素与项目管理一致（2026-02-13）
-  # ==================
-  table_columns_alignment:
-    intent: "列表表格显示字段与项目管理列表完全一致"
-    component:
-      type: "custom"
-      spec: |
-        列表表格调整说明（2026-02-13完成）：
-
-        目标：团队收入确认的列表与项目管理列表展示要素保持一致
-
-        新增列（8个）：
-        - 合同状态（contractStatus）：显示合同签署状态
-        - 参与人员（participants）：显示项目参与人员姓名列表（逗号分隔）
-        - 启动日期（startDate）：项目启动日期
-        - 结束日期（endDate）：项目结束日期
-        - 验收日期（acceptanceDate）：项目验收日期
-        - 审核状态（approvalStatus）：项目审核状态（待审核/已通过/已拒绝）
-        - 验收状态（acceptanceStatus）：项目验收状态
-        - 更新人（updateBy）：最后更新人
-        - 更新时间（updateTime）：最后更新时间
-
-        移除列（2个）：
-        - 市场经理（marketManagerId）：项目管理列表没有此列
-        - 创建时间（createTime）：改为显示更新时间
-
-        保留列（收入确认特有）：
-        - 税后金额（afterTaxAmount）：团队收入确认特有字段，保留显示
-
-        最终列顺序（24列）：
-        1. 序号（55）
-        2. 项目名称（150）
-        3. 项目部门（120）
-        4. 项目经理（100）
-        5. 项目分类（120）
-        6. 二级区域（120）
-        7. 项目预算（120）
-        8. 预估工作量（100）
-        9. 实际人天（100）
-        10. 合同金额（120）
-        11. 收入确认年度（120）
-        12. 合同状态（100）- 新增
-        13. 收入确认状态（120）
-        14. 确认金额(含税)（120）
-        15. 税后金额（120）- 收入确认特有
-        16. 参与人员（150）- 新增
-        17. 启动日期（100）- 新增
-        18. 结束日期（100）- 新增
-        19. 验收日期（100）- 新增
-        20. 审核状态（100）- 新增
-        21. 项目阶段（100）
-        22. 验收状态（100）- 新增
-        23. 更新人（100）- 新增
-        24. 更新时间（160）- 新增
-        25. 操作（150）
-    bindTo: "table"
-    service: null
-    notes: |
-      参与人员显示实现：
-      1. 添加隐藏的 UserSelect 组件加载所有用户
-         <user-select
-           ref="allUsersSelectRef"
-           v-model="hiddenAllUsersValue"
-           style="display: none"
-         />
-
-      2. 添加 getParticipantsNames() 方法
-         function getParticipantsNames(participants) {
-           if (!participants) return '-'
-           const participantIds = typeof participants === 'string'
-             ? participants.split(',').map(id => parseInt(id.trim()))
-             : participants
-           const allUsers = allUsersSelectRef.value?.userOptions?.value || []
-           const names = participantIds
-             .map(id => {
-               const user = allUsers.find(u => u.userId === id)
-               return user ? user.nickName : null
-             })
-             .filter(name => name !== null)
-           return names.length > 0 ? names.join(', ') : '-'
-         }
-
-      3. 表格列显示
-         <el-table-column label="参与人员">
-           <template #default="scope">
-             <span v-if="!scope.row.isSummaryRow">
-               {{ getParticipantsNames(scope.row.participants) }}
-             </span>
-           </template>
-         </el-table-column>
-
-      字典依赖：
-      - sys_htzt：合同状态
-      - sys_spzt：审核状态
-      - sys_yszt：验收状态
-    timestamp: "2026-02-13"
-
-  # ==================
-  # 详情页面数据刷新优化（2026-02-13）
-  # ==================
-  detail_page_data_refresh:
-    intent: "详情页面从公司收入确认返回时能自动刷新最新数据"
-    component:
-      type: "custom"
-      spec: |
-        数据刷新优化说明（2026-02-13完成）：
-
-        问题：从公司收入确认页面输入确认数据后，返回团队收入确认详情页面查看公司收入确认信息时，数据没有刷新，需要手动刷新页面才能看到最新数据
-
-        原因：Vue Router 的 keep-alive 缓存机制，组件被缓存后只有首次挂载时执行 onMounted()，从缓存恢复时不会重新执行
-
-        解决方案：
-        1. 添加 onActivated() 生命周期钩子
-        2. 添加 watch 监听路由参数变化
-        3. 两者结合确保数据始终是最新的
-
-        核心代码实现：
-
-        import { ref, computed, onMounted, onActivated, watch, getCurrentInstance } from 'vue'
-        import { useRouter, useRoute } from 'vue-router'
-
-        const router = useRouter()
-        const route = useRoute()
-
-        /** 获取详情 */
-        function getDetail() {
-          const projectId = route.params.projectId
-          getTeamRevenue(projectId).then(response => {
-            const projectData = response.data.project || {}
-            // ... 处理数据
-            form.value = projectData
-            detailList.value = response.data.detailList || []
-          })
-        }
-
-        // 初始化
-        onMounted(() => {
-          loadAllUsers()
-          getDetail()
-        })
-
-        // 当组件被激活时（从缓存中恢复），重新加载数据
-        // 这样可以确保从公司收入确认页面返回时能看到最新数据
-        onActivated(() => {
-          // 重新加载详情数据，获取最新的公司收入确认信息
-          getDetail()
-        })
-
-        // 监听路由参数变化，当项目ID变化时重新加载数据
-        watch(
-          () => route.params.projectId,
-          (newProjectId, oldProjectId) => {
-            if (newProjectId && newProjectId !== oldProjectId) {
-              getDetail()
-            }
-          }
-        )
-    bindTo: "detail.vue"
-    service:
-      endpoint: "GET /revenue/team/{projectId}"
-      source: "getTeamRevenue API"
-      returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
-      newApi: false
-    notes: |
-      Vue 生命周期钩子说明：
-      - onMounted()：组件首次挂载时执行（只执行一次）
-      - onActivated()：组件从 keep-alive 缓存中激活时执行（每次激活都执行）
-      - watch()：监听响应式数据变化，持续监听
-
-      使用场景：
-      1. 用户在公司收入确认页面填写数据
-      2. 点击"团队收入确认-详情"查看
-      3. onActivated() 自动触发，重新加载最新数据
-      4. 用户无需手动刷新页面即可看到更新
-
-      相关文件：
-      - ruoyi-ui/src/views/revenue/team/detail.vue
-    timestamp: "2026-02-13"
-
-  # ==================
-  # 编辑时项目名称回显优化（2026-02-13）
-  # ==================
-  edit_project_name_display:
-    intent: "编辑团队收入确认时，项目名称正确显示而不是显示项目ID"
-    component:
-      type: "custom"
-      spec: |
-        项目名称回显优化说明（2026-02-13完成）：
-
-        问题：点击编辑按钮，项目选择器中显示的是项目ID数字，而不是项目名称
-
-        原因：ProjectSelect 组件使用 remote 搜索模式，初始状态下 projectOptions 为空数组，只有在用户输入搜索关键词或打开下拉框时才加载数据。编辑时设置 form.projectId，但 projectOptions 中没有对应的项目对象，导致无法显示项目名称
-
-        解决方案：
-        1. 给 ProjectSelect 组件添加 ref 引用
-        2. 在 handleUpdate() 方法中，手动将当前项目对象添加到 projectOptions
-        3. 确保在设置 form.projectId 之前，projectOptions 中已经包含该项目
-
-        核心代码实现：
-
-        <template>
-          <el-dialog title="修改团队收入确认" v-model="open">
-            <el-form :model="form">
-              <el-form-item label="项目名称" prop="projectId">
-                <project-select
-                  ref="projectSelectRef"
-                  v-model="form.projectId"
-                  placeholder="请选择项目"
-                  @change="handleProjectChange"
-                />
-              </el-form-item>
-              <!-- 其他表单项 -->
-            </el-form>
-          </el-dialog>
-        </template>
-
-        <script setup>
-        const projectSelectRef = ref(null)
-
-        /** 修改按钮操作 */
-        function handleUpdate(row) {
-          reset()
-          const projectId = row.projectId
-
-          // 加载项目详情
-          getProject(projectId).then(response => {
-            const project = response.data
-
-            // 关键：手动添加当前项目到 projectOptions，确保项目名称正确显示
-            if (projectSelectRef.value && project.projectId && project.projectName) {
-              projectSelectRef.value.projectOptions.push({
-                projectId: project.projectId,
-                projectName: project.projectName
-              })
-            }
-
-            // 设置表单数据
-            form.value = {
-              projectId: project.projectId,
-              projectName: project.projectName,  // 用于显示
-              // ... 其他字段
-            }
-
-            // 加载团队确认明细
-            listTeamRevenue({ projectId: projectId }).then(res => {
-              form.value.detailList = res.rows || []
-            })
-
-            open.value = true
-            title.value = "修改团队收入确认"
-          })
-        }
-        </script>
-    bindTo: "index.vue"
-    service:
-      endpoint: "GET /project/project/{projectId}"
-      source: "getProject API"
-      returns: "Project 对象，包含 projectId 和 projectName"
-      newApi: false
-    notes: |
-      ProjectSelect 组件工作原理：
-      - remote: true - 开启远程搜索
-      - projectOptions: ref([]) - 内部维护的项目选项数组
-      - 用户输入时调用 remoteMethod 加载匹配的项目
-      - v-model 绑定的是 projectId，显示依赖 projectOptions 中的 projectName
-
-      手动填充 projectOptions 的时机：
-      1. 编辑操作（handleUpdate）- 加载项目详情后
-      2. 详情查看（handleDetail）- 如需要显示项目名称
-      3. 任何需要预填充项目的场景
-
-      注意事项：
-      - 必须同时包含 projectId 和 projectName
-      - 在设置 form.projectId 之前填充
-      - 使用 push() 而不是直接赋值，保留已有选项
-
-      相关文件：
-      - ruoyi-ui/src/views/revenue/team/index.vue
-      - ruoyi-ui/src/components/ProjectSelect/index.vue
-    timestamp: "2026-02-13"
 
   # ========== 后端接口定制 ==========
   backend_list_query:
-    intent: "列表查询主表从项目表查询"
+    intent: "列表查询主表从项目表查询，与公司收入确认逻辑一致"
     component: null
     bindTo: backend
     service:
@@ -798,8 +516,7 @@ customizations:
       source: "Controller 调用 IProjectService.selectProjectList()"
       returns: "项目列表（TableDataInfo）"
       newApi: false
-    notes: "与公司收入确认查询逻辑一致，确保数据源统一"
-    timestamp: "2026-02-12"
+    notes: "确保数据源与公司收入确认统一"
 
   backend_detail_query:
     intent: "详情接口返回项目信息+团队明细列表"
@@ -815,7 +532,6 @@ customizations:
       returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
       newApi: false
     notes: "一次接口调用返回详情页面所需的所有数据"
-    timestamp: "2026-02-12"
 
   backend_batch_save:
     intent: "新增/编辑支持批量保存明细"
@@ -829,15 +545,10 @@ customizations:
         2. 验证必填字段不为空
         3. 遍历 detailList，为每条明细设置 projectId 和 confirmTime（当前时间）
         4. 调用 Service.insertTeamRevenueConfirmation() 逐条保存
-        5. 编辑时先删除旧明细，再保存新明细
+        5. 编辑时先删除旧明细，再保存新明细（删除后新增策略）
       returns: "AjaxResult"
       newApi: false
-    notes: |
-      关键实现：
-      - 前端传递明细数组，后端遍历保存
-      - 自动设置 confirmTime = new Date()（修复数据库字段无默认值问题）
-      - 编辑时采用"删除后新增"策略，简化逻辑
-    timestamp: "2026-02-12"
+    notes: "后端自动设置 confirmTime = new Date()，解决数据库字段无默认值问题"
 
   backend_data_validation:
     intent: "后端数据验证和错误处理"
@@ -846,12 +557,11 @@ customizations:
     service: null
     notes: |
       验证规则：
-      1. projectId 不能为空
-      2. detailList 不能为空，至少一条明细
-      3. 每条明细的 deptId、confirmAmount、confirmUserId 不能为空
-      4. 使用 Map.get() 前先判空，避免 NullPointerException
-      5. 返回友好的中文错误提示
-    timestamp: "2026-02-12"
+      - projectId 不能为空
+      - detailList 不能为空，至少一条明细
+      - 每条明细的 deptId、confirmAmount、confirmUserId 不能为空
+      - 使用 Map.get() 前先判空，避免 NullPointerException
+      - 返回友好的中文错误提示
 
   backend_data_association:
     intent: "团队确认明细关联查询部门名称和确认人姓名"
@@ -863,14 +573,11 @@ customizations:
         TeamRevenueConfirmationMapper.xml:
         LEFT JOIN sys_dept d ON t.dept_id = d.dept_id
         LEFT JOIN sys_user u ON t.confirm_user_id = u.user_id
-
-        查询字段：
-        - d.dept_name as dept_name
-        - u.nick_name as confirm_user_name
-      returns: "TeamRevenueConfirmation（包含关联字段）"
+        查询字段：d.dept_name as dept_name, u.nick_name as confirm_user_name
+        排序：ORDER BY COALESCE(t.update_time, t.create_time) DESC（注意使用表别名 t）
+      returns: "TeamRevenueConfirmation（包含 deptName 和 confirmUserName 扩展字段）"
       newApi: false
     notes: "实体类中添加 deptName 和 confirmUserName 扩展字段用于显示"
-    timestamp: "2026-02-12"
 
 # ============================
 # 实现总结
@@ -880,49 +587,35 @@ implementation_summary:
 
   key_features:
     - "列表查询主表从项目表查询，与公司收入确认逻辑一致"
-    - "列表表格与项目管理列表保持一致，显示24个字段"
-    - "列表添加合计行，显示在表头和第一行数据之间，合计6个数值字段"
+    - "列表表格与项目管理列表保持一致，显示25列（24数据列+1操作列）"
+    - "列表添加合计行，显示在表头与第一行数据之间，合计6个数值字段"
+    - "金额字段千分位格式化（formatAmount），工作量字段取整显示（formatWorkload）"
+    - "更新人列显示中文昵称（prop=updateByName，后端 JOIN sys_user）"
+    - "参与人员通过隐藏 UserSelect 组件加载用户列表，getParticipantsNames() 转换为姓名"
     - "新增/编辑页面支持批量管理明细，自动计算合计金额"
-    - "项目选择支持下拉和远程搜索双模式"
-    - "部门选择只显示三级及以下机构"
-    - "确认人默认当前用户，只读不可编辑"
-    - "详情页面左右布局，完整展示项目信息和团队明细"
-    - "详情页面支持 keep-alive 缓存自动刷新数据"
-    - "编辑时项目名称正确回显而不是显示ID"
+    - "项目选择支持下拉和远程搜索双模式（ProjectSelect 组件）"
+    - "编辑时通过 nextTick 注入 projectOptions 确保项目名称正确回显"
+    - "部门选择只显示三级及以下机构（ancestors.split(',').length >= 3）"
+    - "确认人默认当前用户（userStore.id），只读不可编辑"
+    - "详情页面左13右11布局，完整展示项目信息和团队明细"
+    - "详情页面通过 onActivated + watch 双重机制支持 keep-alive 缓存自动刷新"
+    - "详情页面参与人员通过 getUsersByPost() 加载用户并用 el-tag 显示"
     - "项目部门显示完整路径（三级及以下，用-隔开）"
-    - "参与人员显示姓名列表（逗号分隔）"
-    - "区域字段拆分为一级区域和二级区域"
-    - "合同状态、审核状态、验收状态使用字典标签显示"
-    - "后端支持批量保存明细，自动设置确认时间"
-    - "数据关联查询部门名称和确认人姓名"
+    - "一级区域与二级区域分别显示（dict-tag 和 regionName）"
+    - "后端批量保存明细，自动设置 confirmTime，编辑采用删除后新增策略"
+    - "MyBatis ORDER BY 使用表别名 t 避免多表 JOIN 字段歧义"
+    - "分页组件固定底部，表格高度动态计算"
 
   technical_highlights:
-    - "使用 Composition API（setup script）和 Vue 3 生命周期钩子"
-    - "使用 Pinia userStore（注意是 userStore.id 不是 userId）"
-    - "列表合计行：displayList computed 属性动态生成，合计行插入到数据开头，不在表格底部"
-    - "合计行标识：isSummaryRow: true，各列模板根据此标识判断显示内容"
-    - "合计行样式：tableRowClassName 方法返回 'summary-row' 类名，背景色 #f5f7fa"
-    - "合计6个数值字段：projectBudget, estimatedWorkload, actualWorkload, contractAmount, confirmAmount, afterTaxAmount"
-    - "参与人员显示：通过隐藏的 allUsersSelectRef 访问用户列表，使用 getParticipantsNames() 转换为姓名"
-    - "项目选择使用 ProjectSelect 组件，支持 remote 和 visibleChange"
-    - "编辑时手动填充 projectOptions 解决项目名称回显问题"
-    - "详情页面数据刷新：onActivated() + watch 双重机制确保数据实时更新"
-    - "部门过滤逻辑：ancestors.split(',').length >= 3"
-    - "部门路径构建：解析 ancestors，用'-'连接各级部门名称"
-    - "参与人员标签显示：el-tag 循环渲染"
-    - "明细列表使用 el-table，支持动态添加/删除行"
-    - "后端批量保存：遍历明细数组，逐条插入"
-    - "编辑策略：先删除旧明细，再插入新明细"
-    - "自动设置 confirmTime = new Date() 解决数据库字段无默认值问题"
-
-  bug_fixes:
-    - "修复 userStore 访问错误：使用 userStore.id 而非 userStore.userId"
-    - "修复 confirmTime 字段无默认值错误：后端自动设置为当前时间"
-    - "修复 NullPointerException：后端添加空值检查"
-    - "修复确认人字段验证：前端过滤 confirmUserName，只提交 confirmUserId"
-    - "修复详情页面布局：备注从右侧移到左侧项目信息区域"
-    - "修复详情页面缓存数据不刷新：添加 onActivated() 和 watch 监听"
-    - "修复编辑时项目名称显示为数字：手动填充 projectOptions"
+    - "Composition API（setup script）+ Vue 3 生命周期钩子"
+    - "Pinia userStore.id（注意不是 userId）和 userStore.nickName"
+    - "displayList computed：合计行插入列表开头，金额 .toFixed(2)，工作量 Math.round()"
+    - "合计行标识 isSummaryRow: true，各列模板据此判断显示内容"
+    - "隐藏 UserSelect 通过 allUsersSelectRef.value?.userOptions || [] 获取用户（不需要额外 .value）"
+    - "编辑回显：先 open.value = true → nextTick → projectSelectRef.value.projectOptions.push()"
+    - "详情数据刷新：onActivated() + watch(route.params.projectId) 双重保障"
+    - "部门过滤：ancestors.split(',').length >= 3"
+    - "收入确认状态字典 sys_srqrzt：未确认(0)、已确认(1)"
 
   related_files:
     backend:
@@ -940,128 +633,3 @@ implementation_summary:
     sql:
       - "pm-sql/init/00_tables_ddl.sql (pm_team_revenue_confirmation)"
       - "pm-sql/init/02_menu_data.sql (团队收入确认菜单)"
-
-  recent_updates:
-    - date: "2026-02-13"
-      description: "列表添加合计行功能"
-      details: |
-        需求：在列表第一行数据与表头之间添加合计行，显示确认金额的合计，操作列不显示按钮
-        实现：
-        - 创建 displayList computed 属性，计算合计并插入合计行到列表开头
-        - 使用 isSummaryRow 标识合计行，各列模板根据标识判断显示内容
-        - 添加 tableRowClassName 方法给合计行添加样式类 'summary-row'
-        - 合计行样式：背景色 #f5f7fa，字体加粗
-        - 序号列、操作列在合计行不显示内容
-        - 项目名称列在合计行显示"合计"文字
-        - 确认金额列在合计行显示合计值（保留2位小数）
-        - 合计6个数值字段：项目预算、预估工作量、实际人天、合同金额、确认金额、税后金额
-      files:
-        - "ruoyi-ui/src/views/revenue/team/index.vue"
-
-    - date: "2026-02-13"
-      description: "列表表格要素与项目管理一致"
-      details: |
-        需求：团队收入确认的列表展示要素要与项目管理列表一致
-        实现：
-        - 新增8个列：合同状态、参与人员、启动/结束/验收日期、审核/验收状态、更新人/时间
-        - 移除2个列：市场经理、创建时间
-        - 保留收入确认特有字段：税后金额
-        - 添加 getParticipantsNames() 方法显示参与人员姓名
-        - 添加隐藏的 allUsersSelectRef 加载所有用户
-        - 添加 sys_htzt 字典支持合同状态显示
-        - 最终24列与项目管理列表完全一致
-      files:
-        - "ruoyi-ui/src/views/revenue/team/index.vue"
-
-    - date: "2026-02-13"
-      description: "详情页面数据刷新优化"
-      details: |
-        问题：从公司收入确认页面输入确认数据后，返回团队收入确认详情页面时，数据没有自动刷新
-        原因：Vue Router 的 keep-alive 缓存机制，组件被缓存后只有首次挂载时执行 onMounted()
-        实现：
-        - 添加 onActivated() 生命周期钩子，在组件从缓存激活时重新加载数据
-        - 添加 watch 监听 route.params.projectId，在项目ID变化时重新加载
-        - 两者结合确保数据始终是最新的
-        - 用户无需手动刷新页面即可看到更新
-      files:
-        - "ruoyi-ui/src/views/revenue/team/detail.vue"
-
-    - date: "2026-02-13"
-      description: "编辑时项目名称回显优化"
-      details: |
-        问题：点击编辑按钮时，项目选择器中显示的是项目ID数字，而不是项目名称
-        原因：ProjectSelect 组件使用 remote 搜索模式，初始状态下 projectOptions 为空，无法根据 projectId 显示项目名称
-        实现：
-        - 给 ProjectSelect 组件添加 ref 引用
-        - 在 handleUpdate() 方法中，手动将当前项目对象添加到 projectOptions
-        - 确保在设置 form.projectId 之前，projectOptions 中已包含该项目
-        - 项目名称正确显示而不是显示ID数字
-      files:
-        - "ruoyi-ui/src/views/revenue/team/index.vue"
-
-  timestamp: "2026-02-13 02:00:00"
-
-  pagination_fixed_bottom:
-    intent: "分页组件固定在页面底部，即使数据很少也保持在底部位置"
-    date: "2026-02-14"
-    implementation:
-      container:
-        className: "revenue-team-container"
-        styles:
-          - "height: 100%"
-          - "display: flex"
-          - "flex-direction: column"
-      table:
-        dynamicHeight: true
-        heightRef: "const tableHeight = ref(600)"
-        heightCalculation: "tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding"
-        attributes:
-          - ":height='tableHeight': 固定表格高度"
-      lifecycle:
-        onMounted:
-          - "calcTableHeight(): 初始计算表格高度"
-          - "window.addEventListener('resize', calcTableHeight): 监听窗口大小变化"
-        onUnmounted:
-          - "window.removeEventListener('resize', calcTableHeight): 移除resize监听"
-        watch:
-          - "showSearch: 搜索框显隐时重新计算表格高度"
-      pagination:
-        position: "紧跟el-table后，对话框之前"
-        styles:
-          - "margin-top: 15px"
-          - "text-align: right"
-      heightParameters:
-        searchHeight: "200px (showSearch为true时，复用公司收入确认的查询条件)"
-        toolbarHeight: "50px"
-        paginationHeight: "50px"
-        padding: "120px"
-    notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部。"
-
-# =============================================
-# 2026-02-26 改动记录
-# =============================================
-changes_2026_02_26:
-  - feature: 列表显示优化（金额格式、更新人昵称、项目名称换行）
-    description: >
-      index.vue 中金额字段统一 formatAmount() 千分位+2位小数格式；
-      更新人改为显示昵称（后端 JOIN sys_user 取 nick_name）；
-      项目名称列改为 align=left, min-width=220，自动换行显示。
-
-  - feature: 收入确认状态字典简化
-    description: >
-      sys_srqrzt 字典由4个值精简为2个：未确认(0)、已确认(1)。
-      删除多余的待确认(2)和已确认收入(3)，并对存量数据执行迁移：'2'→'0'，'3'→'1'。
-      同步更新 pm-sql/init/01_tables_data.sql 及运行数据库。
-
-  - bugfix: 编辑弹窗项目名称显示为ID
-    description: >
-      handleUpdate() 在对话框未打开时 projectSelectRef.value 为 null，
-      导致项目选项无法注入，组件显示原始 projectId 而非项目名称。
-      修复方案：先执行 open.value = true 打开对话框，
-      再通过 nextTick(() => { projectSelectRef.value.projectOptions.push(...) }) 等组件挂载后注入。
-
-  - bugfix: ORDER BY 字段歧义报错
-    description: >
-      TeamRevenueConfirmationMapper.xml 中 selectTeamRevenueConfirmationList 的
-      ORDER BY COALESCE(update_time, create_time) DESC 未加表别名，
-      多表 JOIN 后产生歧义报错，修正为 ORDER BY COALESCE(t.update_time, t.create_time) DESC。
