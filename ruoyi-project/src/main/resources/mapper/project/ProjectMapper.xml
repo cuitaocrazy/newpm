@@ -21,6 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="acceptanceStatus"    column="acceptance_status"    />
         <result property="estimatedWorkload"    column="estimated_workload"    />
         <result property="actualWorkload"    column="actual_workload"    />
+        <result property="adjustWorkload"    column="adjust_workload"    />
         <result property="projectAddress"    column="project_address"    />
         <result property="projectPlan"    column="project_plan"    />
         <result property="projectDescription"    column="project_description"    />
@@ -86,7 +87,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <sql id="selectProjectVo">
         select project_id, project_code, project_name, industry, region, region_id, short_name,
                established_year, project_category, project_dept, project_status, project_stage, acceptance_status,
-               estimated_workload, actual_workload, project_address, project_plan, project_description,
+               estimated_workload, actual_workload, adjust_workload, project_address, project_plan, project_description,
                project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact,
                team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone,
                start_date, end_date, production_date, acceptance_date, project_budget, project_cost,
@@ -102,7 +103,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
-               p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description,
+               p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
                p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
@@ -185,7 +186,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
-               p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description,
+               p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
                p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
@@ -231,6 +232,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="acceptanceStatus != null">acceptance_status,</if>
             <if test="estimatedWorkload != null">estimated_workload,</if>
             <if test="actualWorkload != null">actual_workload,</if>
+            <if test="adjustWorkload != null">adjust_workload,</if>
             <if test="projectAddress != null">project_address,</if>
             <if test="projectPlan != null">project_plan,</if>
             <if test="projectDescription != null">project_description,</if>
@@ -294,6 +296,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="acceptanceStatus != null">#{acceptanceStatus},</if>
             <if test="estimatedWorkload != null">#{estimatedWorkload},</if>
             <if test="actualWorkload != null">#{actualWorkload},</if>
+            <if test="adjustWorkload != null">#{adjustWorkload},</if>
             <if test="projectAddress != null">#{projectAddress},</if>
             <if test="projectPlan != null">#{projectPlan},</if>
             <if test="projectDescription != null">#{projectDescription},</if>
@@ -361,6 +364,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="acceptanceStatus != null">acceptance_status = #{acceptanceStatus},</if>
             <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
             <if test="actualWorkload != null">actual_workload = #{actualWorkload},</if>
+            <if test="adjustWorkload != null">adjust_workload = #{adjustWorkload},</if>
             <if test="projectAddress != null">project_address = #{projectAddress},</if>
             <if test="projectPlan != null">project_plan = #{projectPlan},</if>
             <if test="projectDescription != null">project_description = #{projectDescription},</if>
@@ -497,7 +501,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectReviewList" parameterType="Project" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
-               p.estimated_workload, p.actual_workload, p.project_address, p.project_plan, p.project_description,
+               p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
                p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,

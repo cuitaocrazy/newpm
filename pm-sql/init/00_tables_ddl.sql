@@ -735,6 +735,7 @@ CREATE TABLE `pm_project` (
   `acceptance_status` varchar(50) DEFAULT NULL COMMENT '验收状态',
   `estimated_workload` decimal(10,2) DEFAULT NULL COMMENT '预估工作量(人天)',
   `actual_workload` decimal(10,2) DEFAULT '0.00' COMMENT '实际工作量(人天)',
+  `adjust_workload` decimal(10,2) DEFAULT '0.00' COMMENT '调整工作量(人天)',
   `project_address` varchar(500) DEFAULT NULL COMMENT '项目地址',
   `project_plan` text COMMENT '项目计划',
   `project_description` text COMMENT '项目描述',

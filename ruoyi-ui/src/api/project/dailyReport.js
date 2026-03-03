@@ -58,3 +58,30 @@ export function delDailyReport(reportIds) {
     method: 'delete'
   })
 }
+
+// 项目人天统计（服务端分页）
+export function getProjectStats(projectName, pageNum, pageSize) {
+  return request({
+    url: '/project/dailyReport/projectStats',
+    method: 'get',
+    params: { projectName, pageNum, pageSize }
+  })
+}
+
+// 更新调整人天
+export function updateAdjustWorkload(projectId, adjustWorkload) {
+  return request({
+    url: `/project/dailyReport/projectStats/${projectId}/adjustWorkload`,
+    method: 'put',
+    params: { adjustWorkload }
+  })
+}
+
+// 项目名称 autocomplete
+export function getProjectNameSuggestions(keyword) {
+  return request({
+    url: '/project/dailyReport/projectNameSuggestions',
+    method: 'get',
+    params: { keyword }
+  })
+}

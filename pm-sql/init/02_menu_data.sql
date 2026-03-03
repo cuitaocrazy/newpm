@@ -454,5 +454,12 @@ values('项目阶段变更修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0'
 insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 values('项目阶段变更删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:remove',       '#', 'admin', sysdate(), '', null, '');
 
+-- =============================
+-- 项目人天统计菜单（挂在日报管理下）
+-- =============================
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+values('项目人天统计', 2123, 4, 'stats', 'project/dailyReport/stats', 1, 0, 'C', '0', '0', 'project:dailyReport:list', 'chart', 'admin', sysdate(), '', null, '项目人天统计菜单', 'ProjectStats');
+
+
 insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 values('项目阶段变更导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:export',       '#', 'admin', sysdate(), '', null, '');

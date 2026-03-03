@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.ProjectStatsMapper">
+
+    <!-- 统计符合条件的项目总数 -->
+    <select id="countProjects" resultType="long">
+        SELECT COUNT(*)
+        FROM pm_project
+        WHERE del_flag = '0'
+        <if test="projectName != null and projectName != ''">
+            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+        </if>
+    </select>
+
+    <!--
+      分页查询项目人天统计（项目级分页 + 阶段明细展开）
+      先通过子查询取当前页的 project_id，再 JOIN 日报明细
+      确保分页按项目维度切割，rowspan 不会被截断
+    -->
+    <select id="selectProjectStatsByStageWithPage" resultType="java.util.HashMap">
+        SELECT
+            p.project_id                                  AS projectId,
+            p.project_name                                AS projectName,
+            u.nick_name                                   AS projectManagerName,
+            p.estimated_workload                          AS estimatedWorkload,
+            p.adjust_workload                             AS adjustWorkload,
+            d.project_stage                               AS projectStage,
+            ROUND(COALESCE(SUM(d.work_hours), 0) / 8, 2) AS stageDays
+        FROM pm_project p
+        LEFT JOIN sys_user u
+               ON u.user_id = p.project_manager_id AND u.del_flag = '0'
+        LEFT JOIN pm_daily_report_detail d
+               ON d.project_id = p.project_id AND d.del_flag = '0'
+        LEFT JOIN pm_daily_report r
+               ON r.report_id = d.report_id AND r.del_flag = '0'
+        WHERE p.del_flag = '0'
+          AND p.project_id IN (
+              SELECT project_id FROM (
+                  SELECT project_id FROM pm_project
+                  WHERE del_flag = '0'
+                  <if test="projectName != null and projectName != ''">
+                      AND project_name LIKE CONCAT('%', #{projectName}, '%')
+                  </if>
+                  ORDER BY project_id
+                  LIMIT #{offset}, #{pageSize}
+              ) paged_ids
+          )
+        GROUP BY p.project_id, p.project_name, u.nick_name,
+                 p.estimated_workload, p.adjust_workload, d.project_stage
+        ORDER BY p.project_id, d.project_stage
+    </select>
+
+    <!-- 更新调整人天 -->
+    <update id="updateAdjustWorkload">
+        UPDATE pm_project
+        SET adjust_workload = #{adjustWorkload},
+            update_time     = NOW()
+        WHERE project_id = #{projectId}
+          AND del_flag   = '0'
+    </update>
+
+    <!-- 项目名称 autocomplete -->
+    <select id="selectProjectNameSuggestions" resultType="java.util.HashMap">
+        SELECT DISTINCT project_id AS projectId, project_name AS projectName
+        FROM pm_project
+        WHERE del_flag = '0'
+        <if test="keyword != null and keyword != ''">
+            AND project_name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY project_name
+        LIMIT 20
+    </select>
+
+</mapper>

@@ -80,6 +80,10 @@ public class Project extends BaseEntity
     @Excel(name = "实际工作量(人天)")
     private BigDecimal actualWorkload;
 
+    /** 调整工作量(人天) */
+    @Excel(name = "调整工作量(人天)")
+    private BigDecimal adjustWorkload;
+
     /** 项目地址 */
     @Excel(name = "项目地址")
     private String projectAddress;
@@ -456,9 +460,19 @@ public class Project extends BaseEntity
         this.actualWorkload = actualWorkload;
     }
 
-    public BigDecimal getActualWorkload() 
+    public BigDecimal getActualWorkload()
     {
         return actualWorkload;
+    }
+
+    public void setAdjustWorkload(BigDecimal adjustWorkload)
+    {
+        this.adjustWorkload = adjustWorkload;
+    }
+
+    public BigDecimal getAdjustWorkload()
+    {
+        return adjustWorkload;
     }
 
     public void setProjectAddress(String projectAddress) 
@@ -1029,6 +1043,7 @@ public class Project extends BaseEntity
             .append("acceptanceStatus", getAcceptanceStatus())
             .append("estimatedWorkload", getEstimatedWorkload())
             .append("actualWorkload", getActualWorkload())
+            .append("adjustWorkload", getAdjustWorkload())
             .append("projectAddress", getProjectAddress())
             .append("projectPlan", getProjectPlan())
             .append("projectDescription", getProjectDescription())
