@@ -45,7 +45,11 @@
     <el-table v-loading="loading" :data="projectStageChangeList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" type="index" width="55" align="center" />
-      <el-table-column label="项目名称" align="center" prop="projectName" min-width="160" show-overflow-tooltip />
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220">
+        <template #default="scope">
+          <div class="project-name-cell">{{ scope.row.projectName }}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120" />
       <el-table-column label="确认金额(元)" align="center" prop="confirmAmount" width="150">
         <template #default="scope">
@@ -353,5 +357,12 @@ getList()
 :deep(.el-pagination) {
   margin-top: 15px;
   text-align: right;
+}
+
+.project-name-cell {
+  word-break: break-all;
+  white-space: normal;
+  line-height: 1.5;
+  text-align: left;
 }
 </style>

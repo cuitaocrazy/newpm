@@ -6,7 +6,7 @@
         <el-autocomplete
           v-model="queryParams.projectName"
           :fetch-suggestions="fetchProjectSuggestions"
-          placeholder="请选择搜索项目"
+          placeholder="请选择或搜索项目"
           clearable
           style="width: 300px"
           value-key="projectName"
