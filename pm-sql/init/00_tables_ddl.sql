@@ -1075,6 +1075,24 @@ CREATE TABLE `pm_work_calendar` (
   CONSTRAINT `pm_work_calendar_chk_1` CHECK ((`day_type` in (_utf8mb4'holiday',_utf8mb4'workday')))
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作日历（节假日 & 调休上班日）';
 
+-- ----------------------------
+-- 18. 项目阶段变更记录表
+-- ----------------------------
+
+CREATE TABLE `pm_project_stage_change` (
+  `change_id` bigint NOT NULL AUTO_INCREMENT COMMENT '变更记录ID',
+  `project_id` bigint NOT NULL COMMENT '项目ID',
+  `old_stage` varchar(50) DEFAULT NULL COMMENT '变更前阶段(字典:sys_xmjd)',
+  `new_stage` varchar(50) NOT NULL COMMENT '变更后阶段(字典:sys_xmjd)',
+  `change_reason` varchar(500) DEFAULT NULL COMMENT '变更原因',
+  `del_flag` char(1) NOT NULL DEFAULT '0' COMMENT '删除标志(0=正常,1=删除)',
+  `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
+  `create_time` datetime DEFAULT NULL COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT NULL COMMENT '更新者',
+  `update_time` datetime DEFAULT NULL COMMENT '更新时间',
+  PRIMARY KEY (`change_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目阶段变更记录表';
+
 
 
 

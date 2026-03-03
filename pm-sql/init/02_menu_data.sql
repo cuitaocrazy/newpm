@@ -430,3 +430,29 @@ VALUES ('工作日历修改', @workCalendarId, 3, '#', '', 1, 0, 'F', '0', '0', 
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('工作日历删除', @workCalendarId, 4, '#', '', 1, 0, 'F', '0', '0', 'project:workCalendar:remove', '#', 'admin', sysdate(), '', NULL, '');
+
+-- =============================
+-- 项目阶段变更菜单
+-- =============================
+-- 菜单 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目阶段变更', '2059', '1', 'projectStageChange', 'project/projectStageChange/index', 1, 0, 'C', '0', '0', 'project:projectStageChange:list', '#', 'admin', sysdate(), '', null, '项目阶段变更菜单');
+
+-- 按钮父菜单ID
+SELECT @parentId := LAST_INSERT_ID();
+
+-- 按钮 SQL
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目阶段变更查询', @parentId, '1',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:query',        '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目阶段变更新增', @parentId, '2',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:add',          '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目阶段变更修改', @parentId, '3',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:edit',         '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目阶段变更删除', @parentId, '4',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:remove',       '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('项目阶段变更导出', @parentId, '5',  '#', '', 1, 0, 'F', '0', '0', 'project:projectStageChange:export',       '#', 'admin', sysdate(), '', null, '');

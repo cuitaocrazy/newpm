@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.ProjectStageChangeMapper">
+
+    <!-- 完整结果映射（包含项目信息 + 合同状态 + 最新变更信息） -->
+    <resultMap type="ProjectStageChange" id="ProjectStageChangeResult">
+        <result property="changeId"             column="change_id"              />
+        <result property="projectId"            column="project_id"             />
+        <result property="oldStage"             column="old_stage"              />
+        <result property="newStage"             column="new_stage"              />
+        <result property="changeReason"         column="change_reason"          />
+        <result property="delFlag"              column="del_flag"               />
+        <result property="createBy"             column="create_by"              />
+        <result property="createTime"           column="create_time"            />
+        <result property="updateBy"             column="update_by"              />
+        <result property="updateTime"           column="update_time"            />
+        <!-- 项目信息 -->
+        <result property="projectName"          column="project_name"           />
+        <result property="revenueConfirmYear"   column="revenue_confirm_year"   />
+        <result property="confirmAmount"        column="confirm_amount"         />
+        <result property="revenueConfirmStatus" column="revenue_confirm_status" />
+        <result property="projectDept"          column="project_dept"           />
+        <result property="projectStage"         column="project_stage"          />
+        <!-- 合同信息 -->
+        <result property="contractStatus"       column="contract_status"        />
+        <result property="contractAmount"       column="contract_amount"        />
+        <!-- 最近变更人/时间（别名列） -->
+        <result property="changeBy"             column="change_by"              />
+        <result property="changeTime"           column="change_time"            />
+    </resultMap>
+
+    <!-- ==================== 以项目为主体的列表查询 ==================== -->
+    <!--
+        主表：pm_project p
+        LEFT JOIN 最新变更记录（ROW_NUMBER OVER PARTITION BY project_id）
+        LEFT JOIN pm_project_contract_rel + pm_contract（一项目一合同）
+        查询条件：projectId（autocomplete 选中后填入）、projectStage（当前阶段下拉）
+    -->
+    <select id="selectProjectStageChangeList" parameterType="ProjectStageChange" resultMap="ProjectStageChangeResult">
+        SELECT
+            p.project_id,
+            p.project_name,
+            p.revenue_confirm_year,
+            p.confirm_amount,
+            p.revenue_confirm_status,
+            p.project_dept,
+            p.project_stage,
+            c.contract_status,
+            c.contract_amount,
+            psc.change_id,
+            psc.old_stage,
+            psc.new_stage,
+            psc.change_reason,
+            COALESCE(u.nick_name, psc.create_by) AS change_by,
+            psc.create_time AS change_time
+        FROM pm_project p
+        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id
+        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
+        LEFT JOIN (
+            SELECT change_id, project_id, old_stage, new_stage, change_reason, create_by, create_time
+            FROM (
+                SELECT change_id, project_id, old_stage, new_stage, change_reason, create_by, create_time,
+                       ROW_NUMBER() OVER (PARTITION BY project_id ORDER BY create_time DESC, change_id DESC) AS rn
+                FROM pm_project_stage_change
+                WHERE del_flag = '0'
+            ) t WHERE rn = 1
+        ) psc ON p.project_id = psc.project_id
+        LEFT JOIN sys_user u ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
+        <where>
+            p.del_flag = '0'
+            <if test="projectId != null">AND p.project_id = #{projectId}</if>
+            <if test="projectStage != null and projectStage != ''">AND p.project_stage = #{projectStage}</if>
+        </where>
+        ORDER BY p.update_time DESC
+    </select>
+
+    <!-- ==================== 查询某项目的全部变更历史（用于变更记录弹窗）==================== -->
+    <select id="selectHistoryByProjectId" parameterType="Long" resultMap="ProjectStageChangeResult">
+        SELECT psc.change_id, psc.project_id, psc.old_stage, psc.new_stage, psc.change_reason,
+               COALESCE(u.nick_name, psc.create_by) AS create_by, psc.create_time
+        FROM pm_project_stage_change psc
+        LEFT JOIN sys_user u ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
+        WHERE psc.project_id = #{projectId}
+          AND psc.del_flag = '0'
+        ORDER BY psc.create_time DESC, psc.change_id DESC
+    </select>
+
+    <!-- ==================== 查询单条变更记录详情 ==================== -->
+    <select id="selectProjectStageChangeByChangeId" parameterType="Long" resultMap="ProjectStageChangeResult">
+        SELECT change_id, project_id, old_stage, new_stage, change_reason, del_flag,
+               create_by, create_time, update_by, update_time
+        FROM pm_project_stage_change
+        WHERE change_id = #{changeId}
+    </select>
+
+    <!-- ==================== 查询项目当前阶段 ==================== -->
+    <select id="selectProjectStageByProjectId" parameterType="Long" resultType="String">
+        SELECT project_stage FROM pm_project WHERE project_id = #{projectId} AND del_flag = '0'
+    </select>
+
+    <!-- ==================== 更新项目当前阶段 ==================== -->
+    <update id="updateProjectStageByProjectId">
+        UPDATE pm_project SET project_stage = #{projectStage}, update_time = NOW()
+        WHERE project_id = #{projectId}
+    </update>
+
+    <!-- ==================== 新增变更记录 ==================== -->
+    <insert id="insertProjectStageChange" parameterType="ProjectStageChange" useGeneratedKeys="true" keyProperty="changeId">
+        INSERT INTO pm_project_stage_change
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="projectId != null">project_id,</if>
+            <if test="oldStage != null">old_stage,</if>
+            <if test="newStage != null and newStage != ''">new_stage,</if>
+            <if test="changeReason != null">change_reason,</if>
+            <if test="delFlag != null and delFlag != ''">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="projectId != null">#{projectId},</if>
+            <if test="oldStage != null">#{oldStage},</if>
+            <if test="newStage != null and newStage != ''">#{newStage},</if>
+            <if test="changeReason != null">#{changeReason},</if>
+            <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <!-- ==================== 修改变更记录 ==================== -->
+    <update id="updateProjectStageChange" parameterType="ProjectStageChange">
+        UPDATE pm_project_stage_change
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="oldStage != null">old_stage = #{oldStage},</if>
+            <if test="newStage != null and newStage != ''">new_stage = #{newStage},</if>
+            <if test="changeReason != null">change_reason = #{changeReason},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        WHERE change_id = #{changeId}
+    </update>
+
+    <!-- ==================== 删除 ==================== -->
+    <delete id="deleteProjectStageChangeByChangeId" parameterType="Long">
+        DELETE FROM pm_project_stage_change WHERE change_id = #{changeId}
+    </delete>
+
+    <delete id="deleteProjectStageChangeByChangeIds" parameterType="String">
+        DELETE FROM pm_project_stage_change WHERE change_id IN
+        <foreach item="changeId" collection="array" open="(" separator="," close=")">
+            #{changeId}
+        </foreach>
+    </delete>
+
+</mapper>

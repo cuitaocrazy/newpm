@@ -1,0 +1,237 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_project_stage_change
+  tableComment: 项目阶段变更记录表
+  className: ProjectStageChange
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  change_id:
+    columnComment: 变更记录ID
+    columnType: bigint
+    javaType: Long
+    javaField: changeId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 项目ID
+    columnType: bigint
+    javaType: Long
+    javaField: projectId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  old_stage:
+    columnComment: 变更前阶段
+    columnType: varchar(50)
+    javaType: String
+    javaField: oldStage
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_xmjd
+
+  new_stage:
+    columnComment: 变更后阶段(当前阶段)
+    columnType: varchar(50)
+    javaType: String
+    javaField: newStage
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: sys_xmjd
+
+  change_reason:
+    columnComment: 变更原因
+    columnType: varchar(500)
+    javaType: String
+    javaField: changeReason
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: projectStageChange
+  functionName: 项目阶段变更
+  parentMenuId: 2059
+
+# ============================
+# 定制需求
+# ============================
+customizations:
+  project_name_autocomplete:
+    intent: "查询区：按项目名称远程模糊搜索，数据量大（几百~上千），后端搜索"
+    component:
+      type: el-autocomplete
+      props:
+        fetchSuggestions: "后端远程搜索"
+        valueKey: "projectName"
+        debounce: 300
+        triggerOnFocus: false
+        placeholder: "输入项目名称搜索"
+    bindTo: query_form
+    service:
+      endpoint: "GET /project/project/list?projectName={keyword}&pageSize=20"
+      source: "复用 PmProjectService，已有接口支持名称模糊查询"
+      returns: "[{ projectId, projectName }]"
+      newApi: false
+    notes: "autocomplete 选中后设置 queryParams.projectId；重置时同步清除 projectId；Mapper 以 pm_project 为主表，LEFT JOIN 最新变更记录"
+
+  project_centric_list:
+    intent: "列表以项目为主，一行一个项目，展示项目信息 + 最近一次阶段变更字段"
+    component:
+      type: custom
+      spec: |
+        列：序号/项目名称/收入确认年度/确认金额/合同状态/确认状态/项目部门/当前阶段/原阶段/变更原因/变更人/变更时间/操作(变更+变更记录)
+        数据来源：pm_project LEFT JOIN (ROW_NUMBER 取最新变更) psc LEFT JOIN pm_project_contract_rel+pm_contract
+        查询条件：projectId（autocomplete选中后填充）、projectStage（当前阶段下拉）
+    bindTo: page
+    service:
+      endpoint: "GET /project/projectStageChange/list"
+      source: "重写 selectProjectStageChangeList，以 pm_project 为主表"
+      newApi: false
+    notes: |
+      Domain 新增 transient 字段：projectName/revenueConfirmYear/confirmAmount/contractStatus/
+      revenueConfirmStatus/projectDept/projectStage(当前阶段)/changeBy/changeTime(Date)
+      Mapper 新增：selectProjectStageByProjectId、updateProjectStageByProjectId
+
+  batch_change:
+    intent: "勾选多个项目，统一设置新阶段 + 变更原因，一次提交生成多条变更记录并更新 pm_project.project_stage"
+    component:
+      type: custom
+      spec: |
+        工具栏"批量变更"按钮（multi-selection 有值时激活），点击弹出 Dialog：
+        - 新阶段（el-select, sys_xmjd, 必填）
+        - 变更原因（el-input type=textarea）
+        提交后为每个选中项目：old_stage=pm_project.project_stage，创建变更记录，更新 pm_project.project_stage
+    bindTo: toolbar
+    service:
+      endpoint: "POST /project/projectStageChange/batchChange"
+      source: "new"
+      returns: "AjaxResult"
+      newApi: true
+    notes: "请求体：{ projectIds: Long[], newStage: String, changeReason: String }；Domain 加 Long[] projectIds 字段"
+
+  change_history_dialog:
+    intent: "操作列'变更记录'按钮，弹出 Dialog 展示该项目所有阶段变更历史（时间倒序）"
+    component:
+      type: custom
+      spec: |
+        Dialog 内只读 el-table，列：变更时间/变更人/原阶段/新阶段/变更原因
+        时间倒序，不分页（变更次数有限）
+    bindTo: [changeId]
+    service:
+      endpoint: "GET /project/projectStageChange/history/{projectId}"
+      source: "new"
+      returns: "AjaxResult<List<ProjectStageChange>>"
+      newApi: true
+    notes: "返回纯变更记录（非 project-centric），按 create_time DESC 排序"
