@@ -233,7 +233,7 @@ genInfo:
   moduleName: project
   businessName: projectStageChange
   functionName: 项目阶段变更
-  parentMenuId: 2059
+  parentMenuId: 2059  # 一级菜单"项目管理"的 menu_id
 
 # ============================
 # 菜单配置
