@@ -564,7 +564,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.estimated_workload
         FROM pm_project p
         WHERE p.del_flag = '0'
-          AND p.project_dept = #{deptId}
+          AND (
+              p.project_dept = #{deptId}
+              OR p.project_dept IN (
+                  SELECT dept_id FROM sys_dept
+                  WHERE FIND_IN_SET(#{deptId}, ancestors) > 0
+                    AND del_flag = '0' AND status = '0'
+              )
+          )
           AND p.approval_status = '1'
           <if test="excludeContractId != null">
               AND p.project_id NOT IN (

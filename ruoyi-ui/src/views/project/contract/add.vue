@@ -269,7 +269,7 @@
 <script setup name="ContractAdd">
 import { ref, reactive, toRefs, watch, getCurrentInstance, onMounted, onActivated } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { addContract } from '@/api/project/contract'
+import { addContract, checkContractNameUnique } from '@/api/project/contract'
 import { listProjectByDept, getProject, getDeptTree as fetchDeptTree } from '@/api/project/project'
 import { listAllCustomer } from '@/api/project/customer'
 
@@ -284,6 +284,25 @@ const projectInfo = ref(null)
 
 // 折叠面板激活状态
 const activeNames = ref(['1', '2', '3', '4'])
+
+/** 合同名称唯一性校验 */
+async function validateContractName(rule, value, callback) {
+  if (!value || value.trim() === '') {
+    callback()
+    return
+  }
+  try {
+    const response = await checkContractNameUnique(value.trim(), null)
+    if (response.data === true) {
+      callback()
+    } else {
+      callback(new Error('合同名称已存在，请使用其他名称'))
+    }
+  } catch (error) {
+    console.error('校验合同名称唯一性失败:', error)
+    callback()
+  }
+}
 
 // 表单数据
 const data = reactive({
@@ -306,7 +325,8 @@ const data = reactive({
   },
   rules: {
     contractName: [
-      { required: true, message: '请输入合同名称', trigger: 'blur' }
+      { required: true, message: '请输入合同名称', trigger: 'blur' },
+      { validator: validateContractName, trigger: 'blur' }
     ],
     deptId: [
       { required: true, message: '请选择部门', trigger: 'change' }
@@ -368,8 +388,32 @@ function getDeptTree() {
       id: dept.deptId,
       label: dept.deptName
     }))
-    deptOptions.value = proxy.handleTree(deptData, "id")
+    const tree = proxy.handleTree(deptData, "id")
+    deptOptions.value = filterDeptFromLevel3(tree)
   })
+}
+
+/** 过滤部门树，从第三级开始展示 */
+function filterDeptFromLevel3(deptTree, level = 1) {
+  if (!deptTree || !Array.isArray(deptTree)) {
+    return []
+  }
+  const result = []
+  for (const dept of deptTree) {
+    if (level >= 3) {
+      const newDept = { ...dept }
+      if (dept.children && dept.children.length > 0) {
+        newDept.children = filterDeptFromLevel3(dept.children, level + 1)
+      }
+      result.push(newDept)
+    } else {
+      if (dept.children && dept.children.length > 0) {
+        const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
+        result.push(...childrenResult)
+      }
+    }
+  }
+  return result
 }
 
 // 加载客户列表

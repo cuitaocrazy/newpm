@@ -13,7 +13,7 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="部门" prop="deptId">
+      <el-form-item label="项目部门" prop="deptId">
         <el-tree-select
           v-model="queryParams.deptId"
           :data="deptOptions"
@@ -25,16 +25,6 @@
           style="width: 200px"
         />
       </el-form-item>
-      <el-form-item label="客户" prop="customerId">
-        <el-select v-model="queryParams.customerId" placeholder="请选择客户" clearable filterable style="width: 200px">
-          <el-option
-            v-for="customer in customerOptions"
-            :key="customer.customerId"
-            :label="customer.customerSimpleName"
-            :value="customer.customerId"
-          />
-        </el-select>
-      </el-form-item>
       <el-form-item label="合同类型" prop="contractType">
         <el-select v-model="queryParams.contractType" placeholder="请选择合同类型" clearable style="width: 200px">
           <el-option
@@ -43,6 +33,16 @@
             :label="dict.label"
             :value="dict.value"
           ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="关联客户" prop="customerId">
+        <el-select v-model="queryParams.customerId" placeholder="请选择关联客户" clearable filterable style="width: 200px">
+          <el-option
+            v-for="customer in customerOptions"
+            :key="customer.customerId"
+            :label="customer.customerSimpleName"
+            :value="customer.customerId"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="合同状态" prop="contractStatus">
@@ -95,7 +95,7 @@
         </el-form-item>
       </template>
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
         <el-button
           :icon="showMoreQuery ? 'ArrowUp' : 'ArrowDown'"
@@ -114,7 +114,7 @@
           icon="Plus"
           @click="handleAdd"
           v-hasPermi="['project:contract:add']"
-        >新增</el-button>
+        >新增合同</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -582,7 +582,6 @@ function handleQuery() {
 
 /** 合同名称 autocomplete */
 function fetchContractNameSuggestions(queryStr, cb) {
-  if (!queryStr) { cb([]); return }
   searchContracts({ keyword: queryStr }).then(res => {
     cb(res.data || [])
   }).catch(() => cb([]))

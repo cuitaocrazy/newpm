@@ -182,13 +182,14 @@
     </el-card>
 
     <!-- 第六部分：关联项目列表 -->
-    <el-card class="box-card" style="margin-top: 20px;" v-if="projectList.length > 0">
+    <el-card class="box-card" style="margin-top: 20px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
       </template>
-      <el-table :data="projectList" border>
+      <el-empty v-if="projectList.length === 0" description="该合同暂无关联项目" :image-size="80" />
+      <el-table v-else :data="projectList" border>
         <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="项目名称" align="center" prop="projectName" show-overflow-tooltip>
+        <el-table-column label="项目名称" align="left" prop="projectName" show-overflow-tooltip>
           <template #default="scope">
             <el-link type="primary" @click="handleViewProject(scope.row.projectId)">
               {{ scope.row.projectName }}
@@ -366,7 +367,10 @@ function handleBack() {
 
 /** 查看项目详情 */
 function handleViewProject(projectId) {
-  router.push({ path: `/project/list/detail/${projectId}` })
+  router.push({
+    path: `/project/list/detail/${projectId}`,
+    query: { from: 'contract', contractId: detailData.value.contractId }
+  })
 }
 
 /** 下载附件 */

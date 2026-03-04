@@ -485,7 +485,11 @@ function getUserNickName(loginName) {
 
 // 返回列表
 function goBack() {
-  router.push('/project/list')
+  if (route.query.from === 'contract' && route.query.contractId) {
+    router.push(`/htkx/contract/detail/${route.query.contractId}`)
+  } else {
+    router.push('/project/list')
+  }
 }
 
 // 查看合同详情

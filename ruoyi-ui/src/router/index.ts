@@ -83,6 +83,19 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/project/list/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':projectId(\\d+)',
+        component: () => import('@/views/project/project/detail.vue'),
+        name: 'ProjectDetail',
+        meta: { title: '项目详情', activeMenu: '/project/list' }
+      }
+    ]
   }
 ]
 

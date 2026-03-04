@@ -600,6 +600,43 @@ public TableDataInfo list(Entity entity) {
 }
 ```
 
+### Cross-module Permission (hasAnyPermi)
+
+When a page calls an endpoint from a different controller (e.g., contract page fetches attachments), use `@ss.hasAnyPermi()` listing all valid callers — otherwise a user with only `contract` permissions gets a 403 on the `attachment` endpoint.
+
+```java
+// Wrong — blocks callers who lack 'project:attachment:list'
+@PreAuthorize("@ss.hasPermi('project:attachment:list')")
+
+// Correct — allow any of the relevant callers
+@PreAuthorize("@ss.hasAnyPermi('project:attachment:list,project:project:query,project:contract:list,project:contract:query')")
+```
+
+### Project Module Proxy APIs
+
+`ProjectController` exposes proxy endpoints for system resources so frontend pages avoid cross-module 403s. **Use these instead of `system/user/list`, `system/dept/list`, etc.:**
+
+| Endpoint | Returns | Response field |
+|---|---|---|
+| `GET /project/project/users?postCode=xxx` | All users (optionally by post code) | `res.data` (not `res.rows`) |
+| `GET /project/project/deptTree` | Flat dept list | `res.data` — **flat list**, must call `handleTree(data, 'deptId', 'parentId', 'children')` |
+| `GET /project/project/customers` | Customer list | `res.data` |
+| `GET /project/project/search` | Project search | `res.data` |
+
+```typescript
+// Wrong — system API, causes 403 for contract-only users
+import { listUser } from '@/api/system/user'
+listUser({}).then(res => res.rows)  // ❌ res.rows
+
+// Correct — project proxy, returns res.data
+import { getUsersByPost, getDeptTree } from '@/api/project/project'
+getUsersByPost().then(res => res.data)    // ✅ res.data
+getDeptTree().then(res => {
+  // getDeptTree returns FLAT list — must build tree manually
+  deptOptions.value = proxy.handleTree(res.data.map(d => ({...d, id: d.deptId, label: d.deptName})), 'id')
+})
+```
+
 ## CI/CD Pipeline
 
 **GitHub Actions** (`.github/workflows/deploy.yml`): Pushes to `main` auto-deploy to K3s.
