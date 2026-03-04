@@ -42,7 +42,7 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -59,26 +59,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="success"
-          plain
-          icon="Edit"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['project:customer:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['project:customer:remove']"
-        >删除</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
           type="warning"
           plain
           icon="Download"
@@ -89,8 +69,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="customerList" :height="tableHeight" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
+    <el-table v-loading="loading" :data="customerList" :height="tableHeight" border>
       <el-table-column type="index" label="序号" width="55" align="center" />
       <el-table-column label="客户简称" align="center" prop="customerSimpleName" />
       <el-table-column label="客户全称" align="center" prop="customerAllName" />
@@ -117,7 +96,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:customer:edit']">修改</el-button>
+          <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:customer:query']">详情</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:customer:edit']">编辑</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:customer:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -221,12 +201,8 @@
           <el-col :span="1.5">
             <el-button type="primary" icon="Plus" @click="handleAddCustomerContact">添加</el-button>
           </el-col>
-          <el-col :span="1.5">
-            <el-button type="danger" icon="Delete" @click="handleDeleteCustomerContact">删除</el-button>
-          </el-col>
         </el-row>
-        <el-table :data="customerContactList" :row-class-name="rowCustomerContactIndex" @selection-change="handleCustomerContactSelectionChange" ref="customerContact">
-          <el-table-column type="selection" width="50" align="center" />
+        <el-table :data="customerContactList" :row-class-name="rowCustomerContactIndex">
           <el-table-column label="序号" align="center" prop="index" width="70"/>
           <el-table-column label="联系人姓名" prop="contactName" width="160">
             <template #default="scope">
@@ -269,6 +245,53 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 客户详情对话框 -->
+    <el-dialog title="客户详情" v-model="openDetail" width="900px" append-to-body>
+      <div class="detail-section">
+        <div class="detail-section-title">客户基本信息</div>
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="客户简称">{{ detailData.customerSimpleName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="客户全称">{{ detailData.customerAllName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="所属行业">
+            <dict-tag :options="industry" :value="detailData.industry" />
+          </el-descriptions-item>
+          <el-descriptions-item label="所属区域">
+            <dict-tag :options="sys_yjqy" :value="detailData.region" />
+          </el-descriptions-item>
+          <el-descriptions-item label="销售负责人">{{ detailData.salesManagerName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="办公地址">{{ detailData.officeAddress || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建日期">{{ parseTime(detailData.createTime, '{y}-{m}-{d} {h}:{i}:{s}') || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="更新日期">{{ parseTime(detailData.updateTime, '{y}-{m}-{d} {h}:{i}:{s}') || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="备注" :span="2">{{ detailData.remark || '-' }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <div class="detail-section" style="margin-top: 20px;">
+        <div class="detail-section-title">联系人信息</div>
+        <el-table :data="detailData.customerContactList || []" border>
+          <el-table-column label="序号" type="index" width="60" align="center" />
+          <el-table-column label="联系人姓名" prop="contactName" />
+          <el-table-column label="联系人电话" prop="contactPhone" />
+          <el-table-column label="联系人标签" prop="contactTag">
+            <template #default="scope">
+              <dict-tag :options="contact_tag" :value="scope.row.contactTag" />
+            </template>
+          </el-table-column>
+          <el-table-column label="备注" prop="remark" />
+          <el-table-column label="创建时间" prop="createTime" width="180">
+            <template #default="scope">
+              {{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="handleDetailEdit">编辑</el-button>
+          <el-button @click="openDetail = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -284,12 +307,10 @@ const customerContactList = ref([])
 const salesManagerList = ref([])
 const customerSimpleNameList = ref([])
 const open = ref(false)
+const openDetail = ref(false)
+const detailData = ref({})
 const loading = ref(true)
 const showSearch = ref(true)
-const ids = ref([])
-const checkedCustomerContact = ref([])
-const single = ref(true)
-const multiple = ref(true)
 const total = ref(0)
 const tableHeight = ref(600)
 const title = ref("")
@@ -383,13 +404,6 @@ function resetQuery() {
   handleQuery()
 }
 
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.customerId)
-  single.value = selection.length != 1
-  multiple.value = !selection.length
-}
-
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
@@ -400,13 +414,27 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
-  const _customerId = row.customerId || ids.value
+  const _customerId = row.customerId
   getCustomer(_customerId).then(response => {
     form.value = response.data
     customerContactList.value = response.data.customerContactList
     open.value = true
-    title.value = "修改客户管理"
+    title.value = "编辑客户信息"
   })
+}
+
+/** 详情按钮操作 */
+function handleDetail(row) {
+  getCustomer(row.customerId).then(response => {
+    detailData.value = response.data
+    openDetail.value = true
+  })
+}
+
+/** 详情弹窗点击编辑 */
+function handleDetailEdit() {
+  openDetail.value = false
+  handleUpdate(detailData.value)
 }
 
 /** 提交按钮 */
@@ -450,22 +478,8 @@ function submitForm() {
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const _customerIds = row.customerId || ids.value
-
-  // 构建删除确认消息
-  let confirmMessage = ''
-  if (row.customerId) {
-    // 单个删除：使用客户简称
-    confirmMessage = `是否确认删除客户简称为"${row.customerSimpleName}"的数据项？`
-  } else {
-    // 批量删除：提取所有选中客户的简称
-    const selectedCustomers = customerList.value.filter(item => ids.value.includes(item.customerId))
-    const customerNames = selectedCustomers.map(item => item.customerSimpleName).join('、')
-    confirmMessage = `是否确认删除客户简称为"${customerNames}"的数据项？`
-  }
-
-  proxy.$modal.confirm(confirmMessage).then(function() {
-    return delCustomer(_customerIds)
+  proxy.$modal.confirm(`是否确认删除客户简称为"${row.customerSimpleName}"的数据项及其所有关联数据，且无法恢复！是否继续？`).then(function() {
+    return delCustomer(row.customerId)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
@@ -487,22 +501,6 @@ function handleAddCustomerContact() {
   customerContactList.value.push(obj)
 }
 
-/** 客户联系人删除按钮操作 */
-function handleDeleteCustomerContact() {
-  if (checkedCustomerContact.value.length == 0) {
-    proxy.$modal.msgError("请先选择要删除的客户联系人数据")
-  } else {
-    proxy.$modal.confirm('是否确认删除选中的联系人？').then(() => {
-      const customerContacts = customerContactList.value
-      const checkedCustomerContacts = checkedCustomerContact.value
-      customerContactList.value = customerContacts.filter(function(item) {
-        return checkedCustomerContacts.indexOf(item.index) == -1
-      })
-      proxy.$modal.msgSuccess("删除成功")
-    }).catch(() => {})
-  }
-}
-
 /** 客户联系人行内删除操作 */
 function handleDeleteSingleContact(index) {
   proxy.$modal.confirm('是否确认删除该联系人？').then(() => {
@@ -512,16 +510,11 @@ function handleDeleteSingleContact(index) {
   }).catch(() => {})
 }
 
-/** 复选框选中数据 */
-function handleCustomerContactSelectionChange(selection) {
-  checkedCustomerContact.value = selection.map(item => item.index)
-}
-
 /** 导出按钮操作 */
 function handleExport() {
   proxy.download('project/customer/export', {
     ...queryParams.value
-  }, `customer_${new Date().getTime()}.xlsx`)
+  }, `客户信息_${new Date().getTime()}.xlsx`)
 }
 
 /** 加载销售负责人列表 */
@@ -611,5 +604,14 @@ getList()
     margin-top: 15px;
     text-align: right;
   }
+}
+
+.detail-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+  padding-left: 8px;
+  border-left: 3px solid #409eff;
 }
 </style>

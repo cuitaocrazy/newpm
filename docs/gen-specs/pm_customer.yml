@@ -445,6 +445,17 @@ customizations:
     service: null
     notes: "修改 Customer.java 实体类，为所有 @Excel 注解添加 sort 参数，确保导出列顺序与列表页面一致"
 
+  excel_export_filename:
+    intent: "导出文件名使用中文前缀加 Unix 时间戳"
+    component:
+      type: "custom"
+      spec: |
+        导出文件名格式：客户信息_${new Date().getTime()}.xlsx
+        示例：客户信息_1741234567890.xlsx
+    bindTo: "handleExport"
+    service: null
+    notes: "修改位置：ruoyi-ui/src/views/project/customer/index.vue，handleExport() 方法中的文件名参数"
+
   sales_manager_query_condition:
     intent: "添加销售负责人查询条件，支持按销售负责人筛选客户"
     component:
@@ -556,35 +567,32 @@ customizations:
       - 客户联系人表格保持在表单下方，不受2列布局影响
 
   customer_list_columns_with_expand:
-    intent: "优化客户列表展示，添加序号列和联系人折叠展开功能"
+    intent: "优化客户列表展示，添加序号列、列间竖线和联系人折叠展开功能"
     component:
       type: "custom"
       spec: |
-        列表展示字段（按顺序）：
-        1. 选择框（type="selection"）
-        2. 序号（type="index"）
-        3. 客户简称
-        4. 客户全称
-        5. 所属行业（使用 dict-tag 显示字典标签）
-        6. 所属区域（使用 dict-tag 显示字典标签）
-        7. 销售负责人（显示用户昵称，通过 getSalesManagerName() 方法）
-        8. 办公地址（添加 show-overflow-tooltip 属性）
-        9. 创建时间（格式：yyyy-MM-dd）
-        10. 操作列（修改、删除按钮）
-        11. 展开列（type="expand"，显示联系人信息）
+        el-table 属性：border（显示列间竖线分隔，与合同页面风格一致）
+
+        列表展示字段（按顺序，无多选列）：
+        1. 序号（type="index"）
+        2. 客户简称
+        3. 客户全称
+        4. 所属行业（使用 dict-tag 显示字典标签）
+        5. 所属区域（使用 dict-tag 显示字典标签）
+        6. 销售负责人（显示用户昵称，来自后端关联查询字段 salesManagerName）
+        7. 办公地址（添加 show-overflow-tooltip 属性）
+        8. 创建时间（格式：yyyy-MM-dd）
+        9. 操作列（详情、编辑、删除按钮）
+        10. 展开列（type="expand"，显示联系人信息）
 
         联系人展开功能：
         - 使用 el-table-column type="expand" 实现折叠展开
         - 默认折叠状态
         - 展开后显示该客户的所有联系人信息（嵌套表格）
         - 联系人表格字段：联系人姓名、联系人电话、联系人标签
-        - 不展示联系人的备注字段
+        - 不展示联系人的备注字段（备注在详情弹窗中显示）
         - 如果没有联系人，显示"暂无联系人信息"提示
         - 联系人数据从 customerContactList 属性获取
-
-        销售负责人显示逻辑：
-        - 添加 getSalesManagerName(salesManagerId) 方法
-        - 从 salesManagerList 中根据 userId 查找对应的 nickName
     bindTo: "customerList"
     service: null
     notes: |
@@ -594,46 +602,37 @@ customizations:
          - 这样列表查询会自动关联查询联系人信息
 
       2. 前端：ruoyi-ui/src/views/project/customer/index.vue
-         - 添加 type="index" 序号列
+         - 添加 type="index" 序号列（无 type="selection" 多选列）
          - 添加 type="expand" 展开列（放在最后）
          - 展开列中嵌套 el-table 显示联系人信息
-         - 添加 getSalesManagerName() 辅助方法
+         - salesManagerName 直接使用后端关联查询结果，前端无需转换
 
   customer_contact_inline_delete:
-    intent: "联系人表格添加行内删除按钮，支持逻辑删除和批量删除确认"
+    intent: "联系人表格每行提供行内删除按钮，仅支持逐条删除"
     component:
       type: "custom"
       spec: |
-        联系人表格操作优化：
+        联系人表格操作：
         1. 行内删除按钮：
-           - 在每行末尾添加"删除"按钮（el-button link type="danger"）
+           - 在每行末尾"操作"列（宽度 80px）添加"删除"按钮（el-button link type="danger"）
            - 点击弹框确认："是否确认删除该联系人？"
-           - 确认后执行逻辑删除：设置 delFlag = '1'
-           - 从前端列表中移除该行（splice）
+           - 确认后执行逻辑删除：设置 delFlag = '1'，从前端列表中移除该行（splice）
            - 显示"删除成功"提示
 
-        2. 批量删除按钮：
-           - 点击弹框确认："是否确认删除选中的联系人？"
-           - 确认后执行逻辑删除：遍历选中项，设置 delFlag = '1'
-           - 从前端列表中过滤掉已删除的联系人
-           - 显示"删除成功"提示
+        2. 无批量删除功能：
+           - 联系人表格无 type="selection" 多选列
+           - 表格上方工具栏只保留"添加"按钮，不提供"删除"批量操作按钮
 
         3. 逻辑删除说明：
-           - 不直接从数组中删除数据
-           - 标记 delFlag = '1' 表示已删除
-           - 提交表单时，后端会根据 delFlag 判断是否删除
-           - 前端显示时过滤掉 delFlag = '1' 的数据
-
-        4. 表格列宽调整：
-           - 添加"操作"列，宽度 80px
-           - 包含行内删除按钮
+           - 标记 delFlag = '1' 表示已删除，不直接执行 DELETE 语句
+           - 提交表单时，后端根据 delFlag 判断是否删除对应联系人
     bindTo: "customerContactList"
     service: null
     notes: |
       修改位置：ruoyi-ui/src/views/project/customer/index.vue
-      - 在联系人表格中添加"操作"列
-      - 修改 handleDeleteCustomerContact() 方法，添加确认弹框和逻辑删除
-      - 新增 handleDeleteSingleContact(index) 方法，处理行内删除
+      - 联系人表格添加"操作"列，包含行内删除按钮
+      - handleDeleteSingleContact(index) 处理行内删除逻辑
+      - 已移除：handleDeleteCustomerContact()、handleCustomerContactSelectionChange()、checkedCustomerContact ref
 
   customer_simple_name_unique_validation:
     intent: "客户简称添加前后端重复性验证，确保数据唯一性"
@@ -787,40 +786,104 @@ customizations:
       - 避免误删除造成的数据丢失
 
   delete_confirm_message_optimization:
-    intent: "优化删除确认提示信息，使用客户简称代替客户管理编号"
+    intent: "优化删除确认提示信息，使用客户简称并提示关联数据无法恢复"
     component:
       type: "custom"
       spec: |
-        删除提示信息优化：
-        1. 单个删除：
-           - 原提示："是否确认删除客户管理编号为"123"的数据项？"
-           - 新提示："是否确认删除客户简称为"XX公司"的数据项？"
-           - 使用 row.customerSimpleName 获取客户简称
-
-        2. 批量删除：
-           - 原提示："是否确认删除客户管理编号为"123,456"的数据项？"
-           - 新提示："是否确认删除客户简称为"XX公司、YY公司"的数据项？"
-           - 从 customerList 中筛选选中的客户
-           - 提取所有客户简称，用顿号（、）连接
-
-        3. 实现逻辑：
-           - 判断是单个删除还是批量删除（row.customerId 是否存在）
-           - 单个删除：直接使用 row.customerSimpleName
-           - 批量删除：filter + map 提取所有选中客户的简称
-           - 使用模板字符串构建确认消息
-
-        4. 用户体验提升：
-           - 客户简称比编号更直观
-           - 批量删除时可以清楚看到要删除哪些客户
-           - 避免误删除
+        删除提示信息（仅支持单行删除，已移除批量删除入口）：
+        - 提示文案："是否确认删除客户简称为"${customerSimpleName}"的数据项及其所有关联数据，且无法恢复！是否继续？"
+        - 使用 row.customerSimpleName 获取客户简称
+        - 操作栏仅有单行删除按钮，顶部工具栏不提供批量删除按钮
     bindTo: "handleDelete"
     service: null
     notes: |
       修改位置：ruoyi-ui/src/views/project/customer/index.vue
-      - 修改 handleDelete() 方法
-      - 添加 confirmMessage 变量
-      - 根据删除类型构建不同的提示信息
-      - 批量删除时使用 filter + map + join 处理客户简称列表
+      - handleDelete(row) 方法只处理单行删除，移除批量删除逻辑
+      - 顶部工具栏已移除"删除"批量操作按钮（随多选功能一并移除）
+
+  list_ui_optimizations:
+    intent: "客户列表 UI 细节优化：查询按钮文字、移除多选列和顶部批量操作按钮"
+    component:
+      type: "custom"
+      spec: |
+        1. 查询按钮文字：
+           - 原文字："搜索"  →  新文字："查询"
+           - 重置按钮文字保持不变："重置"
+
+        2. 移除多选功能：
+           - 移除 el-table 的 type="selection" 列
+           - 移除 @selection-change="handleSelectionChange" 事件绑定
+           - 移除顶部工具栏的"修改"按钮（原依赖单选状态 :disabled="single"）
+           - 移除顶部工具栏的"删除"按钮（原依赖多选状态 :disabled="multiple"）
+           - 顶部工具栏只保留：新增、导出
+
+        3. 清理关联状态变量：
+           - 移除 ids、single、multiple 响应式变量
+           - 移除 handleSelectionChange() 函数
+    bindTo: "queryParams"
+    service: null
+    notes: |
+      修改位置：ruoyi-ui/src/views/project/customer/index.vue
+      操作栏保留单行操作：详情、编辑、删除（无批量操作入口）
+
+  customer_detail_dialog:
+    intent: "操作栏新增详情按钮，点击展示客户只读详情弹窗，支持从详情跳转编辑"
+    component:
+      type: "el-dialog"
+      props:
+        title: "客户详情"
+        width: "900px"
+        appendToBody: true
+      spec: |
+        弹窗结构：
+
+        1. 客户基本信息（el-descriptions :column="2" border）：
+           - 客户简称
+           - 客户全称
+           - 所属行业（dict-tag，dictType: industry）
+           - 所属区域（dict-tag，dictType: sys_yjqy）
+           - 销售负责人（salesManagerName，无则显示 '-'）
+           - 办公地址（无则显示 '-'）
+           - 创建日期（格式：yyyy-MM-dd HH:mm:ss，无则显示 '-'）
+           - 更新日期（格式：yyyy-MM-dd HH:mm:ss，无则显示 '-'）
+           - 备注（:span="2" 占满整行，无则显示 '-'）
+
+        2. 联系人信息（el-table border）：
+           - 序号（type="index"）
+           - 联系人姓名（contactName）
+           - 联系人电话（contactPhone）
+           - 联系人标签（dict-tag，dictType: contact_tag）
+           - 备注（remark）
+           - 创建时间（格式：yyyy-MM-dd HH:mm:ss）
+
+        3. 弹窗底部按钮（右对齐）：
+           - 编辑（type="primary"）：关闭详情弹窗，打开编辑弹窗（调用 handleUpdate）
+           - 关闭：关闭详情弹窗，返回列表
+
+        4. 样式：
+           - section 标题使用 .detail-section-title：左侧 3px 蓝色（#409eff）边框，font-size 14px，font-weight 600
+           - 两个 section 之间 margin-top: 20px
+    bindTo: "customerId"
+    service:
+      endpoint: "GET /project/customer/{customerId}"
+      source: "复用 getCustomer 接口，已有"
+      returns: "{ data: { ...customer, customerContactList: [...] } }"
+      newApi: false
+    notes: |
+      实现位置：ruoyi-ui/src/views/project/customer/index.vue
+
+      新增响应式变量：
+      - const openDetail = ref(false)
+      - const detailData = ref({})
+
+      新增函数：
+      - handleDetail(row)：调用 getCustomer(row.customerId)，赋值 detailData，打开弹窗
+      - handleDetailEdit()：关闭详情弹窗（openDetail = false），调用 handleUpdate(detailData.value)
+
+      操作栏按钮顺序：详情 → 编辑 → 删除
+      权限控制：详情按钮使用 v-hasPermi="['project:customer:query']"
+      日期格式化：使用 parseTime(value, '{y}-{m}-{d} {h}:{i}:{s}')
+      编辑弹窗 title 改为"编辑客户信息"（原为"修改客户管理"）
 
   menu_structure_and_permissions:
     intent: "记录客户信息管理的菜单结构和按钮权限配置"
