@@ -73,6 +73,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="companyRevenueConfirmedTime"    column="company_revenue_confirmed_time"    />
         <!-- 关联字段 -->
         <result property="contractAmount"    column="contract_amount"    />
+        <result property="contractName"      column="contract_name"      />
         <result property="contractStatus"    column="contract_status"    />
         <result property="deptName"    column="dept_name"    />
         <result property="projectManagerName"    column="project_manager_name"    />
@@ -100,8 +101,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_project
     </sql>
 
-    <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
-        SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
+    <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">        SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
                p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
@@ -115,13 +115,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.company_revenue_confirmed_time,
                sr.region_name,
                pcr.contract_id as contractId,
-               c.contract_amount, c.contract_status,
-               u_upd.nick_name AS update_by_name
+               c.contract_name, c.contract_amount, c.contract_status,
+               u_upd.nick_name AS update_by_name,
+               u1.nick_name AS project_manager_name
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id AND pcr.del_flag = '0' AND pcr.rel_status = '有效'
-        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
+        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
         LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
         <where>
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
@@ -179,8 +181,45 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="afterTaxAmount != null "> and p.after_tax_amount = #{afterTaxAmount}</if>
             <if test="companyRevenueConfirmedBy != null  and companyRevenueConfirmedBy != ''"> and p.company_revenue_confirmed_by = #{companyRevenueConfirmedBy}</if>
             <if test="companyRevenueConfirmedTime != null "> and p.company_revenue_confirmed_time = #{companyRevenueConfirmedTime}</if>
+            <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
         </where>
-        ORDER BY COALESCE(p.update_time, p.create_time) DESC
+        ORDER BY p.update_time DESC
+    </select>
+
+    <select id="selectProjectSummary" parameterType="Project" resultType="java.util.Map">
+        SELECT
+            COALESCE(SUM(p.project_budget), 0)  AS projectBudget,
+            COALESCE(SUM(p.estimated_workload), 0) AS estimatedWorkload,
+            COALESCE(SUM(p.actual_workload), 0)    AS actualWorkload,
+            COALESCE(SUM(c.contract_amount), 0)    AS contractAmount,
+            COALESCE(SUM(p.confirm_amount), 0)     AS confirmAmount
+        FROM pm_project p
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id AND pcr.del_flag = '0' AND pcr.rel_status = '有效'
+        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
+        LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
+        <where>
+            p.del_flag = '0'
+            <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
+            <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
+            <if test="region != null  and region != ''"> and p.region = #{region}</if>
+            <if test="regionId != null "> and p.region_id = #{regionId}</if>
+            <if test="shortName != null  and shortName != ''"> and p.short_name like concat('%', #{shortName}, '%')</if>
+            <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
+            <if test="projectCategory != null  and projectCategory != ''"> and p.project_category = #{projectCategory}</if>
+            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
+            <if test="projectStage != null  and projectStage != ''"> and p.project_stage = #{projectStage}</if>
+            <if test="acceptanceStatus != null  and acceptanceStatus != ''"> and p.acceptance_status = #{acceptanceStatus}</if>
+            <if test="projectManagerId != null "> and p.project_manager_id = #{projectManagerId}</if>
+            <if test="marketManagerId != null "> and p.market_manager_id = #{marketManagerId}</if>
+            <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
+            <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
+            <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
+            <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+        </where>
     </select>
 
     <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectResult">
@@ -416,16 +455,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where project_id = #{projectId}
     </update>
 
-    <update id="deleteProjectByProjectId" parameterType="Long">
-        update pm_project set del_flag = '1' where project_id = #{projectId}
-    </update>
+    <delete id="deleteProjectByProjectId" parameterType="Long">
+        delete from pm_project where project_id = #{projectId}
+    </delete>
 
-    <update id="deleteProjectByProjectIds" parameterType="String">
-        update pm_project set del_flag = '1' where project_id in
+    <delete id="deleteProjectByProjectIds" parameterType="String">
+        delete from pm_project where project_id in
         <foreach item="projectId" collection="array" open="(" separator="," close=")">
             #{projectId}
         </foreach>
-    </update>
+    </delete>
 
     <!-- 获取用户列表（按岗位过滤） -->
     <select id="selectUsersByPost" resultType="map">
@@ -686,6 +725,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
               )
           )
         order by p.create_time desc
+    </select>
+
+    <!-- 查询所有部门（用于导出时构建部门路径） -->
+    <select id="selectAllDeptsForPath" resultType="map">
+        SELECT dept_id AS deptId, dept_name AS deptName, ancestors
+        FROM sys_dept
+        WHERE del_flag = '0'
+    </select>
+
+    <!-- 根据用户ID列表查询昵称（用于导出时解析参与人员） -->
+    <select id="selectUserNickNamesByIds" resultType="map">
+        SELECT user_id AS userId, nick_name AS nickName
+        FROM sys_user
+        WHERE del_flag = '0'
+        AND user_id IN
+        <foreach collection="userIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
 </mapper>

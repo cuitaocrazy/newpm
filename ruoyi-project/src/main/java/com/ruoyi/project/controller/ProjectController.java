@@ -58,6 +58,16 @@ public class ProjectController extends BaseController
     }
 
     /**
+     * 查询项目合计（全量，不分页）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:query')")
+    @GetMapping("/summary")
+    public AjaxResult summary(Project project)
+    {
+        return success(projectService.selectProjectSummary(project));
+    }
+
+    /**
      * 导出项目管理列表
      */
     @PreAuthorize("@ss.hasPermi('project:project:export')")
@@ -66,8 +76,9 @@ public class ProjectController extends BaseController
     public void export(HttpServletResponse response, Project project)
     {
         List<Project> list = projectService.selectProjectList(project);
+        projectService.enrichForExport(list);
         ExcelUtil<Project> util = new ExcelUtil<Project>(Project.class);
-        util.exportExcel(response, list, "项目管理数据");
+        util.exportExcel(response, list, "项目数据");
     }
 
     /**

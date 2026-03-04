@@ -7,6 +7,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+import com.ruoyi.project.utils.AmountFormatHandler;
 
 /**
  * 项目管理对象 pm_project
@@ -22,263 +23,231 @@ public class Project extends BaseEntity
     private Long projectId;
 
     /** 项目编号(格式:行业-一级区域-二级区域-简称-年份) */
-    @Excel(name = "项目编号(格式:行业-一级区域-二级区域-简称-年份)")
     private String projectCode;
 
     /** 项目名称 */
-    @Excel(name = "项目名称")
+    @Excel(name = "项目名称", sort = 10)
     private String projectName;
 
     /** 行业 */
-    @Excel(name = "行业")
     private String industry;
 
     /** 一级区域 */
-    @Excel(name = "一级区域")
     private String region;
 
     /** 二级区域ID（关联pm_secondary_region表 ） */
-    @Excel(name = "二级区域ID", readConverterExp = "关=联pm_secondary_region表")
     private Long regionId;
 
     /** 二级区域名称（关联查询） */
+    @Excel(name = "二级区域", sort = 30)
     private String regionName;
 
     /** 简称 */
-    @Excel(name = "简称")
     private String shortName;
 
     /** 立项年度 */
-    @Excel(name = "立项年度")
-    private Long establishedYear;
+    private String establishedYear;
 
     /** 项目分类 */
-    @Excel(name = "项目分类")
+    @Excel(name = "项目分类", dictType = "sys_xmfl", sort = 20)
     private String projectCategory;
 
     /** 项目部门 */
-    @Excel(name = "项目部门")
     private String projectDept;
 
+    /** 项目部门路径（导出用，非数据库字段） */
+    @Excel(name = "项目部门路径", sort = 40)
+    private String deptPathDisplay;
+
     /** 项目状态 */
-    @Excel(name = "项目状态")
+    @Excel(name = "项目状态", dictType = "sys_xmzt", sort = 190)
     private String projectStatus;
 
     /** 项目阶段 */
-    @Excel(name = "项目阶段")
+    @Excel(name = "项目阶段", dictType = "sys_xmjd", sort = 210)
     private String projectStage;
 
     /** 验收状态 */
-    @Excel(name = "验收状态")
+    @Excel(name = "验收状态", dictType = "sys_yszt", sort = 200)
     private String acceptanceStatus;
 
     /** 预估工作量(人天) */
-    @Excel(name = "预估工作量(人天)")
+    @Excel(name = "预估工作量(人天)", sort = 70)
     private BigDecimal estimatedWorkload;
 
     /** 实际工作量(人天) */
-    @Excel(name = "实际工作量(人天)")
+    @Excel(name = "实际人天", sort = 80)
     private BigDecimal actualWorkload;
 
     /** 调整工作量(人天) */
-    @Excel(name = "调整工作量(人天)")
     private BigDecimal adjustWorkload;
 
     /** 项目地址 */
-    @Excel(name = "项目地址")
     private String projectAddress;
 
     /** 项目计划 */
-    @Excel(name = "项目计划")
     private String projectPlan;
 
     /** 项目描述 */
-    @Excel(name = "项目描述")
     private String projectDescription;
 
     /** 项目经理ID */
-    @Excel(name = "项目经理ID")
     private Long projectManagerId;
 
     /** 市场经理ID */
-    @Excel(name = "市场经理ID")
     private Long marketManagerId;
 
     /** 参与人员ID列表(逗号分隔) */
-    @Excel(name = "参与人员ID列表(逗号分隔)")
     private String participants;
 
     /** 销售负责人ID */
-    @Excel(name = "销售负责人ID")
     private Long salesManagerId;
 
     /** 销售联系方式 */
-    @Excel(name = "销售联系方式")
     private String salesContact;
 
     /** 团队负责人ID */
-    @Excel(name = "团队负责人ID")
     private Long teamLeaderId;
 
     /** 客户ID */
-    @Excel(name = "客户ID")
     private Long customerId;
 
     /** 客户联系人ID */
-    @Excel(name = "客户联系人ID")
     private Long customerContactId;
 
     /** 关联的合同ID */
     private Long contractId;
 
     /** 商户联系人 */
-    @Excel(name = "商户联系人")
     private String merchantContact;
 
     /** 商户联系方式 */
-    @Excel(name = "商户联系方式")
     private String merchantPhone;
 
     /** 启动日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "启动日期", width = 30, dateFormat = "yyyy-MM-dd")
+    @Excel(name = "启动日期", width = 30, dateFormat = "yyyy-MM-dd", sort = 150)
     private Date startDate;
 
     /** 结束日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "结束日期", width = 30, dateFormat = "yyyy-MM-dd")
+    @Excel(name = "结束日期", width = 30, dateFormat = "yyyy-MM-dd", sort = 160)
     private Date endDate;
 
     /** 投产日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "投产日期", width = 30, dateFormat = "yyyy-MM-dd")
     private Date productionDate;
 
     /** 验收日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "验收日期", width = 30, dateFormat = "yyyy-MM-dd")
+    @Excel(name = "验收日期", width = 30, dateFormat = "yyyy-MM-dd", sort = 170)
     private Date acceptanceDate;
 
     /** 项目预算(元) */
-    @Excel(name = "项目预算(元)")
+    @Excel(name = "项目预算(元)", sort = 60, handler = AmountFormatHandler.class)
     private BigDecimal projectBudget;
 
     /** 项目费用(元) */
-    @Excel(name = "项目费用(元)")
     private BigDecimal projectCost;
 
     /** 费用预算(元) */
-    @Excel(name = "费用预算(元)")
     private BigDecimal expenseBudget;
 
     /** 成本预算(元) */
-    @Excel(name = "成本预算(元)")
     private BigDecimal costBudget;
 
     /** 人力费用(元) */
-    @Excel(name = "人力费用(元)")
     private BigDecimal laborCost;
 
     /** 采购成本 */
-    @Excel(name = "采购成本")
     private BigDecimal purchaseCost;
 
     /** 审核状态(0待审核/1已通过/2已拒绝) */
-    @Excel(name = "审核状态(0待审核/1已通过/2已拒绝)")
+    @Excel(name = "审核状态", readConverterExp = "0=待审核,1=已通过,2=已拒绝", sort = 180)
     private String approvalStatus;
 
     /** 审核意见 */
-    @Excel(name = "审核意见")
     private String approvalReason;
 
     /** 审核时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @Excel(name = "审核时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date approvalTime;
 
     /** 审核人ID */
-    @Excel(name = "审核人ID")
     private String approverId;
 
     /** 行业代码 */
-    @Excel(name = "行业代码")
     private String industryCode;
 
     /** 区域代码(字典:sys_yjqy) */
-    @Excel(name = "区域代码(字典:sys_yjqy)")
     private String regionCode;
 
     /** 税率(%) */
-    @Excel(name = "税率(%)")
     private BigDecimal taxRate;
 
     /** 确认人ID */
-    @Excel(name = "确认人ID")
     private Long confirmUserId;
 
     /** 确认时间 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "确认时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date confirmTime;
 
     /** 备用域1 */
-    @Excel(name = "备用域1")
     private String reservedField1;
 
     /** 备用域2 */
-    @Excel(name = "备用域2")
     private String reservedField2;
 
     /** 备用域3 */
-    @Excel(name = "备用域3")
     private String reservedField3;
 
     /** 备用域4 */
-    @Excel(name = "备用域4")
     private String reservedField4;
 
     /** 备用域5 */
-    @Excel(name = "备用域5")
     private String reservedField5;
 
     /** 删除标志(0正常 1删除) */
     private String delFlag;
 
     /** 收入确认状态（字典:sys_srqrzt 未确认、待确认、已确认、无法确认） */
-    @Excel(name = "收入确认状态", readConverterExp = "字=典:sys_srqrzt,未=确认、待确认、已确认、无法确认")
+    @Excel(name = "确认状态", dictType = "sys_srqrzt", sort = 120)
     private String revenueConfirmStatus;
 
     /** 收入确认年度 */
-    @Excel(name = "收入确认年度")
+    @Excel(name = "收入确认年度", sort = 110)
     private String revenueConfirmYear;
 
     /** 确认金额（含税） */
-    @Excel(name = "确认金额", readConverterExp = "含=税")
+    @Excel(name = "确认金额(元)", sort = 130, handler = AmountFormatHandler.class)
     private BigDecimal confirmAmount;
 
     /** 税后金额 */
-    @Excel(name = "税后金额")
     private BigDecimal afterTaxAmount;
 
     /** 公司收入确认人ID */
-    @Excel(name = "公司收入确认人ID")
     private String companyRevenueConfirmedBy;
 
     /** 公司收入确认时间 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "公司收入确认时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date companyRevenueConfirmedTime;
 
     /** 合同金额（关联字段，非数据库字段） */
+    @Excel(name = "合同金额(元)", sort = 90, handler = AmountFormatHandler.class)
     private BigDecimal contractAmount;
 
+    /** 合同名称（关联字段，非数据库字段） */
+    private String contractName;
+
     /** 合同状态（关联字段，非数据库字段） */
+    @Excel(name = "合同状态", dictType = "sys_htzt", sort = 100)
     private String contractStatus;
 
     /** 部门名称（关联字段，非数据库字段） */
     private String deptName;
 
     /** 项目经理名称（关联字段，非数据库字段） */
+    @Excel(name = "项目经理", sort = 50)
     private String projectManagerName;
 
     /** 市场经理名称（关联字段，非数据库字段） */
@@ -297,10 +266,22 @@ public class Project extends BaseEntity
     private String customerContactPhone;
 
     /** 参与人员名称列表（关联字段，非数据库字段） */
+    @Excel(name = "参与人员", sort = 140)
     private String participantsNames;
 
     /** 更新人昵称（关联字段，非数据库字段） */
+    @Excel(name = "更新人", sort = 220)
     private String updateByName;
+
+    /** 更新时间（导出用，非数据库字段） */
+    @Excel(name = "更新时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss", sort = 230)
+    private Date updateTimeDisplay;
+
+    public void setUpdateTimeDisplay(Date updateTimeDisplay) { this.updateTimeDisplay = updateTimeDisplay; }
+    public Date getUpdateTimeDisplay() { return updateTimeDisplay; }
+
+    public void setDeptPathDisplay(String deptPathDisplay) { this.deptPathDisplay = deptPathDisplay; }
+    public String getDeptPathDisplay() { return deptPathDisplay; }
 
     public void setUpdateByName(String updateByName) { this.updateByName = updateByName; }
     public String getUpdateByName() { return updateByName; }
@@ -385,12 +366,12 @@ public class Project extends BaseEntity
         return shortName;
     }
 
-    public void setEstablishedYear(Long establishedYear) 
+    public void setEstablishedYear(String establishedYear)
     {
         this.establishedYear = establishedYear;
     }
 
-    public Long getEstablishedYear() 
+    public String getEstablishedYear()
     {
         return establishedYear;
     }
@@ -933,6 +914,16 @@ public class Project extends BaseEntity
     public BigDecimal getContractAmount()
     {
         return contractAmount;
+    }
+
+    public void setContractName(String contractName)
+    {
+        this.contractName = contractName;
+    }
+
+    public String getContractName()
+    {
+        return contractName;
     }
 
     public void setContractStatus(String contractStatus)

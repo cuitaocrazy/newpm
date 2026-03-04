@@ -9,6 +9,15 @@ export function listProject(query) {
   })
 }
 
+// 查询项目合计（全量，不分页）
+export function getProjectSummary(query) {
+  return request({
+    url: '/project/project/summary',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询项目管理详细
 export function getProject(projectId) {
   return request({

@@ -2,10 +2,12 @@ package com.ruoyi.project.service.impl;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -62,6 +64,12 @@ public class ProjectServiceImpl implements IProjectService
         return projectMapper.selectProjectList(project);
     }
 
+    @Override
+    public Map<String, Object> selectProjectSummary(Project project)
+    {
+        return projectMapper.selectProjectSummary(project);
+    }
+
     /**
      * 新增项目管理
      *
@@ -73,6 +81,7 @@ public class ProjectServiceImpl implements IProjectService
     public int insertProject(Project project)
     {
         project.setCreateTime(DateUtils.getNowDate());
+        project.setUpdateTime(DateUtils.getNowDate());
         int rows = projectMapper.insertProject(project);
         syncProjectMembers(project);
         return rows;
@@ -268,6 +277,122 @@ public class ProjectServiceImpl implements IProjectService
     public List<Map<String, Object>> searchProjectsByName(String projectName)
     {
         return projectMapper.searchProjectsByName(projectName);
+    }
+
+    /**
+     * 为导出填充附加字段：部门路径、参与人员名称、更新时间显示
+     *
+     * @param list 项目列表
+     */
+    @Override
+    public void enrichForExport(List<Project> list)
+    {
+        if (list == null || list.isEmpty())
+        {
+            return;
+        }
+
+        // 1. 加载全部部门，构建 deptId -> {deptName, ancestors} 映射
+        List<Map<String, Object>> allDepts = projectMapper.selectAllDeptsForPath();
+        Map<Long, Map<String, Object>> deptMapById = new HashMap<>();
+        for (Map<String, Object> dept : allDepts)
+        {
+            Object id = dept.get("deptId");
+            if (id != null)
+            {
+                deptMapById.put(Long.parseLong(id.toString()), dept);
+            }
+        }
+
+        // 2. 收集所有参与人员 ID（逗号分隔字符串解析）
+        Set<Long> allParticipantIds = new LinkedHashSet<>();
+        for (Project p : list)
+        {
+            if (StringUtils.isNotEmpty(p.getParticipants()))
+            {
+                for (String idStr : p.getParticipants().split(","))
+                {
+                    String trimmed = idStr.trim();
+                    if (StringUtils.isNotEmpty(trimmed))
+                    {
+                        try { allParticipantIds.add(Long.parseLong(trimmed)); } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+        }
+
+        // 3. 批量查询参与人员昵称
+        Map<Long, String> userNickMap = new HashMap<>();
+        if (!allParticipantIds.isEmpty())
+        {
+            List<Map<String, Object>> userList = projectMapper.selectUserNickNamesByIds(new ArrayList<>(allParticipantIds));
+            for (Map<String, Object> u : userList)
+            {
+                Object uid = u.get("userId");
+                Object nick = u.get("nickName");
+                if (uid != null && nick != null)
+                {
+                    userNickMap.put(Long.parseLong(uid.toString()), nick.toString());
+                }
+            }
+        }
+
+        // 4. 逐项目填充导出字段
+        for (Project p : list)
+        {
+            // 4a. 部门路径
+            if (StringUtils.isNotEmpty(p.getProjectDept()))
+            {
+                try
+                {
+                    long deptId = Long.parseLong(p.getProjectDept().trim());
+                    Map<String, Object> dept = deptMapById.get(deptId);
+                    if (dept != null)
+                    {
+                        String ancestors = (String) dept.get("ancestors");
+                        List<Long> fullPath = new ArrayList<>();
+                        if (StringUtils.isNotEmpty(ancestors))
+                        {
+                            for (String anc : ancestors.split(","))
+                            {
+                                try { fullPath.add(Long.parseLong(anc.trim())); } catch (NumberFormatException ignored) {}
+                            }
+                        }
+                        fullPath.add(deptId);
+                        // 从第2个索引起显示（跳过根节点和一级节点）
+                        List<Long> displayIds = fullPath.size() > 2 ? fullPath.subList(2, fullPath.size()) : fullPath;
+                        String path = displayIds.stream()
+                                .map(did -> {
+                                    Map<String, Object> d = deptMapById.get(did);
+                                    return d != null ? d.get("deptName").toString() : String.valueOf(did);
+                                })
+                                .collect(Collectors.joining(" - "));
+                        p.setDeptPathDisplay(path);
+                    }
+                }
+                catch (NumberFormatException ignored) {}
+            }
+
+            // 4b. 参与人员名称
+            if (StringUtils.isNotEmpty(p.getParticipants()))
+            {
+                List<String> names = new ArrayList<>();
+                for (String idStr : p.getParticipants().split(","))
+                {
+                    try
+                    {
+                        long uid = Long.parseLong(idStr.trim());
+                        String nick = userNickMap.get(uid);
+                        if (nick != null) names.add(nick);
+                    }
+                    catch (NumberFormatException ignored) {}
+                }
+                p.setParticipantsNames(String.join("、", names));
+            }
+
+            // 4c. 更新时间
+            p.setUpdateTimeDisplay(p.getUpdateTime());
+        }
     }
 
     /**

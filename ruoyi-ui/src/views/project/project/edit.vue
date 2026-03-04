@@ -32,20 +32,6 @@
         <el-collapse-item name="1" title="一、项目基本信息">
           <el-row :gutter="20">
             <el-col :span="12">
-              <el-form-item label="项目编号">
-                <el-input v-model="form.projectCode" disabled
-                  style="background-color: #f5f7fa;" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
-                <el-input v-model="form.projectName" placeholder="请输入项目名称" @blur="validateOnBlur('projectName')" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
-            <el-col :span="12">
               <el-form-item label="行业" prop="industry" data-prop="industry">
                 <dict-select
                   v-model="form.industry"
@@ -111,6 +97,20 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
+              <el-form-item label="项目名称" prop="projectName" data-prop="projectName">
+                <el-input v-model="form.projectName" placeholder="请输入项目名称" @blur="validateOnBlur('projectName')" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="项目编号">
+                <el-input v-model="form.projectCode" disabled
+                  style="background-color: #f5f7fa;" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
               <el-form-item label="项目分类" prop="projectCategory" data-prop="projectCategory">
                 <dict-select
                   v-model="form.projectCategory"
@@ -157,6 +157,9 @@
                 />
               </el-form-item>
             </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="验收状态" prop="acceptanceStatus" data-prop="acceptanceStatus">
                 <dict-select
@@ -168,9 +171,6 @@
                 />
               </el-form-item>
             </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="预估工作量" prop="estimatedWorkload" data-prop="estimatedWorkload">
                 <el-input v-model="form.estimatedWorkload" placeholder="请输入预估工作量" @blur="validateOnBlur('estimatedWorkload')">
@@ -178,6 +178,9 @@
                 </el-input>
               </el-form-item>
             </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="项目预算" prop="projectBudget" data-prop="projectBudget">
                 <el-input v-model="form.projectBudget" placeholder="请输入项目预算" @blur="validateOnBlur('projectBudget')">
@@ -185,9 +188,6 @@
                 </el-input>
               </el-form-item>
             </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="实际工作量" prop="actualWorkload" data-prop="actualWorkload">
                 <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
@@ -287,9 +287,6 @@
                   multiple
                   filterable
                   clearable
-                  collapse-tags
-                  collapse-tags-tooltip
-                  :max-collapse-tags="3"
                   @change="handleParticipantsChange"
                   style="width: 100%">
                   <el-option v-for="user in allUsers" :key="user.userId"
@@ -299,6 +296,7 @@
                     <span style="color: #8492a6; font-size: 13px; margin-left: 8px;">（{{ user.userName }}）</span>
                   </el-option>
                 </el-select>
+                <div v-if="form.participants && form.participants.length > 0" style="margin-top: 6px; color: #606266; font-size: 13px;">已选 {{ form.participants.length }} 人</div>
               </el-form-item>
             </el-col>
           </el-row>
@@ -408,9 +406,6 @@
                 </el-input>
               </el-form-item>
             </el-col>
-          </el-row>
-
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="费用预算">
                 <el-input v-model="form.costBudget" placeholder="请输入费用预算">
@@ -418,6 +413,9 @@
                 </el-input>
               </el-form-item>
             </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="成本预算">
                 <el-input v-model="form.budgetCost" placeholder="请输入成本预算">
@@ -425,9 +423,6 @@
                 </el-input>
               </el-form-item>
             </el-col>
-          </el-row>
-          
-          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="人力费用">
                 <el-input v-model="form.laborCost" placeholder="请输入人力费用">
@@ -435,6 +430,9 @@
                 </el-input>
               </el-form-item>
             </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="采购成本">
                 <el-input v-model="form.purchaseCost" placeholder="请输入采购成本">
@@ -710,10 +708,6 @@ function submitForm() {
       // 将参与人员数组转换为逗号分隔的字符串
       if (Array.isArray(submitData.participants)) {
         submitData.participants = submitData.participants.join(',')
-      }
-      // 转换 establishedYear 为整数
-      if (submitData.establishedYear) {
-        submitData.establishedYear = parseInt(submitData.establishedYear)
       }
 
       updateProject(submitData).then(response => {

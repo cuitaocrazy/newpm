@@ -30,6 +30,11 @@ public interface ProjectMapper
     public List<Project> selectProjectList(Project project);
 
     /**
+     * 查询项目合计（全量，不分页）
+     */
+    public Map<String, Object> selectProjectSummary(Project project);
+
+    /**
      * 新增项目管理
      *
      * @param project 项目管理
@@ -141,4 +146,19 @@ public interface ProjectMapper
      * @return 项目列表（projectId, projectName, projectCode, projectStage, projectStageName）
      */
     public List<Map<String, Object>> selectProjectsByUserId(@Param("userId") Long userId);
+
+    /**
+     * 查询所有部门信息（用于导出时构建部门路径）
+     *
+     * @return 部门列表（deptId, deptName, ancestors）
+     */
+    public List<Map<String, Object>> selectAllDeptsForPath();
+
+    /**
+     * 根据用户ID列表查询昵称（用于导出时解析参与人员）
+     *
+     * @param userIds 用户ID列表
+     * @return 用户列表（userId, nickName）
+     */
+    public List<Map<String, Object>> selectUserNickNamesByIds(@Param("userIds") List<Long> userIds);
 }

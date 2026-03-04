@@ -354,6 +354,30 @@ Use `@Transactional` on service methods that modify data. Auto-rollback on `Runt
 - **`@Log` annotation** → auto-async via `AsyncManager`
 - **`@Async` methods** (e.g., `ProjectEmailServiceImpl.sendNotificationEmail`) → Spring task executor thread pool
 
+### Excel Export Patterns
+
+**Custom cell formatter** — implement `ExcelHandlerAdapter` and reference via `@Excel(handler = ...)`:
+
+```java
+// com.ruoyi.project.utils.AmountFormatHandler — formats BigDecimal as "1,234,567.89"
+@Excel(name = "合同金额(元)", handler = AmountFormatHandler.class, sort = 50)
+private BigDecimal contractAmount;
+```
+
+**Pre-export enrichment** — for fields that aren't stored in DB (e.g., dept full path, participant names resolved from ID lists), add an `enrichForExport(List<Entity> list)` service method and call it in the controller before `exportExcel`:
+
+```java
+// Controller
+projectService.enrichForExport(list);
+util.exportExcel(response, list, "项目数据");
+
+// Entity — non-DB display field
+@Excel(name = "项目部门路径", sort = 40)
+private String deptPathDisplay;  // populated by enrichForExport, no DB column
+```
+
+The mapper provides helper queries: `selectAllDeptsForPath()` (dept tree with ancestors) and `selectUserNickNamesByIds(List<Long> userIds)` for batch nick-name resolution.
+
 ## Frontend Patterns
 
 ### Tech Stack
@@ -453,6 +477,22 @@ All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>
 ### File Upload Pattern
 
 Unified attachment system: `AttachmentController` → `pm_attachment` + `pm_attachment_log` (audit). Business types: `project`, `contract`, `payment`. Frontend: `FileUpload`, `ImageUpload`, `ImagePreview` components. API: `src/api/project/attachment.js`.
+
+### Server-Side Sort Pattern
+
+Use `sortable="custom"` on `el-table-column` + `@sort-change` on `el-table`. RuoYi's `startPage()` automatically picks up `orderByColumn`/`isAsc` from the request:
+
+```typescript
+// template: <el-table @sort-change="handleSortChange">
+// column:   <el-table-column sortable="custom" prop="projectBudget">
+function handleSortChange({ prop, order }) {
+  queryParams.value.orderByColumn = prop
+  queryParams.value.isAsc = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : null
+  handleQuery()
+}
+```
+
+The prop name must match the camelCase Java field name (e.g., `projectBudget` → `p.project_budget` via MyBatis column mapping).
 
 ## Configuration Files
 
@@ -572,6 +612,24 @@ left join sys_dict_data d on t.type = d.dict_value
 <!-- Correct -->
 left join sys_dict_data d on t.type COLLATE utf8mb4_unicode_ci = d.dict_value
 ```
+
+### Username Field Join (update_by / create_by)
+
+`update_by` and `create_by` in project tables store the **username string** (not user ID). When joining `sys_user` to resolve `nick_name`, the collation must match:
+
+```xml
+LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+```
+
+Map to a separate display field — **not** to `updateBy` (which is managed by `BaseEntity`):
+
+```xml
+<result property="updateByName" column="update_by_name"/>
+```
+
+### Hard Delete Exception: pm_project
+
+`pm_project` uses **hard delete** (`DELETE FROM pm_project`) instead of the standard soft-delete (`del_flag = '1'`). All other PM tables use soft delete. When filtering deleted records from project joins, check only `p.del_flag = '0'` for other tables.
 
 ### Frontend HTTP Request Pattern
 
