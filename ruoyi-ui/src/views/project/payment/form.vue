@@ -1,6 +1,12 @@
 <template>
   <div class="app-container payment-form">
-    <el-form ref="paymentFormRef" :model="form" :rules="rules" label-width="140px" v-loading="formLoading">
+    <el-card class="outer-card" shadow="never">
+      <template #header>
+        <div class="card-header">
+          <span class="page-title">{{ pageTitle }}</span>
+        </div>
+      </template>
+      <el-form ref="paymentFormRef" :model="form" :rules="rules" label-width="140px" v-loading="formLoading">
       <!-- 第一部分：关联合同 -->
       <el-card class="form-card" shadow="never">
         <template #header>
@@ -37,9 +43,9 @@
 
               <!-- 合同详细信息 -->
               <div v-if="selectedContract.contractId" class="contract-detail">
-                <el-divider content-position="left">
-                  <span style="font-weight: 600; color: #303133;">合同基本信息</span>
-                </el-divider>
+                <div class="section-header">
+                  <span class="section-title">合同基本信息</span>
+                </div>
                 <el-descriptions :column="3" border size="small">
                   <el-descriptions-item label="合同名称" :span="3">
                     {{ selectedContract.contractName || '-' }}
@@ -82,9 +88,9 @@
                 </el-descriptions>
 
                 <!-- 已付款里程碑列表 -->
-                <el-divider content-position="left" style="margin-top: 20px;">
-                  <span style="font-weight: 600; color: #303133;">已付款里程碑</span>
-                </el-divider>
+                <div class="section-header" style="margin-top: 20px;">
+                  <span class="section-title">已付款里程碑</span>
+                </div>
                 <el-table
                   :data="paymentMilestones"
                   border
@@ -247,11 +253,11 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="提交验收日期" prop="submitAcceptanceDate">
+            <el-form-item label="开票日期" prop="submitAcceptanceDate">
               <el-date-picker
                 v-model="form.submitAcceptanceDate"
                 type="date"
-                placeholder="请选择提交验收日期"
+                placeholder="请选择开票日期"
                 value-format="YYYY-MM-DD"
                 clearable
                 style="width: 100%"
@@ -287,10 +293,12 @@
         </el-row>
       </el-card>
     </el-form>
+    </el-card>
 
     <!-- 底部操作按钮 -->
     <div class="form-footer">
       <el-button type="primary" size="large" @click="handleSubmit" :loading="submitLoading">提交</el-button>
+      <el-button size="large" @click="handleReset" v-if="!isEdit">重置</el-button>
       <el-button size="large" @click="handleCancel">取消</el-button>
     </div>
   </div>
@@ -627,6 +635,28 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .payment-form {
+  .outer-card {
+    margin-bottom: 20px;
+
+    .card-header {
+      display: flex;
+      align-items: center;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #303133;
+      padding-left: 12px;
+      border-left: 4px solid #409eff;
+    }
+
+    :deep(.el-card__body) {
+      background-color: #fff;
+      padding: 16px;
+    }
+  }
+
   .form-card {
     margin-bottom: 20px;
 
@@ -649,8 +679,16 @@ onMounted(() => {
     width: 100%;
     margin-top: 15px;
 
-    .el-divider {
-      margin: 15px 0;
+    .section-header {
+      margin-bottom: 12px;
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #303133;
+        padding-left: 10px;
+        border-left: 3px solid #409eff;
+      }
     }
 
     .el-table {

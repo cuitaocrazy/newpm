@@ -183,6 +183,8 @@ columns:
     isRequired: false
     htmlType: datetime
     dictType: ""
+    uiLabel: 开票日期
+    uiNote: 数据库字段语义为"提交验收材料日期"，在列表列、新增/编辑表单、已付款里程碑子表中均展示为"开票日期"
     excelConfig:
       export: true
       name: 提交验收材料日期
@@ -449,13 +451,30 @@ relations:
 customizations:
   # 查询条件配置
   queryConditions:
-    # 主要查询条件（默认显示）
+    # 主要查询条件（默认显示，按实际代码顺序）
     mainConditions:
       - field: contractName
         label: 合同名称
         type: input
         queryType: LIKE
         placeholder: 请输入合同名称
+        width: 200px
+      - field: deptId
+        label: 合同所属团队
+        type: tree-select
+        queryType: EQ
+        component: el-tree-select
+        dataSource: getDeptTree（过滤三级及以下部门，level = ancestors.split(',').length >= 3）
+        props: "{ label: 'label', value: 'value', children: 'children' }"
+        checkStrictly: true
+        placeholder: 请选择合同所属团队
+        width: 200px
+      - field: expectedQuarter
+        label: 预计回款季度
+        type: select
+        queryType: EQ
+        dictType: sys_jdgl
+        placeholder: 请选择预计回款季度
         width: 200px
       - field: contractCode
         label: 合同编号
@@ -472,9 +491,12 @@ customizations:
         width: 200px
       - field: customerName
         label: 客户名称
-        type: input
+        type: autocomplete
         queryType: LIKE
-        placeholder: 请输入客户名称
+        component: el-autocomplete
+        dataSource: listAllCustomer（获取所有客户简称列表，前端模糊过滤）
+        triggerOnSelect: true
+        placeholder: 请选择客户名称
         width: 200px
       - field: paymentStatus
         label: 付款状态
@@ -486,14 +508,7 @@ customizations:
 
     # 折叠查询条件（点击"更多"按钮后显示）
     collapsibleConditions:
-      - field: expectedQuarter
-        label: 预计回款季度
-        type: select
-        queryType: EQ
-        dictType: sys_jdgl
-        placeholder: 请选择预计回款季度
-        width: 200px
-      - field: confirmYear
+      - field: paymentConfirmYear
         label: 款项确认年份
         type: select
         queryType: EQ
@@ -685,6 +700,15 @@ customizations:
         dictType: sys_fkzt
         source: pm_payment.payment_status
 
+      - field: submitAcceptanceDate
+        label: 开票日期
+        type: date
+        width: 120px
+        align: center
+        format: "{y}-{m}-{d}"
+        source: pm_payment.submit_acceptance_date
+        emptyText: "-"
+
       - field: expectedQuarter
         label: 预计回款季度
         type: dict
@@ -734,8 +758,8 @@ customizations:
         align: center
         emptyText: "-"
         source: sys_user.nick_name (JOIN via pm_payment.update_by)
-        fallbackLogic: updateByName → createByName → updateBy → createBy → '-'
-        description: 优先显示更新人姓名，依次fallback到创建人姓名、更新人用户名、创建人用户名
+        fallbackLogic: updateByName → createByName → '-'
+        description: 优先显示更新人中文名，无更新记录时fallback到创建人中文名，绝不显示英文用户名
 
       - field: updateTime
         label: 更新时间
@@ -792,6 +816,7 @@ customizations:
           - contractName: 合同名称（LIKE）
           - contractStatus: 合同状态（EQ）
           - customerName: 客户名称（LIKE）
+          - deptId: 合同所属团队（EQ，通过 pm_contract.dept_id 过滤）
         payment:
           - paymentMethodName: 付款方式名称（LIKE）
           - hasPenalty: 是否违约扣款（EQ）
@@ -801,6 +826,7 @@ customizations:
           - paymentConfirmYear: 款项确认年份（EQ）
           - actualPaymentDateStart: 实际回款日期开始（GTE）
           - actualPaymentDateEnd: 实际回款日期结束（LTE）
+      sortOrder: ORDER BY COALESCE(p.update_time, p.create_time) DESC
 
     dataModel:
       Contract:
@@ -927,6 +953,9 @@ customizations:
       - key: paymentStatus
         label: 付款状态
         visible: true
+      - key: submitAcceptanceDate
+        label: 开票日期
+        visible: true
       - key: expectedQuarter
         label: 预计回款季度
         visible: true
@@ -955,6 +984,32 @@ customizations:
 
   # 新增/编辑表单配置
   formConfig:
+    # 页面整体布局
+    pageLayout:
+      outerCard:
+        component: el-card
+        cssClass: outer-card
+        shadow: never
+        header:
+          content: "{{ pageTitle }}"
+          computed: pageTitle
+          values:
+            add: 新增付款里程碑
+            edit: 编辑付款里程碑
+          style: "font-size:18px; font-weight:600; padding-left:12px; border-left:4px solid #409eff"
+        body:
+          background: "#fff"
+          padding: 16px
+          contains:
+            - el-form（包含以下三个内层卡片）
+        innerSections:
+          - card: 关联合同
+          - card: 付款信息
+          - card: 回款信息
+      footer:
+        position: sticky bottom
+        outside: outerCard（底部按钮不在外层卡片内，保证 sticky 定位生效）
+
     # 合同选择配置
     contractSelect:
       component: el-select
@@ -981,6 +1036,13 @@ customizations:
       trigger: handleContractChange
       sections:
         - name: 合同基本信息
+          headerStyle:
+            component: div.section-header > span.section-title
+            fontWeight: 600
+            fontSize: 14px
+            color: "#303133"
+            borderLeft: "3px solid #409eff"
+            paddingLeft: 10px
           component: el-descriptions
           layout: 3
           fields:
@@ -999,6 +1061,14 @@ customizations:
           total: 12个字段
 
         - name: 已付款里程碑列表
+          headerStyle:
+            component: div.section-header > span.section-title
+            fontWeight: 600
+            fontSize: 14px
+            color: "#303133"
+            borderLeft: "3px solid #409eff"
+            paddingLeft: 10px
+            marginTop: 20px
           component: el-table
           maxHeight: 300px
           columns:
@@ -1032,10 +1102,14 @@ customizations:
           - text: 提交
             action: handleSubmit
             afterSubmit: 跳转到付款里程碑查询页面
+          - text: 重置
+            action: handleReset
+            confirm: 确认重置已经填写好的付款里程碑信息吗？重置后将清空填写的所有信息！
+            display: 仅新增模式显示（v-if="!isEdit"）
           - text: 取消
             action: handleCancel
             afterCancel: 跳转到付款里程碑查询页面
-        description: 新增模式下不显示重置按钮，简化操作流程
+        description: 新增模式显示重置按钮，点击二次确认后清空所有表单内容及合同关联数据
 
       editMode:
         buttons:
@@ -1045,7 +1119,7 @@ customizations:
           - text: 取消
             action: handleCancel
             afterCancel: 跳转到付款里程碑查询页面
-        description: 编辑模式下不显示重置按钮，避免误操作
+        description: 编辑模式下不显示重置按钮（v-if="!isEdit" 控制），避免误操作覆盖已有数据
 
     # 预设合同模式
     presetContractMode:
@@ -1075,7 +1149,7 @@ customizations:
       behavior:
         - 合同选择框禁用
         - 显示完整的合同信息和里程碑列表
-        - 不显示重置按钮
+        - 重置按钮隐藏（预设合同模式属于新增模式但合同已固定，重置仍可用）
 
   # 路由配置
   routeConfig:
@@ -1884,8 +1958,7 @@ customizations:
 
 # ============================
 # 实现说明
-# ============================
-implementation:
+# ============================implementation:
   description: 本规格文件定义了付款里程碑管理模块的完整功能配置，包括主子表展示模式、表单交互、路由配置等
 
   keyFeatures:
@@ -1893,14 +1966,14 @@ implementation:
     - 金额统计功能：列表第一行显示付款总金额，统计所有查询结果（不受分页影响）
     - 智能表单：合同选择支持模糊搜索，自动加载合同详情和已有里程碑
     - 预设合同模式：从列表页快速新增付款里程碑
-    - 更新人fallback逻辑：新增记录显示创建人，已更新记录显示更新人
+    - 更新人展示规则：优先显示更新人中文名（nick_name），无更新记录时fallback到创建人中文名，绝不显示英文用户名
     - 列显隐功能：用户可自定义列的显示/隐藏
     - 合同名称可点击：跳转到合同详情页，智能返回
     - 详情页面优化：三部分卡片式布局，集成附件列表，动态列宽显示
     - 附件管理页面：展示付款里程碑基本信息，支持附件上传、下载、删除、日志查看
     - 附件存储优化：附件按照"款项\{payment_id}_{payment_method_name}\yyyyMMdd\{file_name}"格式存储
     - 菜单高亮支持：新增/编辑/详情/附件页面访问时，左侧"付款里程碑"菜单自动高亮（前端自动设置，无需修改数据库）
-    - 表单优化：所有下拉选和日期选择器支持清除，去掉重置按钮简化操作
+    - 表单页面标题：外层 el-card 包含三个内层卡片（关联合同/付款信息/回款信息），header 动态显示"新增付款里程碑"或"编辑付款里程碑"，body 背景白色；合同详情内的分节标题（合同基本信息/已付款里程碑）使用 .section-title 左蓝色边框加粗样式，与卡片标题层级一致
     - 删除业务规则：有附件时禁止删除，确保数据完整性和可追溯性
     - 导出功能：
         - 文件名格式：付款里程碑_yyyyMMddHHmmss.xlsx（中文前缀+时间戳）
@@ -1944,32 +2017,3 @@ implementation:
       - ruoyi-ui/src/store/modules/permission.ts（动态路由生成，包含 setActiveMenu 函数实现菜单高亮）
     database:
       - pm-sql/init/02_menu_data.sql（菜单数据，包含付款里程碑菜单配置）
-
-# =============================================
-# 2026-02-26 改动记录
-# =============================================
-changes_2026_02_26:
-  - feature: 付款里程碑查询条件优化
-    description: >
-      index.vue 主查询区前4个条件调整为：合同编号、合同状态、合同所属团队、预计回款季度。
-      新增合同所属团队（el-tree-select，过滤三级及以下部门，调用 listDept API）。
-      预计回款季度从"更多"折叠区提升至主查询区。
-      客户名称改为 el-autocomplete 支持模糊匹配（调用 listCustomer API）。
-
-  - bugfix: 付款里程碑列表按更新时间降序排列
-    description: >
-      PaymentMapper.xml 的 selectPaymentList 查询末尾改为：
-      ORDER BY COALESCE(p.update_time, p.create_time) DESC
-
-  - bugfix: 项目详情/合同详情页里程碑名称字段名错误
-    description: >
-      project/project/detail.vue 和 project/contract/detail.vue 中，
-      付款里程碑表格的"里程碑名称"列 prop 从错误的 paymentName 修正为 paymentMethodName，
-      与后端 Payment.java 字段名一致。
-
-  - bugfix: 项目详情/合同详情页预计回款季度格式不一致
-    description: >
-      detail.vue 中预计回款季度列原用 {{ scope.row.expectedQuarter }} 显示原始值，
-      改为 <dict-tag :options="sys_jdgl" :value="scope.row.expectedQuarter"/>，
-      与付款里程碑管理列表页显示格式一致。
-      同步在 useDict 中引入 sys_jdgl 字典。

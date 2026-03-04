@@ -126,7 +126,7 @@
 
       <!-- 操作按钮 -->
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
         <el-button link type="primary" @click="showMoreSearch = !showMoreSearch">
           {{ showMoreSearch ? '收起' : '更多' }}
@@ -143,7 +143,7 @@
           icon="Plus"
           @click="handleAdd"
           v-hasPermi="['project:payment:add']"
-        >新增</el-button>
+        >新增付款里程碑</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -236,6 +236,11 @@
             <dict-tag v-if="scope.row.paymentStatus" :options="sys_fkzt" :value="scope.row.paymentStatus"/>
             <span v-else>-</span>
           </template>
+        </template>
+      </el-table-column>
+      <el-table-column label="开票日期" align="center" prop="submitAcceptanceDate" width="120" v-if="columns.submitAcceptanceDate.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ scope.row.submitAcceptanceDate ? parseTime(scope.row.submitAcceptanceDate, '{y}-{m}-{d}') : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="预计回款季度" align="center" prop="expectedQuarter" width="120" v-if="columns.expectedQuarter.visible">
@@ -366,6 +371,7 @@ const columns = ref({
   deptName: { label: '合同所属团队', visible: true },
   paymentMethodName: { label: '付款里程碑名称', visible: true },
   paymentStatus: { label: '付款状态', visible: true },
+  submitAcceptanceDate: { label: '开票日期', visible: true },
   expectedQuarter: { label: '预计回款季度', visible: true },
   actualQuarter: { label: '实际回款季度', visible: true },
   actualPaymentDate: { label: '实际回款日期', visible: true },
@@ -548,11 +554,8 @@ function formatMoney(amount) {
 
 /** 获取显示的更新人 */
 function getDisplayUpdateBy(row) {
-  // 优先显示更新人姓名，如果为空则显示创建人姓名
   if (row.updateByName) return row.updateByName
   if (row.createByName) return row.createByName
-  if (row.updateBy) return row.updateBy
-  if (row.createBy) return row.createBy
   return '-'
 }
 

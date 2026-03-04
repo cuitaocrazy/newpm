@@ -698,7 +698,7 @@ CREATE TABLE `pm_payment` (
   `payment_status` varchar(50) DEFAULT NULL COMMENT '付款状态(字典:sys_fkzt)',
   `expected_quarter` varchar(20) DEFAULT NULL COMMENT '预计回款所属季度(字典:sys_jdgl)',
   `actual_quarter` varchar(20) DEFAULT NULL COMMENT '实际回款所属季度(字典:sys_jdgl)',
-  `submit_acceptance_date` date DEFAULT NULL COMMENT '提交验收材料日期',
+  `submit_acceptance_date` date DEFAULT NULL COMMENT '开票日期',
   `actual_payment_date` date DEFAULT NULL COMMENT '实际回款日期',
   `confirm_year` varchar(10) DEFAULT NULL COMMENT '款项确认年份(字典:sys_ndgl)',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',

@@ -294,8 +294,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_user u1 on c.create_by = u1.user_name COLLATE utf8mb4_0900_ai_ci
         left join sys_user u2 on c.update_by = u2.user_name COLLATE utf8mb4_0900_ai_ci
         left join pm_payment p on c.contract_id = p.contract_id and p.del_flag = '0'
-        left join sys_user u3 on p.create_by = CAST(u3.user_id AS CHAR) COLLATE utf8mb4_unicode_ci
-        left join sys_user u4 on p.update_by = CAST(u4.user_id AS CHAR) COLLATE utf8mb4_unicode_ci
+        left join sys_user u3 on p.create_by = u3.user_name COLLATE utf8mb4_0900_ai_ci
+        left join sys_user u4 on p.update_by = u4.user_name COLLATE utf8mb4_0900_ai_ci
         <where>
             c.del_flag = '0'
             <if test="contractCode != null and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
