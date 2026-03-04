@@ -48,7 +48,7 @@ public class ProjectController extends BaseController
     /**
      * 查询项目管理列表
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:query,project:contract:list,project:projectStageChange:list')")
     @GetMapping("/list")
     public TableDataInfo list(Project project)
     {
@@ -84,7 +84,7 @@ public class ProjectController extends BaseController
     /**
      * 获取项目管理详细信息
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:query,project:contract:list,project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:query,project:project:edit,project:contract:list,project:contract:query,project:contract:add')")
     @GetMapping(value = "/{projectId}")
     public AjaxResult getInfo(@PathVariable("projectId") Long projectId)
     {
@@ -188,7 +188,7 @@ public class ProjectController extends BaseController
     /**
      * 获取部门树（三级及以下机构）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:payment:list,revenue:company:list,revenue:team:query,project:contract:list,project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:payment:list,revenue:company:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity')")
     @GetMapping("/deptTree")
     public AjaxResult getDeptTree()
     {

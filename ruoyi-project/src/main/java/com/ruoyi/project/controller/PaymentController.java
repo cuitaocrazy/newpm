@@ -42,7 +42,7 @@ public class PaymentController extends BaseController
     /**
      * 查询款项管理列表
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:payment:list,project:project:query,project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:payment:list,project:project:query,project:contract:query,project:payment:add,project:payment:edit')")
     @GetMapping("/list")
     public TableDataInfo list(Payment payment)
     {
@@ -90,7 +90,7 @@ public class PaymentController extends BaseController
     /**
      * 获取款项管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('project:payment:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:payment:query,project:payment:edit')")
     @GetMapping(value = "/{paymentId:\\d+}")
     public AjaxResult getInfo(@PathVariable("paymentId") Long paymentId)
     {
@@ -133,7 +133,7 @@ public class PaymentController extends BaseController
     /**
      * 检查付款里程碑是否有附件
      */
-    @PreAuthorize("@ss.hasPermi('project:payment:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:payment:query,project:payment:list')")
     @GetMapping("/checkAttachments/{paymentId:\\d+}")
     public AjaxResult checkAttachments(@PathVariable Long paymentId)
     {

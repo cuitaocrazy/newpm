@@ -225,7 +225,7 @@ function formatAmountYuan(val) {
 // 部门树
 const deptMap = ref({})
 function loadDepts() {
-  request({ url: '/system/dept/list', method: 'get' }).then(res => {
+  request({ url: '/project/project/deptTree', method: 'get' }).then(res => {
     const map = {}
     ;(res.data || []).forEach(d => { map[d.deptId] = d })
     deptMap.value = map

@@ -271,13 +271,15 @@
             <!-- 动态合同按钮：有合同显示"查看合同"，无合同显示"添加合同" -->
             <el-button
               v-if="scope.row.contractId"
+              v-hasPermi="['project:contract:query']"
               link
               type="primary"
               icon="Document"
               @click="handleViewContract(scope.row)"
             >查看合同</el-button>
             <el-button
-              v-else
+              v-if="!scope.row.contractId"
+              v-hasPermi="['project:contract:add']"
               link
               type="primary"
               icon="Plus"

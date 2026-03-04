@@ -70,7 +70,7 @@ public class ContractController extends BaseController
     /**
      * 获取合同管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:edit,project:payment:query')")
     @GetMapping(value = "/{contractId}")
     public AjaxResult getInfo(@PathVariable("contractId") Long contractId)
     {
@@ -113,7 +113,7 @@ public class ContractController extends BaseController
     /**
      * 搜索合同（用于下拉选择）
      */
-    @PreAuthorize("@ss.hasPermi('project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:list,project:contract:add,project:contract:edit,project:payment:add,project:payment:edit')")
     @GetMapping("/search")
     public AjaxResult search(String keyword)
     {
@@ -124,7 +124,7 @@ public class ContractController extends BaseController
     /**
      * 检查合同名称是否唯一
      */
-    @PreAuthorize("@ss.hasPermi('project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:add,project:contract:edit')")
     @GetMapping("/checkContractNameUnique")
     public AjaxResult checkContractNameUnique(String contractName, Long contractId)
     {
@@ -139,7 +139,7 @@ public class ContractController extends BaseController
      * @param contractId 合同ID（编辑时传入，新增时为null）
      * @return true-唯一，false-不唯一
      */
-    @PreAuthorize("@ss.hasPermi('project:contract:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:add,project:contract:edit')")
     @GetMapping("/checkContractCodeUnique")
     public AjaxResult checkContractCodeUnique(String contractCode, Long contractId)
     {

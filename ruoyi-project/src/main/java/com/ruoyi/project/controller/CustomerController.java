@@ -37,7 +37,7 @@ public class CustomerController extends BaseController
     /**
      * 查询客户管理列表
      */
-    @PreAuthorize("@ss.hasPermi('project:customer:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:customer:list,project:project:edit,project:project:add,project:contract:list,project:contract:query')")
     @GetMapping("/list")
     public TableDataInfo list(Customer customer)
     {
@@ -62,7 +62,7 @@ public class CustomerController extends BaseController
     /**
      * 获取客户管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('project:customer:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:customer:query,project:project:query,project:project:edit')")
     @GetMapping(value = "/{customerId}")
     public AjaxResult getInfo(@PathVariable("customerId") Long customerId)
     {
@@ -116,7 +116,7 @@ public class CustomerController extends BaseController
     /**
      * 根据客户ID查询联系人列表
      */
-    @PreAuthorize("@ss.hasPermi('project:customer:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:customer:list,project:project:query,project:project:edit,project:project:add')")
     @GetMapping("/contact/listByCustomer")
     public AjaxResult listContactByCustomer(Long customerId)
     {
