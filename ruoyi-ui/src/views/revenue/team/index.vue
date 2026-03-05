@@ -274,6 +274,13 @@
             >编辑</el-button>
             <el-button
               link
+              type="danger"
+              icon="Delete"
+              @click="handleDelete(scope.row)"
+              v-hasPermi="['revenue:team:remove']"
+            >删除</el-button>
+            <el-button
+              link
               type="primary"
               icon="View"
               @click="handleDetail(scope.row)"
@@ -406,7 +413,7 @@
 
 <script setup name="RevenueTeam">
 import { ref, reactive, toRefs, getCurrentInstance, computed, nextTick } from 'vue'
-import { listTeamRevenue, getTeamRevenue, getProjectInfo, addTeamRevenue, updateTeamRevenue, exportTeamRevenue } from "@/api/revenue/team"
+import { listTeamRevenue, getTeamRevenue, getProjectInfo, addTeamRevenue, updateTeamRevenue, delTeamRevenue, exportTeamRevenue } from "@/api/revenue/team"
 import { getDeptTree, listProjectByName } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
@@ -767,6 +774,16 @@ function handleAddDetail() {
     confirmUserName: userStore.nickName, // 默认当前用户名
     remark: ''
   })
+}
+
+/** 删除按钮操作 */
+function handleDelete(row) {
+  proxy.$modal.confirm('是否确认删除该项目的团队收入确认数据？').then(() => {
+    return delTeamRevenue(row.projectId)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess("删除成功")
+  }).catch(() => {})
 }
 
 /** 删除明细行 */

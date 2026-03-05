@@ -334,6 +334,14 @@
               @click="handleRevenue(scope.row)"
               v-hasPermi="['revenue:company:edit']"
             >收入确认</el-button>
+            <el-button
+              v-else-if="scope.row.revenueConfirmStatus"
+              link
+              type="primary"
+              icon="View"
+              @click="handleRevenueView(scope.row)"
+              v-hasPermi="['revenue:company:query']"
+            >收入查看</el-button>
           </template>
         </template>
       </el-table-column>

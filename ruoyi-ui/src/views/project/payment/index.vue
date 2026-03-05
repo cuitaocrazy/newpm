@@ -174,6 +174,7 @@
         <template #default="scope">
           <div v-if="!scope.row.isSummary" class="contract-name-cell">
             <el-link
+              v-if="checkPermi(['project:contract:query'])"
               type="primary"
               underline="never"
               @click="handleViewContract(scope.row)"
@@ -181,6 +182,7 @@
               :title="scope.row.contractName">
               {{ scope.row.contractName }}
             </el-link>
+            <span v-else :title="scope.row.contractName" class="contract-name-link">{{ scope.row.contractName }}</span>
             <el-button
               v-if="scope.row.isFirstRow"
               link
@@ -295,7 +297,7 @@
             <template v-if="scope.row.paymentId">
               <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:payment:query']">详情</el-button>
               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:payment:edit']">编辑</el-button>
-              <el-button link type="primary" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:payment:query']">附件</el-button>
+              <el-button link type="primary" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:payment:attachment']">附件</el-button>
               <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:payment:remove']">删除</el-button>
             </template>
             <template v-else>
@@ -323,6 +325,7 @@ import { listAllCustomer } from "@/api/project/customer"
 import { handleTree } from '@/utils/ruoyi'
 import { watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { checkPermi } from "@/utils/permission"
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()

@@ -30,7 +30,7 @@ public class WorkCalendarController extends BaseController
     }
 
     /** 按年份查询全部（日历渲染用，不分页） */
-    @PreAuthorize("@ss.hasAnyPermi('project:workCalendar:list,project:dailyReport:activity')")
+    @PreAuthorize("@ss.hasAnyPermi('project:workCalendar:list,project:dailyReport:list,project:dailyReport:activity')")
     @GetMapping("/year/{year}")
     public AjaxResult getByYear(@PathVariable Integer year)
     {

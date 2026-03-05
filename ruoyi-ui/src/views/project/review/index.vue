@@ -131,7 +131,7 @@
             type="primary"
             icon="Edit"
             @click="handleReview(scope.row)"
-            v-hasPermi="['project:review:approve']"
+            v-hasPermi="['project:review:approve', 'project:review:reject']"
           >审核</el-button>
         </template>
       </el-table-column>

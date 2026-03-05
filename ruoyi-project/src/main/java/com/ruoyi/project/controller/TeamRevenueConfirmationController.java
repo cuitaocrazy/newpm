@@ -59,7 +59,7 @@ public class TeamRevenueConfirmationController extends BaseController
     /**
      * 获取团队收入确认详细信息（项目详情 + 团队确认明细列表）
      */
-    @PreAuthorize("@ss.hasPermi('revenue:team:query')")
+    @PreAuthorize("@ss.hasAnyPermi('revenue:team:query,revenue:team:edit')")
     @GetMapping(value = "/{projectId}")
     public AjaxResult getInfo(@PathVariable("projectId") Long projectId)
     {
@@ -221,7 +221,7 @@ public class TeamRevenueConfirmationController extends BaseController
     /**
      * 根据项目ID获取项目基本信息（用于新增页面自动带出字段）
      */
-    @PreAuthorize("@ss.hasPermi('revenue:team:query')")
+    @PreAuthorize("@ss.hasAnyPermi('revenue:team:query,revenue:team:edit,revenue:team:add')")
     @GetMapping("/project/{projectId}")
     public AjaxResult getProjectInfo(@PathVariable("projectId") Long projectId)
     {

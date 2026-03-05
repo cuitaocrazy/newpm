@@ -48,7 +48,7 @@ public class ProjectController extends BaseController
     /**
      * 查询项目管理列表
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:query,project:contract:list,project:projectStageChange:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:query,project:contract:list,project:projectStageChange:list,project:review:list')")
     @GetMapping("/list")
     public TableDataInfo list(Project project)
     {
@@ -84,7 +84,7 @@ public class ProjectController extends BaseController
     /**
      * 获取项目管理详细信息
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:query,project:project:edit,project:contract:list,project:contract:query,project:contract:add')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:query,project:project:edit,project:project:attachment,project:contract:list,project:contract:query,project:contract:add')")
     @GetMapping(value = "/{projectId}")
     public AjaxResult getInfo(@PathVariable("projectId") Long projectId)
     {
@@ -145,7 +145,7 @@ public class ProjectController extends BaseController
      * 获取用户列表（按岗位过滤）
      * @param postCode 岗位编码：pm-项目经理, scjl-市场经理, xsfzr-销售负责人
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:contract:list,revenue:team:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:project:add,project:contract:list,revenue:team:list,revenue:team:query,project:managerChange:list,project:dailyReport:activity,project:review:list,project:member:edit,project:customer:list,revenue:company:list')")
     @GetMapping("/users")
     public AjaxResult getUsersByPost(@RequestParam(required = false) String postCode)
     {
@@ -188,7 +188,7 @@ public class ProjectController extends BaseController
     /**
      * 获取部门树（三级及以下机构）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:payment:list,revenue:company:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:payment:list,revenue:company:list,revenue:team:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity,project:projectStageChange:list')")
     @GetMapping("/deptTree")
     public AjaxResult getDeptTree()
     {
@@ -238,7 +238,7 @@ public class ProjectController extends BaseController
     /**
      * 获取收入确认详情
      */
-    @PreAuthorize("@ss.hasPermi('revenue:company:query')")
+    @PreAuthorize("@ss.hasAnyPermi('revenue:company:query,revenue:company:edit')")
     @GetMapping("/revenue/{projectId}")
     public AjaxResult getRevenueInfo(@PathVariable("projectId") Long projectId)
     {
@@ -310,7 +310,7 @@ public class ProjectController extends BaseController
     /**
      * 根据项目名称搜索（用于 autocomplete）
      */
-    @PreAuthorize("@ss.hasPermi('project:project:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,revenue:team:list')")
     @GetMapping("/listByName")
     public AjaxResult listByName(@RequestParam(required = false) String projectName)
     {
@@ -336,7 +336,7 @@ public class ProjectController extends BaseController
      * @param projectName 项目名称（模糊搜索）
      * @return 返回精简字段：projectId, projectName, projectCode
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,project:managerChange:list')")
     @GetMapping("/search")
     public AjaxResult searchProjects(@RequestParam(required = false) String projectName)
     {
