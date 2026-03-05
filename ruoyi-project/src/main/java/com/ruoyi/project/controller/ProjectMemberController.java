@@ -50,7 +50,7 @@ public class ProjectMemberController extends BaseController
     /**
      * 查询项目成员详情
      */
-    @PreAuthorize("@ss.hasPermi('project:member:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:member:query,project:member:edit')")
     @GetMapping("/{projectId}")
     public AjaxResult getDetail(@PathVariable("projectId") Long projectId)
     {

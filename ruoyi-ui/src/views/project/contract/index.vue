@@ -146,12 +146,14 @@
         <template #default="scope">
           <div v-if="!scope.row.isSummary" class="contract-name-cell">
             <el-link
+              v-if="checkPermi(['project:contract:query'])"
               class="contract-name-link"
               type="primary"
               @click="handleView(scope.row)"
               @contextmenu.prevent="handleContextMenu($event, scope.row)">
               {{ scope.row.contractName }}
             </el-link>
+            <span v-else>{{ scope.row.contractName }}</span>
           </div>
         </template>
       </el-table-column>
@@ -246,7 +248,7 @@
           <template v-if="!scope.row.isSummary">
             <el-button link type="primary" icon="View" @click="handleView(scope.row)" v-hasPermi="['project:contract:query']">详情</el-button>
             <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:contract:edit']">编辑</el-button>
-            <el-button link type="primary" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:contract:query']">附件</el-button>
+            <el-button link type="primary" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:contract:attachment']">附件</el-button>
             <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:contract:remove']">删除</el-button>
           </template>
         </template>
@@ -350,6 +352,7 @@ import { listCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, listAttachmentLog } from "@/api/project/attachment"
 import { getToken } from "@/utils/auth"
+import { checkPermi } from "@/utils/permission"
 
 const { proxy } = getCurrentInstance()
 const { sys_ndgl, sys_htlx, sys_htzt, sys_wdlx } = proxy.useDict('sys_ndgl', 'sys_htlx', 'sys_htzt', 'sys_wdlx')

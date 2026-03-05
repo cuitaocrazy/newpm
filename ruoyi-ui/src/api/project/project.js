@@ -126,7 +126,7 @@ export function listProjectByName(query) {
   })
 }
 
-// 项目名称远程搜索（精简字段，用于下拉选）
+// 轻量项目搜索（只返回 projectId/projectName/projectCode，支持 revenue 权限）
 export function searchProjects(projectName) {
   return request({
     url: '/project/project/search',

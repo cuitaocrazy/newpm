@@ -179,7 +179,8 @@
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220" fixed="left">
         <template #default="scope">
           <div v-if="!scope.row.isSummaryRow" class="project-name-cell">
-            <el-link type="primary" @click="handleDetail(scope.row)">{{ scope.row.projectName }}</el-link>
+            <el-link v-if="checkPermi(['project:project:query'])" type="primary" @click="handleDetail(scope.row)">{{ scope.row.projectName }}</el-link>
+            <span v-else>{{ scope.row.projectName }}</span>
           </div>
         </template>
       </el-table-column>
@@ -314,10 +315,10 @@
               type="primary"
               icon="View"
               @click="handleRevenueView(scope.row)"
-              v-hasPermi="['revenue:company:view']"
+              v-hasPermi="['revenue:company:query']"
             >收入查看</el-button>
 
-            <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:query']">附件管理</el-button>
+            <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:attachment']">附件管理</el-button>
             <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
           </template>
         </template>
@@ -396,6 +397,7 @@ import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
+import { checkPermi } from "@/utils/permission"
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()

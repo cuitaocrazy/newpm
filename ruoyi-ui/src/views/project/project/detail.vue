@@ -241,7 +241,7 @@
             {{ contractInfo.updateTime || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="操作">
-            <el-button type="primary" link @click="viewContract">查看详情</el-button>
+            <el-button v-if="checkPermi(['project:contract:query'])" type="primary" link @click="viewContract">查看详情</el-button>
           </el-descriptions-item>
         </el-descriptions>
       </div>
@@ -391,6 +391,7 @@ import { listPayment } from '@/api/project/payment'
 import { listAttachment, downloadAttachment } from '@/api/project/attachment'
 import { saveAs } from 'file-saver'
 import request from '@/utils/request'
+import { checkPermi } from "@/utils/permission"
 
 const router = useRouter()
 const route = useRoute()

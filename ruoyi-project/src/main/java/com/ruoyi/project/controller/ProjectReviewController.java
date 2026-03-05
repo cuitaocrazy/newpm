@@ -25,7 +25,10 @@ public class ProjectReviewController extends BaseController
     @Autowired
     private IProjectReviewService projectReviewService;
 
-    @PreAuthorize("@ss.hasPermi('project:review:query')")
+    /**
+     * 查询待审核项目列表
+     */
+    @PreAuthorize("@ss.hasPermi('project:review:list')")
     @GetMapping("/list")
     public TableDataInfo list(Project project)
     {
@@ -34,21 +37,27 @@ public class ProjectReviewController extends BaseController
         return getDataTable(list);
     }
 
-    @PreAuthorize("@ss.hasPermi('project:review:query')")
+    @PreAuthorize("@ss.hasPermi('project:review:list')")
     @GetMapping("/summary")
     public AjaxResult summary(Project project)
     {
         return success(projectReviewService.selectReviewSummary(project));
     }
 
-    @PreAuthorize("@ss.hasPermi('project:review:query')")
+    /**
+     * 获取项目详细信息（用于审核）
+     */
+    @PreAuthorize("@ss.hasPermi('project:review:list')")
     @GetMapping(value = "/{projectId}")
     public AjaxResult getInfo(@PathVariable("projectId") Long projectId)
     {
         return success(projectReviewService.selectProjectById(projectId));
     }
 
-    @PreAuthorize("@ss.hasPermi('project:review:approve')")
+    /**
+     * 审核项目
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:review:approve,project:review:reject')")
     @Log(title = "项目审核", businessType = BusinessType.UPDATE)
     @PostMapping("/approve")
     public AjaxResult approve(@RequestBody Project project)

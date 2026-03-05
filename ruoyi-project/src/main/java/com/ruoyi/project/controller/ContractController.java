@@ -70,7 +70,7 @@ public class ContractController extends BaseController
     /**
      * 获取合同管理详细信息
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:edit,project:payment:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:edit,project:contract:attachment,project:payment:query,project:payment:add,project:payment:edit')")
     @GetMapping(value = "/{contractId}")
     public AjaxResult getInfo(@PathVariable("contractId") Long contractId)
     {

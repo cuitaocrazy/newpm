@@ -4,24 +4,13 @@
       <el-row :gutter="10">
         <el-col :span="6">
           <el-form-item label="项目名称" prop="projectName">
-            <el-select
+            <el-autocomplete
               v-model="queryParams.projectName"
-              filterable
-              remote
+              :fetch-suggestions="queryProjectNames"
               clearable
-              :remote-method="loadProjectNameOptions"
-              :loading="projectNameLoading"
-              placeholder="点击展示全部，输入模糊搜索"
-              @visible-change="(v) => v && loadProjectNameOptions('')"
+              placeholder="输入关键字搜索，或直接输入后查询"
               style="width: 100%"
-            >
-              <el-option
-                v-for="opt in projectNameOptions"
-                :key="opt.value"
-                :label="opt.label"
-                :value="opt.value"
-              />
-            </el-select>
+            />
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -334,6 +323,14 @@
               @click="handleRevenue(scope.row)"
               v-hasPermi="['revenue:company:edit']"
             >收入确认</el-button>
+            <el-button
+              v-else-if="scope.row.revenueConfirmStatus"
+              link
+              type="primary"
+              icon="View"
+              @click="handleRevenueView(scope.row)"
+              v-hasPermi="['revenue:company:query']"
+            >收入查看</el-button>
           </template>
         </template>
       </el-table-column>
@@ -352,7 +349,7 @@
 <script setup name="RevenueCompany">
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { listRevenue, getRevenueSummary, exportRevenue } from "@/api/revenue/company"
-import { getDeptTree } from "@/api/project/project"
+import { getDeptTree, listProjectByName } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 
@@ -375,7 +372,6 @@ const deptFlatList = ref([])
 
 // 项目名称下拉选项
 const projectNameOptions = ref([])
-const projectNameLoading = ref(false)
 
 // 列显隐配置
 const columns = ref([
@@ -476,7 +472,7 @@ function resetQuery() {
 
 /** 导出按钮操作 */
 function handleExport() {
-  proxy.download('revenue/export', {
+  proxy.download('project/project/revenue/export', {
     ...queryParams.value
   }, `收入确认_${new Date().getTime()}.xlsx`)
 }
@@ -579,17 +575,15 @@ function getParticipantsNames(participants) {
   return names.length > 0 ? names.join(', ') : '-'
 }
 
-/** 加载项目名称下拉选项（支持模糊查询，空时加载全部） */
-function loadProjectNameOptions(query = '') {
-  projectNameLoading.value = true
-  listRevenue({ pageNum: 1, pageSize: 200, projectName: query || undefined })
-    .then(res => {
-      const seen = new Set()
-      projectNameOptions.value = (res.rows || [])
-        .filter(row => row.projectName && !seen.has(row.projectName) && seen.add(row.projectName))
-        .map(row => ({ label: row.projectName, value: row.projectName }))
-    })
-    .finally(() => { projectNameLoading.value = false })
+/** 加载项目名称下拉选项（支持模糊查询） */
+function queryProjectNames(queryString, cb) {
+  listProjectByName({ projectName: queryString || '' }).then(response => {
+    const results = (response.data || []).map(item => ({
+      value: item.projectName,
+      projectId: item.projectId
+    }))
+    cb(results)
+  }).catch(() => cb([]))
 }
 
 /** 初始化下拉选项 */

@@ -134,7 +134,7 @@
           </template>
           <el-descriptions :column="1" border>
             <el-descriptions-item label="收入确认状态">
-              <dict-tag :options="sys_srqrzt" :value="form.revenueConfirmStatus" />
+              <dict-tag :options="sys_qrzt" :value="form.revenueConfirmStatus" />
             </el-descriptions-item>
             <el-descriptions-item label="收入确认年度">{{ form.revenueConfirmYear }}</el-descriptions-item>
             <el-descriptions-item label="合同金额(含税)">{{ form.contractAmount }} 元</el-descriptions-item>
@@ -189,8 +189,8 @@ const route = useRoute()
 
 // 字典
 const { proxy } = getCurrentInstance()
-const { industry, sys_yjqy, sys_xmfl, sys_xmjd, sys_spzt, sys_yszt, sys_srqrzt } = proxy.useDict(
-  'industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_srqrzt'
+const { industry, sys_yjqy, sys_xmfl, sys_xmjd, sys_spzt, sys_yszt, sys_qrzt } = proxy.useDict(
+  'industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_qrzt'
 )
 
 // 数据

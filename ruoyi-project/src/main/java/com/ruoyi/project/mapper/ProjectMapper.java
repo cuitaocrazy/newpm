@@ -75,6 +75,14 @@ public interface ProjectMapper
     public int deleteProjectByProjectIds(Long[] projectIds);
 
     /**
+     * 批量查询团队确认明细（用于列表分行展示）
+     *
+     * @param projectIds 项目ID列表
+     * @return 明细列表（含 projectId, deptId, deptName, confirmAmount）
+     */
+    public List<Map<String, Object>> selectTeamConfirmDetailsByIds(@Param("projectIds") List<Long> projectIds);
+
+    /**
      * 获取用户列表（按岗位过滤）
      *
      * @param postCode 岗位编码
@@ -174,4 +182,20 @@ public interface ProjectMapper
      * @return 用户列表（userId, nickName）
      */
     public List<Map<String, Object>> selectUserNickNamesByIds(@Param("userIds") List<Long> userIds);
+
+    /**
+     * 查询团队收入确认平铺列表（以团队为维度，每行一条团队确认记录 + 关联项目信息）
+     *
+     * @param project 查询条件（含 confirmDeptId 等扩展字段）
+     * @return 平铺列表
+     */
+    public List<Map<String, Object>> selectTeamRevenueFlatList(Project project);
+
+    /**
+     * 查询团队收入确认平铺合计（与 selectTeamRevenueFlatList 使用相同筛选条件）
+     *
+     * @param project 查询条件
+     * @return 合计（teamConfirmAmount）
+     */
+    public Map<String, Object> selectTeamRevenueFlatSummary(Project project);
 }

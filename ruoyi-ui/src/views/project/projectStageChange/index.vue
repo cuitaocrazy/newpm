@@ -35,7 +35,7 @@
           icon="Switch"
           :disabled="multiple"
           @click="handleBatchChange"
-          v-hasPermi="['project:projectStageChange:add']"
+          v-hasPermi="['project:projectStageChange:batchChange']"
         >批量变更</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
@@ -92,7 +92,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="160" fixed="right">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleChange(scope.row)" v-hasPermi="['project:projectStageChange:add']">变更</el-button>
-          <el-button link type="primary" icon="Document" @click="handleHistory(scope.row)">变更记录</el-button>
+          <el-button link type="primary" icon="Document" @click="handleHistory(scope.row)" v-hasPermi="['project:projectStageChange:query']">变更记录</el-button>
         </template>
       </el-table-column>
     </el-table>

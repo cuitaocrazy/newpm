@@ -84,6 +84,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="customerContactPhone"    column="customer_contact_phone"    />
         <result property="updateByName"    column="update_by_name"    />
         <result property="createByName"    column="create_by_name"    />
+        <result property="teamConfirmDepts" column="team_confirm_depts" />
+        <result property="teamConfirmAmount" column="team_confirm_amount" />
     </resultMap>
 
     <sql id="selectProjectVo">
@@ -118,7 +120,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                sr.region_name,
                ca.contract_amount, ca.contract_status, ca.contract_name,
                u_upd.nick_name AS update_by_name,
-               u1.nick_name AS project_manager_name
+               u1.nick_name AS project_manager_name,
+               tc.team_confirm_depts,
+               tc.team_confirm_amount
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
@@ -131,6 +135,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
             GROUP BY pcr.project_id
         ) ca ON p.project_id = ca.project_id
+        LEFT JOIN (
+            SELECT t.project_id,
+                   GROUP_CONCAT(DISTINCT d.dept_name ORDER BY d.dept_name SEPARATOR '、') AS team_confirm_depts,
+                   SUM(t.confirm_amount) AS team_confirm_amount
+            FROM pm_team_revenue_confirmation t
+            JOIN sys_dept d ON t.dept_id = d.dept_id
+            WHERE t.del_flag = '0'
+            GROUP BY t.project_id
+        ) tc ON p.project_id = tc.project_id
         LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
         LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
         <where>
@@ -191,6 +204,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="afterTaxAmount != null "> and p.after_tax_amount = #{afterTaxAmount}</if>
             <if test="companyRevenueConfirmedBy != null  and companyRevenueConfirmedBy != ''"> and p.company_revenue_confirmed_by = #{companyRevenueConfirmedBy}</if>
             <if test="companyRevenueConfirmedTime != null "> and p.company_revenue_confirmed_time = #{companyRevenueConfirmedTime}</if>
+            <if test="confirmDeptId != null and confirmDeptId == -1">
+                AND NOT EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2 WHERE tc2.project_id = p.project_id AND tc2.del_flag = '0')
+            </if>
+            <if test="confirmDeptId != null and confirmDeptId != -1">
+                AND EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2 WHERE tc2.project_id = p.project_id AND tc2.dept_id = #{confirmDeptId} AND tc2.del_flag = '0')
+            </if>
         </where>
         ORDER BY COALESCE(p.update_time, p.create_time) DESC
     </select>
@@ -241,7 +260,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             COALESCE(SUM(p.estimated_workload), 0) AS estimatedWorkload,
             COALESCE(SUM(p.actual_workload), 0)   AS actualWorkload,
             COALESCE(SUM(ca.contract_amount), 0)  AS contractAmount,
-            COALESCE(SUM(p.confirm_amount), 0)    AS confirmAmount
+            COALESCE(SUM(p.confirm_amount), 0)    AS confirmAmount,
+            COALESCE(SUM(tc.team_confirm_amount), 0) AS teamConfirmAmount
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
@@ -253,6 +273,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
             GROUP BY pcr.project_id
         ) ca ON p.project_id = ca.project_id
+        LEFT JOIN (
+            SELECT t.project_id,
+                   SUM(t.confirm_amount) AS team_confirm_amount
+            FROM pm_team_revenue_confirmation t
+            WHERE t.del_flag = '0'
+            GROUP BY t.project_id
+        ) tc ON p.project_id = tc.project_id
         <where>
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
@@ -278,6 +305,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
             <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and ca.contract_status = #{contractStatus}</if>
+            <if test="confirmDeptId != null and confirmDeptId == -1">
+                AND NOT EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2 WHERE tc2.project_id = p.project_id AND tc2.del_flag = '0')
+            </if>
+            <if test="confirmDeptId != null and confirmDeptId != -1">
+                AND EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2 WHERE tc2.project_id = p.project_id AND tc2.dept_id = #{confirmDeptId} AND tc2.del_flag = '0')
+            </if>
         </where>
     </select>
 
@@ -538,6 +571,152 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <!-- 批量查询团队确认明细（用于列表分行展示） -->
+    <select id="selectTeamConfirmDetailsByIds" resultType="map">
+        SELECT
+            t.team_confirm_id AS teamConfirmId,
+            t.project_id   AS projectId,
+            t.dept_id      AS deptId,
+            d.dept_name    AS deptName,
+            t.confirm_amount AS confirmAmount
+        FROM pm_team_revenue_confirmation t
+        JOIN sys_dept d ON t.dept_id = d.dept_id
+        WHERE t.del_flag = '0'
+        AND t.project_id IN
+        <foreach item="id" collection="projectIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY t.project_id, t.team_confirm_id
+    </select>
+
+    <!-- 团队收入确认平铺列表（以 pm_team_revenue_confirmation 为主表） -->
+    <sql id="teamRevenueFlatWhere">
+        t.del_flag = '0'
+        AND p.del_flag = '0'
+        <if test="projectName != null and projectName != ''"> AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
+        <if test="projectDept != null and projectDept != ''"> AND p.project_dept = #{projectDept}</if>
+        <if test="confirmDeptId != null and confirmDeptId > 0"> AND t.dept_id = #{confirmDeptId}</if>
+        <if test="revenueConfirmYear != null and revenueConfirmYear != ''"> AND p.revenue_confirm_year = #{revenueConfirmYear}</if>
+        <if test="projectCategory != null and projectCategory != ''"> AND p.project_category = #{projectCategory}</if>
+        <if test="region != null and region != ''"> AND p.region = #{region}</if>
+        <if test="regionId != null"> AND p.region_id = #{regionId}</if>
+        <if test="projectManagerId != null"> AND p.project_manager_id = #{projectManagerId}</if>
+        <if test="marketManagerId != null"> AND p.market_manager_id = #{marketManagerId}</if>
+        <if test="establishedYear != null"> AND p.established_year = #{establishedYear}</if>
+        <if test="projectStage != null and projectStage != ''"> AND p.project_stage = #{projectStage}</if>
+        <if test="approvalStatus != null and approvalStatus != ''"> AND p.approval_status = #{approvalStatus}</if>
+        <if test="acceptanceStatus != null and acceptanceStatus != ''"> AND p.acceptance_status = #{acceptanceStatus}</if>
+        <if test="revenueConfirmStatus != null and revenueConfirmStatus != ''"> AND p.revenue_confirm_status = #{revenueConfirmStatus}</if>
+        <if test="contractStatus != null and contractStatus != ''"> AND ca.contract_status = #{contractStatus}</if>
+    </sql>
+
+    <select id="selectTeamRevenueFlatList" parameterType="Project" resultType="map">
+        SELECT
+            t.team_confirm_id    AS teamConfirmId,
+            t.project_id         AS projectId,
+            t.dept_id            AS confirmDeptId,
+            d_team.dept_name     AS teamDeptName,
+            t.confirm_amount     AS teamConfirmAmount,
+            t.confirm_time       AS confirmTime,
+            t.confirm_user_id    AS confirmUserId,
+            u_confirm.nick_name  AS confirmUserName,
+            t.remark             AS remark,
+            p.project_name       AS projectName,
+            p.project_code       AS projectCode,
+            p.project_stage      AS projectStage,
+            p.project_dept       AS projectDept,
+            p.project_manager_id AS projectManagerId,
+            u_pm.nick_name       AS projectManagerName,
+            p.market_manager_id  AS marketManagerId,
+            p.project_category   AS projectCategory,
+            p.region             AS region,
+            p.region_id          AS regionId,
+            sr.region_name       AS regionName,
+            p.project_budget     AS projectBudget,
+            p.estimated_workload AS estimatedWorkload,
+            p.actual_workload    AS actualWorkload,
+            ca.contract_name     AS contractName,
+            ca.contract_amount   AS contractAmount,
+            ca.contract_status   AS contractStatus,
+            p.revenue_confirm_year   AS revenueConfirmYear,
+            p.revenue_confirm_status AS revenueConfirmStatus,
+            p.confirm_amount     AS confirmAmount,
+            p.participants       AS participants,
+            p.start_date         AS startDate,
+            p.end_date           AS endDate,
+            p.acceptance_date    AS acceptanceDate,
+            p.approval_status    AS approvalStatus,
+            p.project_status     AS projectStatus,
+            p.acceptance_status  AS acceptanceStatus,
+            u_upd.nick_name      AS updateByName,
+            COALESCE(t.update_time, t.create_time) AS updateTime
+        FROM pm_team_revenue_confirmation t
+        JOIN pm_project p ON t.project_id = p.project_id
+        LEFT JOIN sys_dept d_team ON t.dept_id = d_team.dept_id
+        LEFT JOIN sys_user u_confirm ON t.confirm_user_id = u_confirm.user_id
+        LEFT JOIN sys_user u_pm ON p.project_manager_id = u_pm.user_id
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+        LEFT JOIN (
+            SELECT pcr.project_id,
+                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   SUM(c.contract_amount)  AS contract_amount,
+                   MAX(c.contract_status)  AS contract_status
+            FROM pm_project_contract_rel pcr
+            JOIN pm_contract c ON pcr.contract_id = c.contract_id
+            WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
+            GROUP BY pcr.project_id
+        ) ca ON p.project_id = ca.project_id
+        LEFT JOIN sys_user u_upd ON t.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        <where>
+            <include refid="teamRevenueFlatWhere"/>
+        </where>
+        ORDER BY p.project_name ASC, COALESCE(d_team.dept_name, '') ASC
+    </select>
+
+    <select id="selectTeamRevenueFlatSummary" parameterType="Project" resultType="map">
+        SELECT
+            SUM(t_proj.teamConfirmAmount)            AS teamConfirmAmount,
+            SUM(p.project_budget)                    AS projectBudget,
+            SUM(p.estimated_workload)                AS estimatedWorkload,
+            SUM(p.actual_workload)                   AS actualWorkload,
+            SUM(COALESCE(ca.contract_amount, 0))     AS contractAmount,
+            SUM(COALESCE(p.confirm_amount, 0))       AS confirmAmount
+        FROM (
+            SELECT project_id, SUM(confirm_amount) AS teamConfirmAmount
+            FROM pm_team_revenue_confirmation
+            WHERE del_flag = '0'
+            <if test="confirmDeptId != null and confirmDeptId > 0"> AND dept_id = #{confirmDeptId}</if>
+            GROUP BY project_id
+        ) t_proj
+        JOIN pm_project p ON t_proj.project_id = p.project_id
+        LEFT JOIN (
+            SELECT pcr.project_id,
+                   SUM(c.contract_amount)   AS contract_amount,
+                   MAX(c.contract_status)   AS contract_status
+            FROM pm_project_contract_rel pcr
+            JOIN pm_contract c ON pcr.contract_id = c.contract_id
+            WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
+            GROUP BY pcr.project_id
+        ) ca ON p.project_id = ca.project_id
+        <where>
+            p.del_flag = '0'
+            <if test="projectName != null and projectName != ''"> AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
+            <if test="projectDept != null and projectDept != ''"> AND p.project_dept = #{projectDept}</if>
+            <if test="revenueConfirmYear != null and revenueConfirmYear != ''"> AND p.revenue_confirm_year = #{revenueConfirmYear}</if>
+            <if test="projectCategory != null and projectCategory != ''"> AND p.project_category = #{projectCategory}</if>
+            <if test="region != null and region != ''"> AND p.region = #{region}</if>
+            <if test="regionId != null"> AND p.region_id = #{regionId}</if>
+            <if test="projectManagerId != null"> AND p.project_manager_id = #{projectManagerId}</if>
+            <if test="marketManagerId != null"> AND p.market_manager_id = #{marketManagerId}</if>
+            <if test="establishedYear != null"> AND p.established_year = #{establishedYear}</if>
+            <if test="projectStage != null and projectStage != ''"> AND p.project_stage = #{projectStage}</if>
+            <if test="approvalStatus != null and approvalStatus != ''"> AND p.approval_status = #{approvalStatus}</if>
+            <if test="acceptanceStatus != null and acceptanceStatus != ''"> AND p.acceptance_status = #{acceptanceStatus}</if>
+            <if test="revenueConfirmStatus != null and revenueConfirmStatus != ''"> AND p.revenue_confirm_status = #{revenueConfirmStatus}</if>
+            <if test="contractStatus != null and contractStatus != ''"> AND ca.contract_status = #{contractStatus}</if>
+        </where>
+    </select>
+
     <!-- 获取用户列表（按岗位过滤） -->
     <select id="selectUsersByPost" resultType="map">
         SELECT DISTINCT
@@ -549,6 +728,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user_post up ON u.user_id = up.user_id
         LEFT JOIN sys_post p ON up.post_id = p.post_id
         WHERE u.del_flag = '0'
+        AND u.status = '0'
         <if test="postCode != null and postCode != ''">
             AND p.post_code = #{postCode}
         </if>

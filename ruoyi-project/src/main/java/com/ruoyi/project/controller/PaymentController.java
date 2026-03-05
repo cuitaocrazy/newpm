@@ -90,7 +90,7 @@ public class PaymentController extends BaseController
     /**
      * 获取款项管理详细信息
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:payment:query,project:payment:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('project:payment:query,project:payment:edit,project:payment:attachment')")
     @GetMapping(value = "/{paymentId:\\d+}")
     public AjaxResult getInfo(@PathVariable("paymentId") Long paymentId)
     {

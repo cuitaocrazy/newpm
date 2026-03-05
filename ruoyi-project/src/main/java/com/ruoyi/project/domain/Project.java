@@ -2,6 +2,8 @@ package com.ruoyi.project.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -276,6 +278,18 @@ public class Project extends BaseEntity
     /** 申请人昵称（关联字段，非数据库字段） */
     private String createByName;
 
+    /** 确认团队部门名称（关联字段，多个用顿号分隔，非数据库字段） */
+    private String teamConfirmDepts;
+
+    /** 团队确认收入汇总（关联字段，非数据库字段） */
+    private BigDecimal teamConfirmAmount;
+
+    /** 团队确认明细列表（用于列表分行展示，非数据库字段） */
+    private List<Map<String, Object>> teamConfirmList;
+
+    /** 查询条件：确认团队部门ID（-1表示无确认团队，非数据库字段） */
+    private Long confirmDeptId;
+
     /** 更新时间（导出用，非数据库字段） */
     @Excel(name = "更新时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss", sort = 230)
     private Date updateTimeDisplay;
@@ -291,6 +305,18 @@ public class Project extends BaseEntity
 
     public void setCreateByName(String createByName) { this.createByName = createByName; }
     public String getCreateByName() { return createByName; }
+
+    public void setTeamConfirmDepts(String teamConfirmDepts) { this.teamConfirmDepts = teamConfirmDepts; }
+    public String getTeamConfirmDepts() { return teamConfirmDepts; }
+
+    public void setTeamConfirmAmount(BigDecimal teamConfirmAmount) { this.teamConfirmAmount = teamConfirmAmount; }
+    public BigDecimal getTeamConfirmAmount() { return teamConfirmAmount; }
+
+    public void setTeamConfirmList(List<Map<String, Object>> teamConfirmList) { this.teamConfirmList = teamConfirmList; }
+    public List<Map<String, Object>> getTeamConfirmList() { return teamConfirmList; }
+
+    public void setConfirmDeptId(Long confirmDeptId) { this.confirmDeptId = confirmDeptId; }
+    public Long getConfirmDeptId() { return confirmDeptId; }
 
     public void setProjectId(Long projectId)
     {

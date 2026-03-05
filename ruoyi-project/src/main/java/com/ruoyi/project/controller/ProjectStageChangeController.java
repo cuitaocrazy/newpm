@@ -74,7 +74,7 @@ public class ProjectStageChangeController extends BaseController
     }
 
     /** 批量变更阶段 */
-    @PreAuthorize("@ss.hasPermi('project:projectStageChange:add')")
+    @PreAuthorize("@ss.hasPermi('project:projectStageChange:batchChange')")
     @Log(title = "项目阶段批量变更", businessType = BusinessType.UPDATE)
     @PostMapping("/batchChange")
     public AjaxResult batchChange(@RequestBody ProjectStageChange request)

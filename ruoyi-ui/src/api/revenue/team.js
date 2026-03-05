@@ -1,5 +1,14 @@
 import request from '@/utils/request'
 
+// 查询团队收入确认合计（全量，不分页）
+export function getTeamRevenueSummary(query) {
+  return request({
+    url: '/revenue/team/summary',
+    method: 'get',
+    params: query
+  })
+}
+
 // 查询团队收入确认列表（项目列表）
 export function listTeamRevenue(query) {
   return request({

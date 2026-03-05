@@ -84,6 +84,7 @@ export const constantRoutes = [
       }
     ]
   },
+  // 项目详情 / 编辑 / 附件（父路径 /project/list）
   {
     path: '/project/list/detail',
     component: Layout,
@@ -94,6 +95,165 @@ export const constantRoutes = [
         component: () => import('@/views/project/project/detail.vue'),
         name: 'ProjectDetail',
         meta: { title: '项目详情', activeMenu: '/project/list' }
+      }
+    ]
+  },
+  {
+    path: '/project/list/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':projectId(\\d+)',
+        component: () => import('@/views/project/project/edit.vue'),
+        name: 'ProjectEdit',
+        meta: { title: '编辑项目', activeMenu: '/project/list' }
+      }
+    ]
+  },
+  {
+    path: '/project/list/attachment',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':projectId(\\d+)',
+        component: () => import('@/views/project/project/attachment.vue'),
+        name: 'ProjectAttachment',
+        meta: { title: '项目附件', activeMenu: '/project/list' }
+      }
+    ]
+  },
+  // 合同：新增 / 编辑 / 详情 / 附件（父路径 /htkx/contract）
+  {
+    path: '/htkx/contract/add',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/contract/add.vue'),
+        name: 'ContractAdd',
+        meta: { title: '新增合同', activeMenu: '/htkx/contract' }
+      }
+    ]
+  },
+  {
+    path: '/htkx/contract/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':contractId(\\d+)',
+        component: () => import('@/views/project/contract/edit.vue'),
+        name: 'ContractEdit',
+        meta: { title: '编辑合同', activeMenu: '/htkx/contract' }
+      }
+    ]
+  },
+  {
+    path: '/htkx/contract/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':contractId(\\d+)',
+        component: () => import('@/views/project/contract/detail.vue'),
+        name: 'ContractDetail',
+        meta: { title: '合同详情', activeMenu: '/htkx/contract' }
+      }
+    ]
+  },
+  {
+    path: '/htkx/contract/attachment',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':contractId(\\d+)',
+        component: () => import('@/views/project/contract/attachment.vue'),
+        name: 'ContractAttachment',
+        meta: { title: '合同附件', activeMenu: '/htkx/contract' }
+      }
+    ]
+  },
+  // 款项：新增 / 编辑 / 详情 / 附件（父路径 /htkx/payment）
+  {
+    path: '/htkx/payment/add',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/payment/form.vue'),
+        name: 'PaymentAdd',
+        meta: { title: '新增款项', activeMenu: '/htkx/payment' }
+      }
+    ]
+  },
+  {
+    path: '/htkx/payment/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':paymentId(\\d+)',
+        component: () => import('@/views/project/payment/form.vue'),
+        name: 'PaymentEdit',
+        meta: { title: '编辑款项', activeMenu: '/htkx/payment' }
+      }
+    ]
+  },
+  {
+    path: '/htkx/payment/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':paymentId(\\d+)',
+        component: () => import('@/views/project/payment/detail.vue'),
+        name: 'PaymentDetail',
+        meta: { title: '款项详情', activeMenu: '/htkx/payment' }
+      }
+    ]
+  },
+  {
+    path: '/htkx/payment/attachment',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':paymentId(\\d+)',
+        component: () => import('@/views/project/payment/attachment.vue'),
+        name: 'PaymentAttachment',
+        meta: { title: '款项附件', activeMenu: '/htkx/payment' }
+      }
+    ]
+  },
+  // 收入确认详情（父路径 /revenue）
+  {
+    path: '/revenue/company/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':projectId(\\d+)',
+        component: () => import('@/views/revenue/company/detail.vue'),
+        name: 'CompanyRevenueDetail',
+        meta: { title: '收入确认详情', activeMenu: '/revenue/company' }
+      }
+    ]
+  },
+  {
+    path: '/revenue/team/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':projectId(\\d+)',
+        component: () => import('@/views/revenue/team/detail.vue'),
+        name: 'TeamRevenueDetail',
+        meta: { title: '团队收入确认详情', activeMenu: '/revenue/team' }
       }
     ]
   }
