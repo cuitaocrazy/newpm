@@ -227,9 +227,9 @@
           <span v-else>{{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(4) : '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同名称" align="left" header-align="center" prop="contractName" width="200" show-overflow-tooltip v-if="columns.contractName.visible">
+      <el-table-column label="合同名称" align="left" header-align="center" prop="contractName" width="200" v-if="columns.contractName.visible">
         <template #default="scope">
-          <span v-if="!scope.row.isSummaryRow">{{ scope.row.contractName || '-' }}</span>
+          <span v-if="!scope.row.isSummaryRow" style="white-space: pre-line; word-break: break-all;">{{ scope.row.contractName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="合同金额(元)" align="center" prop="contractAmount" min-width="120" sortable="custom" v-if="columns.contractAmount.visible">
