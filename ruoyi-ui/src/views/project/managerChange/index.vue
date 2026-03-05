@@ -294,10 +294,6 @@ function loadProjectOptions(query) {
     projectSearchLoading.value = false
   })
 }
-  }).catch(() => {
-    projectSearchLoading.value = false
-  })
-}
 
 /** 项目远程搜索 */
 function remoteSearchProject(query) {
