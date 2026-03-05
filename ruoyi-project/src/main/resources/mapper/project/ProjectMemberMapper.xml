@@ -105,7 +105,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             AND p.project_dept = #{deptId}
         </if>
         GROUP BY p.project_id, p.project_name, p.project_code, d.dept_name, p.project_dept
-        ORDER BY p.create_time DESC
+        ORDER BY p.update_time DESC
     </select>
 
 </mapper>
