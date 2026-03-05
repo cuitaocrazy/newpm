@@ -37,7 +37,7 @@ public class SecondaryRegionController extends BaseController
     /**
      * 查询二级区域列表
      */
-    @PreAuthorize("@ss.hasPermi('project:secondaryRegion:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:secondaryRegion:list,project:project:list,project:project:edit,project:project:add,project:contract:list,project:contract:query,project:projectStageChange:list,revenue:company:list,revenue:team:list')")
     @GetMapping("/list")
     public TableDataInfo list(SecondaryRegion secondaryRegion)
     {
@@ -105,7 +105,7 @@ public class SecondaryRegionController extends BaseController
     /**
      * 根据一级区域查询二级区域列表
      */
-    @PreAuthorize("@ss.hasPermi('project:secondaryRegion:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:secondaryRegion:list,project:project:edit,project:project:add')")
     @GetMapping("/listByRegion")
     public AjaxResult listByRegion(String regionDictValue)
     {

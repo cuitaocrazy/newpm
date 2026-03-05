@@ -115,8 +115,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                sr.region_name,
-               ca.contract_amount, ca.contract_status, ca.contract_name,
-               u_upd.nick_name AS update_by_name
+               pcr.contract_id as contractId,
+               c.contract_amount, c.contract_status, ca.contract_name,
+               u_upd.nick_name AS update_by_name,
+               u1.nick_name AS project_manager_name
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
@@ -130,6 +132,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             GROUP BY pcr.project_id
         ) ca ON p.project_id = ca.project_id
         LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
         <where>
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
@@ -189,7 +192,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="companyRevenueConfirmedBy != null  and companyRevenueConfirmedBy != ''"> and p.company_revenue_confirmed_by = #{companyRevenueConfirmedBy}</if>
             <if test="companyRevenueConfirmedTime != null "> and p.company_revenue_confirmed_time = #{companyRevenueConfirmedTime}</if>
         </where>
-        ORDER BY COALESCE(p.update_time, p.create_time) DESC
+        ORDER BY p.update_time DESC
     </select>
 
     <!-- 查询收入确认汇总（全量筛选，不分页） -->
@@ -477,16 +480,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where project_id = #{projectId}
     </update>
 
-    <update id="deleteProjectByProjectId" parameterType="Long">
-        update pm_project set del_flag = '1' where project_id = #{projectId}
-    </update>
+    <delete id="deleteProjectByProjectId" parameterType="Long">
+        delete from pm_project where project_id = #{projectId}
+    </delete>
 
-    <update id="deleteProjectByProjectIds" parameterType="String">
-        update pm_project set del_flag = '1' where project_id in
+    <delete id="deleteProjectByProjectIds" parameterType="String">
+        delete from pm_project where project_id in
         <foreach item="projectId" collection="array" open="(" separator="," close=")">
             #{projectId}
         </foreach>
-    </update>
+    </delete>
 
     <!-- 获取用户列表（按岗位过滤） -->
     <select id="selectUsersByPost" resultType="map">
@@ -747,6 +750,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
               )
           )
         order by p.create_time desc
+    </select>
+
+    <!-- 查询所有部门（用于导出时构建部门路径） -->
+    <select id="selectAllDeptsForPath" resultType="map">
+        SELECT dept_id AS deptId, dept_name AS deptName, ancestors
+        FROM sys_dept
+        WHERE del_flag = '0'
+    </select>
+
+    <!-- 根据用户ID列表查询昵称（用于导出时解析参与人员） -->
+    <select id="selectUserNickNamesByIds" resultType="map">
+        SELECT user_id AS userId, nick_name AS nickName
+        FROM sys_user
+        WHERE del_flag = '0'
+        AND user_id IN
+        <foreach collection="userIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
 </mapper>

@@ -394,8 +394,8 @@ async function loadData() {
 }
 
 async function loadUsers() {
-  const res = await request({ url: '/system/user/list', method: 'get', params: { pageSize: 500 } })
-  userList.value = (res.rows || []).map(u => ({
+  const res = await request({ url: '/project/project/users', method: 'get' })
+  userList.value = (res.data || []).map(u => ({
     userId: u.userId,
     nickName: u.nickName,
     deptName: u.dept?.deptName || ''

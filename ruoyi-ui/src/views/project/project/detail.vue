@@ -29,7 +29,7 @@
         <el-descriptions-item label="立项年份">
           {{ form.establishedYear || '-' }} 年
         </el-descriptions-item>
-        <el-descriptions-item label="项目编号" :span="2">
+        <el-descriptions-item label="项目ID">
           {{ form.projectCode || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="项目名称" :span="3">
@@ -41,26 +41,44 @@
         <el-descriptions-item label="项目部门">
           {{ getDeptName(form.projectDept) }}
         </el-descriptions-item>
-        <el-descriptions-item label="项目状态">
-          <dict-tag :options="sys_xmzt" :value="form.projectStatus" />
-        </el-descriptions-item>
         <el-descriptions-item label="预估工作量">
           {{ form.estimatedWorkload || 0 }} 人天
         </el-descriptions-item>
-        <el-descriptions-item label="项目预算">
-          {{ formatAmount(form.projectBudget) }} 元
-        </el-descriptions-item>
-        <el-descriptions-item label="实际工作量">
-          {{ form.actualWorkload || 0 }} 人天
-        </el-descriptions-item>
-        <el-descriptions-item label="项目阶段">
-          <dict-tag :options="sys_xmjd" :value="form.projectStage" />
+        <el-descriptions-item label="项目状态">
+          <dict-tag :options="sys_xmzt" :value="form.projectStatus" />
         </el-descriptions-item>
         <el-descriptions-item label="验收状态">
           <dict-tag :options="sys_yszt" :value="form.acceptanceStatus" />
         </el-descriptions-item>
+        <el-descriptions-item label="实际人天">
+          {{ form.actualWorkload || 0 }} 人天
+        </el-descriptions-item>
         <el-descriptions-item label="审核状态">
           <dict-tag :options="sys_spzt" :value="form.approvalStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="项目预算">
+          {{ formatAmount(form.projectBudget) }} 元
+        </el-descriptions-item>
+        <el-descriptions-item label="合同状态">
+          <dict-tag :options="sys_htzt" :value="form.contractStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="合同名称" :span="2">
+          {{ form.contractName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="合同金额">
+          {{ form.contractAmount != null ? formatAmount(form.contractAmount) + ' 元' : '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="收入确认年度">
+          {{ form.revenueConfirmYear || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="收入确认状态">
+          <dict-tag :options="sys_srqrzt" :value="form.revenueConfirmStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="收入确认金额">
+          {{ form.confirmAmount != null ? formatAmount(form.confirmAmount) + ' 元' : '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="项目阶段" :span="2">
+          <dict-tag :options="sys_xmjd" :value="form.projectStage" />
         </el-descriptions-item>
         <el-descriptions-item label="项目地址" :span="3">
           {{ form.projectAddress || '-' }}
@@ -161,9 +179,6 @@
         <el-descriptions-item label="项目预算">
           {{ formatAmount(form.projectBudget) }} 元
         </el-descriptions-item>
-        <el-descriptions-item label="项目费用">
-          {{ formatAmount(form.projectCost) }} 元
-        </el-descriptions-item>
         <el-descriptions-item label="费用预算">
           {{ formatAmount(form.costBudget) }} 元
         </el-descriptions-item>
@@ -179,14 +194,14 @@
       </el-descriptions>
     </el-card>
 
-    <!-- 关联合同信息 -->
+    <!-- 合同信息 -->
     <el-card shadow="never" class="detail-card">
       <template #header>
-        <span class="card-title">关联合同信息</span>
+        <span class="card-title">合同信息</span>
       </template>
       <div v-if="contractInfo">
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="合同名称" :span="2">
+          <el-descriptions-item label="合同名称" :span="3">
             {{ contractInfo.contractName || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="合同状态">
@@ -381,8 +396,8 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl } =
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl')
+const { sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl, sys_srqrzt } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl', 'sys_srqrzt')
 
 // 表单数据
 const data = reactive({

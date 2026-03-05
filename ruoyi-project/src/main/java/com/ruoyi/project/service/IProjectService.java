@@ -38,6 +38,11 @@ public interface IProjectService
     public List<Project> selectProjectList(Project project);
 
     /**
+     * 查询项目合计（全量，不分页）
+     */
+    public Map<String, Object> selectProjectSummary(Project project);
+
+    /**
      * 新增项目管理
      *
      * @param project 项目管理
@@ -144,4 +149,11 @@ public interface IProjectService
      * @return 精简字段列表：projectId, projectName, projectCode
      */
     public List<Map<String, Object>> searchProjectsByName(String projectName);
+
+    /**
+     * 为导出填充附加字段：部门路径、参与人员名称、更新时间显示
+     *
+     * @param list 项目列表
+     */
+    public void enrichForExport(List<Project> list);
 }

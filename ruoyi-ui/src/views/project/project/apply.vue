@@ -120,6 +120,7 @@
               v-model="form.projectStatus"
               dict-type="sys_xmzt"
               placeholder="请选择项目状态"
+              clearable
               @blur="validateOnBlur('projectStatus')"
             />
           </el-form-item>
@@ -151,25 +152,17 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="预估工作量" prop="estimatedWorkload" data-prop="estimatedWorkload">
-            <el-input v-model="form.estimatedWorkload" placeholder="请输入预估工作量" @blur="validateOnBlur('estimatedWorkload')">
-              <template #append>人天</template>
-            </el-input>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
           <el-form-item label="项目预算" prop="projectBudget" data-prop="projectBudget">
-            <el-input v-model="form.projectBudget" placeholder="请输入项目预算" @blur="validateOnBlur('projectBudget')">
+            <el-input v-model="form.projectBudget" placeholder="请输入金额"
+              @input="handleAmountInput('projectBudget', $event)"
+              @blur="handleAmountBlur('projectBudget')">
               <template #append>元</template>
             </el-input>
           </el-form-item>
         </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="实际工作量" prop="actualWorkload" data-prop="actualWorkload">
-            <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
+          <el-form-item label="预估工作量" prop="estimatedWorkload" data-prop="estimatedWorkload">
+            <el-input v-model="form.estimatedWorkload" placeholder="请输入" @blur="validateOnBlur('estimatedWorkload')">
               <template #append>人天</template>
             </el-input>
           </el-form-item>
@@ -265,10 +258,10 @@
               placeholder="请选择参与人员"
               multiple
               filterable
-              collapse-tags
               style="width: 100%"
               @blur="validateOnBlur('participants')"
             />
+            <div v-if="participantIds.length > 0" style="margin-top: 6px; color: #606266; font-size: 13px;">已选 {{ participantIds.length }} 人</div>
           </el-form-item>
         </el-col>
       </el-row>
@@ -407,31 +400,54 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="项目费用(元)" prop="projectCost" data-prop="projectCost">
-            <el-input-number v-model="form.projectCost" :min="0" :precision="2" placeholder="请输入项目费用" style="width: 100%" @blur="validateOnBlur('projectCost')" />
+          <el-form-item label="项目费用" prop="projectCost" data-prop="projectCost">
+            <el-input v-model="form.projectCost" placeholder="请输入项目费用" style="width: 100%"
+              @input="handleAmountInput('projectCost', $event)"
+              @blur="handleAmountBlur('projectCost')">
+              <template #append>元</template>
+            </el-input>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="费用预算(元)" prop="expenseBudget" data-prop="expenseBudget">
-            <el-input-number v-model="form.expenseBudget" :min="0" :precision="2" placeholder="请输入费用预算" style="width: 100%" @blur="validateOnBlur('expenseBudget')" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="成本预算(元)" prop="costBudget" data-prop="costBudget">
-            <el-input-number v-model="form.costBudget" :min="0" :precision="2" placeholder="请输入成本预算" style="width: 100%" @blur="validateOnBlur('costBudget')" />
+          <el-form-item label="费用预算" prop="expenseBudget" data-prop="expenseBudget">
+            <el-input v-model="form.expenseBudget" placeholder="请输入费用预算" style="width: 100%"
+              @input="handleAmountInput('expenseBudget', $event)"
+              @blur="handleAmountBlur('expenseBudget')">
+              <template #append>元</template>
+            </el-input>
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="人力费用(元)" prop="laborCost" data-prop="laborCost">
-            <el-input-number v-model="form.laborCost" :min="0" :precision="2" placeholder="请输入人力费用" style="width: 100%" @blur="validateOnBlur('laborCost')" />
+          <el-form-item label="成本预算" prop="costBudget" data-prop="costBudget">
+            <el-input v-model="form.costBudget" placeholder="请输入成本预算" style="width: 100%"
+              @input="handleAmountInput('costBudget', $event)"
+              @blur="handleAmountBlur('costBudget')">
+              <template #append>元</template>
+            </el-input>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="采购成本(元)" prop="purchaseCost" data-prop="purchaseCost">
-            <el-input-number v-model="form.purchaseCost" :min="0" :precision="2" placeholder="请输入采购成本" style="width: 100%" @blur="validateOnBlur('purchaseCost')" />
+          <el-form-item label="人力费用" prop="laborCost" data-prop="laborCost">
+            <el-input v-model="form.laborCost" placeholder="请输入人力费用" style="width: 100%"
+              @input="handleAmountInput('laborCost', $event)"
+              @blur="handleAmountBlur('laborCost')">
+              <template #append>元</template>
+            </el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="采购成本" prop="purchaseCost" data-prop="purchaseCost">
+            <el-input v-model="form.purchaseCost" placeholder="请输入采购成本" style="width: 100%"
+              @input="handleAmountInput('purchaseCost', $event)"
+              @blur="handleAmountBlur('purchaseCost')">
+              <template #append>元</template>
+            </el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -504,7 +520,7 @@ import { useFormValidation } from '@/composables/useFormValidation'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
-const { industry, sys_xmfl, sys_ndgl, sys_yjqy, sys_xmjd, sys_yszt } = proxy.useDict('industry', 'sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_xmjd', 'sys_yszt')
+const { industry, sys_xmfl, sys_ndgl, sys_yjqy, sys_xmjd, sys_yszt, sys_xmzt } = proxy.useDict('industry', 'sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_xmjd', 'sys_yszt', 'sys_xmzt')
 
 const formRef = ref()
 const activeNames = ref(['1', '3', '4', '5', '6', '7']) // 默认展开所有折叠面板
@@ -523,6 +539,7 @@ const form = ref({
   projectName: null,
   projectCategory: null,
   projectDept: null,
+  projectStatus: null,
   projectStage: null,
   acceptanceStatus: null,
   estimatedWorkload: null,
@@ -692,13 +709,60 @@ function generateProjectCode() {
   }
 }
 
+/** 金额输入处理 - 仅允许数字和小数点 */
+function handleAmountInput(field, value) {
+  let cleaned = String(value).replace(/[^\d.]/g, '')
+  // 只保留第一个小数点
+  const dotIndex = cleaned.indexOf('.')
+  if (dotIndex !== -1) {
+    cleaned = cleaned.substring(0, dotIndex + 1) + cleaned.substring(dotIndex + 1).replace(/\./g, '')
+  }
+  // 小数位不超过2位
+  const parts = cleaned.split('.')
+  if (parts.length === 2 && parts[1].length > 2) {
+    cleaned = parts[0] + '.' + parts[1].substring(0, 2)
+  }
+  form.value[field] = cleaned
+}
+
+/** 失焦时格式化为千分位显示 */
+function finalizeAmountFormat(field) {
+  const value = form.value[field]
+  if (!value && value !== 0) return
+  const str = String(value).replace(/,/g, '')
+  const num = parseFloat(str)
+  if (isNaN(num)) return
+  const parts = str.split('.')
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const decPart = parts.length === 2 ? parts[1].padEnd(2, '0').substring(0, 2) : '00'
+  form.value[field] = `${intPart}.${decPart}`
+}
+
+/** 金额字段失焦 - 格式化 + 验证 */
+function handleAmountBlur(field) {
+  finalizeAmountFormat(field)
+  validateOnBlur(field)
+}
+
+/** 解析金额字符串为数字（提交前用） */
+function parseAmount(value) {
+  if (value === null || value === undefined || value === '') return null
+  const num = parseFloat(String(value).replace(/,/g, ''))
+  return isNaN(num) ? null : num
+}
+
 /** 提交表单 */
 function submitForm() {
   validateAndScroll(() => {
     // 验证通过后的提交逻辑
     const submitData = {
       ...form.value,
-      establishedYear: parseInt(form.value.establishedYear)  // 转换为整数
+      projectBudget: parseAmount(form.value.projectBudget),
+      projectCost: parseAmount(form.value.projectCost),
+      expenseBudget: parseAmount(form.value.expenseBudget),
+      costBudget: parseAmount(form.value.costBudget),
+      laborCost: parseAmount(form.value.laborCost),
+      purchaseCost: parseAmount(form.value.purchaseCost)
     }
 
     addProject(submitData).then(response => {

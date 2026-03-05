@@ -30,8 +30,8 @@ columns:
     columnType: varchar(50)
     javaType: String
     javaField: projectCode
-    isInsert: true  # 新增时生成
-    isEdit: false   # 编辑时只读，不可修改
+    isInsert: true   # 新增时前端自动生成后提交
+    isEdit: false    # 编辑时只读，不可修改
     isList: true
     isQuery: true
     queryType: LIKE
@@ -102,7 +102,7 @@ columns:
     javaField: regionId
     isInsert: true
     isEdit: true
-    isList: false  # 列表不显示ID，显示名称
+    isList: false    # 列表不显示ID，显示关联查询的 regionName
     isQuery: true
     queryType: EQ
     isRequired: true
@@ -186,7 +186,7 @@ columns:
     javaField: projectStage
     isInsert: true
     isEdit: true
-    isList: true
+    isList: true     # 列表第2列（项目名称后紧跟）
     isQuery: true
     queryType: EQ
     isRequired: true
@@ -284,7 +284,7 @@ columns:
     javaField: projectManagerId
     isInsert: true
     isEdit: true
-    isList: false  # 列表显示昵称，不显示ID
+    isList: false    # 列表通过 UserSelect ref 解析昵称显示
     isQuery: true
     queryType: EQ
     isRequired: true
@@ -298,7 +298,7 @@ columns:
     javaField: marketManagerId
     isInsert: true
     isEdit: true
-    isList: false  # 列表显示昵称，不显示ID
+    isList: false    # 列表通过 UserSelect ref 解析昵称显示
     isQuery: true
     queryType: EQ
     isRequired: true
@@ -339,7 +339,7 @@ columns:
     javaType: String
     javaField: salesContact
     isInsert: true
-    isEdit: false  # 自动填充，只读
+    isEdit: false    # 自动填充销售负责人电话，只读
     isList: false
     isQuery: false
     queryType: EQ
@@ -409,7 +409,7 @@ columns:
     javaType: String
     javaField: merchantPhone
     isInsert: true
-    isEdit: false  # 自动填充，只读
+    isEdit: false    # 自动填充客户联系人电话，只读
     isList: false
     isQuery: false
     queryType: EQ
@@ -480,7 +480,7 @@ columns:
     javaField: projectBudget
     isInsert: true
     isEdit: true
-    isList: true
+    isList: true     # 列头显示"项目预算(元)"，sortable="custom"，千分位格式化
     isQuery: false
     queryType: EQ
     isRequired: true
@@ -562,8 +562,8 @@ columns:
     columnType: varchar(20)
     javaType: String
     javaField: approvalStatus
-    isInsert: true   # 新增时默认为待审核
-    isEdit: false    # 编辑时只读，由审核流程控制
+    isInsert: true   # 新增时默认为待审核(0)
+    isEdit: false    # 由审核流程控制，编辑表单不暴露
     isList: true
     isQuery: true
     queryType: EQ
@@ -586,7 +586,7 @@ columns:
     dictType: ""
 
   industry_code:
-    columnComment: 行业代码
+    columnComment: 行业代码（用于项目编号生成）
     columnType: varchar(50)
     javaType: String
     javaField: industryCode
@@ -600,7 +600,7 @@ columns:
     dictType: ""
 
   region_code:
-    columnComment: 二级区域代码（从pm_secondary_region表的region_code字段获取）
+    columnComment: 二级区域代码（从pm_secondary_region.region_code获取，用于项目编号生成）
     columnType: varchar(50)
     javaType: String
     javaField: regionCode
@@ -816,7 +816,7 @@ columns:
     javaField: updateBy
     isInsert: false
     isEdit: false
-    isList: true
+    isList: true     # 列表默认可见
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -830,7 +830,7 @@ columns:
     javaField: updateTime
     isInsert: false
     isEdit: false
-    isList: true
+    isList: true     # 列表默认可见；新增时由后端同步设置为与 create_time 相同
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -844,7 +844,7 @@ columns:
     javaField: revenueConfirmStatus
     isInsert: true
     isEdit: true
-    isList: true
+    isList: true     # 列表中位于"收入确认年度"之后、"合同状态"之前
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -872,7 +872,7 @@ columns:
     javaField: confirmAmount
     isInsert: true
     isEdit: true
-    isList: true
+    isList: true     # 列头显示"确认金额(元)"，sortable="custom"，千分位格式化
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -968,23 +968,34 @@ customizations:
          - 前端自动生成，后端保存
          - 数据库 UNIQUE 约束
 
-      6. 更新人昵称显示（updateByName）
+      6. 新增时时间字段同步
+         - insertProject 同时调用 setCreateTime 和 setUpdateTime，两者设为相同时间
+         - 代码：project.setCreateTime(DateUtils.getNowDate());
+                project.setUpdateTime(DateUtils.getNowDate());
+
+      7. 更新人昵称显示（updateByName）
          - 实体类扩展字段 updateByName（非数据库字段）
          - selectProjectList 通过 LEFT JOIN sys_user 关联查询 nick_name
          - SQL: LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
 
-      7. 列表排序规则
-         - ORDER BY COALESCE(p.update_time, p.create_time) DESC
-         - 无更新时间的记录按创建时间排序
+      8. 列表排序规则
+         - ORDER BY p.update_time DESC
+         - 新增时 update_time 已同步为 create_time，所有记录均有 update_time
 
-      8. 逻辑删除
-         - 删除标记：del_flag ('0'=正常, '1'=已删除)
-         - 使用 UPDATE 而非 DELETE
-         - 所有查询添加 WHERE del_flag = '0'
+      9. 物理删除
+         - 删除操作执行 DELETE FROM pm_project WHERE project_id = #{projectId}
+         - 无软删除，数据直接从数据库移除
+         - del_flag 字段仅用于历史兼容，查询时保留 WHERE p.del_flag = '0' 过滤已删除数据
 
-      9. Collation 注意事项
-         - pm_project 使用 utf8mb4_0900_ai_ci，sys_dict_data 使用 utf8mb4_unicode_ci
-         - JOIN 系统表时须显式指定 COLLATE utf8mb4_unicode_ci
+      10. 关联查询（selectProjectList）
+          - LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id → sr.region_name
+          - LEFT JOIN pm_project_contract_rel pcr → pcr.contract_id
+          - LEFT JOIN pm_contract c → c.contract_name, c.contract_amount, c.contract_status
+          - LEFT JOIN sys_user u_upd → u_upd.nick_name AS update_by_name
+
+      11. Collation 注意事项
+          - pm_project 使用 utf8mb4_0900_ai_ci，sys_user 使用 utf8mb4_unicode_ci
+          - JOIN 系统表时须显式指定 COLLATE utf8mb4_unicode_ci
 
   # ==================
   # 前端字段绑定说明
@@ -1117,7 +1128,7 @@ customizations:
         placeholder: "请选择项目阶段"
     bindTo: "projectStage"
     spec: |
-      字典选项（sys_xmjd）：需求分析、设计阶段、开发阶段、部署阶段、测试阶段、运维阶段
+      字典选项（sys_xmjd）：0=其他, 1=售前支持, 2=需求及设计, 3=开发及自测, 4=验收测试, 5=系统投产, 6=免维期维护, 7=项目结项
       使用场景：立项申请（必填）、项目编辑（必填）、项目列表（筛选）
 
   participants_multi_select:
@@ -1133,8 +1144,8 @@ customizations:
         placeholder: "请选择参与人员"
     bindTo: "participants"
     service:
-      endpoint: "GET /system/user/list"
-      returns: "所有用户列表，显示 nickName，值为 userId"
+      endpoint: "GET /project/project/users"
+      returns: "所有用户列表，显示 nickName，值为 userId（注意使用代理接口 res.data，非 res.rows）"
     spec: |
       后端存储：逗号分隔的 userId 字符串（"1,2,3"）
       前端展示：数组 [1, 2, 3]
@@ -1144,7 +1155,7 @@ customizations:
   project_dept_tree_select:
     intent: "项目部门树形选择器，仅展示三级及以下机构"
     component:
-      type: "ProjectDeptSelect（自定义组件）"
+      type: "el-tree-select（内联，非独立组件）"
       props:
         check-strictly: true
         clearable: true
@@ -1152,7 +1163,7 @@ customizations:
     bindTo: "project_dept"
     service:
       endpoint: "GET /project/project/deptTree"
-      returns: "所有部门数据: deptId, parentId, deptName, ancestors"
+      returns: "所有部门数据: deptId, parentId, deptName, ancestors（res.data 扁平列表，前端 handleTree 构建树）"
     spec: |
       列表显示逻辑：
       - getDeptName(deptId) 函数解析 ancestors 字段
@@ -1160,7 +1171,7 @@ customizations:
       - 示例："事业部-开发部-研发组"
 
       数据加载：
-      - deptTree: 过滤三级及以下，用于下拉选择
+      - deptTree: 过滤三级及以下（ancestors 逗号数量≥2），handleTree 构建，用于下拉选择
       - deptFlatList: 包含所有部门，用于列表名称显示
 
   sales_contact_auto_fill:
@@ -1186,7 +1197,7 @@ customizations:
     bindTo: "customer_id"
     service:
       endpoint: "GET /project/project/customers"
-      returns: "客户列表: customerId, customerSimpleName, customerFullName"
+      returns: "客户列表: customerId, customerSimpleName, customerFullName（res.data）"
 
   customer_contact_id_dynamic:
     intent: "客户联系人根据客户动态加载"
@@ -1251,6 +1262,19 @@ customizations:
       组件宽度：240px（所有查询组件统一）
       包括：el-autocomplete、el-select、el-tree-select
 
+  list_column_order:
+    intent: "列表列顺序（从左到右）"
+    spec: |
+      序号 → 项目名称 → 项目阶段 → 项目部门 → 项目经理 → 项目分类 → 二级区域
+      → 项目预算(元) → 预估工作量 → 实际人天 → 合同名称
+      → 合同金额(元) → 收入确认年度 → 收入确认状态 → 合同状态
+      → 确认金额(元) → 参与人员 → 启动日期 → 结束日期 → 验收日期
+      → 审核状态 → 验收状态 → 更新人 → 更新时间 → 操作
+
+      注意：
+      - 收入确认状态在合同状态之前
+      - 项目阶段紧随项目名称之后（第2列）
+
   list_display_fields:
     intent: "列表字段显示处理"
     spec: |
@@ -1264,60 +1288,81 @@ customizations:
          - 收入确认状态 (revenueConfirmStatus): sys_srqrzt
 
       2. 关联表字段（函数转换）：
-         - 项目部门 → getDeptName(deptId)，从第三级开始的完整路径
-         - 项目经理 → getUserName(userId, projectManagerList)
-         - 市场经理 → getUserName(userId, marketManagerList)
-         - 参与人员 → getParticipantsNames(participants)，ID→昵称
-         - 更新人 → 后端 updateByName 字段（LEFT JOIN sys_user）
-         - 二级区域 → regionName（LEFT JOIN pm_secondary_region）
+         - 项目部门 → getDeptName(deptId)，从第三级开始的完整路径（用'-'连接）
+         - 项目经理 → getUserName(userId, projectManagerSelectRef?.userOptions)
+         - 参与人员 → getParticipantsNames(participants)，ID→昵称，onMounted 预加载全量用户
+         - 更新人 → updateByName 字段（后端 LEFT JOIN sys_user 返回 nick_name，prop="updateByName"）
+         - 二级区域 → regionName（selectProjectList LEFT JOIN pm_secondary_region）
+         - 合同名称 → contractName（selectProjectList LEFT JOIN pm_contract）
 
       3. 参与人员昵称加载方案：
-         onMounted 调用 listUser({ pageNum: 1, pageSize: 1000 }) 获取全量用户
+         onMounted 调用 getUsersByPost()（GET /project/project/users，res.data）获取全量用户
          getParticipantsNames() 从 allUsersList 中查找昵称
 
-      4. 金额千分位格式化：
-         formatAmount(value) → toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
-         应用字段：项目预算、合同金额、确认金额
-         不格式化：预估工作量、实际工作量（人天单位）
+      4. 金额千分位格式化（formatAmount）：
+         toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+         应用字段：项目预算(元)、合同金额(元)、确认金额(元)
+         不格式化：预估工作量、实际人天（人天单位）
 
-      5. 项目名称列：align=left, min-width=220, word-break:break-all 自动换行
+      5. 特殊列样式：
+         - 项目名称：align=left, header-align=center, min-width=220，内容 word-break:break-all 自动换行
+                     使用 el-link type="primary" 包裹文本，点击触发 handleDetail(row) 跳转详情
+         - 合同名称：align=left, header-align=center, width=200（固定宽），show-overflow-tooltip
+
+      6. sortable="custom" 的列（支持表头点击排序）：
+         - 项目预算(元)
+         - 合同金额(元)
+         - 确认金额(元)
 
   list_column_visibility:
     intent: "显隐列功能"
     spec: |
       right-toolbar 绑定 :columns，可控制各列的显示/隐藏
-      默认隐藏列：更新人(updateBy)、更新时间(updateTime)
+      所有列默认可见（visible: true），无默认隐藏列
       所有表格列添加 v-if="columns.xxx.visible" 控制
 
   list_summary_row:
     intent: "列表第一行合计行"
     spec: |
-      位置：表头和第一行数据之间
+      位置：表头和第一行数据之间（projectList 数组第0位）
       实现：getList() 中计算合计值，创建 { isSummaryRow: true, ... } 插入数组第一位
       合计字段：项目预算、预估工作量、实际人天、合同金额、确认金额
       样式：序号列显示"合计"（加粗），数值列加粗，操作列无按钮
+      CSS：.summary-row { background-color: #f5f7fa; font-weight: bold; }
 
   list_extra_fields:
-    intent: "列表显示关联表字段（合同金额、合同状态）"
+    intent: "列表显示关联表字段（合同名称、合同金额、合同状态）"
     spec: |
-      SQL 关联查询：
+      SQL 关联查询（selectProjectList）：
       LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id
+        AND pcr.del_flag = '0' AND pcr.rel_status = '有效'
       LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
-      字段：c.contract_amount, c.contract_status (字典 sys_htzt)
+      查询字段：c.contract_name, c.contract_amount, c.contract_status
+      实体类扩展字段（非数据库字段）：contractName, contractAmount, contractStatus
+      resultMap 映射：
+        contractName → contract_name
+        contractAmount → contract_amount
+        contractStatus → contract_status
 
   list_operations:
     intent: "列表操作按钮"
     spec: |
-      操作列按钮（宽度 300px）：
-      1. 详情 → /project/project/detail/:id
-      2. 编辑 → /project/project/edit/:id (v-hasPermi)
-      3. 添加合同/查看合同 → 根据 contractStatus 动态显示
-      4. 删除 → 确认弹框后单行删除
-      5. 审核/拒绝 → 当 approvalStatus === '0' 时显示
+      操作列按钮（固定右侧，宽度 350px）：
+      1. 详情 → handleDetail(row)，router.push(/project/list/detail/:id)，v-hasPermi project:project:query
+      2. 编辑 → handleUpdate(row)，router.push(/project/list/edit/:id)，v-hasPermi project:project:edit
+      3. 添加合同/查看合同 → 根据 scope.row.contractId 动态显示：
+         - contractId 存在：按钮"查看合同"(Document)，router.push(/htkx/contract/detail/:contractId)
+         - contractId 不存在：按钮"添加合同"(Plus)，router.push(/htkx/contract/add?projectId=xxx)
+      4. 收入确认/收入查看 → 根据 revenueConfirmStatus 动态显示：
+         - '0' 或 null：按钮"收入确认"(Money, success)，v-hasPermi revenue:company:edit
+         - '1'：按钮"收入查看"(View)，v-hasPermi revenue:company:view
+      5. 附件管理 → router.push(/project/list/attachment/:projectId)，v-hasPermi project:project:query
+      6. 删除 → 确认弹框后物理删除（DELETE），v-hasPermi project:project:remove
 
       注意：
       - 无批量删除功能（已移除工具栏删除按钮和 checkbox 选择列）
       - 无"新增"按钮，新增通过"立项申请"菜单进入独立页面
+      - 删除为物理删除，不可恢复，弹框确认提示需体现
 
   list_query_cache:
     intent: "查询条件和分页状态导航返回后保留"
@@ -1459,7 +1504,6 @@ customizations:
       - 上传路径配置：${user.home}/ruoyi/uploadPath（跨平台）
 
       列表入口：项目列表操作列"附件管理"按钮
-
       菜单权限：project:project:query
 
   # ==================

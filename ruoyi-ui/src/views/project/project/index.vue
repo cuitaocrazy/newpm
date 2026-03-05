@@ -91,15 +91,6 @@
           style="width: 240px"
         />
       </el-form-item>
-      <el-form-item label="项目阶段" prop="projectStage">
-        <dict-select
-          v-model="queryParams.projectStage"
-          dict-type="sys_xmjd"
-          placeholder="请选择项目阶段"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
       <el-form-item label="审核状态" prop="approvalStatus">
         <dict-select
           v-model="queryParams.approvalStatus"
@@ -114,6 +105,33 @@
           v-model="queryParams.acceptanceStatus"
           dict-type="sys_yszt"
           placeholder="请选择验收状态"
+          clearable
+          style="width: 240px"
+        />
+      </el-form-item>
+      <el-form-item label="合同状态" prop="contractStatus">
+        <dict-select
+          v-model="queryParams.contractStatus"
+          dict-type="sys_htzt"
+          placeholder="请选择合同状态"
+          clearable
+          style="width: 240px"
+        />
+      </el-form-item>
+      <el-form-item label="项目阶段" prop="projectStage">
+        <dict-select
+          v-model="queryParams.projectStage"
+          dict-type="sys_xmjd"
+          placeholder="请选择项目阶段"
+          clearable
+          style="width: 240px"
+        />
+      </el-form-item>
+      <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
+        <dict-select
+          v-model="queryParams.revenueConfirmStatus"
+          dict-type="sys_srqrzt"
+          placeholder="请选择收入确认状态"
           clearable
           style="width: 240px"
         />
@@ -138,16 +156,24 @@
     </el-row>
 
     <el-table v-loading="loading" :data="projectList" :height="tableHeight"
-              :row-class-name="tableRowClassName">
-      <el-table-column label="序号" width="55" align="center" v-if="columns.index.visible">
+              border stripe style="width: 100%"
+              :row-class-name="tableRowClassName" @sort-change="handleSortChange">
+      <el-table-column label="序号" width="55" align="center" fixed="left">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
           <span v-else>{{ scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="220" v-if="columns.projectName.visible">
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220" fixed="left">
         <template #default="scope">
-          <div v-if="!scope.row.isSummaryRow" class="project-name-cell">{{ scope.row.projectName }}</div>
+          <div v-if="!scope.row.isSummaryRow" class="project-name-cell">
+            <el-link type="primary" @click="handleDetail(scope.row)">{{ scope.row.projectName }}</el-link>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="100" v-if="columns.projectStage.visible">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmjd" :value="scope.row.projectStage" />
         </template>
       </el-table-column>
       <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip v-if="columns.projectDept.visible">
@@ -170,7 +196,7 @@
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算" align="center" prop="projectBudget" min-width="120" v-if="columns.projectBudget.visible">
+      <el-table-column label="项目预算(元)" align="center" prop="projectBudget" min-width="120" sortable="custom" v-if="columns.projectBudget.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.projectBudget) }}</span>
           <span v-else>{{ formatAmount(scope.row.projectBudget) }}</span>
@@ -185,27 +211,32 @@
       <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100" v-if="columns.actualWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
-          <span v-else>{{ scope.row.actualWorkload }}</span>
+          <span v-else>{{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(4) : '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额" align="center" prop="contractAmount" min-width="120" v-if="columns.contractAmount.visible">
+      <el-table-column label="合同名称" align="left" header-align="center" prop="contractName" width="200" show-overflow-tooltip v-if="columns.contractName.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ scope.row.contractName || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="合同金额(元)" align="center" prop="contractAmount" min-width="120" sortable="custom" v-if="columns.contractAmount.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.contractAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" v-if="columns.revenueConfirmYear.visible" />
-      <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100" v-if="columns.contractStatus.visible">
-        <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus" />
-        </template>
-      </el-table-column>
       <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120" v-if="columns.revenueConfirmStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="确认金额" align="center" prop="confirmAmount" min-width="120" v-if="columns.confirmAmount.visible">
+      <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100" v-if="columns.contractStatus.visible">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus" />
+        </template>
+      </el-table-column>
+      <el-table-column label="确认金额(元)" align="center" prop="confirmAmount" min-width="120" sortable="custom" v-if="columns.confirmAmount.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.confirmAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.confirmAmount) }}</span>
@@ -224,17 +255,12 @@
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="100" v-if="columns.projectStage.visible">
-        <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmjd" :value="scope.row.projectStage" />
-        </template>
-      </el-table-column>
       <el-table-column label="验收状态" align="center" prop="acceptanceStatus" min-width="100" v-if="columns.acceptanceStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="更新人" align="center" prop="updateBy" min-width="100" v-if="columns.updateBy.visible" />
+      <el-table-column label="更新人" align="center" prop="updateByName" min-width="100" v-if="columns.updateBy.visible" />
       <el-table-column label="更新时间" align="center" prop="updateTime" width="160" v-if="columns.updateTime.visible" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="350" v-if="columns.actions.visible">
         <template #default="scope">
@@ -245,13 +271,15 @@
             <!-- 动态合同按钮：有合同显示"查看合同"，无合同显示"添加合同" -->
             <el-button
               v-if="scope.row.contractId"
+              v-hasPermi="['project:contract:query']"
               link
               type="primary"
               icon="Document"
               @click="handleViewContract(scope.row)"
             >查看合同</el-button>
             <el-button
-              v-else
+              v-if="!scope.row.contractId"
+              v-hasPermi="['project:contract:add']"
               link
               type="primary"
               icon="Plus"
@@ -352,7 +380,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -367,31 +395,29 @@ const showSearch = ref(true)
 const total = ref(0)
 const tableHeight = ref(600)
 
-// 列显隐信息
 const columns = ref({
-  index: { label: '序号', visible: true },
-  projectName: { label: '项目名称', visible: true },
+  projectStage: { label: '项目阶段', visible: true },
   projectDept: { label: '项目部门', visible: true },
   projectManagerId: { label: '项目经理', visible: true },
   projectCategory: { label: '项目分类', visible: true },
   regionName: { label: '二级区域', visible: true },
-  projectBudget: { label: '项目预算', visible: true },
+  projectBudget: { label: '项目预算(元)', visible: true },
   estimatedWorkload: { label: '预估工作量', visible: true },
   actualWorkload: { label: '实际人天', visible: true },
-  contractAmount: { label: '合同金额', visible: true },
+  contractName: { label: '合同名称', visible: true },
+  contractAmount: { label: '合同金额(元)', visible: true },
   revenueConfirmYear: { label: '收入确认年度', visible: true },
-  contractStatus: { label: '合同状态', visible: true },
   revenueConfirmStatus: { label: '收入确认状态', visible: true },
-  confirmAmount: { label: '确认金额', visible: true },
+  contractStatus: { label: '合同状态', visible: true },
+  confirmAmount: { label: '确认金额(元)', visible: true },
   participants: { label: '参与人员', visible: true },
   startDate: { label: '启动日期', visible: true },
   endDate: { label: '结束日期', visible: true },
   acceptanceDate: { label: '验收日期', visible: true },
   approvalStatus: { label: '审核状态', visible: true },
-  projectStage: { label: '项目阶段', visible: true },
   acceptanceStatus: { label: '验收状态', visible: true },
-  updateBy: { label: '更新人', visible: false },
-  updateTime: { label: '更新时间', visible: false },
+  updateBy: { label: '更新人', visible: true },
+  updateTime: { label: '更新时间', visible: true },
   actions: { label: '操作', visible: true }
 })
 const approvalDialogVisible = ref(false)
@@ -435,35 +461,51 @@ const data = reactive({
     establishedYear: null,
     projectStage: null,
     approvalStatus: null,
-    acceptanceStatus: null
+    acceptanceStatus: null,
+    contractStatus: null,
+    revenueConfirmStatus: null,
+    orderByColumn: null,
+    isAsc: null
   }
 })
 
 const { queryParams } = toRefs(data)
 
-/** 查询项目管理列表 */
-function getList() {
-  loading.value = true
-  listProject(queryParams.value).then(response => {
-    const rows = response.rows || []
+/** 排序 */
+function handleSortChange({ prop, order }) {
+  queryParams.value.orderByColumn = prop
+  queryParams.value.isAsc = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : null
+  queryParams.value.pageNum = 1
+  getList()
+}
 
-    // 计算合计行
+/** 查询项目管理列表 */
+function getList() {  loading.value = true
+  // 并行请求分页列表和全量合计
+  Promise.all([
+    listProject(queryParams.value),
+    getProjectSummary(queryParams.value)
+  ]).then(([listRes, summaryRes]) => {
+    const rows = listRes.rows || []
+    const s = summaryRes.data || {}
+
     if (rows.length > 0) {
       const summaryRow = {
         isSummaryRow: true,
-        projectBudget: rows.reduce((sum, item) => sum + (Number(item.projectBudget) || 0), 0).toFixed(2),
-        estimatedWorkload: rows.reduce((sum, item) => sum + (Number(item.estimatedWorkload) || 0), 0).toFixed(2),
-        actualWorkload: rows.reduce((sum, item) => sum + (Number(item.actualWorkload) || 0), 0).toFixed(2),
-        contractAmount: rows.reduce((sum, item) => sum + (Number(item.contractAmount) || 0), 0).toFixed(2),
-        confirmAmount: rows.reduce((sum, item) => sum + (Number(item.confirmAmount) || 0), 0).toFixed(2)
+        projectBudget:     Number(s.projectBudget     || 0).toFixed(2),
+        estimatedWorkload: Math.round(Number(s.estimatedWorkload || 0)),
+        actualWorkload:    Number(s.actualWorkload    || 0).toFixed(4),
+        contractAmount:    Number(s.contractAmount    || 0).toFixed(2),
+        confirmAmount:     Number(s.confirmAmount     || 0).toFixed(2)
       }
-      // 将合计行插入到列表第一行
       projectList.value = [summaryRow, ...rows]
     } else {
       projectList.value = rows
     }
 
-    total.value = response.total
+    total.value = listRes.total
+    loading.value = false
+  }).catch(() => {
     loading.value = false
   })
 }
@@ -653,9 +695,16 @@ function handleDelete(row) {
 
 /** 导出按钮操作 */
 function handleExport() {
+  const now = new Date()
+  const ts = now.getFullYear().toString()
+    + String(now.getMonth() + 1).padStart(2, '0')
+    + String(now.getDate()).padStart(2, '0')
+    + String(now.getHours()).padStart(2, '0')
+    + String(now.getMinutes()).padStart(2, '0')
+    + String(now.getSeconds()).padStart(2, '0')
   proxy.download('project/project/export', {
     ...queryParams.value
-  }, `project_${new Date().getTime()}.xlsx`)
+  }, `项目数据_${ts}.xlsx`)
 }
 
 /** 审核按钮操作 */
@@ -749,6 +798,10 @@ loadDeptTree()
       background-color: #f5f7fa;
       color: #606266;
       font-weight: 600;
+    }
+
+    .el-table__header th.is-sortable .cell {
+      white-space: nowrap;
     }
 
     .el-table__body tr:hover > td {
