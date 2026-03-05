@@ -1,79 +1,44 @@
 <template>
-  <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
+  <div class="app-container review-container">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-autocomplete
+        <el-select
           v-model="queryParams.projectName"
-          :fetch-suggestions="queryProjectNames"
-          placeholder="请输入项目名称"
+          filterable
+          remote
           clearable
-          @select="handleQuery"
-          style="width: 200px"
-        />
+          :remote-method="remoteQueryProjectNames"
+          :loading="loadingProjectNames"
+          placeholder="请选择或输入项目名称"
+          style="width: 240px"
+          @keyup.enter="handleQuery"
+          @focus="remoteQueryProjectNames('')"
+        >
+          <el-option
+            v-for="item in projectNameOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
       </el-form-item>
-      <el-form-item label="项目部门" prop="projectDept">
-        <ProjectDeptSelect
-          v-model="queryParams.projectDept"
-          placeholder="请选择项目部门"
-          width="200px"
-        />
+      <el-form-item label="项目编号" prop="projectCode">
+        <el-input v-model="queryParams.projectCode" placeholder="请输入项目编号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="项目分类" prop="projectCategory">
-        <dict-select
-          v-model="queryParams.projectCategory"
-          dict-type="sys_xmfl"
-          placeholder="请选择项目分类"
-          clearable
-          style="width: 200px"
-        />
+        <dict-select v-model="queryParams.projectCategory" dict-type="sys_xmfl" placeholder="请选择项目分类" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="一级区域" prop="region">
-        <dict-select
-          v-model="queryParams.region"
-          dict-type="sys_yjqy"
-          placeholder="请选择一级区域"
-          clearable
-          style="width: 200px"
-        />
+        <dict-select v-model="queryParams.region" dict-type="sys_yjqy" placeholder="请选择一级区域" clearable style="width: 240px" />
       </el-form-item>
-      <el-form-item label="二级区域" prop="regionId">
-        <secondary-region-select
-          v-model="queryParams.regionId"
-          :region-dict-value="queryParams.region"
-          placeholder="请选择二级区域"
-          clearable
-          filterable
-          style="width: 200px"
-        />
-      </el-form-item>
-      <el-form-item label="项目经理" prop="projectManagerId">
-        <user-select
-          v-model="queryParams.projectManagerId"
-          post-code="pm"
-          placeholder="请选择项目经理"
-          clearable
-          filterable
-          style="width: 200px"
-        />
-      </el-form-item>
-      <el-form-item label="市场经理" prop="marketManagerId">
-        <user-select
-          v-model="queryParams.marketManagerId"
-          post-code="scjl"
-          placeholder="请选择市场经理"
-          clearable
-          filterable
-          style="width: 200px"
-        />
+      <el-form-item label="项目状态" prop="projectStatus">
+        <dict-select v-model="queryParams.projectStatus" dict-type="sys_xmzt" placeholder="请选择项目状态" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="审核状态" prop="approvalStatus">
-        <dict-select
-          v-model="queryParams.approvalStatus"
-          dict-type="sys_spzt"
-          placeholder="请选择审核状态"
-          clearable
-          style="width: 200px"
-        />
+        <dict-select v-model="queryParams.approvalStatus" dict-type="sys_spzt" placeholder="请选择审核状态" clearable style="width: 240px" />
+      </el-form-item>
+      <el-form-item label="项目经理" prop="projectManagerId">
+        <user-select v-model="queryParams.projectManagerId" post-code="pm" placeholder="请选择项目经理" clearable filterable style="width: 240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -85,60 +50,104 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="reviewList">
-      <el-table-column label="序号" type="index" width="55" align="center" />
-      <el-table-column label="项目名称" align="center" prop="projectName" min-width="150" show-overflow-tooltip>
+    <el-table
+      v-loading="loading"
+      :data="reviewList"
+      :height="tableHeight"
+      border
+      stripe
+      style="width: 100%"
+      :row-class-name="tableRowClassName"
+      @sort-change="handleSortChange"
+    >
+      <el-table-column label="序号" width="55" align="center" fixed="left">
         <template #default="scope">
-          <el-link type="primary" @click="handleReview(scope.row)" underline="never">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
+          <span v-else>{{ scope.$index }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="200" fixed="left" show-overflow-tooltip>
+        <template #default="scope">
+          <el-link v-if="!scope.row.isSummaryRow" type="primary" @click="handleReview(scope.row)" underline="never">
             {{ scope.row.projectName }}
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="项目部门" align="center" prop="deptName" min-width="120" show-overflow-tooltip />
-      <el-table-column label="项目分类" align="center" prop="projectCategory" width="120">
+      <el-table-column label="项目编号" prop="projectCode" align="center" min-width="160" show-overflow-tooltip>
         <template #default="scope">
-          <dict-tag :options="sys_xmfl" :value="scope.row.projectCategory"/>
+          <span v-if="!scope.row.isSummaryRow">{{ scope.row.projectCode || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="行业" align="center" prop="industry" width="100">
+      <el-table-column label="项目分类" prop="projectCategory" align="center" min-width="110">
         <template #default="scope">
-          <dict-tag :options="industry" :value="scope.row.industry"/>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmfl" :value="scope.row.projectCategory" />
         </template>
       </el-table-column>
-      <el-table-column label="二级区域" align="center" prop="regionName" width="100" show-overflow-tooltip />
-      <el-table-column label="项目阶段" align="center" prop="projectStage" width="100">
+      <el-table-column label="行业" prop="industry" align="center" min-width="100">
         <template #default="scope">
-          <dict-tag :options="sys_xmjd" :value="scope.row.projectStage"/>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="industry" :value="scope.row.industry" />
         </template>
       </el-table-column>
-      <el-table-column label="审核状态" align="center" prop="approvalStatus" width="100">
+      <el-table-column label="区域" prop="region" align="center" min-width="100">
         <template #default="scope">
-          <dict-tag :options="sys_spzt" :value="scope.row.approvalStatus"/>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yjqy" :value="scope.row.region" />
         </template>
       </el-table-column>
-      <el-table-column label="项目经理" align="center" prop="projectManagerName" min-width="100" />
-      <el-table-column label="市场经理" align="center" prop="marketManagerName" min-width="100" />
-      <el-table-column label="申请人" align="center" prop="createBy" width="100" />
-      <el-table-column label="申请时间" align="center" prop="createTime" width="160">
+      <el-table-column label="项目状态" prop="projectStatus" align="center" min-width="100">
         <template #default="scope">
-          <span>{{ parseTime(scope.row.createTime) }}</span>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmzt" :value="scope.row.projectStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120" fixed="right">
+      <el-table-column label="审核状态" prop="approvalStatus" align="center" min-width="110">
         <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            icon="Edit"
-            @click="handleReview(scope.row)"
-            v-hasPermi="['project:review:approve']"
-          >审核</el-button>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus" />
+        </template>
+      </el-table-column>
+      <el-table-column label="项目部门" align="center" min-width="130" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ scope.row.deptName || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目经理" prop="projectManagerName" align="center" min-width="90" />
+      <el-table-column label="申请人" prop="createByName" align="center" min-width="90" />
+      <el-table-column label="申请时间" prop="createTime" align="center" min-width="110">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目预算(元)" prop="projectBudget" align="right" header-align="center" min-width="130" sortable="custom">
+        <template #default="scope">
+          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.projectBudget }}</span>
+          <span v-else>{{ formatAmount(scope.row.projectBudget) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" width="120" fixed="right">
+        <template #default="scope">
+          <template v-if="!scope.row.isSummaryRow">
+            <!-- 待审核(0)：显示审核按钮 -->
+            <el-button
+              v-if="scope.row.approvalStatus === '0'"
+              link
+              type="primary"
+              icon="Edit"
+              @click="handleReview(scope.row)"
+              v-hasPermi="['project:review:approve']"
+            >审核</el-button>
+            <!-- 审核通过(1)：显示退回按钮 -->
+            <el-button
+              v-if="scope.row.approvalStatus === '1'"
+              link
+              type="warning"
+              @click="handleRollback(scope.row)"
+              v-hasPermi="['project:review:approve']"
+            >退回</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
 
     <pagination
-      v-show="total>0"
+      v-show="total > 0"
       :total="total"
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
@@ -165,7 +174,6 @@
       </template>
 
       <el-collapse v-model="activeNames" style="margin-top: -10px;">
-        <!-- 基本信息 -->
         <el-collapse-item title="基本信息" name="1">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="行业">
@@ -201,7 +209,6 @@
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 人员配置 -->
         <el-collapse-item title="人员配置" name="2">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="项目经理">{{ reviewForm.projectManagerName }}</el-descriptions-item>
@@ -212,7 +219,6 @@
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 客户信息 -->
         <el-collapse-item title="客户信息" name="3">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="客户名称">{{ reviewForm.customerName }}</el-descriptions-item>
@@ -223,7 +229,6 @@
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 时间规划 -->
         <el-collapse-item title="时间规划" name="4">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="启动日期">{{ parseTime(reviewForm.startDate, '{y}-{m}-{d}') }}</el-descriptions-item>
@@ -233,7 +238,6 @@
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 成本预算 -->
         <el-collapse-item title="成本预算" name="5">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="项目费用">{{ reviewForm.projectCost }} 元</el-descriptions-item>
@@ -244,7 +248,6 @@
           </el-descriptions>
         </el-collapse-item>
 
-        <!-- 备注 -->
         <el-collapse-item title="备注" name="6">
           <el-descriptions :column="1" border>
             <el-descriptions-item label="备注">{{ reviewForm.remark }}</el-descriptions-item>
@@ -282,161 +285,166 @@
       </template>
     </el-drawer>
 
-    <!-- 列表和对话框将在后续步骤添加 -->
+    <!-- 退回对话框 -->
+    <el-dialog title="退回项目" v-model="rollbackOpen" width="480px" append-to-body>
+      <div class="dialog-project-info">
+        <p><strong>项目名称：</strong>{{ currentProject.projectName }}</p>
+        <p><strong>项目编号：</strong>{{ currentProject.projectCode || '-' }}</p>
+      </div>
+      <el-form ref="rollbackRef" :model="rollbackForm" :rules="rollbackRules" label-width="90px" style="margin-top: 16px;">
+        <el-form-item label="退回原因" prop="rollbackReason">
+          <el-input
+            v-model="rollbackForm.rollbackReason"
+            type="textarea"
+            :rows="3"
+            placeholder="请填写退回原因"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="rollbackOpen = false">取消</el-button>
+        <el-button type="warning" @click="submitRollback">确认退回</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Review">
-import { listReview, getReview, approveProject } from "@/api/project/review"
-import request from '@/utils/request'
-import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
+import { listReview, getReviewSummary, getReview, approveProject, rollbackProject } from "@/api/project/review"
+import { searchProjects } from "@/api/project/project"
 import { WarningFilled } from '@element-plus/icons-vue'
+import { parseTime } from "@/utils/ruoyi"
 
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'industry')
+const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_xmzt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_xmzt', 'industry')
 
 const reviewList = ref([])
+const projectNameOptions = ref([])
+const loadingProjectNames = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
+const tableHeight = ref(600)
 const reviewOpen = ref(false)
 const activeNames = ref(['1', '2', '3', '4', '5', '6'])
 const isAllExpanded = ref(true)
 const showReasonError = ref(false)
 
-const data = reactive({
-  queryParams: {
-    pageNum: 1,
-    pageSize: 10,
-    projectName: null,
-    projectDept: null,
-    projectCategory: null,
-    region: null,
-    regionId: null,
-    projectManagerId: null,
-    marketManagerId: null,
-    approvalStatus: '0'  // 默认查询待审核
-  },
-  reviewForm: {},
-  reviewRules: {
-    approvalReason: [
-      { required: false, message: "审核意见不能为空", trigger: "blur" }
-    ]
-  }
+const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  projectName: null,
+  projectCode: null,
+  projectCategory: null,
+  region: null,
+  projectStatus: null,
+  approvalStatus: '0',
+  projectManagerId: null,
 })
 
-const { queryParams, reviewForm, reviewRules } = toRefs(data)
-
-/** 查询列表 */
-function getList() {
-  loading.value = true
-  listReview(queryParams.value).then(response => {
-    reviewList.value = response.rows
-    total.value = response.total
-    loading.value = false
-  })
+const reviewForm = ref({})
+const reviewRules = {
+  approvalReason: [{ required: false, message: "审核意见不能为空", trigger: "blur" }]
 }
 
-/** 搜索按钮操作 */
+function formatAmount(val) {
+  if (val == null || val === '') return '-'
+  return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function tableRowClassName({ row }) {
+  return row.isSummaryRow ? 'summary-row' : ''
+}
+
+function getList() {
+  loading.value = true
+  listReview(queryParams.value).then(res => {
+    const rows = res.rows || []
+    total.value = res.total
+    if (rows.length > 0) {
+      reviewList.value = [{ isSummaryRow: true, projectBudget: '-' }, ...rows]
+      getReviewSummary(queryParams.value).then(summaryRes => {
+        const s = summaryRes.data || {}
+        reviewList.value[0] = {
+          isSummaryRow: true,
+          projectBudget: formatAmount(Number(s.projectBudget || 0))
+        }
+      }).catch(() => {})
+    } else {
+      reviewList.value = []
+    }
+    loading.value = false
+  }).catch(() => { loading.value = false })
+}
+
 function handleQuery() {
   queryParams.value.pageNum = 1
   getList()
 }
 
-/** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
-  queryParams.value.approvalStatus = '0'  // 重置后仍然默认查询待审核
   handleQuery()
 }
 
-/** 项目名称自动完成 */
-function queryProjectNames(queryString, cb) {
-  if (!queryString) {
-    cb([])
-    return
-  }
-  // 调用API获取项目名称列表
-  request({
-    url: '/project/project/list',
-    method: 'get',
-    params: { projectName: queryString, pageNum: 1, pageSize: 10 }
-  }).then(response => {
-    const suggestions = response.rows.map(item => ({
-      value: item.projectName
-    }))
-    cb(suggestions)
-  }).catch(() => {
-    cb([])
+function handleSortChange({ prop, order }) {
+  queryParams.value.orderByColumn = order ? prop : null
+  queryParams.value.isAsc = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : null
+  getList()
+}
+function remoteQueryProjectNames(query) {
+  loadingProjectNames.value = true
+  searchProjects(query).then(res => {
+    projectNameOptions.value = (res.data || []).map(p => ({ value: p.projectName, label: p.projectName }))
+  }).finally(() => {
+    loadingProjectNames.value = false
   })
 }
 
-/** 审核按钮操作 */
 function handleReview(row) {
   reviewOpen.value = true
-  const projectId = row.projectId
-  getReview(projectId).then(response => {
+  getReview(row.projectId).then(response => {
     reviewForm.value = response.data
     reviewForm.value.approvalReason = null
-    // 默认展开所有折叠面板
     activeNames.value = ['1', '2', '3', '4', '5', '6']
     isAllExpanded.value = true
   })
 }
 
-/** 切换全部折叠/展开 */
 function toggleAllCollapse() {
   if (isAllExpanded.value) {
-    // 收起所有
     activeNames.value = ['1']
     isAllExpanded.value = false
   } else {
-    // 展开所有
     activeNames.value = ['1', '2', '3', '4', '5', '6']
     isAllExpanded.value = true
   }
 }
 
-/** 取消审核 */
 function cancelReview() {
   reviewOpen.value = false
   showReasonError.value = false
-  reset()
+  reviewForm.value = {}
 }
 
-/** 表单重置 */
-function reset() {
-  reviewForm.value = {
-    projectId: null,
-    approvalReason: null
-  }
-  proxy.resetForm("reviewFormRef")
-}
-
-/** 提交审核 */
 function submitApprove(approvalStatus) {
-  // 拒绝时必须填写审核意见
   if (approvalStatus === '2' && (!reviewForm.value.approvalReason || reviewForm.value.approvalReason.trim() === '')) {
-    // 显示输入框下方的错误提示
     showReasonError.value = true
-    // 滚动到审核意见输入框位置
     nextTick(() => {
       const formElement = document.querySelector('.review-drawer .el-form')
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      }
+      if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
     return
   }
-
   const statusText = approvalStatus === '1' ? '通过' : '拒绝'
   proxy.$modal.confirm('是否确认' + statusText + '该项目立项申请？').then(() => {
-    const data = {
+    return approveProject({
       projectId: reviewForm.value.projectId,
       approvalStatus: approvalStatus,
       approvalReason: reviewForm.value.approvalReason
-    }
-    return approveProject(data)
+    })
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("审核" + statusText + "成功")
@@ -445,11 +453,93 @@ function submitApprove(approvalStatus) {
   }).catch(() => {})
 }
 
-// 初始化
+// 退回
+const rollbackOpen = ref(false)
+const currentProject = ref({})
+const rollbackForm = ref({ rollbackReason: '' })
+const rollbackRules = {
+  rollbackReason: [{ required: true, message: '请填写退回原因', trigger: 'blur' }]
+}
+
+function handleRollback(row) {
+  currentProject.value = row
+  rollbackForm.value = { rollbackReason: '' }
+  rollbackOpen.value = true
+}
+
+function submitRollback() {
+  proxy.$refs['rollbackRef'].validate(valid => {
+    if (valid) {
+      rollbackProject({
+        projectId: currentProject.value.projectId,
+        rollbackReason: rollbackForm.value.rollbackReason
+      }).then(() => {
+        proxy.$modal.msgSuccess("退回成功")
+        rollbackOpen.value = false
+        getList()
+      })
+    }
+  })
+}
+
+function calcTableHeight() {
+  nextTick(() => {
+    const windowHeight = window.innerHeight
+    const searchHeight = showSearch.value ? 160 : 0
+    tableHeight.value = windowHeight - searchHeight - 50 - 50 - 120
+  })
+}
+
+onMounted(() => {
+  calcTableHeight()
+  window.addEventListener('resize', calcTableHeight)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', calcTableHeight)
+})
+
+watch(showSearch, () => calcTableHeight())
+
 getList()
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.review-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  :deep(.el-form--inline .el-form-item) {
+    margin-right: 20px;
+    margin-bottom: 15px;
+  }
+
+  :deep(.el-table) {
+    font-size: 13px;
+
+    .el-table__header th {
+      background-color: #f5f7fa;
+      color: #606266;
+      font-weight: 600;
+    }
+  }
+
+  :deep(.el-pagination) {
+    margin-top: 15px;
+    text-align: right;
+  }
+}
+
+::v-deep .summary-row {
+  background-color: #f5f7fa;
+  font-weight: bold;
+}
+
+::v-deep .summary-row:hover > td {
+  background-color: #f5f7fa !important;
+}
+
 .review-drawer :deep(.el-drawer__body) {
   padding-top: 10px;
 }
@@ -464,6 +554,17 @@ getList()
 .drawer-title {
   font-size: 16px;
   font-weight: 500;
+}
+
+.dialog-project-info {
+  background: #f5f7fa;
+  border-radius: 4px;
+  padding: 12px 16px;
+  p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #303133;
+  }
 }
 
 .error-tip {

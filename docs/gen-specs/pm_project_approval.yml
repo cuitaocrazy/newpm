@@ -2,22 +2,21 @@
 # Tab 1: 基本信息
 # ============================
 basicInfo:
-  tableName: pm_project
-  tableComment: 项目管理表（立项审核视图）
-  className: Project
+  tableName: pm_project_approval
+  tableComment: 立项审核记录
+  className: ProjectApproval
   functionAuthor: ruoyi
-  remark: ""
+  remark: "审核历史记录表，每次审核操作（通过/拒绝/退回）均写入一条记录"
 
 # ============================
-# Tab 2: 字段信息（立项审核涉及的 pm_project 表字段）
+# Tab 2: 字段信息（pm_project_approval 表）
 # ============================
 columns:
-  # === 主键 ===
-  project_id:
-    columnComment: 项目ID
+  approval_id:
+    columnComment: 审核记录主键
     columnType: bigint
     javaType: Long
-    javaField: projectId
+    javaField: approvalId
     isInsert: false
     isEdit: false
     isList: false
@@ -27,155 +26,55 @@ columns:
     htmlType: input
     dictType: ""
 
-  # === 查询条件字段 ===
-  project_name:
-    columnComment: 项目名称
-    columnType: varchar(200)
-    javaType: String
-    javaField: projectName
-    isInsert: false
-    isEdit: false
-    isList: true
-    isQuery: true
-    queryType: LIKE
-    isRequired: false
-    htmlType: input  # 实际使用 el-autocomplete
-    dictType: ""
-
-  project_dept:
-    columnComment: 项目部门
-    columnType: varchar(100)
-    javaType: String
-    javaField: projectDept
-    isInsert: false
-    isEdit: false
-    isList: false  # 列表显示的是 deptName（后端 buildDeptPath 构建）
-    isQuery: true
-    queryType: EQ
-    isRequired: false
-    htmlType: select  # 实际使用 ProjectDeptSelect
-    dictType: ""
-
-  project_category:
-    columnComment: 项目分类
-    columnType: varchar(50)
-    javaType: String
-    javaField: projectCategory
-    isInsert: false
+  project_id:
+    columnComment: 关联项目ID
+    columnType: bigint
+    javaType: Long
+    javaField: projectId
+    isInsert: true
     isEdit: false
     isList: true
     isQuery: true
     queryType: EQ
-    isRequired: false
-    htmlType: select
-    dictType: "sys_xmfl"
-
-  region:
-    columnComment: 一级区域
-    columnType: varchar(50)
-    javaType: String
-    javaField: region
-    isInsert: false
-    isEdit: false
-    isList: false  # 列表不显示一级区域（只查询用）
-    isQuery: true
-    queryType: EQ
-    isRequired: false
-    htmlType: select
-    dictType: "sys_yjqy"
-
-  region_id:
-    columnComment: 二级区域ID
-    columnType: bigint
-    javaType: Long
-    javaField: regionId
-    isInsert: false
-    isEdit: false
-    isList: false  # 列表显示的是 regionName（关联字段）
-    isQuery: true
-    queryType: EQ
-    isRequired: false
-    htmlType: select
+    isRequired: true
+    htmlType: input
     dictType: ""
 
-  project_manager_id:
-    columnComment: 项目经理ID
-    columnType: bigint
-    javaType: Long
-    javaField: projectManagerId
-    isInsert: false
-    isEdit: false
-    isList: false  # 列表显示的是 projectManagerName（LEFT JOIN 获取）
-    isQuery: true
-    queryType: EQ
-    isRequired: false
-    htmlType: select
-    dictType: ""
-
-  market_manager_id:
-    columnComment: 市场经理ID
-    columnType: bigint
-    javaType: Long
-    javaField: marketManagerId
-    isInsert: false
-    isEdit: false
-    isList: false  # 列表显示的是 marketManagerName（LEFT JOIN 获取）
-    isQuery: true
-    queryType: EQ
-    isRequired: false
-    htmlType: select
-    dictType: ""
-
-  project_stage:
-    columnComment: 项目阶段
-    columnType: varchar(50)
-    javaType: String
-    javaField: projectStage
-    isInsert: false
-    isEdit: false
-    isList: true
-    isQuery: false
-    queryType: EQ
-    isRequired: false
-    htmlType: select
-    dictType: "sys_xmjd"
-
-  # === 审核相关字段 ===
   approval_status:
-    columnComment: 审核状态(0-待审核、1-通过、2-拒绝)
+    columnComment: 审核状态(0-待审核 1-审核通过 2-审核拒绝 3-退回待审核)
     columnType: varchar(50)
     javaType: String
     javaField: approvalStatus
-    isInsert: false
+    isInsert: true
     isEdit: true
     isList: true
     isQuery: true
     queryType: EQ
     isRequired: false
-    htmlType: radio
+    htmlType: select
     dictType: "sys_spzt"
 
   approval_reason:
-    columnComment: 审核原因/意见
+    columnComment: 审核意见/拒绝原因/退回原因
     columnType: text
     javaType: String
     javaField: approvalReason
-    isInsert: false
+    isInsert: true
     isEdit: true
-    isList: false
+    isList: true
     isQuery: false
     queryType: EQ
-    isRequired: false  # 拒绝时前端+后端校验必填
+    isRequired: false
     htmlType: textarea
     dictType: ""
 
   approver_id:
     columnComment: 审核人ID
-    columnType: varchar(64)
-    javaType: String
+    columnType: bigint
+    javaType: Long
     javaField: approverId
-    isInsert: false
-    isEdit: false  # 后端自动填充当前登录用户ID
+    isInsert: true
+    isEdit: false
     isList: false
     isQuery: false
     queryType: EQ
@@ -188,8 +87,50 @@ columns:
     columnType: datetime
     javaType: Date
     javaField: approvalTime
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志(0正常 1删除)
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
     isInsert: false
-    isEdit: false  # 后端自动填充当前时间
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
     isList: false
     isQuery: false
     queryType: EQ
@@ -197,30 +138,47 @@ columns:
     htmlType: datetime
     dictType: ""
 
-  create_time:
-    columnComment: 创建时间（申请时间）
-    columnType: datetime
-    javaType: Date
-    javaField: createTime
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
     isInsert: false
     isEdit: false
-    isList: true  # 列表显示为"申请时间"
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
     htmlType: datetime
     dictType: ""
 
-  # === 关联字段（LEFT JOIN 查询获得，非表中实际字段）===
-  # deptName: 部门层级路径（后端 buildDeptPath() 构建，三级及以下用"-"连接）
-  # regionName: 二级区域名称（来自 pm_secondary_region 表）
-  # projectManagerName: 项目经理姓名（来自 sys_user 表）
-  # marketManagerName: 市场经理姓名（来自 sys_user 表）
-  # salesManagerName: 销售负责人姓名（来自 sys_user 表）
-  # customerName: 客户简称（来自 pm_customer 表）
-  # customerContactName: 客户联系人（来自 pm_customer_contact 表）
-  # customerContactPhone: 客户联系方式（来自 pm_customer_contact 表）
-  # participantsNames: 参与人员姓名列表（后端 buildParticipantsNames() 构建）
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
 
 # ============================
 # Tab 3: 生成信息
@@ -230,205 +188,350 @@ genInfo:
   tplWebType: element-plus
   packageName: com.ruoyi.project
   moduleName: project
-  businessName: review
+  businessName: approval
   functionName: 立项审核
-  parentMenuId: 3
+  parentMenuId: 2059  # 项目管理一级菜单
 
-# 实际代码路径：
-# - Controller: ProjectReviewController.java (/project/review/**)
-# - Service: IProjectReviewService.java / ProjectReviewServiceImpl.java
-# - Mapper: ProjectMapper.java (复用项目Mapper)
-#            ProjectMapper.xml (selectReviewList, selectProjectByProjectId)
-# - Vue: ruoyi-ui/src/views/project/review/index.vue
-# - API: ruoyi-ui/src/api/project/review.js
-# - 权限前缀: project:review:*
-#
-# 审核历史记录（辅助模块）：
-# - Controller: ProjectApprovalController.java (/project/approval/**)
-# - Domain: ProjectApproval.java (pm_project_approval 表)
-# - Mapper: ProjectApprovalMapper.xml
-# - Vue: ruoyi-ui/src/views/project/approval/index.vue (代码生成原始CRUD，非业务工作台)
-# - API: ruoyi-ui/src/api/project/approval.js
+# ============================
+# 实际代码路径
+# ============================
+# Controller:  ProjectApprovalController.java  → /project/approval/**
+# Service:     IProjectApprovalService.java / ProjectApprovalServiceImpl.java
+# Domain:      ProjectApproval.java（pm_project_approval 表实体）
+# Mapper:      ProjectApprovalMapper.xml
+# Vue 工作台:  ruoyi-ui/src/views/project/approval/index.vue（审核工作台，非普通CRUD页面）
+# API:         ruoyi-ui/src/api/project/approval.js
+# 权限前缀:    project:approval:*
 
 # ============================
 # 定制需求（超出标准模板的组件/交互/接口需求）
 # ============================
 customizations:
 
-  # ========== 查询条件定制 ==========
-  list_query_conditions:
-    intent: "8个查询条件，使用通用选择器组件，默认查询待审核状态"
+  # --------------------------------------------------
+  # 1. 审核工作台：列表页面
+  # --------------------------------------------------
+  approval_workbench_list:
+    intent: "审核工作台：查询项目列表（来自 pm_project）、合计行、动态表格高度"
     component:
-      type: custom
-      spec: "查询表单使用 ProjectDeptSelect、DictSelect、UserSelect、SecondaryRegionSelect 等通用组件"
-    bindTo: page
+      type: "custom"
+      spec: |
+        容器与布局：
+        - div class="app-container approval-container"
+        - approval-container flex 列布局（height: 100%，flex-direction: column）
+        - 分页固定底部
+
+        el-table 属性：border stripe :height="tableHeight" :row-class-name="tableRowClassName"
+
+        数据加载：getList() 同时调用两个接口（Promise.all）：
+        1. getApprovalProjectList(queryParams) → GET /project/approval/projectList
+           - 后端委托 projectService.selectProjectList(project) 查询 pm_project 表
+        2. getApprovalProjectSummary(queryParams) → GET /project/approval/projectSummary
+           - 后端委托 projectService.selectProjectSummary(project) 聚合预算合计
+
+        合计行（summary row）：
+        - 当 rows.length > 0 时，在列表最前面插入一个合计行对象：
+          { isSummaryRow: true, projectBudget: formatAmount(summaryRes.data.projectBudget) }
+        - tableRowClassName：isSummaryRow 返回 'summary-row'
+        - 合计行只在"序号"列显示"合计"文字（加粗），在"项目预算(元)"列显示格式化后的金额（加粗）
+        - 其余列对合计行不渲染（v-if="!scope.row.isSummaryRow"）
+        - summary-row 样式：background-color: #f5f7fa; font-weight: bold
+        - summary-row:hover 保持背景色不变
+
+        列展示顺序（13列+操作列）：
+        1.  序号（width=55, fixed="left"）：合计行显示"合计"，其他行显示 $index
+        2.  项目名称（min-width=200, fixed="left", show-overflow-tooltip）
+        3.  项目编号（min-width=160, show-overflow-tooltip，无则显示 '-'）
+        4.  项目分类（min-width=120, dict-tag :options="sys_xmfl"）
+        5.  行业（min-width=100, dict-tag :options="industry"）
+        6.  区域（min-width=100, dict-tag :options="sys_yjqy"）
+        7.  项目状态（min-width=100, dict-tag :options="sys_xmzt"）
+        8.  审核状态（min-width=110, dict-tag :options="sys_spzt"）
+        9.  项目部门（min-width=130, show-overflow-tooltip）：调用前端 getDeptName(scope.row.projectDept)
+        10. 项目经理（min-width=90, prop="projectManagerName"）
+        11. 申请人（min-width=90, prop="createBy"）
+        12. 申请时间（min-width=110, parseTime 格式化 '{y}-{m}-{d}'）
+        13. 项目预算(元)（min-width=130, align="right"）：formatAmount 格式化，合计行加粗
+        14. 操作（width=120, fixed="right"）：
+            - 待审核(status='0') 或 退回待审核(status='3')：显示"审核"按钮（link primary）
+            - 审核通过(status='1')：显示"退回"按钮（link warning）
+            - 审核拒绝(status='2')：不显示操作按钮
+            - 权限：v-hasPermi="['project:approval:approve']"
+
+        格式化函数：
+        - formatAmount(val)：Number(val).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})，null/空返回 '-'
+
+        动态表格高度：
+        - tableHeight = ref(600)
+        - calcTableHeight()：windowHeight - (showSearch?160:0) - 50(toolbar) - 50(pagination) - 120(padding)
+        - onMounted + resize 监听 + onUnmounted 移除 + watch(showSearch)
+
+        useDict 依赖（5个）：sys_spzt, sys_xmfl, industry, sys_yjqy, sys_xmzt
+    bindTo: "projectList"
     service:
-      endpoint: "GET /project/review/list"
-      source: "ProjectReviewServiceImpl.selectReviewList() → ProjectMapper.selectReviewList"
-      returns: "TableDataInfo<Project>"
+      endpoint: "GET /project/approval/projectList  +  GET /project/approval/projectSummary"
+      source: "ProjectApprovalController 委托给 IProjectService"
+      returns: "TableDataInfo<Project>  +  AjaxResult<Map>"
       newApi: false
     notes: |
-      查询条件字段（8个）：
-      1. 项目名称 - el-autocomplete, queryProjectNames 联想（调 /project/project/list, pageSize=10）
-      2. 项目部门 - ProjectDeptSelect 组件, width=200px
-      3. 项目分类 - dict-select, dict-type="sys_xmfl"
-      4. 一级区域 - dict-select, dict-type="sys_yjqy"（联动二级区域）
-      5. 二级区域 - secondary-region-select, :region-dict-value="queryParams.region", filterable
-      6. 项目经理 - user-select, post-code="pm"
-      7. 市场经理 - user-select, post-code="scjl"
-      8. 审核状态 - dict-select, dict-type="sys_spzt", 默认值 '0'（待审核）
+      审核工作台查询的是 pm_project 表（非 pm_project_approval），通过代理端点保持权限统一。
+      列表默认无审核状态过滤，用户可以通过查询条件筛选。
 
-      重置时 approvalStatus 重置回 '0'（不清空为 null）
-
-  # ========== 列表显示定制 ==========
-  list_table_columns:
-    intent: "列表显示13列+操作列，关联字段由后端 LEFT JOIN 和 buildDeptPath/buildParticipantsNames 构建"
+  # --------------------------------------------------
+  # 2. 查询条件
+  # --------------------------------------------------
+  search_form:
+    intent: "7个查询条件：项目名称 remote select、编号文本输入、5个下拉选；label-width 100px"
     component:
-      type: custom
-      spec: "表格列显示项目基本信息和审核状态"
-    bindTo: table
-    service: null
+      type: "custom"
+      spec: |
+        el-form :inline="true" label-width="100px" v-show="showSearch"
+
+        查询字段（按顺序）：
+        1. 项目名称（el-select remote filterable clearable, style="width:200px"）：
+           - :remote-method="remoteQueryProjectNames" :loading="loadingProjectNames"
+           - queryParams.projectName（String）
+           - el-option v-for="item in projectNameOptions"
+           - remoteQueryProjectNames(query)：调用 searchProjects(query)（来自 @/api/project/project）
+             返回 res.data.map(p => ({ value: p.projectName, label: p.projectName }))
+
+        2. 项目编号（el-input clearable, @keyup.enter="handleQuery", style="width:200px"）
+           - queryParams.projectCode
+
+        3. 项目分类（dict-select, dict-type="sys_xmfl", style="width:200px"）
+           - queryParams.projectCategory
+
+        4. 行业（dict-select, dict-type="industry", style="width:200px"）
+           - queryParams.industry
+
+        5. 区域（dict-select, dict-type="sys_yjqy", style="width:200px"）
+           - queryParams.region
+
+        6. 项目状态（dict-select, dict-type="sys_xmzt", style="width:200px"）
+           - queryParams.projectStatus
+
+        7. 审核状态（dict-select, dict-type="sys_spzt", style="width:200px"）
+           - queryParams.approvalStatus，默认 null（不过滤，显示全部）
+           - 重置时 approvalStatus 清空为 null（不强制重置为 '0'）
+
+        查询按钮："搜索"（type=primary icon=Search），重置按钮："重置"（icon=Refresh）
+
+        queryParams 默认值：
+        { pageNum:1, pageSize:10, projectName:null, projectCode:null, projectCategory:null,
+          industry:null, region:null, projectStatus:null, approvalStatus:null }
+
+        工具栏：仅 right-toolbar（showSearch 开关），无新增/导出按钮
+    bindTo: "queryParams"
+    service:
+      endpoint: "GET /project/project/search?projectName=xxx"
+      source: "searchProjects API，来自 @/api/project/project，用于项目名称 remote search"
+      returns: "{ data: [{ projectName }] }"
+      newApi: false
     notes: |
-      列顺序（14列）：
-      1. 序号（width=55, type="index", center）
-      2. 项目名称（min-width=150, el-link 可点击触发 handleReview 打开审核抽屉, show-overflow-tooltip）
-      3. 项目部门（min-width=120, prop="deptName", show-overflow-tooltip）
-      4. 项目分类（width=120, dict-tag :options="sys_xmfl"）
-      5. 行业（width=100, dict-tag :options="industry"）
-      6. 二级区域（width=100, prop="regionName", show-overflow-tooltip）
-      7. 项目阶段（width=100, dict-tag :options="sys_xmjd"）
-      8. 审核状态（width=100, dict-tag :options="sys_spzt"）
-      9. 项目经理（min-width=100, prop="projectManagerName"）
-      10. 市场经理（min-width=100, prop="marketManagerName"）
-      11. 申请人（width=100, prop="createBy"）
-      12. 申请时间（width=160, prop="createTime", parseTime 格式化）
-      13. 操作（width=120, fixed="right"）— 仅一个"审核"按钮
+      项目名称使用 el-select remote（非 el-autocomplete），与项目管理列表页保持一致。
+      searchProjects 来自 @/api/project/project，非 approval 模块 API。
 
-      操作列：
-      - "审核"按钮：link type="primary", icon="Edit"
-      - 权限：v-hasPermi="['project:review:approve']"
-      - 点击触发 handleReview(row)，打开审核抽屉
-
-      useDict 依赖（6个）：
-      sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, industry
-
-      无合计行、无 formatAmount/formatWorkload、无 calcTableHeight/pagination固定
-
-  # ========== 审核抽屉定制 ==========
-  approval_drawer:
-    intent: "审核详情使用 el-drawer 展示，右侧打开，包含项目完整信息 + 审核表单"
+  # --------------------------------------------------
+  # 3. 部门名称前端构建
+  # --------------------------------------------------
+  dept_name_display:
+    intent: "前端 getDeptName() 根据 deptId 从缓存的部门列表中构建层级路径"
     component:
-      type: el-drawer
+      type: "custom"
+      spec: |
+        在 onMounted 中调用 loadDeptTree()：
+        - 调用 getDeptTree()（来自 @/api/project/project）
+        - 将返回的平铺部门列表存入 deptFlatList: ref([])
+
+        getDeptName(deptId) 函数：
+        1. deptId 为空返回 '-'
+        2. parseInt(deptId) 在 deptFlatList 中查找对应部门
+        3. 未找到返回 '-'
+        4. 取 dept.ancestors.split(',') 过滤空值和 '0'
+        5. 从 index=1 开始（跳过根部门）逐个查找祖先部门名称，push 到 pathDepts
+        6. 最后 push 当前部门名称
+        7. join('-') 返回，如"研发部-后端组"
+
+        响应式变量：const deptFlatList = ref([])
+    bindTo: "projectDept"
+    service:
+      endpoint: "GET /project/project/deptTree"
+      source: "getDeptTree，来自 @/api/project/project"
+      returns: "{ data: [{ deptId, deptName, ancestors, parentId }] }（平铺列表）"
+      newApi: false
+    notes: |
+      getDeptTree 返回的是平铺列表（非树形结构），此处直接用于前端路径构建，无需 handleTree 转换。
+      loadDeptTree() 在 onMounted 中调用，不影响列表初始加载。
+
+  # --------------------------------------------------
+  # 4. 审核对话框（通过/拒绝）
+  # --------------------------------------------------
+  approve_dialog:
+    intent: "审核对话框：el-dialog 480px，radio 选通过/不通过，拒绝时意见必填"
+    component:
+      type: "el-dialog"
       props:
-        direction: "rtl"
-        size: "60%"
-        closeOnClickModal: true
-        closeOnPressEscape: false
-        class: "review-drawer"
-    bindTo: page
+        title: "项目审核"
+        width: "480px"
+        appendToBody: true
+      spec: |
+        触发：操作列"审核"按钮（待审核 status='0' 或 退回待审核 status='3'）
+
+        弹窗内容：
+        1. 项目信息展示区（background: #f5f7fa, padding: 12px 16px, border-radius: 4px）：
+           <p><strong>项目名称：</strong>{{ currentProject.projectName }}</p>
+           <p><strong>项目编号：</strong>{{ currentProject.projectCode || '-' }}</p>
+
+        2. el-form :model="approveForm" :rules="approveRules" label-width="90px" style="margin-top: 16px"：
+           - 审核结果（prop="approvalStatus"）：el-radio-group
+             * <el-radio value="1">通过</el-radio>
+             * <el-radio value="2">不通过</el-radio>
+             * required 验证：'请选择审核结果'（trigger: change）
+           - 审核意见（prop="approvalReason"）：el-input textarea :rows="3" maxlength="500" show-word-limit
+             * placeholder 动态：status='2' 时"请填写不通过原因（必填）"，否则"审核意见（可选）"
+             * 自定义 validator：status='2' 且值为空 → Error('不通过时必须填写原因')（trigger: blur）
+
+        底部：
+        - 取消（@click="approveOpen = false"）
+        - 确定（type="primary" @click="submitApprove"）
+
+        handleApprove(row)：
+        - currentProject.value = row
+        - approveForm.value = { approvalStatus: '1', approvalReason: '' }（默认选"通过"）
+        - approveOpen.value = true
+
+        submitApprove()：
+        - 表单验证通过后调用 approveProject({ projectId, approvalStatus, approvalReason })
+        - 成功：msgSuccess("审核成功")，关闭弹窗，刷新列表
+
+        响应式变量：approveOpen = ref(false), currentProject = ref({}),
+                    approveForm = ref({ approvalStatus: '1', approvalReason: '' })
+    bindTo: "approvalStatus"
     service:
-      endpoint: "GET /project/review/{projectId}"
-      source: "ProjectReviewServiceImpl.selectProjectById() → ProjectMapper.selectProjectByProjectId"
-      returns: "Project 对象（包含所有关联字段：deptName, regionName, 各经理Name, 客户信息, participantsNames）"
-      newApi: false
-    notes: |
-      抽屉 header：
-      - 标题："审核项目 - {reviewForm.projectName}"
-      - 右侧 el-link：toggleAllCollapse，切换"全部收起"/"全部展开"
-
-      抽屉内容 — el-collapse（默认全部展开 activeNames=['1','2','3','4','5','6']）：
-
-      1. 基本信息（el-descriptions column=2 border）：
-         行业(dict industry)、一级区域(dict sys_yjqy)、二级区域(regionName)、简称(shortName)、
-         立项年份(establishedYear 年)、项目编号(projectCode)、
-         项目名称(span=2)、项目分类(dict sys_xmfl)、项目部门(deptName)、
-         预估工作量(estimatedWorkload 人天)、项目预算(projectBudget 元)、
-         实际工作量(actualWorkload 人天)、项目阶段(dict sys_xmjd)、
-         验收状态(dict sys_yszt)、审核状态(dict sys_spzt)、
-         项目地址(span=2)、项目计划(span=2)、项目描述(span=2)
-
-      2. 人员配置（el-descriptions column=2 border）：
-         项目经理(projectManagerName)、市场经理(marketManagerName)、
-         销售负责人(salesManagerName)、销售联系方式(salesContact)、
-         参与人员(participantsNames, span=2)
-
-      3. 客户信息（el-descriptions column=2 border）：
-         客户名称(customerName)、客户联系人(customerContactName)、
-         客户联系方式(customerContactPhone)、商户联系人(merchantContact)、
-         商户联系方式(merchantPhone)
-
-      4. 时间规划（el-descriptions column=2 border）：
-         启动日期、结束日期、上线日期、验收日期（均用 parseTime 格式化）
-
-      5. 成本预算（el-descriptions column=2 border）：
-         项目费用(projectCost 元)、费用预算(expenseBudget 元)、
-         成本预算(costBudget 元)、人力费用(laborCost 元)、采购成本(purchaseCost 元)
-         注意：项目预算已在基本信息中显示，此处不重复
-
-      6. 备注（el-descriptions column=1）：
-         备注(remark)
-
-      审核表单（el-divider 分隔后）：
-      - el-form, label-width="100px"
-      - 审核意见：el-input type="textarea" rows=3, placeholder="请输入审核意见（拒绝时必填）"
-      - 绑定 reviewForm.approvalReason
-      - 自定义错误显示：:class="{ 'is-error': showReasonError }"
-      - 输入时自动清除错误提示
-      - transition 包裹错误提示（WarningFilled icon + "拒绝审核时必须填写审核意见"）
-
-      footer slot：
-      - 通过（type=success）→ submitApprove('1')
-      - 拒绝（type=danger）→ submitApprove('2')
-      - 取消 → cancelReview()
-
-  # ========== 审核逻辑定制 ==========
-  approval_logic:
-    intent: "审核通过/拒绝后，同时更新 pm_project 表和插入 pm_project_approval 表（双写策略），并异步发送邮件通知"
-    component:
-      type: custom
-      spec: "前端校验 + 后端事务处理"
-    bindTo: null
-    service:
-      endpoint: "POST /project/review/approve"
-      source: "ProjectReviewController.approve() → ProjectReviewServiceImpl.approveProject()"
+      endpoint: "POST /project/approval/approve"
+      source: "ProjectApprovalController.approve() → ProjectApprovalServiceImpl.approveProject()"
       returns: "AjaxResult"
       newApi: false
     notes: |
-      前端 submitApprove(approvalStatus) 逻辑：
-      1. 拒绝时校验 approvalReason 非空（showReasonError + scrollIntoView）
-      2. confirm 弹窗确认
-      3. 调用 approveProject({ projectId, approvalStatus, approvalReason })
-      4. 成功后刷新列表、关闭抽屉
+      后端 approveProject() 事务处理（@Transactional）：
+      1. 更新 pm_project 表（approval_status, approval_reason, approver_id(String), approval_time, update_by, update_time）
+      2. 插入 pm_project_approval 表（project_id, approval_status, approval_reason, approver_id(Long), approval_time, create_time）
+      注意：approverId 类型不一致——pm_project.approver_id 为 varchar，保存 String.valueOf(userId)；
+             pm_project_approval.approver_id 为 bigint，保存 SecurityUtils.getUserId()
 
-      后端 approveProject(@Transactional) 双写逻辑：
-      1. 更新 pm_project 表（保存最新审核状态）：
-         - approval_status, approval_reason, approver_id(String), approval_time, update_by, update_time
-      2. 插入 pm_project_approval 表（保存审核历史）：
-         - project_id, approval_status, approval_reason, approver_id(Long), approval_time, create_by, create_time
-      3. 异步发送邮件通知：
-         - projectEmailService.sendApprovalNotification(projectId, approvalStatus, approvalReason)
-         - 通知项目创建人审核结果（通过/拒绝及原因）
-
-      注意 approverId 类型不一致：
-      - pm_project.approver_id: varchar(64) → 保存为 String
-      - pm_project_approval.approver_id: bigint → 保存为 Long
-
-      审核状态流转（sys_spzt）：
-      - 0 待审核 → 1 已通过（审核通过）
-      - 0 待审核 → 2 已拒绝（审核拒绝）
-      - 2 已拒绝 → 0 待审核（编辑后重新提交，自动触发）
-      - 支持无限次"拒绝→修改→重新提交"循环
-
-      后端校验：
-      - approvalStatus 必须是 "1" 或 "2"
-      - 拒绝时 approvalReason 不能为空
-
-  # ========== 审核历史定制 ==========
-  approval_history:
-    intent: "审核历史记录通过 pm_project_approval 表保存，支持查询项目的所有审核历史"
+  # --------------------------------------------------
+  # 5. 退回对话框
+  # --------------------------------------------------
+  rollback_dialog:
+    intent: "退回对话框：el-dialog 480px，退回原因必填，仅对审核通过的项目生效"
     component:
-      type: custom
-      spec: "每次审核操作都会在 pm_project_approval 表中生成一条记录"
+      type: "el-dialog"
+      props:
+        title: "退回项目"
+        width: "480px"
+        appendToBody: true
+      spec: |
+        触发：操作列"退回"按钮（仅在 approvalStatus='1' 即审核通过时显示）
+
+        弹窗内容：
+        1. 项目信息展示区（同审核对话框样式）：
+           <p><strong>项目名称：</strong>{{ currentProject.projectName }}</p>
+           <p><strong>项目编号：</strong>{{ currentProject.projectCode || '-' }}</p>
+
+        2. el-form :model="rollbackForm" :rules="rollbackRules" label-width="90px" style="margin-top: 16px"：
+           - 退回原因（prop="rollbackReason"）：el-input textarea :rows="3" maxlength="500" show-word-limit
+             placeholder="请填写退回原因"
+             * required 验证：'请填写退回原因'（trigger: blur）
+
+        底部：
+        - 取消（@click="rollbackOpen = false"）
+        - 确认退回（type="warning" @click="submitRollback"）
+
+        handleRollback(row)：
+        - currentProject.value = row
+        - rollbackForm.value = { rollbackReason: '' }
+        - rollbackOpen.value = true
+
+        submitRollback()：
+        - 表单验证通过后调用 rollbackProject({ projectId, rollbackReason })
+        - 成功：msgSuccess("退回成功")，关闭弹窗，刷新列表
+
+        响应式变量：rollbackOpen = ref(false),
+                    rollbackForm = ref({ rollbackReason: '' })
+    bindTo: "approvalStatus"
+    service:
+      endpoint: "POST /project/approval/rollback"
+      source: "ProjectApprovalController.rollback() → ProjectApprovalServiceImpl.rollbackProject()"
+      returns: "AjaxResult"
+      newApi: false
+    notes: |
+      后端 rollbackProject() 事务处理（@Transactional）：
+      1. 校验：查 pm_project 当前 approvalStatus，必须为 '1'（审核通过），否则 throw ServiceException("只有审核通过的项目才能退回")
+      2. 更新 pm_project.approval_status = '3'（退回待审核）
+      3. 插入 pm_project_approval 记录（approval_status='3', approval_reason=rollbackReason）
+
+  # --------------------------------------------------
+  # 6. 审核状态流转与状态值
+  # --------------------------------------------------
+  approval_status_flow:
+    intent: "四态审核状态流转：待审核 → 通过/拒绝 → 退回，状态值对应 sys_spzt 字典"
+    component:
+      type: "custom"
+      spec: |
+        审核状态（sys_spzt 字典）完整值：
+        - '0' = 待审核
+        - '1' = 审核通过
+        - '2' = 审核拒绝
+        - '3' = 退回待审核
+
+        状态流转：
+        - 0（待审核）→ 1（审核通过）：点击"审核"→ 选择"通过" → submitApprove
+        - 0（待审核）→ 2（审核拒绝）：点击"审核"→ 选择"不通过"→ submitApprove（原因必填）
+        - 1（审核通过）→ 3（退回待审核）：点击"退回"→ submitRollback（原因必填）
+        - 2（审核拒绝）→ 重新申请（项目编辑后重新提交，将 approval_status 改回 '0'，与审核模块无关）
+        - 3（退回待审核）→ 1 或 2：项目退回后重新显示"审核"按钮
+
+        操作按钮与状态对应（操作列）：
+        - status='0' 或 status='3'：显示"审核"按钮（link primary）
+        - status='1'：显示"退回"按钮（link warning）
+        - status='2'：不显示操作按钮
+
+        pm_project_approval 记录类型（按 approval_status 区分）：
+        - '1'：审核通过记录
+        - '2'：审核拒绝记录（含拒绝原因）
+        - '3'：退回记录（含退回原因）
+        注意：'0'（待审核）状态不主动插入 approval 记录，项目申请由 pm_project 表本身记录
+    bindTo: "approvalStatus"
+    service: null
+    notes: |
+      pm_project.approval_status 和 pm_project_approval.approval_status 使用相同的状态编码。
+      sys_spzt 字典必须包含 '3'='退回待审核' 值，否则 dict-tag 无法正确显示。
+
+  # --------------------------------------------------
+  # 7. 审核历史记录
+  # --------------------------------------------------
+  approval_history:
+    intent: "pm_project_approval 表存储每次审核操作的历史记录，支持按 projectId 查询"
+    component:
+      type: "custom"
+      spec: |
+        pm_project_approval 表字段：
+        - approval_id（主键）、project_id、approval_status（0/1/2/3）、approval_reason
+        - approver_id（bigint，保存 SecurityUtils.getUserId()）、approval_time
+        - del_flag, create_by, create_time, update_by, update_time, remark
+
+        查询历史接口：GET /project/approval/history/{projectId}
+        - 权限：@ss.hasAnyPermi('project:approval:query,project:project:list,project:project:query')
+        - 实现：selectProjectApprovalList(query where project_id = projectId)
+        - 返回：List<ProjectApproval>（按时间顺序）
+        - 供项目详情/列表页面查看审核历史使用
+
+        标准 CRUD（pm_project_approval 表管理）：
+        - GET  /project/approval/list        → 查询审核记录列表（权限: project:approval:list）
+        - GET  /project/approval/{approvalId} → 查询单条记录（权限: project:approval:query）
+        - POST /project/approval             → 新增（权限: project:approval:add）
+        - PUT  /project/approval             → 修改（权限: project:approval:edit）
+        - DELETE /project/approval/{ids}    → 删除（权限: project:approval:remove）
     bindTo: null
     service:
       endpoint: "GET /project/approval/history/{projectId}"
@@ -436,179 +539,110 @@ customizations:
       returns: "AjaxResult<List<ProjectApproval>>"
       newApi: false
     notes: |
-      pm_project_approval 表结构：
-      - approval_id(主键), project_id, approval_status, approval_reason
-      - approver_id(Long), approval_time
-      - del_flag, create_by, create_time, update_by, update_time, remark
+      selectApprovalHistory 内部复用 selectProjectApprovalList(query with projectId) 实现，
+      无需独立的 Mapper 方法。
 
-      记录类型：
-      - 审核通过：approval_status='1'
-      - 审核拒绝：approval_status='2'
-      - 重新提交：approval_status='0', approval_reason='重新提交审核'
-
-      权限：project:approval:query 或 project:project:list 或 project:project:query
-
-      辅助CRUD页面：
-      - ruoyi-ui/src/views/project/approval/index.vue（代码生成器原始输出，非业务工作台）
-      - ruoyi-ui/src/api/project/approval.js（含 listApproval, getApproval, addApproval, updateApproval, delApproval, approveProject, getApprovalHistory）
-
-  # ========== 后端查询定制 ==========
-  backend_list_query:
-    intent: "审核列表从 pm_project 表查询，关联多张表获取部门、区域、用户名称"
-    component: null
-    bindTo: backend
-    service:
-      endpoint: "GET /project/review/list"
-      source: "ProjectMapper.selectReviewList"
-      returns: "List<Project>"
-      newApi: false
-    notes: |
-      SQL JOIN 关系：
-      - LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
-      - LEFT JOIN sys_user u1 ON p.create_by COLLATE utf8mb4_unicode_ci = u1.user_name（数据权限过滤用）
-      - LEFT JOIN sys_user u2 ON p.project_manager_id = u2.user_id → u2.nick_name AS project_manager_name
-      - LEFT JOIN sys_user u3 ON p.market_manager_id = u3.user_id → u3.nick_name AS market_manager_name
-      - LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id → sr.region_name
-
-      固定过滤：WHERE p.del_flag = '0' AND (p.approval_status = '0' OR p.approval_status IS NULL)
-      数据权限：@DataScope(deptAlias='d', userAlias='u1')
-      排序：ORDER BY COALESCE(p.update_time, p.create_time) DESC
-
-      可选查询条件：projectName(LIKE), projectCode, projectCategory, projectDept, region, regionId,
-                    projectManagerId, marketManagerId, establishedYear
-
-      后端 Service 层额外处理：
-      - 遍历结果调用 buildDeptPath(projectDept) 构建完整部门路径并 setDeptName
-
-  backend_detail_query:
-    intent: "审核详情查询关联多张表获取完整项目信息"
-    component: null
-    bindTo: backend
-    service:
-      endpoint: "GET /project/review/{projectId}"
-      source: "ProjectReviewServiceImpl.selectProjectById() → ProjectMapper.selectProjectByProjectId"
-      returns: "Project（含所有关联字段）"
-      newApi: false
-    notes: |
-      额外 JOIN（在 selectProjectByProjectId 中）：
-      - sys_dept d → dept_name
-      - sys_user u1/u2/u3 → project_manager_name, market_manager_name, sales_manager_name
-      - pm_customer c → customer_name（使用 customer_simple_name 简称）
-      - pm_customer_contact cc → customer_contact_name, customer_contact_phone
-
-      Service 层额外处理：
-      - buildDeptPath(projectDept)：解析 ancestors，跳过前两级（skip(2)），
-        逐个查部门名称，用"-"连接，如"三级部门-四级部门"
-      - buildParticipantsNames(participants)：拆分逗号分隔的用户ID，
-        逐个查 sys_user.nick_name，用", "连接返回
-
-  # ========== 权限控制 ==========
+  # --------------------------------------------------
+  # 8. 权限控制
+  # --------------------------------------------------
   permission_control:
-    intent: "审核权限控制"
+    intent: "审核工作台权限配置：project:approval:* 前缀，approve 操作需独立权限"
     component:
-      type: "v-hasPermi 指令"
-    bindTo: null
+      type: "custom"
+      spec: |
+        ProjectApprovalController 各接口权限：
+        - GET  /list            → @PreAuthorize("@ss.hasPermi('project:approval:list')")
+        - POST /export          → @PreAuthorize("@ss.hasPermi('project:approval:export')")
+        - GET  /{approvalId}   → @PreAuthorize("@ss.hasPermi('project:approval:query')")
+        - POST /               → @PreAuthorize("@ss.hasPermi('project:approval:add')")
+        - PUT  /               → @PreAuthorize("@ss.hasPermi('project:approval:edit')")
+        - DELETE /{ids}        → @PreAuthorize("@ss.hasPermi('project:approval:remove')")
+        - POST /approve        → @PreAuthorize("@ss.hasPermi('project:approval:approve')")
+        - POST /rollback       → @PreAuthorize("@ss.hasPermi('project:approval:approve')")（复用同一权限）
+        - GET  /history/{id}   → @PreAuthorize("@ss.hasAnyPermi('project:approval:query,project:project:list,project:project:query')")
+        - GET  /projectList    → @PreAuthorize("@ss.hasPermi('project:approval:list')")
+        - GET  /projectSummary → @PreAuthorize("@ss.hasPermi('project:approval:list')")
+
+        前端权限指令：
+        - 审核/退回按钮：v-hasPermi="['project:approval:approve']"
+
+        菜单结构：
+        - 父菜单：项目管理（parent_id: 2059）
+        - 菜单名称：立项审核
+        - path: approval
+        - component: project/approval/index
+        - menu_type: C（菜单）
+        - perms: project:approval:list
+
+        按钮权限（6个）：
+        1. 立项审核查询：perms=project:approval:query，order_num=1
+        2. 立项审核新增：perms=project:approval:add，order_num=2
+        3. 立项审核修改：perms=project:approval:edit，order_num=3
+        4. 立项审核删除：perms=project:approval:remove，order_num=4
+        5. 立项审核导出：perms=project:approval:export，order_num=5
+        6. 立项审核操作：perms=project:approval:approve，order_num=6（审核/退回操作专用权限）
+    bindTo: "menu"
     service: null
     notes: |
-      权限配置：
-      - 列表查询：project:review:query（后端 @PreAuthorize）
-      - 审核操作：project:review:approve（前后端双重校验）
-      - 前端指令：v-hasPermi="['project:review:approve']"
+      approve 和 rollback 复用同一个权限 project:approval:approve，
+      无需单独设置退回权限，简化权限管理。
 
 # ============================
 # 字典依赖
 # ============================
 dictionaries:
+  sys_spzt:
+    name: 审核状态
+    values: { '0': 待审核, '1': 审核通过, '2': 审核拒绝, '3': 退回待审核 }
+    usage: 查询条件 + 列表显示 + 审核对话框
+
   sys_xmfl:
     name: 项目分类
-    usage: 查询条件 + 列表显示 + 抽屉详情
+    usage: 查询条件 + 列表显示
 
   sys_yjqy:
     name: 一级区域
-    usage: 查询条件（联动二级区域）+ 抽屉详情
+    usage: 查询条件 + 列表显示
 
-  sys_xmjd:
-    name: 项目阶段
-    usage: 列表显示 + 抽屉详情
-
-  sys_spzt:
-    name: 审核状态
-    values: { 0: 待审核, 1: 已通过, 2: 已拒绝 }
-    usage: 查询条件（默认0）+ 列表显示 + 抽屉详情
-
-  sys_yszt:
-    name: 验收状态
-    usage: 抽屉详情
+  sys_xmzt:
+    name: 项目状态
+    usage: 查询条件 + 列表显示
 
   industry:
     name: 行业
-    usage: 列表显示 + 抽屉详情
+    usage: 查询条件 + 列表显示
 
 # ============================
-# 实现总结
+# API 函数清单
 # ============================
-implementation_summary:
-  description: "立项审核功能，基于 pm_project 表查询待审核项目，通过 Drawer 抽屉展示项目详情并执行审核操作，采用双写策略同步更新项目表和审核历史表"
+api_functions:
+  approval_js:
+    file: "ruoyi-ui/src/api/project/approval.js"
+    functions:
+      - "listApproval(query)           → GET  /project/approval/list"
+      - "getApproval(approvalId)        → GET  /project/approval/{approvalId}"
+      - "addApproval(data)              → POST /project/approval"
+      - "updateApproval(data)           → PUT  /project/approval"
+      - "delApproval(approvalId)        → DELETE /project/approval/{approvalId}"
+      - "approveProject(data)           → POST /project/approval/approve"
+      - "getApprovalHistory(projectId)  → GET  /project/approval/history/{projectId}"
+      - "getApprovalProjectList(query)  → GET  /project/approval/projectList"
+      - "getApprovalProjectSummary(query) → GET /project/approval/projectSummary"
+      - "rollbackProject(data)          → POST /project/approval/rollback"
 
-  key_features:
-    - "审核工作台基于 pm_project 表查询（selectReviewList），默认显示待审核项目"
-    - "8个查询条件，使用通用选择器组件（ProjectDeptSelect, DictSelect, UserSelect, SecondaryRegionSelect）"
-    - "列表13列+操作列，项目名称可点击打开审核抽屉"
-    - "审核抽屉 el-drawer（右侧60%），6个可折叠面板展示完整项目信息"
-    - "支持一键全部展开/收起面板"
-    - "审核表单：审核意见（textarea），拒绝时必填（带自定义错误提示和滚动定位）"
-    - "双写策略：同时更新 pm_project（最新状态）+ 插入 pm_project_approval（历史记录）"
-    - "审核后异步发送邮件通知项目创建人"
-    - "审核状态流转：待审核 ↔ 已通过/已拒绝，支持无限次拒绝→修改→重新提交"
-    - "部门显示完整层级路径（后端 buildDeptPath，三级及以下用-连接）"
-    - "参与人员由后端 buildParticipantsNames 构建为逗号分隔的姓名字符串"
-    - "关联字段（经理名称、区域名称、客户信息）由后端 LEFT JOIN 查询获取"
-
-  technical_highlights:
-    - "Composition API（setup script）"
-    - "审核列表 selectReviewList 固定过滤 approval_status='0' OR IS NULL"
-    - "数据权限：@DataScope(deptAlias='d', userAlias='u1')"
-    - "事务处理：approveProject 使用 @Transactional 保证双写一致性"
-    - "异步邮件：projectEmailService.sendApprovalNotification()"
-    - "buildDeptPath：ancestors.split(',') → skip(2) → 逐个查部门名 → join('-')"
-    - "approverId 类型不一致：pm_project 中为 String，pm_project_approval 中为 Long"
-    - "SQL COLLATE utf8mb4_unicode_ci 解决字符集冲突"
-    - "SQL 别名使用下划线格式（region_name）与 MyBatis ResultMap 保持一致"
-    - "审核状态默认查询 '0'，重置时不清空为 null"
-
-  api_functions:
-    review_js:
-      - "listReview(query) → GET /project/review/list"
-      - "getReview(projectId) → GET /project/review/{projectId}"
-      - "approveProject(data) → POST /project/review/approve"
-    approval_js:
-      - "listApproval(query) → GET /project/approval/list"
-      - "getApproval(approvalId) → GET /project/approval/{approvalId}"
-      - "addApproval(data) → POST /project/approval"
-      - "updateApproval(data) → PUT /project/approval"
-      - "delApproval(approvalId) → DELETE /project/approval/{approvalId}"
-      - "approveProject(data) → POST /project/approval/approve"
-      - "getApprovalHistory(projectId) → GET /project/approval/history/{projectId}"
-
-  related_files:
-    frontend:
-      - "ruoyi-ui/src/views/project/review/index.vue（审核工作台主页面）"
-      - "ruoyi-ui/src/views/project/approval/index.vue（审核记录CRUD，代码生成原始页面）"
-      - "ruoyi-ui/src/api/project/review.js（审核工作台API，3个函数）"
-      - "ruoyi-ui/src/api/project/approval.js（审核记录API，7个函数）"
-      - "ruoyi-ui/src/components/ProjectDeptSelect/index.vue"
-      - "ruoyi-ui/src/components/DictSelect/index.vue"
-      - "ruoyi-ui/src/components/UserSelect/index.vue"
-      - "ruoyi-ui/src/components/SecondaryRegionSelect/index.vue"
-    backend:
-      - "ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectReviewController.java"
-      - "ruoyi-project/src/main/java/com/ruoyi/project/controller/ProjectApprovalController.java"
-      - "ruoyi-project/src/main/java/com/ruoyi/project/service/IProjectReviewService.java"
-      - "ruoyi-project/src/main/java/com/ruoyi/project/service/impl/ProjectReviewServiceImpl.java"
-      - "ruoyi-project/src/main/java/com/ruoyi/project/domain/Project.java"
-      - "ruoyi-project/src/main/java/com/ruoyi/project/domain/ProjectApproval.java"
-      - "ruoyi-project/src/main/resources/mapper/project/ProjectMapper.xml（selectReviewList, selectProjectByProjectId）"
-      - "ruoyi-project/src/main/resources/mapper/project/ProjectApprovalMapper.xml"
-    sql:
-      - "pm-sql/init/00_tables_ddl.sql（pm_project, pm_project_approval）"
-      - "pm-sql/init/02_menu_data.sql（立项审核菜单）"
+# ============================
+# 关联文件
+# ============================
+related_files:
+  frontend:
+    - "ruoyi-ui/src/views/project/approval/index.vue（审核工作台主页面）"
+    - "ruoyi-ui/src/api/project/approval.js（审核模块 API，10个函数）"
+  backend:
+    - "ruoyi-project/.../controller/ProjectApprovalController.java"
+    - "ruoyi-project/.../service/IProjectApprovalService.java"
+    - "ruoyi-project/.../service/impl/ProjectApprovalServiceImpl.java"
+    - "ruoyi-project/.../domain/ProjectApproval.java"
+    - "ruoyi-project/.../mapper/ProjectApprovalMapper.xml"
+  sql:
+    - "pm-sql/init/00_tables_ddl.sql（pm_project_approval 表定义）"
+    - "pm-sql/init/02_menu_data.sql（立项审核菜单）"

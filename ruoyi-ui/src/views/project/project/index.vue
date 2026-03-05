@@ -2,14 +2,26 @@
   <div class="app-container project-container">
         <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-autocomplete
+        <el-select
           v-model="queryParams.projectName"
-          :fetch-suggestions="queryProjectNames"
-          placeholder="请输入项目名称"
+          filterable
+          remote
           clearable
-          @keyup.enter="handleQuery"
+          :remote-method="remoteQueryProjectNames"
+          :loading="loadingProjectNames"
+          placeholder="请选择或输入项目名称"
           style="width: 240px"
-        />
+          @keyup.enter="handleQuery"
+          @focus="remoteQueryProjectNames('')"
+          value-key="value"
+        >
+          <el-option
+            v-for="item in projectNameOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
         <el-tree-select
@@ -266,7 +278,7 @@
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
-            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">编辑</el-button>
+            <el-button v-if="scope.row.approvalStatus !== '1'" link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">编辑</el-button>
 
             <!-- 动态合同按钮：有合同显示"查看合同"，无合同显示"添加合同" -->
             <el-button
@@ -380,7 +392,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, listProjectByName, searchProjects } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -440,6 +452,8 @@ const approvalHistory = ref([])
 // 辅助数据源
 const deptTree = ref([])
 const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
+const projectNameOptions = ref([])
+const loadingProjectNames = ref(false)
 
 // 使用 UserSelect 组件的 ref 来获取用户列表
 const projectManagerSelectRef = ref(null)
@@ -601,19 +615,14 @@ function formatAmount(value) {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-/** 项目名称自动完成 */
-function queryProjectNames(queryString, callback) {
-  if (!queryString) {
-    callback([])
-    return
-  }
-
-  // 从当前项目列表中过滤匹配的项目名称
-  const results = projectList.value
-    .filter(project => project.projectName && project.projectName.toLowerCase().includes(queryString.toLowerCase()))
-    .map(project => ({ value: project.projectName }))
-
-  callback(results)
+/** 项目名称远程搜索 */
+function remoteQueryProjectNames(query) {
+  loadingProjectNames.value = true
+  searchProjects(query).then(res => {
+    projectNameOptions.value = (res.data || []).map(p => ({ value: p.projectName, label: p.projectName }))
+  }).finally(() => {
+    loadingProjectNames.value = false
+  })
 }
 
 /** 搜索按钮操作 */

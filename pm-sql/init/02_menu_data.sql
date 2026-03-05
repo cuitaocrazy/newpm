@@ -51,12 +51,12 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('删除', @projectMenuId, 8, '#', '', 1, 0, 'F', '0', '0', 'project:project:remove', '#', 'admin', sysdate(), '', NULL, '');
 
 -- 项目管理 - 隐藏路由
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('编辑项目', @projectRootMenuId, 10, 'list/edit/:projectId(\\d+)', 'project/project/edit', 1, 0, 'C', '1', '0', 'project:project:edit', '#', 'admin', sysdate(), '', NULL, '编辑项目页面', 'ProjectEdit', '/project/list');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('项目详情', @projectRootMenuId, 11, 'list/detail/:projectId(\\d+)', 'project/project/detail', 1, 0, 'C', '1', '0', 'project:project:query', '#', 'admin', sysdate(), '', NULL, '项目详情页面', 'ProjectDetail', '/project/list');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('项目附件管理', @projectRootMenuId, 12, 'list/attachment/:projectId(\\d+)', 'project/project/attachment', 1, 0, 'C', '1', '0', 'project:project:query', '#', 'admin', sysdate(), '', NULL, '项目附件管理页面', 'ProjectAttachment', '/project/list');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('编辑项目', @projectRootMenuId, 10, 'list/edit/:projectId(\\d+)', 'project/project/edit', 1, 0, 'C', '1', '0', 'project:project:edit', '#', 'admin', sysdate(), '', NULL, '编辑项目页面', 'ProjectEdit');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('项目详情', @projectRootMenuId, 11, 'list/detail/:projectId(\\d+)', 'project/project/detail', 1, 0, 'C', '1', '0', 'project:project:query', '#', 'admin', sysdate(), '', NULL, '项目详情页面', 'ProjectDetail');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('项目附件管理', @projectRootMenuId, 12, 'list/attachment/:projectId(\\d+)', 'project/project/attachment', 1, 0, 'C', '1', '0', 'project:project:query', '#', 'admin', sysdate(), '', NULL, '项目附件管理页面', 'ProjectAttachment');
 
 -- ---- 立项审核 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
@@ -89,7 +89,7 @@ VALUES ('编辑', @memberMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:membe
 
 -- ---- 项目阶段变更 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES ('项目阶段变更', @projectRootMenuId, 6, 'projectStageChange', 'project/projectStageChange/index', 1, 0, 'C', '0', '0', 'project:projectStageChange:list', 'swap', 'admin', sysdate(), '', NULL, '项目阶段变更菜单');
+VALUES ('项目阶段变更', @projectRootMenuId, 6, 'projectStageChange', 'project/projectStageChange/index', 1, 0, 'C', '0', '0', 'project:projectStageChange:list', 'log', 'admin', sysdate(), '', NULL, '项目阶段变更菜单');
 SELECT @stageChangeMenuId := LAST_INSERT_ID();
 
 -- 变更、批量变更共用 project:projectStageChange:add（后端两个接口均使用该权限码）
@@ -121,8 +121,8 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('编辑', @companyRevenueMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'revenue:company:edit', '#', 'admin', sysdate(), '', NULL, '');
 
 -- 公司收入确认 - 隐藏路由
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('收入确认详情', @revenueMenuId, 10, 'company/detail/:projectId(\\d+)', 'revenue/company/detail', 1, 0, 'C', '1', '0', 'revenue:company:query', '#', 'admin', sysdate(), '', NULL, '收入确认详情页面', 'RevenueCompanyDetail', '/revenue/company');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('收入确认详情', @revenueMenuId, 10, 'company/detail/:projectId(\\d+)', 'revenue/company/detail', 1, 0, 'C', '1', '0', 'revenue:company:query', '#', 'admin', sysdate(), '', NULL, '收入确认详情页面', 'RevenueCompanyDetail');
 
 -- ---- 团队收入确认 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
@@ -141,8 +141,8 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('删除', @teamRevenueMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'revenue:team:remove', '#', 'admin', sysdate(), '', NULL, '');
 
 -- 团队收入确认 - 隐藏路由
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('团队收入确认详情', @revenueMenuId, 11, 'team/detail/:projectId(\\d+)', 'revenue/team/detail', 1, 0, 'C', '1', '0', 'revenue:team:query', '#', 'admin', sysdate(), '', NULL, '团队收入确认详情页面', 'TeamRevenueDetail', '/revenue/team');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('团队收入确认详情', @revenueMenuId, 11, 'team/detail/:projectId(\\d+)', 'revenue/team/detail', 1, 0, 'C', '1', '0', 'revenue:team:query', '#', 'admin', sysdate(), '', NULL, '团队收入确认详情页面', 'TeamRevenueDetail');
 
 -- ========================================
 -- 合同款项目录
@@ -169,14 +169,14 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('删除', @contractMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:contract:remove', '#', 'admin', sysdate(), '', NULL, '');
 
 -- 合同管理 - 隐藏路由
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('新增合同', @htkxMenuId, 10, 'contract/add', 'project/contract/add', 1, 0, 'C', '1', '0', 'project:contract:add', '#', 'admin', sysdate(), '', NULL, '新增合同页面', 'ContractAdd', '/htkx/contract');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('编辑合同', @htkxMenuId, 11, 'contract/edit/:contractId(\\d+)', 'project/contract/edit', 1, 0, 'C', '1', '0', 'project:contract:edit', '#', 'admin', sysdate(), '', NULL, '编辑合同页面', 'ContractEdit', '/htkx/contract');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('合同详情', @htkxMenuId, 12, 'contract/detail/:contractId(\\d+)', 'project/contract/detail', 1, 0, 'C', '1', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '合同详情页面', 'ContractDetail', '/htkx/contract');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('合同附件', @htkxMenuId, 13, 'contract/attachment/:contractId(\\d+)', 'project/contract/attachment', 1, 0, 'C', '1', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '合同附件页面', 'ContractAttachment', '/htkx/contract');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('新增合同', @htkxMenuId, 10, 'contract/add', 'project/contract/add', 1, 0, 'C', '1', '0', 'project:contract:add', '#', 'admin', sysdate(), '', NULL, '新增合同页面', 'ContractAdd');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('编辑合同', @htkxMenuId, 11, 'contract/edit/:contractId(\\d+)', 'project/contract/edit', 1, 0, 'C', '1', '0', 'project:contract:edit', '#', 'admin', sysdate(), '', NULL, '编辑合同页面', 'ContractEdit');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('合同详情', @htkxMenuId, 12, 'contract/detail/:contractId(\\d+)', 'project/contract/detail', 1, 0, 'C', '1', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '合同详情页面', 'ContractDetail');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('合同附件', @htkxMenuId, 13, 'contract/attachment/:contractId(\\d+)', 'project/contract/attachment', 1, 0, 'C', '1', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '合同附件页面', 'ContractAttachment');
 
 -- ---- 付款里程碑 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
@@ -197,14 +197,14 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('附件', @paymentMenuId, 6, '#', '', 1, 0, 'F', '0', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '');
 
 -- 付款里程碑 - 隐藏路由
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('新增款项', @htkxMenuId, 20, 'payment/add', 'project/payment/form', 1, 0, 'C', '1', '0', 'project:payment:add', '#', 'admin', sysdate(), '', NULL, '新增款项页面', 'PaymentAdd', '/htkx/payment');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('编辑款项', @htkxMenuId, 21, 'payment/edit/:paymentId(\\d+)', 'project/payment/form', 1, 0, 'C', '1', '0', 'project:payment:edit', '#', 'admin', sysdate(), '', NULL, '编辑款项页面', 'PaymentEdit', '/htkx/payment');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('款项详情', @htkxMenuId, 22, 'payment/detail/:paymentId(\\d+)', 'project/payment/detail', 1, 0, 'C', '1', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '款项详情页面', 'PaymentDetail', '/htkx/payment');
-INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)
-VALUES ('款项附件', @htkxMenuId, 23, 'payment/attachment/:paymentId(\\d+)', 'project/payment/attachment', 1, 0, 'C', '1', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '款项附件页面', 'PaymentAttachment', '/htkx/payment');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('新增款项', @htkxMenuId, 20, 'payment/add', 'project/payment/form', 1, 0, 'C', '1', '0', 'project:payment:add', '#', 'admin', sysdate(), '', NULL, '新增款项页面', 'PaymentAdd');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('编辑款项', @htkxMenuId, 21, 'payment/edit/:paymentId(\\d+)', 'project/payment/form', 1, 0, 'C', '1', '0', 'project:payment:edit', '#', 'admin', sysdate(), '', NULL, '编辑款项页面', 'PaymentEdit');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('款项详情', @htkxMenuId, 22, 'payment/detail/:paymentId(\\d+)', 'project/payment/detail', 1, 0, 'C', '1', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '款项详情页面', 'PaymentDetail');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('款项附件', @htkxMenuId, 23, 'payment/attachment/:paymentId(\\d+)', 'project/payment/attachment', 1, 0, 'C', '1', '0', 'project:payment:query', '#', 'admin', sysdate(), '', NULL, '款项附件页面', 'PaymentAttachment');
 
 -- ========================================
 -- 市场管理目录

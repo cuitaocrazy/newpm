@@ -273,6 +273,9 @@ public class Project extends BaseEntity
     @Excel(name = "更新人", sort = 220)
     private String updateByName;
 
+    /** 申请人昵称（关联字段，非数据库字段） */
+    private String createByName;
+
     /** 更新时间（导出用，非数据库字段） */
     @Excel(name = "更新时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss", sort = 230)
     private Date updateTimeDisplay;
@@ -286,7 +289,10 @@ public class Project extends BaseEntity
     public void setUpdateByName(String updateByName) { this.updateByName = updateByName; }
     public String getUpdateByName() { return updateByName; }
 
-    public void setProjectId(Long projectId) 
+    public void setCreateByName(String createByName) { this.createByName = createByName; }
+    public String getCreateByName() { return createByName; }
+
+    public void setProjectId(Long projectId)
     {
         this.projectId = projectId;
     }

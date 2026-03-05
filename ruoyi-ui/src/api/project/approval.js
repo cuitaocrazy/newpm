@@ -59,3 +59,30 @@ export function getApprovalHistory(projectId) {
     method: 'get'
   })
 }
+
+// 立项审核专用项目列表
+export function getApprovalProjectList(query) {
+  return request({
+    url: '/project/approval/projectList',
+    method: 'get',
+    params: query
+  })
+}
+
+// 立项审核项目预算合计
+export function getApprovalProjectSummary(query) {
+  return request({
+    url: '/project/approval/projectSummary',
+    method: 'get',
+    params: query
+  })
+}
+
+// 退回审核通过的项目
+export function rollbackProject(data) {
+  return request({
+    url: '/project/approval/rollback',
+    method: 'post',
+    data: data
+  })
+}

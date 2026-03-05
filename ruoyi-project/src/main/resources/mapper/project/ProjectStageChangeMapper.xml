@@ -56,8 +56,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             COALESCE(u.nick_name, psc.create_by) AS change_by,
             psc.create_time AS change_time
         FROM pm_project p
-        LEFT JOIN pm_project_contract_rel pcr ON p.project_id = pcr.project_id
-        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id
+        LEFT JOIN (
+            SELECT project_id, MIN(contract_id) AS contract_id
+            FROM pm_project_contract_rel
+            WHERE del_flag = '0' AND rel_status = '有效'
+            GROUP BY project_id
+        ) pcr ON p.project_id = pcr.project_id
+        LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
         LEFT JOIN (
             SELECT change_id, project_id, old_stage, new_stage, change_reason, create_by, create_time
             FROM (

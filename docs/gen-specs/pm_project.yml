@@ -53,20 +53,6 @@ columns:
     htmlType: input
     dictType: ""
 
-  project_full_name:
-    columnComment: 项目全称
-    columnType: varchar(500)
-    javaType: String
-    javaField: projectFullName
-    isInsert: true
-    isEdit: true
-    isList: false
-    isQuery: false
-    queryType: LIKE
-    isRequired: false
-    htmlType: textarea
-    dictType: ""
-
   industry:
     columnComment: 行业
     columnType: varchar(50)
@@ -125,8 +111,8 @@ columns:
 
   established_year:
     columnComment: 立项年度
-    columnType: int
-    javaType: Integer
+    columnType: varchar(20)
+    javaType: String
     javaField: establishedYear
     isInsert: true
     isEdit: true
@@ -229,6 +215,20 @@ columns:
     isInsert: true
     isEdit: true
     isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  adjust_workload:
+    columnComment: 调整工作量(人天)
+    columnType: decimal(10,2)
+    javaType: BigDecimal
+    javaField: adjustWorkload
+    isInsert: true
+    isEdit: true
+    isList: false
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -558,7 +558,7 @@ columns:
     dictType: ""
 
   approval_status:
-    columnComment: 审批状态(0待审核/1已通过/2已拒绝)
+    columnComment: 审核状态(0=待审核/1=审核通过/2=审核拒绝/3=退回待审核)
     columnType: varchar(20)
     javaType: String
     javaField: approvalStatus
@@ -600,7 +600,7 @@ columns:
     dictType: ""
 
   region_code:
-    columnComment: 二级区域代码（从pm_secondary_region.region_code获取，用于项目编号生成）
+    columnComment: 一级区域代码（字典:sys_yjqy，用于项目编号生成）
     columnType: varchar(50)
     javaType: String
     javaField: regionCode
@@ -845,7 +845,7 @@ columns:
     isInsert: true
     isEdit: true
     isList: true     # 列表中位于"收入确认年度"之后、"合同状态"之前
-    isQuery: false
+    isQuery: true
     queryType: EQ
     isRequired: false
     htmlType: select
@@ -946,7 +946,7 @@ customizations:
     spec: |
       1. 二级区域（regionId + regionCode 双字段）
          - regionId (bigint): 保存到数据库，用于关联查询
-         - regionCode (varchar): 用于项目编号生成和显示
+         - regionCode (varchar): 一级区域代码（字典:sys_yjqy），用于项目编号生成
          - INSERT/UPDATE 同时保存两个字段
          - 前端提交时包含 regionCode 和 regionId，后端直接保存
 
@@ -992,10 +992,15 @@ customizations:
           - LEFT JOIN pm_project_contract_rel pcr → pcr.contract_id
           - LEFT JOIN pm_contract c → c.contract_name, c.contract_amount, c.contract_status
           - LEFT JOIN sys_user u_upd → u_upd.nick_name AS update_by_name
+          - LEFT JOIN sys_user u1 → u1.nick_name AS project_manager_name
 
       11. Collation 注意事项
           - pm_project 使用 utf8mb4_0900_ai_ci，sys_user 使用 utf8mb4_unicode_ci
           - JOIN 系统表时须显式指定 COLLATE utf8mb4_unicode_ci
+
+      12. adjust_workload（调整工作量）
+          - 数据库字段，默认值 0.00
+          - 当前前端列表/新增/编辑页面未显示，保留供后续功能扩展使用
 
   # ==================
   # 前端字段绑定说明
@@ -1512,19 +1517,29 @@ customizations:
   approval_workflow:
     intent: "项目审核流程"
     spec: |
-      审核状态流转：
+      审核状态流转（字典:sys_spzt）：
       - 新增项目 → 待审核(0)
-      - 审核通过 → 已通过(1)
-      - 审核拒绝 → 已拒绝(2)
+      - 审核通过 → 审核通过(1)
+      - 审核拒绝 → 审核拒绝(2)，必填拒绝原因
+      - 退回 → 退回待审核(3)，已通过项目可退回重新审核
       - 编辑已拒绝项目并提交 → 重新变为待审核(0)，自动生成 pm_project_approval 记录
 
+      ProjectApprovalController 额外接口（/project/approval/）：
+      - POST /approve   → 审批操作，body: { projectId, approvalStatus, approvalReason }
+                          approvalStatus=2时 approvalReason 必填
+      - POST /rollback  → 退回已通过项目，body: { projectId, rollbackReason }
+                          审核状态改为"退回待审核(3)"
+      - GET  /history/{projectId} → 查询项目的完整审核历史（返回 pm_project_approval 记录列表）
+      - GET  /projectList         → 审核专用项目列表（权限: project:approval:list，查 pm_project）
+      - GET  /projectSummary      → 审核列表的预算合计汇总
+
       编辑页面动态按钮：
-      - 已拒绝(2)：按钮"重新提交审核"(RefreshRight)，顶部黄色警告框展示拒绝原因
+      - 审核拒绝(2)：按钮"重新提交审核"(RefreshRight)，顶部黄色警告框展示拒绝原因
       - 其他状态：按钮"保存"(Select)
 
       后端逻辑：
       - ProjectController.edit() 检测原审核状态
-      - 已拒绝项目修改时自动变为待审核
+      - 已拒绝(2)项目修改时自动变为待审核(0)
       - 自动生成 pm_project_approval 审核记录
 
   # ==================

@@ -1,9 +1,18 @@
 import request from '@/utils/request'
 
-// 查询待审核项目列表
+// 查询立项审核列表
 export function listReview(query) {
   return request({
     url: '/project/review/list',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询立项审核列表预算合计
+export function getReviewSummary(query) {
+  return request({
+    url: '/project/review/summary',
     method: 'get',
     params: query
   })
@@ -21,6 +30,15 @@ export function getReview(projectId) {
 export function approveProject(data) {
   return request({
     url: '/project/review/approve',
+    method: 'post',
+    data: data
+  })
+}
+
+// 退回审核通过的项目（改为退回待审核）
+export function rollbackProject(data) {
+  return request({
+    url: '/project/review/rollback',
     method: 'post',
     data: data
   })

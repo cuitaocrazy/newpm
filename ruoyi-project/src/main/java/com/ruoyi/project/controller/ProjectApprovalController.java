@@ -17,8 +17,10 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.domain.ProjectApproval;
 import com.ruoyi.project.service.IProjectApprovalService;
+import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -34,6 +36,9 @@ public class ProjectApprovalController extends BaseController
 {
     @Autowired
     private IProjectApprovalService projectApprovalService;
+
+    @Autowired
+    private IProjectService projectService;
 
     /**
      * 查询立项审核列表
@@ -132,5 +137,40 @@ public class ProjectApprovalController extends BaseController
     {
         List<ProjectApproval> history = projectApprovalService.selectApprovalHistory(projectId);
         return success(history);
+    }
+
+    /**
+     * 立项审核专用项目列表（查 pm_project，权限用 project:approval:list）
+     */
+    @PreAuthorize("@ss.hasPermi('project:approval:list')")
+    @GetMapping("/projectList")
+    public TableDataInfo projectList(Project project)
+    {
+        startPage();
+        List<Project> list = projectService.selectProjectList(project);
+        return getDataTable(list);
+    }
+
+    /**
+     * 立项审核项目预算合计
+     */
+    @PreAuthorize("@ss.hasPermi('project:approval:list')")
+    @GetMapping("/projectSummary")
+    public AjaxResult projectSummary(Project project)
+    {
+        return success(projectService.selectProjectSummary(project));
+    }
+
+    /**
+     * 退回审核通过的项目（审核状态改为"退回待审核"）
+     */
+    @PreAuthorize("@ss.hasPermi('project:approval:approve')")
+    @Log(title = "立项审核", businessType = BusinessType.UPDATE)
+    @PostMapping("/rollback")
+    public AjaxResult rollback(@RequestBody Map<String, Object> params)
+    {
+        Long projectId = Long.valueOf(params.get("projectId").toString());
+        String rollbackReason = params.getOrDefault("rollbackReason", "").toString();
+        return toAjax(projectApprovalService.rollbackProject(projectId, rollbackReason));
     }
 }

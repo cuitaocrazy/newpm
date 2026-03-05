@@ -2,6 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Quick Start](#quick-start)
+- [Build & Run Commands](#build--run-commands)
+- [Module Architecture](#module-architecture)
+- [Backend Patterns](#backend-patterns)
+- [Frontend Patterns](#frontend-patterns)
+- [Configuration Files](#configuration-files)
+- [Database & SQL Management](#database--sql-management)
+- [Code Generation Workflow](#code-generation-workflow)
+- [Project Documentation](#project-documentation)
+- [Development Workflow](#development-workflow)
+- [Common Pitfalls](#common-pitfalls)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+
 ## Project Overview
 
 RuoYi-Vue v3.9.1 — Enterprise admin system with separated frontend/backend, customized for **Project Management (PM)** business.
@@ -152,7 +170,7 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `WorkCalendar` | `pm_work_calendar` | 工作日历 - Work calendar for tracking working days and holidays |
 | `ProjectStageChange` | `pm_project_stage_change` | 项目阶段变更 - Track project stage changes with old/new stage, reason, and timestamp |
 
-**Business Workflows (from `docs/pm/PM需求.md`):**
+**Business Workflows** — full details in `docs/pm/PM需求.md`. Key points below:
 
 1. **Project Initiation (立项申请):**
    - Project manager/market manager submits new project application
@@ -164,8 +182,14 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
    - Status: 待审核 (pending approval)
 
 2. **Project Approval (项目审核):**
-   - Approval status: 0=pending, 1=approved, 2=rejected
-   - Approval actions: 通过 (approve), 不通过 (reject) with comments
+   - Approval status: 0=待审核, 1=审核通过, 2=审核拒绝, 3=退回待审核
+   - Approval actions: 通过 (approve), 不通过 (reject) with comments, 退回 (rollback approved back to 退回待审核)
+   - Extra endpoints on `ProjectApprovalController` beyond standard CRUD:
+     - `POST /approve` — approve/reject with `{ projectId, approvalStatus, approvalReason }` (reason required when rejecting)
+     - `POST /rollback` — rollback an approved project with `{ projectId, rollbackReason }`
+     - `GET /history/{projectId}` — full approval history for a project
+     - `GET /projectList` — list projects using `project:approval:list` permission (queries `pm_project`)
+     - `GET /projectSummary` — aggregated budget summary for filtered projects
 
 3. **Contract Management (合同管理):**
    - Link contracts to projects via `pm_project_contract_rel` (many-to-many)
@@ -227,10 +251,31 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `sys_htzt` - 合同状态 (未签署, 已签署)
 - `sys_fkzt` - 付款状态 (未开未付, 已提交验收材料, 验收材料已审核, 待通知开票, 已通知)
 - `sys_wdlx` - 文档类型
+- `sys_spzt` - 审核状态 (0=待审核, 1=审核通过, 2=审核拒绝, 3=退回待审核)
 - `sys_qrzt` - 确认状态 (1=1-未确认, 2=2-待确认收入, 3=3-已确认收入, 4=4-无法确认)
 - `sys_srqrzt` - 收入确认状态 (0=未确认, 1=已确认, 2=待确认, 3=已确认收入)
 
-**API URL Convention:** Most PM controllers are under `/project/{entity}/**` (e.g., `/project/project/**`, `/project/contract/**`, `/project/customer/**`). Exceptions: `ProjectReviewController` uses `/project/review/**` (approval workflow), company revenue endpoints are nested under `/project/project/revenue/**`, and `TeamRevenueConfirmationController` uses `/revenue/team/**` (different root). `CustomerContact` is managed through `/project/customer/**` (no separate controller). Frontend routes mirror these at `/project/{entity}` with additional `/revenue/company` and `/revenue/team` for revenue views. See controllers in `com.ruoyi.project.controller` and routes in `ruoyi-ui/src/router/` for the full list.
+**API URL Convention:** Most PM controllers are under `/project/{entity}/**`. Full mapping:
+
+| Controller | URL Prefix | Purpose |
+|---|---|---|
+| `ProjectController` | `/project/project/**` | Project CRUD + proxy endpoints |
+| `ProjectApprovalController` | `/project/approval/**` | Approval workflow (立项审核) |
+| `ContractController` | `/project/contract/**` | Contract management |
+| `PaymentController` | `/project/payment/**` | Payment management |
+| `CustomerController` | `/project/customer/**` | Customer + contacts (no separate contact controller) |
+| `AttachmentController` | `/project/attachment/**` | File attachments |
+| `ProjectMemberController` | `/project/member/**` | Project members |
+| `ProjectManagerChangeController` | `/project/managerChange/**` | Manager change records |
+| `ProjectStageChangeController` | `/project/projectStageChange/**` | Stage change records |
+| `SecondaryRegionController` | `/project/secondaryRegion/**` | Secondary regions |
+| `WorkCalendarController` | `/project/workCalendar/**` | Work calendar |
+| `DailyReportController` | `/project/dailyReport/**` | Daily reports |
+| `ProjectStatsController` | `/project/dailyReport/**` | Daily report statistics (shares prefix; endpoints: `/projectStats`, `/projectNameSuggestions`) |
+| `ProjectReviewController` | `/project/review/**` | Company revenue recognition view (收入确认, NOT approval) |
+| `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue confirmation (different root) |
+
+Company revenue endpoints are nested under `/project/project/revenue/**`. Frontend routes mirror these at `/project/{entity}` with additional `/revenue/company` and `/revenue/team` for revenue views.
 
 ## Backend Patterns
 
@@ -465,6 +510,19 @@ Stores in `src/store/modules/`: user, app, permission, settings, tagsView, dict
 
 Registered in `main.ts`: DictTag, Pagination, FileUpload, ImageUpload, ImagePreview, RightToolbar, Editor
 
+### Custom Business Components (`src/components/`)
+
+These project-specific components are used widely across PM views — prefer them over raw Element Plus equivalents:
+
+| Component | Usage |
+|---|---|
+| `DictSelect` | `<dict-select dict-type="sys_xmfl" v-model="..." />` — dropdown from dict type |
+| `UserSelect` | `<user-select post-code="pm" v-model="..." />` — user picker filtered by post code |
+| `SecondaryRegionSelect` | `<secondary-region-select :region-dict-value="primaryRegion" v-model="..." />` — secondary region dropdown dependent on primary |
+| `ProjectSelect` | Project picker with search |
+| `ProjectDeptSelect` | Department tree picker scoped to project depts |
+| `MonthCalendar` | Monthly calendar view (used in daily report calendar) |
+
 ### Type Definitions
 
 All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>`, `BaseEntity`, `PageDomain`
@@ -522,6 +580,25 @@ Database: `ry-vue` (MySQL 8.x, `utf8mb4_unicode_ci`). Init scripts in `pm-sql/in
 - `02_menu_data.sql` — Menu and permission data
 
 Legacy: `sql/` (original RuoYi). Ad-hoc fixes: `pm-sql/fix_*.sql`. New tables → `00_tables_ddl.sql`, menu changes → `02_menu_data.sql`.
+
+**When to create a `fix_*.sql` vs modifying init scripts:**
+- **Modify init scripts** (`00_tables_ddl.sql`, `02_menu_data.sql`): For new installs or when the change is purely additive (new table, new menu entry). These scripts must remain idempotent.
+- **Create `fix_*.sql`**: For data migrations or schema changes that affect existing deployed databases (column type changes, data corrections, backfills). Name clearly: `fix_<feature>_<date>.sql`.
+
+### Running SQL on Remote K3s MySQL
+
+The production database runs in K3s namespace `newpm`, pod `mysql-0` on server `k3s001`.
+
+```bash
+# Remote execution (use file pipe — never -e with Chinese text)
+cat /tmp/migration.sql | ssh k3s001 "kubectl exec -i mysql-0 -n newpm -- mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue"
+
+# Local Docker MySQL (see docker-compose.yml for container)
+CONTAINER=$(docker ps --filter "name=mysql" -q | head -1)
+cat fix_something.sql | docker exec -i $CONTAINER mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue
+```
+
+> **Important**: Always pipe SQL files — never embed Chinese characters in `-e "..."` args (causes encoding issues).
 
 ## Code Generation Workflow
 

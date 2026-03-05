@@ -1,6 +1,7 @@
 package com.ruoyi.project.service.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import com.ruoyi.common.annotation.DataScope;
@@ -66,6 +67,46 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
             }
         }
         return list;
+    }
+
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u1")
+    public Map<String, Object> selectReviewSummary(Project project)
+    {
+        return projectMapper.selectReviewSummary(project);
+    }
+
+    @Override
+    @Transactional
+    public int rollbackProject(Long projectId, String rollbackReason)
+    {
+        Project current = projectMapper.selectProjectByProjectId(projectId);
+        if (current == null) {
+            throw new com.ruoyi.common.exception.ServiceException("项目不存在");
+        }
+        if (!"1".equals(current.getApprovalStatus())) {
+            throw new com.ruoyi.common.exception.ServiceException("只有审核通过的项目才能退回");
+        }
+
+        Project project = new Project();
+        project.setProjectId(projectId);
+        project.setApprovalStatus("0");
+        project.setApprovalReason(rollbackReason);
+        project.setApprovalTime(DateUtils.getNowDate());
+        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
+        project.setUpdateBy(SecurityUtils.getUsername());
+        project.setUpdateTime(DateUtils.getNowDate());
+        projectMapper.updateProject(project);
+
+        ProjectApproval approval = new ProjectApproval();
+        approval.setProjectId(projectId);
+        approval.setApprovalStatus("0");
+        approval.setApprovalReason(rollbackReason);
+        approval.setApproverId(SecurityUtils.getUserId());
+        approval.setApprovalTime(DateUtils.getNowDate());
+        approval.setCreateBy(SecurityUtils.getUsername());
+        approval.setCreateTime(DateUtils.getNowDate());
+        return projectApprovalMapper.insertProjectApproval(approval);
     }
 
     /**

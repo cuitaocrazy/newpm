@@ -76,4 +76,13 @@ public interface IProjectApprovalService
      * @return 审核历史列表（按时间倒序）
      */
     public List<ProjectApproval> selectApprovalHistory(Long projectId);
+
+    /**
+     * 退回已通过审核的项目（审核状态改为"退回待审核"）
+     *
+     * @param projectId      项目ID
+     * @param rollbackReason 退回原因
+     * @return 结果
+     */
+    public int rollbackProject(Long projectId, String rollbackReason);
 }

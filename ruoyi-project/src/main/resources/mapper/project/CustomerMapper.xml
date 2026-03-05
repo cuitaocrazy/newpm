@@ -68,6 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_dict_data d2 on c.region COLLATE utf8mb4_unicode_ci = d2.dict_value and d2.dict_type = 'sys_yjqy'
         left join sys_user u on c.sales_manager_id = u.user_id
         <where>
+            c.del_flag = '0'
             <if test="customerSimpleName != null  and customerSimpleName != ''"> and c.customer_simple_name like concat('%', #{customerSimpleName}, '%')</if>
             <if test="industry != null  and industry != ''"> and c.industry = #{industry}</if>
             <if test="region != null  and region != ''"> and c.region = #{region}</if>

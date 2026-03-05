@@ -133,7 +133,8 @@ function setActiveMenu(route: any) {
   // 项目相关页面
   else if (path.includes('list/edit') ||
            path.includes('list/detail') ||
-           path.includes('list/apply')) {
+           path.includes('list/apply') ||
+           path.includes('list/attachment')) {
     route.meta.activeMenu = '/project/list'
   }
   // 公司收入确认详情页

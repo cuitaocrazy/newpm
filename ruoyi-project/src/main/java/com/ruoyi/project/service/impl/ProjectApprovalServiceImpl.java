@@ -7,6 +7,7 @@ import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.project.mapper.ProjectApprovalMapper;
 import com.ruoyi.project.mapper.ProjectMapper;
 import com.ruoyi.project.domain.Project;
@@ -147,5 +148,41 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
         ProjectApproval query = new ProjectApproval();
         query.setProjectId(projectId);
         return projectApprovalMapper.selectProjectApprovalList(query);
+    }
+
+    /**
+     * 退回已通过审核的项目（审核状态改为"退回待审核"）
+     */
+    @Override
+    @Transactional
+    public int rollbackProject(Long projectId, String rollbackReason)
+    {
+        // 校验当前状态必须是"审核通过"
+        Project current = projectMapper.selectProjectByProjectId(projectId);
+        if (current == null) {
+            throw new ServiceException("项目不存在");
+        }
+        if (!"1".equals(current.getApprovalStatus())) {
+            throw new ServiceException("只有审核通过的项目才能退回");
+        }
+
+        // 更新项目审核状态为"退回待审核"
+        Project project = new Project();
+        project.setProjectId(projectId);
+        project.setApprovalStatus("3");
+        project.setApprovalReason(rollbackReason);
+        project.setApprovalTime(new Date());
+        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
+        projectMapper.updateProject(project);
+
+        // 记录退回日志
+        ProjectApproval approval = new ProjectApproval();
+        approval.setProjectId(projectId);
+        approval.setApprovalStatus("3");
+        approval.setApprovalReason(rollbackReason);
+        approval.setApprovalTime(new Date());
+        approval.setApproverId(SecurityUtils.getUserId());
+        approval.setCreateTime(new Date());
+        return projectApprovalMapper.insertProjectApproval(approval);
     }
 }

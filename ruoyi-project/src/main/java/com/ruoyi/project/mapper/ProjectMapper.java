@@ -122,6 +122,11 @@ public interface ProjectMapper
     public List<Project> selectReviewList(Project project);
 
     /**
+     * 查询立项审核列表预算合计
+     */
+    public Map<String, Object> selectReviewSummary(Project project);
+
+    /**
      * 根据部门查询项目列表（用于合同关联，可排除已关联的项目）
      *
      * @param deptId 部门ID

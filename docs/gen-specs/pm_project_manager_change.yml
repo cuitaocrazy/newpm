@@ -1,10 +1,4 @@
 # ============================
-# RuoYi 代码生成规格文件
-# 表名: pm_project_manager_change
-# 生成时间: 2026-02-13
-# ============================
-
-# ============================
 # Tab 1: 基本信息
 # ============================
 basicInfo:
@@ -25,7 +19,7 @@ columns:
     javaField: changeId
     isInsert: false
     isEdit: false
-    isList: true
+    isList: false    # VO列表不展示变更记录ID，以项目为中心展示
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -39,8 +33,8 @@ columns:
     javaField: projectId
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false    # 列表通过 projectName 显示，不直接显示 ID
+    isQuery: true    # 查询条件（远程搜索 el-select，提交 projectId）
     queryType: EQ
     isRequired: true
     htmlType: select
@@ -53,8 +47,8 @@ columns:
     javaField: oldManagerId
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false    # 列表通过 VO 的 oldManagerName 显示
+    isQuery: false   # 查询条件不使用 oldManagerId，使用 currentManagerId（VO字段）
     queryType: EQ
     isRequired: false
     htmlType: select
@@ -67,8 +61,8 @@ columns:
     javaField: newManagerId
     isInsert: true
     isEdit: true
-    isList: true
-    isQuery: true
+    isList: false    # 列表通过 VO 的 currentManagerName 显示
+    isQuery: false
     queryType: EQ
     isRequired: true
     htmlType: select
@@ -81,7 +75,7 @@ columns:
     javaField: changeReason
     isInsert: true
     isEdit: true
-    isList: true
+    isList: true     # 列表展示最新变更原因（来自 VO），show-overflow-tooltip，无值显示"-"
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -117,14 +111,14 @@ columns:
     dictType: ""
 
   create_time:
-    columnComment: 创建时间
+    columnComment: 创建时间（即变更时间）
     columnType: datetime
     javaType: Date
     javaField: createTime
     isInsert: false
     isEdit: false
-    isList: true
-    isQuery: true
+    isList: false    # 列表通过 VO 的 changeTime 字段显示
+    isQuery: false   # 查询条件通过 VO 的 changeTime（daterange）传递，不直接用 createTime
     queryType: BETWEEN
     isRequired: false
     htmlType: datetime
@@ -188,76 +182,236 @@ genInfo:
 # 定制需求（超出标准模板的组件/交互/接口需求）
 # ============================
 customizations:
-  project_autocomplete:
-    intent: "项目选择，按项目名称远程搜索，提交project_id"
-    component:
-      type: el-autocomplete
-      props:
-        fetchSuggestions: "后端远程搜索"
-        valueKey: "projectName"
-        debounce: 300
-        triggerOnFocus: false
-    bindTo: project_id
-    service:
-      endpoint: "GET /project/project/search?projectName={keyword}"
-      source: "复用 ProjectService，新增轻量搜索接口返回 id+name"
-      returns: "[{ projectId, projectName, projectCode }]"
-      newApi: true
-    notes: "查询条件和表单中都使用autocomplete，显示项目名称，提交projectId"
 
-  manager_select:
-    intent: "项目经理下拉选择，数据来源：岗位编码为'pm'的用户昵称"
-    component:
-      type: el-select
-      props:
-        filterable: true
-        clearable: true
-    bindTo:
-      - old_manager_id
-      - new_manager_id
-    service:
-      endpoint: "GET /system/user/listByPost?postCode=pm"
-      source: "复用 SysUserController，需新增按岗位编码查询用户接口"
-      returns: "[{ userId, nickName, userName }]"
-      newApi: true
-    notes: "old_manager_id和new_manager_id共用此接口，显示nickName，提交userId。需要关联sys_user_post和sys_post表，查询post_code='pm'的用户"
+  # ==================
+  # 核心设计理念
+  # ==================
+  design_philosophy:
+    intent: "以项目为中心的变更管理，而非变更记录管理"
+    spec: |
+      列表展示每个项目及其最新一次经理变更信息（ProjectManagerChangeVO），
+      而非逐条展示变更记录。点击"详情"可查看该项目的完整变更历史（时间轴）。
+      不提供独立的变更记录新增/编辑/删除页面，所有变更操作通过 Dialog 完成。
 
-  pagination_fixed_bottom:
-    intent: "分页组件固定在页面底部，即使数据很少也保持在底部位置"
-    date: "2026-02-14"
-    implementation:
-      container:
-        className: "manager-change-container"
-        styles:
-          - "height: 100%"
-          - "display: flex"
-          - "flex-direction: column"
-      table:
-        dynamicHeight: true
-        heightRef: "const tableHeight = ref(600)"
-        heightCalculation: "tableHeight.value = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding"
-        attributes:
-          - "border: 添加表格边框"
-          - "stripe: 添加斑马纹效果"
-          - "style='width: 100%': 确保表格占满容器宽度"
-      lifecycle:
-        onMounted:
-          - "calcTableHeight(): 初始计算表格高度"
-          - "window.addEventListener('resize', calcTableHeight): 监听窗口大小变化"
-          - "loadManagerList(): 加载项目经理列表"
-          - "getList(): 加载数据"
-        onUnmounted:
-          - "window.removeEventListener('resize', calcTableHeight): 移除resize监听"
-        watch:
-          - "showSearch: 搜索框显隐时重新计算表格高度"
-      pagination:
-        position: "紧跟el-table后，对话框之前"
-        styles:
-          - "margin-top: 15px"
-          - "text-align: right"
-      heightParameters:
-        searchHeight: "100px (showSearch为true时)"
-        toolbarHeight: "50px"
-        paginationHeight: "50px"
-        padding: "120px"
-    notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部，提升用户体验。关键是表格设置固定高度而不是自适应内容高度。"
+  # ==================
+  # 后端实现说明
+  # ==================
+  backend_implementation:
+    intent: "后端数据结构与查询逻辑"
+    spec: |
+      1. ProjectManagerChangeVO（视图对象）
+         字段：projectId, projectName, projectCode, projectCreateTime,
+               currentManagerId, currentManagerName（来自 pm_project.project_manager_id）,
+               oldManagerId, oldManagerName（最新变更记录中的 old_manager_id）,
+               changeReason, changeBy, changeByName, changeTime（最新变更的 create_time）
+
+      2. selectProjectListWithLatestChange 核心 SQL
+         - 主表：pm_project p（WHERE p.del_flag = '0'）
+         - 子查询获取每个项目最新变更：
+             SELECT c1.* FROM pm_project_manager_change c1
+             INNER JOIN (SELECT project_id, MAX(create_time) FROM pm_project_manager_change
+                         WHERE del_flag = '0' GROUP BY project_id) c2
+             ON c1.project_id = c2.project_id AND c1.create_time = c2.max_time
+             WHERE c1.del_flag = '0'
+         - JOIN sys_user 解析昵称：u_current（当前经理）、u_old（原经理）、u_changer（变更人）
+         - u_changer 用 create_by COLLATE utf8mb4_unicode_ci = user_name 关联（collation 处理）
+         - 排序：ORDER BY p.create_time DESC
+
+      3. selectProjectChangeHistory
+         - 查询指定项目的所有变更记录（del_flag='0'）
+         - JOIN sys_user 解析 old_manager_name、new_manager_name
+         - ORDER BY pmc.create_time DESC
+
+      4. changeProjectManager（单个变更）
+         - 读取当前 pm_project.project_manager_id 作为 oldManagerId
+         - 插入 pm_project_manager_change 记录
+         - 更新 pm_project.project_manager_id = newManagerId
+         - 权限：project:managerChange:change
+
+      5. batchChangeProjectManager（批量变更）
+         - 循环处理每个 projectId，同上逻辑
+         - 参数：projectIds[], newManagerId, changeReason（可选）
+         - 权限：project:managerChange:batchChange
+
+      6. Collation 注意事项
+         - pm_project_manager_change 使用 utf8mb4_unicode_ci
+         - pm_project 使用 utf8mb4_0900_ai_ci
+         - create_by（varchar）关联 sys_user.user_name 需加 COLLATE utf8mb4_unicode_ci
+
+  # ==================
+  # API 接口说明
+  # ==================
+  api_endpoints:
+    intent: "控制器接口清单（/project/managerChange/）"
+    spec: |
+      GET  /list              → 项目列表（含最新变更信息），返回 ProjectManagerChangeVO 分页
+                                查询参数：projectId, currentManagerId, params.beginChangeTime, params.endChangeTime
+                                权限：project:managerChange:list
+
+      GET  /history/{projectId} → 项目完整变更历史，返回 ProjectManagerChange 列表
+                                权限：project:managerChange:query
+
+      POST /change            → 单个项目变更经理
+                                body JSON: { projectId, newManagerId, changeReason }
+                                权限：project:managerChange:change
+
+      POST /batchChange       → 批量变更项目经理
+                                params: projectIds[]（数组）, newManagerId, changeReason（可选）
+                                权限：project:managerChange:batchChange
+
+      POST /export            → 导出变更记录 Excel
+                                权限：project:managerChange:export
+
+      GET  /{changeId}        → 获取单条变更记录详情
+                                权限：project:managerChange:query
+
+      标准 CRUD（后台管理用，前端页面不直接使用）：
+      POST /      → 新增变更记录（project:managerChange:add）
+      PUT  /      → 修改变更记录（project:managerChange:edit）
+      DELETE /{changeIds} → 删除变更记录（project:managerChange:remove）
+
+  # ==================
+  # 查询表单
+  # ==================
+  query_form:
+    intent: "列表页查询条件"
+    spec: |
+      1. 项目名称（prop="projectId"）
+         - el-select，filterable + remote + reserve-keyword + clearable
+         - :remote-method="remoteSearchProject"，输入触发远程搜索
+         - @visible-change 展开时加载初始项目列表
+         - 选项显示：项目名称（右侧灰色小字显示项目编号）
+         - 提交：projectId（Long）
+         - 数据来源：GET /project/project/search?projectName={keyword}，res.data
+         - style="width: 280px"
+
+      2. 当前经理（prop="currentManagerId"）
+         - el-select，filterable + clearable，style="width: 200px"
+         - 数据来源：getUsersByPost('pm')，GET /project/project/users?postCode=pm，res.data
+         - 显示 nickName，提交 userId
+         - onMounted 加载
+
+      3. 变更时间（daterange）
+         - el-date-picker，type="daterange"，value-format="YYYY-MM-DD"
+         - v-model="daterangeChangeTime"（独立 ref，非 queryParams 字段）
+         - 查询时转为 queryParams.params.beginChangeTime / endChangeTime
+         - style="width: 308px"
+
+  # ==================
+  # 列表设计
+  # ==================
+  list_design:
+    intent: "列表列顺序与展示"
+    spec: |
+      多选列（checkbox）→ 序号 → 项目名称 → 项目编号 → 立项时间 → 当前项目经理
+      → 原项目经理 → 变更原因 → 变更人 → 变更时间 → 操作
+
+      列配置：
+      - 项目名称：align=left, header-align=center, width=220，点击触发 handleDetail(row)（蓝色可点击）
+      - 项目编号：align=center, width=150
+      - 立项时间：align=center, width=110（来自 projectCreateTime，格式 yyyy-MM-dd）
+      - 当前项目经理：align=center, width=120（currentManagerName）
+      - 原项目经理：align=center, width=120（oldManagerName，无值显示"-"）
+      - 变更原因：align=left, min-width=150，show-overflow-tooltip（无值显示"-"）
+      - 变更人：align=center, width=100（changeByName，无值显示"-"）
+      - 变更时间：align=center, width=160（changeTime，无值显示"-"）
+      - 操作：align=center, width=150
+
+      工具栏按钮（el-row）：
+      - 批量变更（primary plain，图标 Edit，:disabled="multiple"，v-hasPermi batchChange）
+      - right-toolbar（显隐搜索）
+
+      操作列按钮：
+      - 详情（link type=primary，v-hasPermi project:managerChange:query）→ handleDetail(row)
+      - 变更（link type=primary，v-hasPermi project:managerChange:change）→ handleChange(row)
+
+  # ==================
+  # 变更 Dialog
+  # ==================
+  change_dialog:
+    intent: "单个/批量变更共用 Dialog"
+    spec: |
+      触发方式：
+      - 单个：操作列"变更"按钮 → handleChange(row)，isBatchChange=false
+      - 批量：工具栏"批量变更"按钮 → handleBatchChange()，isBatchChange=true（需勾选项目）
+
+      Dialog 宽度：600px，:title="changeTitle"（单个："变更项目经理"，批量："批量变更项目经理"）
+
+      表单字段：
+      1. 项目（v-if="!isBatchChange"）：el-tag type=info，显示 currentProject.projectName
+      2. 选中项目（v-if="isBatchChange"）：el-tag 列表，遍历 selectedProjects
+      3. 当前项目经理（v-if="!isBatchChange"）：el-input disabled，显示 currentProject.currentManagerName
+      4. 新项目经理（prop="newManagerId"，必填）：el-select filterable，数据来源 managerList（同查询）
+      5. 变更原因：el-input type=textarea，rows=4，maxlength=500，show-word-limit（选填）
+
+      提交逻辑：
+      - 单个：调用 changeManager({ projectId, newManagerId, changeReason })，POST /change
+      - 批量：调用 batchChangeManager(projectIds[], newManagerId, changeReason)，POST /batchChange（params 格式）
+      - 成功后刷新列表
+
+  # ==================
+  # 详情 Dialog
+  # ==================
+  detail_dialog:
+    intent: "项目信息 + 变更历史时间轴"
+    spec: |
+      触发：操作列"详情"或点击项目名称 → handleDetail(row)
+
+      Dialog 宽度：700px，标题："项目经理变更详情"
+
+      布局：
+      1. 项目信息区（el-descriptions :column=2 border）：
+         - 项目名称、项目编号、当前项目经理、立项时间
+
+      2. 变更历史区（el-timeline）：
+         - 无记录时：el-empty description="暂无变更记录"
+         - 每条记录：el-timeline-item，:timestamp=item.createTime，placement=top
+           el-card 内容：
+           - h4：项目经理变更: {oldManagerName||'无'} → {newManagerName}
+           - p（v-if changeReason）：变更原因: {changeReason}
+           - p 灰色小字：变更人: {createBy}
+
+      数据加载：getProjectChangeHistory(projectId)，GET /history/{projectId}
+
+  # ==================
+  # 分页与布局
+  # ==================
+  layout:
+    intent: "容器布局与分页固定底部"
+    spec: |
+      容器：class="app-container manager-change-container"，height:100%，flex 纵向布局
+
+      表格：
+      - :height="tableHeight"（动态计算）
+      - border + stripe
+      - @selection-change="handleSelectionChange"
+
+      高度计算（calcTableHeight）：
+      - tableHeight = windowHeight - searchHeight(100px when visible) - toolbarHeight(50px)
+                    - paginationHeight(50px) - padding(120px)
+      - onMounted 初始计算，window resize 监听，showSearch 变化时重算
+      - onUnmounted 移除 resize 监听
+
+      分页：v-show="total>0"，紧跟 el-table 后
+
+  # ==================
+  # 数据加载
+  # ==================
+  data_loading:
+    intent: "onMounted 初始化加载顺序"
+    spec: |
+      onMounted：
+      1. calcTableHeight()       → 计算表格高度
+      2. loadManagerList()       → getUsersByPost('pm')，加载项目经理下拉
+      3. loadProjectOptions()    → GET /project/project/search?projectName=''，加载初始项目选项
+      4. getList()               → 加载列表数据
+      window.addEventListener('resize', calcTableHeight)
+
+      loadManagerList：
+        getUsersByPost('pm') → res.data → managerList（用于查询筛选和变更 Dialog）
+
+      loadProjectOptions（初始）：
+        request({ url: '/project/project/search', method: 'get', params: { projectName: '' } }) → res.data
+
+      remoteSearchProject（输入触发）：
+        query 非空时远程搜索；query 为空时显示 loadProjectOptions 结果

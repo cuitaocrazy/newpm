@@ -126,6 +126,15 @@ export function listProjectByName(query) {
   })
 }
 
+// 项目名称远程搜索（精简字段，用于下拉选）
+export function searchProjects(projectName) {
+  return request({
+    url: '/project/project/search',
+    method: 'get',
+    params: { projectName }
+  })
+}
+
 // 根据项目ID查询关联的合同信息
 export function getContractByProjectId(projectId) {
   return request({
