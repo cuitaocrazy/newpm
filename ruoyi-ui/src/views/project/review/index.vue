@@ -22,8 +22,17 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="项目编号" prop="projectCode">
-        <el-input v-model="queryParams.projectCode" placeholder="请输入项目编号" clearable style="width: 240px" @keyup.enter="handleQuery" />
+      <el-form-item label="项目部门" prop="projectDept">
+        <el-tree-select
+          v-model="queryParams.projectDept"
+          :data="deptTree"
+          :props="{ label: 'label', value: 'value', children: 'children' }"
+          placeholder="请选择项目部门"
+          check-strictly
+          clearable
+          filterable
+          style="width: 240px"
+        />
       </el-form-item>
       <el-form-item label="项目分类" prop="projectCategory">
         <dict-select v-model="queryParams.projectCategory" dict-type="sys_xmfl" placeholder="请选择项目分类" clearable style="width: 240px" />
@@ -31,14 +40,17 @@
       <el-form-item label="一级区域" prop="region">
         <dict-select v-model="queryParams.region" dict-type="sys_yjqy" placeholder="请选择一级区域" clearable style="width: 240px" />
       </el-form-item>
-      <el-form-item label="项目状态" prop="projectStatus">
-        <dict-select v-model="queryParams.projectStatus" dict-type="sys_xmzt" placeholder="请选择项目状态" clearable style="width: 240px" />
-      </el-form-item>
-      <el-form-item label="审核状态" prop="approvalStatus">
-        <dict-select v-model="queryParams.approvalStatus" dict-type="sys_spzt" placeholder="请选择审核状态" clearable style="width: 240px" />
+      <el-form-item label="二级区域" prop="regionId">
+        <secondary-region-select :region-dict-value="queryParams.region" v-model="queryParams.regionId" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="项目经理" prop="projectManagerId">
         <user-select v-model="queryParams.projectManagerId" post-code="pm" placeholder="请选择项目经理" clearable filterable style="width: 240px" />
+      </el-form-item>
+      <el-form-item label="市场经理" prop="marketManagerId">
+        <user-select v-model="queryParams.marketManagerId" post-code="scjl" placeholder="请选择市场经理" clearable filterable style="width: 240px" />
+      </el-form-item>
+      <el-form-item label="审核状态" prop="approvalStatus">
+        <dict-select v-model="queryParams.approvalStatus" dict-type="sys_spzt" placeholder="请选择审核状态" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -313,7 +325,7 @@
 
 <script setup name="Review">
 import { listReview, getReviewSummary, getReview, approveProject, rollbackProject } from "@/api/project/review"
-import { searchProjects } from "@/api/project/project"
+import { searchProjects, getDeptTree } from "@/api/project/project"
 import { WarningFilled } from '@element-plus/icons-vue'
 import { parseTime } from "@/utils/ruoyi"
 
@@ -321,6 +333,7 @@ const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_xmzt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_xmzt', 'industry')
 
 const reviewList = ref([])
+const deptTree = ref([])
 const projectNameOptions = ref([])
 const loadingProjectNames = ref(false)
 const loading = ref(true)
@@ -336,12 +349,13 @@ const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
   projectName: null,
-  projectCode: null,
+  projectDept: null,
   projectCategory: null,
   region: null,
-  projectStatus: null,
-  approvalStatus: '0',
+  regionId: null,
   projectManagerId: null,
+  marketManagerId: null,
+  approvalStatus: '0',
 })
 
 const reviewForm = ref({})
@@ -493,6 +507,9 @@ function calcTableHeight() {
 onMounted(() => {
   calcTableHeight()
   window.addEventListener('resize', calcTableHeight)
+  getDeptTree().then(res => {
+    deptTree.value = proxy.handleTree(res.data.map(d => ({ ...d, id: d.deptId, label: d.deptName })), 'id')
+  })
 })
 
 onUnmounted(() => {
