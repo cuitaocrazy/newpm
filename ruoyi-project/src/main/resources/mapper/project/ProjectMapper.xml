@@ -115,8 +115,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                sr.region_name,
-               pcr.contract_id as contractId,
-               c.contract_amount, c.contract_status, ca.contract_name,
+               ca.contract_amount, ca.contract_status, ca.contract_name,
                u_upd.nick_name AS update_by_name,
                u1.nick_name AS project_manager_name
         FROM pm_project p
@@ -228,6 +227,53 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectManagerId != null "> and p.project_manager_id = #{projectManagerId}</if>
             <if test="marketManagerId != null "> and p.market_manager_id = #{marketManagerId}</if>
             <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
+            <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
+            <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
+            <if test="contractStatus != null  and contractStatus != ''"> and ca.contract_status = #{contractStatus}</if>
+        </where>
+    </select>
+
+    <!-- 查询项目合计（全量，不分页，与 selectProjectList 条件一致） -->
+    <select id="selectProjectSummary" parameterType="Project" resultType="java.util.Map">
+        SELECT
+            COALESCE(SUM(p.project_budget), 0)    AS projectBudget,
+            COALESCE(SUM(p.estimated_workload), 0) AS estimatedWorkload,
+            COALESCE(SUM(p.actual_workload), 0)   AS actualWorkload,
+            COALESCE(SUM(ca.contract_amount), 0)  AS contractAmount,
+            COALESCE(SUM(p.confirm_amount), 0)    AS confirmAmount
+        FROM pm_project p
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+        LEFT JOIN (
+            SELECT pcr.project_id,
+                   SUM(c.contract_amount) AS contract_amount,
+                   MAX(c.contract_status) AS contract_status
+            FROM pm_project_contract_rel pcr
+            JOIN pm_contract c ON pcr.contract_id = c.contract_id
+            WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
+            GROUP BY pcr.project_id
+        ) ca ON p.project_id = ca.project_id
+        <where>
+            p.del_flag = '0'
+            <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
+            <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
+            <if test="region != null  and region != ''"> and p.region = #{region}</if>
+            <if test="regionId != null "> and p.region_id = #{regionId}</if>
+            <if test="shortName != null  and shortName != ''"> and p.short_name like concat('%', #{shortName}, '%')</if>
+            <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
+            <if test="projectCategory != null  and projectCategory != ''"> and p.project_category = #{projectCategory}</if>
+            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
+            <if test="projectStage != null  and projectStage != ''"> and p.project_stage = #{projectStage}</if>
+            <if test="acceptanceStatus != null  and acceptanceStatus != ''"> and p.acceptance_status = #{acceptanceStatus}</if>
+            <if test="projectManagerId != null "> and p.project_manager_id = #{projectManagerId}</if>
+            <if test="marketManagerId != null "> and p.market_manager_id = #{marketManagerId}</if>
+            <if test="salesManagerId != null "> and p.sales_manager_id = #{salesManagerId}</if>
+            <if test="teamLeaderId != null "> and p.team_leader_id = #{teamLeaderId}</if>
+            <if test="customerId != null "> and p.customer_id = #{customerId}</if>
+            <if test="approvalStatus != null  and approvalStatus != ''"> and p.approval_status = #{approvalStatus}</if>
+            <if test="industryCode != null  and industryCode != ''"> and p.industry_code = #{industryCode}</if>
+            <if test="regionCode != null  and regionCode != ''"> and p.region_code = #{regionCode}</if>
             <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
             <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and ca.contract_status = #{contractStatus}</if>
