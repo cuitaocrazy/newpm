@@ -51,6 +51,15 @@ public class ProjectServiceImpl implements IProjectService
     }
 
     /**
+     * 查询收入确认汇总（全量筛选，不分页）
+     */
+    @Override
+    public Map<String, Object> selectRevenueSummary(Project project)
+    {
+        return projectMapper.selectRevenueSummary(project);
+    }
+
+    /**
      * 查询项目管理列表
      *
      * @param project 项目管理

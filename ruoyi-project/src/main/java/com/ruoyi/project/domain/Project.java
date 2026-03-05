@@ -275,6 +275,9 @@ public class Project extends BaseEntity
     /** 合同状态（关联字段，非数据库字段） */
     private String contractStatus;
 
+    /** 合同名称（关联字段，非数据库字段，多合同换行拼接） */
+    private String contractName;
+
     /** 部门名称（关联字段，非数据库字段） */
     private String deptName;
 
@@ -943,6 +946,16 @@ public class Project extends BaseEntity
     public String getContractStatus()
     {
         return contractStatus;
+    }
+
+    public void setContractName(String contractName)
+    {
+        this.contractName = contractName;
+    }
+
+    public String getContractName()
+    {
+        return contractName;
     }
 
     public void setDeptName(String deptName)

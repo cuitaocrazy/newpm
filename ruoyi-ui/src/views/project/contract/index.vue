@@ -132,6 +132,7 @@
       v-loading="loading"
       :data="tableDataWithSummary"
       :height="tableHeight"
+      @sort-change="handleSortChange"
       border
       stripe
       style="width: 100%">
@@ -186,7 +187,7 @@
           <dict-tag v-if="!scope.row.isSummary" :options="sys_htzt" :value="scope.row.contractStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="合同签订日期" align="center" prop="contractSignDate" width="120" v-if="columns.contractSignDate.visible">
+      <el-table-column label="合同签订日期" align="center" prop="contractSignDate" width="130" v-if="columns.contractSignDate.visible" sortable="custom" >
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ parseTime(scope.row.contractSignDate, '{y}-{m}-{d}') }}</span>
         </template>
@@ -196,7 +197,7 @@
           <span v-if="!scope.row.isSummary">{{ scope.row.contractPeriod }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="130" v-if="columns.contractAmount.visible">
+      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="130" v-if="columns.contractAmount.visible" sortable="custom" >
         <template #default="scope">
           <span :style="scope.row.isSummary ? 'font-weight: bold; color: #409EFF;' : ''">
             {{ formatAmount(scope.row.contractAmount) }}
@@ -445,6 +446,25 @@ function getList() {
     console.log('总计数据:', summaryData.value)
     loading.value = false
   })
+}
+
+// 排序处理
+const handleSortChange = ({ column, prop, order }) => {
+  if (!order) {
+    // 取消排序
+    queryParams.value.orderByColumn = undefined
+    queryParams.value.isAsc = undefined
+  } else {
+    // 设置排序字段和排序方式
+    // 将驼峰命名转换为下划线命名（后端数据库字段格式）
+    const columnMap = {
+      'contractSignDate': 'contract_sign_date',
+      'contractAmount': 'contract_amount'
+    }
+    queryParams.value.orderByColumn = columnMap[prop] || prop
+    queryParams.value.isAsc = order === 'ascending' ? 'asc' : 'desc'
+  }
+  handleQuery()
 }
 
 /** 查询部门下拉树结构 */

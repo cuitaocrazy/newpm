@@ -22,6 +22,14 @@ public interface ProjectMapper
     public Project selectProjectByProjectId(Long projectId);
 
     /**
+     * 查询收入确认汇总（全量筛选，不分页）
+     *
+     * @param project 查询条件
+     * @return 5个数值字段的合计
+     */
+    public Map<String, Object> selectRevenueSummary(Project project);
+
+    /**
      * 查询项目管理列表
      *
      * @param project 项目管理

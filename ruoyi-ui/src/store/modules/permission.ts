@@ -136,6 +136,14 @@ function setActiveMenu(route: any) {
            path.includes('list/apply')) {
     route.meta.activeMenu = '/project/list'
   }
+  // 公司收入确认详情页
+  else if (path.includes('company/detail')) {
+    route.meta.activeMenu = '/revenue/company'
+  }
+  // 团队收入确认详情页
+  else if (path.includes('team/detail')) {
+    route.meta.activeMenu = '/revenue/team'
+  }
 }
 
 // 动态路由遍历，验证是否具备权限

@@ -1,136 +1,196 @@
 <template>
   <div class="app-container revenue-company-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
-      <el-form-item label="项目名称" prop="projectName">
-        <el-autocomplete
-          v-model="queryParams.projectName"
-          :fetch-suggestions="queryProjectNames"
-          placeholder="请输入项目名称"
-          clearable
-          @keyup.enter="handleQuery"
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="项目部门" prop="projectDept">
-        <el-tree-select
-          v-model="queryParams.projectDept"
-          :data="deptTree"
-          :props="{ label: 'label', value: 'value', children: 'children' }"
-          placeholder="请选择项目部门"
-          check-strictly
-          clearable
-          filterable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="收入确认年度" prop="revenueConfirmYear">
-        <dict-select
-          v-model="queryParams.revenueConfirmYear"
-          dict-type="sys_ndgl"
-          placeholder="请选择收入确认年度"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="项目分类" prop="projectCategory">
-        <dict-select
-          v-model="queryParams.projectCategory"
-          dict-type="sys_xmfl"
-          placeholder="请选择项目分类"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="一级区域" prop="region">
-        <dict-select
-          v-model="queryParams.region"
-          dict-type="sys_yjqy"
-          placeholder="请选择一级区域"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="二级区域" prop="regionId">
-        <secondary-region-select
-          v-model="queryParams.regionId"
-          :region-dict-value="queryParams.region"
-          placeholder="请选择二级区域"
-          clearable
-          filterable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="项目经理" prop="projectManagerId">
-        <user-select
-          ref="projectManagerSelectRef"
-          v-model="queryParams.projectManagerId"
-          post-code="pm"
-          placeholder="请选择项目经理"
-          clearable
-          filterable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="市场经理" prop="marketManagerId">
-        <user-select
-          ref="marketManagerSelectRef"
-          v-model="queryParams.marketManagerId"
-          post-code="scjl"
-          placeholder="请选择市场经理"
-          clearable
-          filterable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="立项年度" prop="establishedYear">
-        <dict-select
-          v-model="queryParams.establishedYear"
-          dict-type="sys_ndgl"
-          placeholder="请选择立项年度"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="项目阶段" prop="projectStage">
-        <dict-select
-          v-model="queryParams.projectStage"
-          dict-type="sys_xmjd"
-          placeholder="请选择项目阶段"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="审核状态" prop="approvalStatus">
-        <dict-select
-          v-model="queryParams.approvalStatus"
-          dict-type="sys_spzt"
-          placeholder="请选择审核状态"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="验收状态" prop="acceptanceStatus">
-        <dict-select
-          v-model="queryParams.acceptanceStatus"
-          dict-type="sys_yszt"
-          placeholder="请选择验收状态"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
-        <dict-select
-          v-model="queryParams.revenueConfirmStatus"
-          dict-type="sys_srqrzt"
-          placeholder="请选择收入确认状态"
-          clearable
-          style="width: 240px"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
+    <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="120px">
+      <el-row :gutter="10">
+        <el-col :span="6">
+          <el-form-item label="项目名称" prop="projectName">
+            <el-select
+              v-model="queryParams.projectName"
+              filterable
+              remote
+              clearable
+              :remote-method="loadProjectNameOptions"
+              :loading="projectNameLoading"
+              placeholder="点击展示全部，输入模糊搜索"
+              @visible-change="(v) => v && loadProjectNameOptions('')"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="opt in projectNameOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="项目部门" prop="projectDept">
+            <el-tree-select
+              v-model="queryParams.projectDept"
+              :data="deptTree"
+              :props="{ label: 'label', value: 'value', children: 'children' }"
+              placeholder="请选择项目部门"
+              check-strictly
+              clearable
+              filterable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="收入确认年度" prop="revenueConfirmYear">
+            <dict-select
+              v-model="queryParams.revenueConfirmYear"
+              dict-type="sys_ndgl"
+              placeholder="请选择收入确认年度"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="项目分类" prop="projectCategory">
+            <dict-select
+              v-model="queryParams.projectCategory"
+              dict-type="sys_xmfl"
+              placeholder="请选择项目分类"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="10">
+        <el-col :span="6">
+          <el-form-item label="一级区域" prop="region">
+            <dict-select
+              v-model="queryParams.region"
+              dict-type="sys_yjqy"
+              placeholder="请选择一级区域"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="二级区域" prop="regionId">
+            <secondary-region-select
+              v-model="queryParams.regionId"
+              :region-dict-value="queryParams.region"
+              placeholder="请选择二级区域"
+              clearable
+              filterable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="项目经理" prop="projectManagerId">
+            <user-select
+              ref="projectManagerSelectRef"
+              v-model="queryParams.projectManagerId"
+              post-code="pm"
+              placeholder="请选择项目经理"
+              clearable
+              filterable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="市场经理" prop="marketManagerId">
+            <user-select
+              ref="marketManagerSelectRef"
+              v-model="queryParams.marketManagerId"
+              post-code="scjl"
+              placeholder="请选择市场经理"
+              clearable
+              filterable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="10">
+        <el-col :span="6">
+          <el-form-item label="立项年度" prop="establishedYear">
+            <dict-select
+              v-model="queryParams.establishedYear"
+              dict-type="sys_ndgl"
+              placeholder="请选择立项年度"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="审核状态" prop="approvalStatus">
+            <dict-select
+              v-model="queryParams.approvalStatus"
+              dict-type="sys_spzt"
+              placeholder="请选择审核状态"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="验收状态" prop="acceptanceStatus">
+            <dict-select
+              v-model="queryParams.acceptanceStatus"
+              dict-type="sys_yszt"
+              placeholder="请选择验收状态"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="项目阶段" prop="projectStage">
+            <dict-select
+              v-model="queryParams.projectStage"
+              dict-type="sys_xmjd"
+              placeholder="请选择项目阶段"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="10">
+        <el-col :span="6">
+          <el-form-item label="合同状态" prop="contractStatus">
+            <dict-select
+              v-model="queryParams.contractStatus"
+              dict-type="sys_htzt"
+              placeholder="请选择合同状态"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
+            <dict-select
+              v-model="queryParams.revenueConfirmStatus"
+              dict-type="sys_qrzt"
+              placeholder="请选择收入确认状态"
+              clearable
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="10">
+        <el-col :span="24">
+          <el-form-item label-width="0">
+            <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
+            <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+            <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['revenue:company:export']">导出</el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
     </el-form>
 
     <!-- 隐藏的 UserSelect 组件用于加载所有用户（显示参与人员需要） -->
@@ -141,141 +201,139 @@
     />
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="warning"
-          plain
-          icon="Download"
-          @click="handleExport"
-          v-hasPermi="['revenue:company:export']"
-        >导出</el-button>
-      </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="revenueList" :height="tableHeight">
-      <el-table-column label="序号" width="55" align="center">
+    <el-table v-loading="loading" :data="revenueList" :height="tableHeight" border>
+      <el-table-column label="序号" width="55" align="center" fixed="left">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
           <span v-else>{{ scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="220">
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="220" fixed="left">
         <template #default="scope">
-          <div v-if="!scope.row.isSummaryRow" class="project-name-cell">{{ scope.row.projectName }}</div>
+          <el-link
+            v-if="!scope.row.isSummaryRow"
+            type="primary"
+            class="project-name-cell"
+            @click="handleRevenueView(scope.row)"
+          >{{ scope.row.projectName }}</el-link>
         </template>
       </el-table-column>
-      <el-table-column label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip>
+      <el-table-column v-if="columns[0].visible" label="项目阶段" align="center" prop="projectStage" min-width="100">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmjd" :value="scope.row.projectStage"/>
+        </template>
+      </el-table-column>
+      <el-table-column v-if="columns[1].visible" label="项目部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getDeptName(scope.row.projectDept) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目经理" align="center" prop="projectManagerId" min-width="100">
+      <el-table-column v-if="columns[2].visible" label="项目经理" align="center" prop="projectManagerId" min-width="100">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目分类" align="center" prop="projectCategory" min-width="120">
+      <el-table-column v-if="columns[3].visible" label="项目分类" align="center" prop="projectCategory" min-width="120">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmfl" :value="scope.row.projectCategory"/>
         </template>
       </el-table-column>
-      <el-table-column label="二级区域" align="center" prop="regionName" min-width="120" show-overflow-tooltip>
+      <el-table-column v-if="columns[4].visible" label="二级区域" align="center" prop="regionName" min-width="120" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.regionName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目预算(元)" align="right" prop="projectBudget" min-width="120">
+      <el-table-column v-if="columns[5].visible" label="项目预算(元)" align="right" prop="projectBudget" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.projectBudget) }}</span>
           <span v-else>{{ formatAmount(scope.row.projectBudget) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="预估工作量" align="center" prop="estimatedWorkload" min-width="100">
+      <el-table-column v-if="columns[6].visible" label="预估工作量（人天）" align="center" prop="estimatedWorkload" min-width="130">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.estimatedWorkload }}</span>
           <span v-else>{{ scope.row.estimatedWorkload }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100">
+      <el-table-column v-if="columns[7].visible" label="实际人天" align="center" prop="actualWorkload" min-width="100">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
           <span v-else>{{ scope.row.actualWorkload }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="合同金额(元)" align="right" prop="contractAmount" min-width="120">
+      <el-table-column v-if="columns[8].visible" label="合同名称" align="left" header-align="center" prop="contractName" min-width="180" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow" style="white-space: pre-line;">{{ scope.row.contractName || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column v-if="columns[9].visible" label="合同金额(元)" align="right" prop="contractAmount" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.contractAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
-      <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100">
+      <el-table-column v-if="columns[10].visible" label="合同状态" align="center" prop="contractStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
+      <el-table-column v-if="columns[11].visible" label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
+      <el-table-column v-if="columns[12].visible" label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
         <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus"/>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_qrzt" :value="scope.row.revenueConfirmStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="确认金额(含税)" align="right" prop="confirmAmount" min-width="120">
+      <el-table-column v-if="columns[13].visible" label="确认金额（元）" align="right" prop="confirmAmount" min-width="130">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.confirmAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.confirmAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="税后金额" align="right" prop="afterTaxAmount" min-width="120">
-        <template #default="scope">
-          <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ formatAmount(scope.row.afterTaxAmount) }}</span>
-          <span v-else>{{ formatAmount(scope.row.afterTaxAmount) }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
+      <el-table-column v-if="columns[14].visible" label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getParticipantsNames(scope.row.participants) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="启动日期" align="center" prop="startDate" width="100" />
-      <el-table-column label="结束日期" align="center" prop="endDate" width="100" />
-      <el-table-column label="验收日期" align="center" prop="acceptanceDate" width="100" />
-      <el-table-column label="审核状态" align="center" prop="approvalStatus" min-width="100">
+      <el-table-column v-if="columns[15].visible" label="启动日期" align="center" prop="startDate" width="100" />
+      <el-table-column v-if="columns[16].visible" label="结束日期" align="center" prop="endDate" width="100" />
+      <el-table-column v-if="columns[17].visible" label="验收日期" align="center" prop="acceptanceDate" width="100" />
+      <el-table-column v-if="columns[18].visible" label="审核状态" align="center" prop="approvalStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="100">
+      <el-table-column v-if="columns[19].visible" label="项目状态" align="center" prop="projectStatus" min-width="100">
         <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmjd" :value="scope.row.projectStage"/>
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmzt" :value="scope.row.projectStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="验收状态" align="center" prop="acceptanceStatus" min-width="100">
+      <el-table-column v-if="columns[20].visible" label="验收状态" align="center" prop="acceptanceStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
         </template>
       </el-table-column>
-      <el-table-column label="更新人" align="center" prop="updateByName" min-width="100" />
-      <el-table-column label="更新时间" align="center" prop="updateTime" width="160" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="150" fixed="right">
+      <el-table-column v-if="columns[21].visible" label="更新人" align="center" prop="updateByName" min-width="100" />
+      <el-table-column v-if="columns[22].visible" label="更新时间" align="center" prop="updateTime" width="160" />
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200" fixed="right">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
             <el-button
-              v-if="scope.row.revenueConfirmStatus === '0' || !scope.row.revenueConfirmStatus"
-              link
-              type="success"
-              icon="Money"
-              @click="handleRevenue(scope.row)"
-              v-hasPermi="['revenue:company:edit']"
-            >收入确认</el-button>
-            <el-button
-              v-else-if="scope.row.revenueConfirmStatus === '1'"
               link
               type="primary"
               icon="View"
               @click="handleRevenueView(scope.row)"
               v-hasPermi="['revenue:company:view']"
             >收入查看</el-button>
+            <el-button
+              link
+              type="success"
+              icon="Money"
+              @click="handleRevenue(scope.row)"
+              v-hasPermi="['revenue:company:edit']"
+            >收入确认</el-button>
           </template>
         </template>
       </el-table-column>
@@ -292,8 +350,8 @@
 </template>
 
 <script setup name="RevenueCompany">
-import { ref, reactive, toRefs, getCurrentInstance } from 'vue'
-import { listRevenue, exportRevenue } from "@/api/revenue/company"
+import { ref, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { listRevenue, getRevenueSummary, exportRevenue } from "@/api/revenue/company"
 import { getDeptTree } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
@@ -302,8 +360,8 @@ const router = useRouter()
 
 const { proxy } = getCurrentInstance()
 
-const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_srqrzt, sys_ndgl, sys_htzt } = proxy.useDict(
-  'sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_srqrzt', 'sys_ndgl', 'sys_htzt'
+const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_qrzt, sys_ndgl, sys_htzt, sys_xmzt } = proxy.useDict(
+  'sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_qrzt', 'sys_ndgl', 'sys_htzt', 'sys_xmzt'
 )
 
 const revenueList = ref([])
@@ -313,7 +371,38 @@ const total = ref(0)
 const tableHeight = ref(600)
 
 const deptTree = ref([])
-const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
+const deptFlatList = ref([])
+
+// 项目名称下拉选项
+const projectNameOptions = ref([])
+const projectNameLoading = ref(false)
+
+// 列显隐配置
+const columns = ref([
+  { key: 0,  label: '项目阶段',       visible: true  },
+  { key: 1,  label: '项目部门',       visible: true  },
+  { key: 2,  label: '项目经理',       visible: true  },
+  { key: 3,  label: '项目分类',       visible: true  },
+  { key: 4,  label: '二级区域',       visible: false },
+  { key: 5,  label: '项目预算(元)',    visible: false },
+  { key: 6,  label: '预估工作量(人天)', visible: false },
+  { key: 7,  label: '实际人天',       visible: false },
+  { key: 8,  label: '合同名称',       visible: true  },
+  { key: 9,  label: '合同金额(元)',    visible: false },
+  { key: 10, label: '合同状态',       visible: true  },
+  { key: 11, label: '收入确认年度',   visible: true  },
+  { key: 12, label: '收入确认状态',   visible: true  },
+  { key: 13, label: '确认金额(元)',    visible: true  },
+  { key: 14, label: '参与人员',       visible: false },
+  { key: 15, label: '启动日期',       visible: true  },
+  { key: 16, label: '结束日期',       visible: true  },
+  { key: 17, label: '验收日期',       visible: false },
+  { key: 18, label: '审核状态',       visible: false },
+  { key: 19, label: '项目状态',       visible: false },
+  { key: 20, label: '验收状态',       visible: true  },
+  { key: 21, label: '更新人',         visible: false },
+  { key: 22, label: '更新时间',       visible: false },
+])
 
 // 使用 UserSelect 组件的 ref 来获取用户列表
 const projectManagerSelectRef = ref(null)
@@ -337,6 +426,7 @@ const data = reactive({
     projectStage: null,
     approvalStatus: null,
     acceptanceStatus: null,
+    contractStatus: null,
     revenueConfirmStatus: null
   }
 })
@@ -346,51 +436,29 @@ const { queryParams } = toRefs(data)
 /** 查询列表 */
 function getList() {
   loading.value = true
-  listRevenue(queryParams.value).then(response => {
-    const list = response.rows
-    const summary = calculateSummary(list)
-    revenueList.value = [summary, ...list] // 合计行在第一行
-    total.value = response.total
+  Promise.all([
+    listRevenue(queryParams.value),
+    getRevenueSummary(queryParams.value)
+  ]).then(([listRes, summaryRes]) => {
+    const summary = {
+      isSummaryRow: true,
+      projectBudget: Number(summaryRes.data?.projectBudget || 0).toFixed(2),
+      estimatedWorkload: Number(summaryRes.data?.estimatedWorkload || 0).toFixed(2),
+      actualWorkload: Number(summaryRes.data?.actualWorkload || 0).toFixed(2),
+      contractAmount: Number(summaryRes.data?.contractAmount || 0).toFixed(2),
+      confirmAmount: Number(summaryRes.data?.confirmAmount || 0).toFixed(2)
+    }
+    revenueList.value = [summary, ...listRes.rows]
+    total.value = listRes.total
     loading.value = false
   })
 }
 
-/** 计算合计行 */
-function calculateSummary(list) {
-  const summary = {
-    isSummaryRow: true,
-    projectBudget: 0,
-    estimatedWorkload: 0,
-    actualWorkload: 0,
-    contractAmount: 0,
-    confirmAmount: 0,
-    afterTaxAmount: 0
-  }
-
-  list.forEach(item => {
-    summary.projectBudget += (item.projectBudget || 0)
-    summary.estimatedWorkload += (item.estimatedWorkload || 0)
-    summary.actualWorkload += (item.actualWorkload || 0)
-    summary.contractAmount += (item.contractAmount || 0)
-    summary.confirmAmount += (item.confirmAmount || 0)
-    summary.afterTaxAmount += (item.afterTaxAmount || 0)
-  })
-
-  // 格式化为两位小数
-  Object.keys(summary).forEach(key => {
-    if (key !== 'isSummaryRow') {
-      summary[key] = Number(summary[key] || 0).toFixed(2)
-    }
-  })
-
-  return summary
-}
-
-/** 格式化金额为千分位，保留2位小数 */
+/** 格式化金额为千分位，保留2位小数；无值时显示 0.00 */
 function formatAmount(amount) {
-  if (amount === null || amount === undefined || amount === '') return ''
+  if (amount === null || amount === undefined || amount === '') return '0.00'
   const num = parseFloat(amount)
-  if (isNaN(num)) return ''
+  if (isNaN(num)) return '0.00'
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
@@ -411,17 +479,6 @@ function handleExport() {
   proxy.download('revenue/export', {
     ...queryParams.value
   }, `收入确认_${new Date().getTime()}.xlsx`)
-}
-
-/** 一级区域变化 */
-function handleRegionChange(regionCode) {
-  queryParams.value.regionId = null
-  provinceList.value = []
-  if (regionCode) {
-    getSecondaryRegions(regionCode).then(response => {
-      provinceList.value = response.data || []
-    })
-  }
 }
 
 /** 加载部门树 */
@@ -522,19 +579,17 @@ function getParticipantsNames(participants) {
   return names.length > 0 ? names.join(', ') : '-'
 }
 
-/** 项目名称自动完成 */
-function queryProjectNames(queryString, callback) {
-  if (!queryString) {
-    callback([])
-    return
-  }
-
-  // 从当前项目列表中过滤匹配的项目名称（排除合计行）
-  const results = revenueList.value
-    .filter(project => !project.isSummaryRow && project.projectName && project.projectName.toLowerCase().includes(queryString.toLowerCase()))
-    .map(project => ({ value: project.projectName }))
-
-  callback(results)
+/** 加载项目名称下拉选项（支持模糊查询，空时加载全部） */
+function loadProjectNameOptions(query = '') {
+  projectNameLoading.value = true
+  listRevenue({ pageNum: 1, pageSize: 200, projectName: query || undefined })
+    .then(res => {
+      const seen = new Set()
+      projectNameOptions.value = (res.rows || [])
+        .filter(row => row.projectName && !seen.has(row.projectName) && seen.add(row.projectName))
+        .map(row => ({ label: row.projectName, value: row.projectName }))
+    })
+    .finally(() => { projectNameLoading.value = false })
 }
 
 /** 初始化下拉选项 */
@@ -563,7 +618,7 @@ function handleRevenueView(row) {
 function calcTableHeight() {
   nextTick(() => {
     const windowHeight = window.innerHeight
-    const searchHeight = showSearch.value ? 200 : 0
+    const searchHeight = showSearch.value ? 255 : 0
     const toolbarHeight = 50
     const paginationHeight = 50
     const padding = 120
@@ -597,9 +652,8 @@ getList()
   display: flex;
   flex-direction: column;
 
-  :deep(.el-form--inline .el-form-item) {
-    margin-right: 20px;
-    margin-bottom: 15px;
+  :deep(.el-form .el-form-item) {
+    margin-bottom: 12px;
   }
 
   :deep(.el-table) {

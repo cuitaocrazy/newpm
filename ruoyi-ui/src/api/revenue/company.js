@@ -26,6 +26,15 @@ export function updateRevenue(data) {
   })
 }
 
+// 查询收入确认汇总（全量筛选，不分页）
+export function getRevenueSummary(query) {
+  return request({
+    url: '/project/project/revenue/summary',
+    method: 'get',
+    params: query
+  })
+}
+
 // 导出收入确认
 export function exportRevenue(query) {
   return request({

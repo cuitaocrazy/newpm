@@ -203,6 +203,16 @@ public class ProjectController extends BaseController
     }
 
     /**
+     * 查询收入确认汇总（全量筛选，不分页）
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:company:list')")
+    @GetMapping("/revenue/summary")
+    public AjaxResult getRevenueSummary(Project project)
+    {
+        return success(projectService.selectRevenueSummary(project));
+    }
+
+    /**
      * 查询公司收入确认列表
      */
     @PreAuthorize("@ss.hasPermi('revenue:company:list')")
