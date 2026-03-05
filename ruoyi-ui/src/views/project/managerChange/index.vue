@@ -280,13 +280,13 @@ function loadManagerList() {
   })
 }
 
-/** 加载所有项目列表（初始） */
-function loadProjectOptions() {
+/** 加载项目列表（支持模糊搜索） */
+function loadProjectOptions(query) {
   projectSearchLoading.value = true
   request({
     url: '/project/project/search',
     method: 'get',
-    params: { projectName: '' }
+    params: { projectName: query || '' }
   }).then(response => {
     projectOptions.value = response.data || []
     projectSearchLoading.value = false
@@ -294,29 +294,19 @@ function loadProjectOptions() {
     projectSearchLoading.value = false
   })
 }
+  }).catch(() => {
+    projectSearchLoading.value = false
+  })
+}
 
 /** 项目远程搜索 */
 function remoteSearchProject(query) {
-  if (query) {
-    projectSearchLoading.value = true
-    request({
-      url: '/project/project/search',
-      method: 'get',
-      params: { projectName: query }
-    }).then(response => {
-      projectOptions.value = response.data || []
-      projectSearchLoading.value = false
-    }).catch(() => {
-      projectSearchLoading.value = false
-    })
-  } else {
-    projectOptions.value = []
-  }
+  loadProjectOptions(query)
 }
 
 /** 下拉框展开时加载全部项目 */
 function handleProjectSelectVisible(visible) {
-  if (visible && projectOptions.value.length === 0) {
+  if (visible) {
     loadProjectOptions()
   }
 }

@@ -5,14 +5,25 @@
         <project-dept-select v-model="queryParams.deptId" placeholder="请选择部门" style="width: 220px" />
       </el-form-item>
       <el-form-item label="项目名称" prop="projectName">
-        <el-autocomplete
+        <el-select
           v-model="queryParams.projectName"
-          :fetch-suggestions="queryProjectNames"
-          placeholder="请输入项目名称"
+          filterable
+          remote
           clearable
-          @keyup.enter="handleQuery"
+          :remote-method="remoteSearchProject"
+          :loading="projectSearchLoading"
+          placeholder="请选择或输入项目名称"
           style="width: 240px"
-        />
+          @keyup.enter="handleQuery"
+          @visible-change="(v) => v && loadProjectOptions()"
+        >
+          <el-option
+            v-for="p in projectOptions"
+            :key="p.projectId"
+            :label="p.projectName"
+            :value="p.projectName"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -129,11 +140,13 @@
 
 <script setup name="ProjectMember">
 import { listProjectMember, getProjectMemberDetail, updateProjectMembers } from "@/api/project/projectMember"
-import request from '@/utils/request'
+import { searchProjects } from "@/api/project/project"
 
 const { proxy } = getCurrentInstance()
 
 const projectList = ref([])
+const projectOptions = ref([])
+const projectSearchLoading = ref(false)
 const memberList = ref([])
 const loading = ref(true)
 const memberLoading = ref(false)
@@ -175,22 +188,16 @@ function getList() {
   })
 }
 
-/** 项目名称自动补全（远程模糊搜索） */
-function queryProjectNames(queryString, callback) {
-  if (!queryString) {
-    callback([])
-    return
-  }
-  request({
-    url: '/project/project/search',
-    method: 'get',
-    params: { projectName: queryString }
-  }).then(response => {
-    const results = (response.data || []).map(item => ({ value: item.projectName }))
-    callback(results)
-  }).catch(() => {
-    callback([])
-  })
+/** 加载项目列表（支持模糊搜索） */
+function loadProjectOptions(query) {
+  projectSearchLoading.value = true
+  searchProjects(query || '').then(res => {
+    projectOptions.value = res.data || []
+  }).finally(() => { projectSearchLoading.value = false })
+}
+
+function remoteSearchProject(query) {
+  loadProjectOptions(query)
 }
 
 /** 搜索按钮操作 */

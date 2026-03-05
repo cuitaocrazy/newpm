@@ -3,17 +3,25 @@
     <!-- 查询区域 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="80px">
       <el-form-item label="项目名称" prop="projectId">
-        <el-autocomplete
-          v-model="projectNameQuery"
-          :fetch-suggestions="queryProjectList"
-          placeholder="请输入项目名称搜索"
+        <el-select
+          v-model="queryParams.projectId"
+          filterable
+          remote
           clearable
-          :debounce="300"
-          :trigger-on-focus="false"
-          @select="handleProjectSelect"
-          @input="handleProjectInput"
-          style="width: 220px"
-        />
+          :remote-method="remoteSearchProject"
+          :loading="projectSearchLoading"
+          placeholder="请选择或输入项目名称"
+          style="width: 240px"
+          @keyup.enter="handleQuery"
+          @visible-change="(v) => v && loadProjectOptions()"
+        >
+          <el-option
+            v-for="p in projectOptions"
+            :key="p.projectId"
+            :label="p.projectName"
+            :value="p.projectId"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="当前阶段" prop="projectStage">
         <el-select v-model="queryParams.projectStage" placeholder="请选择阶段" clearable style="width: 160px">
@@ -174,6 +182,7 @@
 
 <script setup name="ProjectStageChange">
 import { listProjectStageChange, historyByProject, addProjectStageChange, batchChangeStage } from "@/api/project/projectStageChange"
+import { searchProjects } from "@/api/project/project"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
@@ -185,8 +194,8 @@ const showSearch = ref(true)
 const total = ref(0)
 const selectedRows = ref([])
 const multiple = ref(true)
-
-const projectNameQuery = ref('')
+const projectOptions = ref([])
+const projectSearchLoading = ref(false)
 const data = reactive({
   queryParams: {
     pageNum: 1,
@@ -253,23 +262,16 @@ function getList() {
   })
 }
 
-function queryProjectList(keyword, cb) {
-  if (!keyword) { cb([]); return }
-  request({
-    url: '/project/project/list',
-    method: 'get',
-    params: { projectName: keyword, pageSize: 10, pageNum: 1 }
-  }).then(res => {
-    cb((res.rows || []).map(r => ({ value: r.projectName, projectId: r.projectId })))
-  }).catch(() => cb([]))
+/** 加载项目列表（支持模糊搜索） */
+function loadProjectOptions(query) {
+  projectSearchLoading.value = true
+  searchProjects(query || '').then(res => {
+    projectOptions.value = res.data || []
+  }).finally(() => { projectSearchLoading.value = false })
 }
 
-function handleProjectSelect(item) {
-  queryParams.value.projectId = item.projectId
-}
-
-function handleProjectInput() {
-  queryParams.value.projectId = null
+function remoteSearchProject(query) {
+  loadProjectOptions(query)
 }
 
 function handleQuery() {
@@ -279,7 +281,6 @@ function handleQuery() {
 
 function resetQuery() {
   proxy.resetForm('queryRef')
-  projectNameQuery.value = ''
   queryParams.value.projectId = null
   handleQuery()
 }
