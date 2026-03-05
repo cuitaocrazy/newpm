@@ -1,11 +1,13 @@
 package com.ruoyi.project.service.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.ruoyi.common.utils.DateUtils;
@@ -70,7 +72,22 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public List<Project> selectProjectList(Project project)
     {
-        return projectMapper.selectProjectList(project);
+        List<Project> list = projectMapper.selectProjectList(project);
+        if (!list.isEmpty()) {
+            List<Long> ids = list.stream()
+                .map(Project::getProjectId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+            List<Map<String, Object>> details = projectMapper.selectTeamConfirmDetailsByIds(ids);
+            Map<Long, List<Map<String, Object>>> detailMap = details.stream()
+                .collect(Collectors.groupingBy(d -> Long.parseLong(d.get("projectId").toString())));
+            for (Project p : list) {
+                if (p.getProjectId() != null) {
+                    p.setTeamConfirmList(detailMap.getOrDefault(p.getProjectId(), Collections.emptyList()));
+                }
+            }
+        }
+        return list;
     }
 
     @Override
@@ -404,9 +421,20 @@ public class ProjectServiceImpl implements IProjectService
         }
     }
 
+    @Override
+    public List<Map<String, Object>> selectTeamRevenueFlatList(Project project)
+    {
+        return projectMapper.selectTeamRevenueFlatList(project);
+    }
+
+    @Override
+    public Map<String, Object> selectTeamRevenueFlatSummary(Project project)
+    {
+        return projectMapper.selectTeamRevenueFlatSummary(project);
+    }
+
     /**
-     * 同步项目成员到 pm_project_member 表
-     * 从项目的项目经理、市场经理、团队负责人、参与人字段中收集所有用户ID，
+     * 同步项目成员到 pm_project_member 表     * 从项目的项目经理、市场经理、团队负责人、参与人字段中收集所有用户ID，
      * 先删除旧成员再批量插入新成员。
      *
      * @param project 项目对象

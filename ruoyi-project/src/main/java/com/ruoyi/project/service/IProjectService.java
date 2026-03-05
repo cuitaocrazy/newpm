@@ -156,4 +156,20 @@ public interface IProjectService
      * @param list 项目列表
      */
     public void enrichForExport(List<Project> list);
+
+    /**
+     * 查询团队收入确认平铺列表（以团队为维度）
+     *
+     * @param project 查询条件
+     * @return 平铺列表
+     */
+    public List<Map<String, Object>> selectTeamRevenueFlatList(Project project);
+
+    /**
+     * 查询团队收入确认平铺合计
+     *
+     * @param project 查询条件
+     * @return 合计（teamConfirmAmount）
+     */
+    public Map<String, Object> selectTeamRevenueFlatSummary(Project project);
 }

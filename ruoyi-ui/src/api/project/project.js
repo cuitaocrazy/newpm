@@ -126,6 +126,15 @@ export function listProjectByName(query) {
   })
 }
 
+// 轻量项目搜索（只返回 projectId/projectName/projectCode，支持 revenue 权限）
+export function searchProjects(projectName) {
+  return request({
+    url: '/project/project/search',
+    method: 'get',
+    params: { projectName }
+  })
+}
+
 // 根据项目ID查询关联的合同信息
 export function getContractByProjectId(projectId) {
   return request({

@@ -44,15 +44,24 @@ public class TeamRevenueConfirmationController extends BaseController
     private IProjectService projectService;
 
     /**
-     * 查询团队收入确认列表（主表从项目表查询）
+     * 查询团队收入确认合计（以团队为维度，全量筛选，不分页）
+     */
+    @PreAuthorize("@ss.hasPermi('revenue:team:list')")
+    @GetMapping("/summary")
+    public AjaxResult summary(Project project)
+    {
+        return success(projectService.selectTeamRevenueFlatSummary(project));
+    }
+
+    /**
+     * 查询团队收入确认列表（以团队为维度，每行一条团队确认记录）
      */
     @PreAuthorize("@ss.hasPermi('revenue:team:list')")
     @GetMapping("/list")
     public TableDataInfo list(Project project)
     {
         startPage();
-        // 从项目表查询，与公司收入确认查询逻辑一致
-        List<Project> list = projectService.selectProjectList(project);
+        List<Map<String, Object>> list = projectService.selectTeamRevenueFlatList(project);
         return getDataTable(list);
     }
 

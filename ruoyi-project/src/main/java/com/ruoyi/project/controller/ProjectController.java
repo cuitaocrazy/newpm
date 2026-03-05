@@ -310,7 +310,7 @@ public class ProjectController extends BaseController
     /**
      * 根据项目名称搜索（用于 autocomplete）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,revenue:team:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,revenue:team:list,revenue:company:list')")
     @GetMapping("/listByName")
     public AjaxResult listByName(@RequestParam(required = false) String projectName)
     {
@@ -336,7 +336,7 @@ public class ProjectController extends BaseController
      * @param projectName 项目名称（模糊搜索）
      * @return 返回精简字段：projectId, projectName, projectCode
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,project:managerChange:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,revenue:team:list,revenue:company:list,project:managerChange:list')")
     @GetMapping("/search")
     public AjaxResult searchProjects(@RequestParam(required = false) String projectName)
     {
