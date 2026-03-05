@@ -323,14 +323,6 @@
               @click="handleRevenue(scope.row)"
               v-hasPermi="['revenue:company:edit']"
             >收入确认</el-button>
-            <el-button
-              v-else-if="scope.row.revenueConfirmStatus"
-              link
-              type="primary"
-              icon="View"
-              @click="handleRevenueView(scope.row)"
-              v-hasPermi="['revenue:company:query']"
-            >收入查看</el-button>
           </template>
         </template>
       </el-table-column>
@@ -369,9 +361,6 @@ const tableHeight = ref(600)
 
 const deptTree = ref([])
 const deptFlatList = ref([])
-
-// 项目名称下拉选项
-const projectNameOptions = ref([])
 
 // 列显隐配置
 const columns = ref([
@@ -444,8 +433,14 @@ function getList() {
       contractAmount: Number(summaryRes.data?.contractAmount || 0).toFixed(2),
       confirmAmount: Number(summaryRes.data?.confirmAmount || 0).toFixed(2)
     }
-    revenueList.value = [summary, ...listRes.rows]
+    if (listRes.rows && listRes.rows.length > 0) {
+      revenueList.value = [summary, ...listRes.rows]
+    } else {
+      revenueList.value = []
+    }
     total.value = listRes.total
+    loading.value = false
+  }).catch(() => {
     loading.value = false
   })
 }

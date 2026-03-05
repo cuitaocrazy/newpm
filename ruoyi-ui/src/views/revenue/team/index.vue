@@ -382,13 +382,6 @@
               @click="handleDelete(scope.row)"
               v-hasPermi="['revenue:team:remove']"
             >删除</el-button>
-            <el-button
-              link
-              type="primary"
-              icon="View"
-              @click="handleDetail(scope.row)"
-              v-hasPermi="['revenue:team:query']"
-            >详情</el-button>
           </template>
         </template>
       </el-table-column>
@@ -717,6 +710,8 @@ function getList() {
       teamRevenueList.value = []
     }
     loading.value = false
+  }).catch(() => {
+    loading.value = false
   })
 }
 
@@ -919,16 +914,6 @@ function handleAddDetail() {
     confirmUserName: userStore.nickName,
     remark: ''
   })
-}
-
-/** 删除按钮操作 */
-function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除该项目的团队收入确认数据？').then(() => {
-    return delTeamRevenue(row.projectId)
-  }).then(() => {
-    getList()
-    proxy.$modal.msgSuccess("删除成功")
-  }).catch(() => {})
 }
 
 /** 删除明细行 */
