@@ -1,28 +1,28 @@
 <template>
   <div class="app-container secondary-region-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="省份代码" prop="provinceCode">
+      <el-form-item label="区域代码" prop="regionCode">
         <el-autocomplete
-          v-model="queryParams.provinceCode"
-          :fetch-suggestions="queryProvinceCodeSearch"
-          placeholder="请输入省份代码"
+          v-model="queryParams.regionCode"
+          :fetch-suggestions="queryRegionCodeSearch"
+          placeholder="请输入区域代码"
           clearable
           style="width: 240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="省份名称" prop="provinceName">
+      <el-form-item label="区域名称" prop="regionName">
         <el-autocomplete
-          v-model="queryParams.provinceName"
-          :fetch-suggestions="queryProvinceNameSearch"
-          placeholder="请输入省份名称"
+          v-model="queryParams.regionName"
+          :fetch-suggestions="queryRegionNameSearch"
+          placeholder="请输入区域名称"
           clearable
           style="width: 240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="省份类型" prop="provinceType">
-        <el-select v-model="queryParams.provinceType" placeholder="请选择省份类型" clearable style="width: 240px">
+      <el-form-item label="区域类型" prop="regionType">
+        <el-select v-model="queryParams.regionType" placeholder="请选择区域类型" clearable style="width: 240px">
           <el-option
             v-for="dict in sflx"
             :key="dict.value"
@@ -71,12 +71,12 @@
     </el-row>
 
     <el-table v-loading="loading" :data="secondaryRegionList" :height="tableHeight">
-      <el-table-column label="省份ID" align="center" prop="provinceId" />
-      <el-table-column label="省份代码" align="center" prop="provinceCode" />
-      <el-table-column label="省份名称" align="center" prop="provinceName" />
-      <el-table-column label="省份类型" align="center" prop="provinceType">
+      <el-table-column label="区域ID" align="center" prop="regionId" />
+      <el-table-column label="区域代码" align="center" prop="regionCode" />
+      <el-table-column label="区域名称" align="center" prop="regionName" />
+      <el-table-column label="区域类型" align="center" prop="regionType">
         <template #default="scope">
-          <dict-tag :options="sflx" :value="scope.row.provinceType"/>
+          <dict-tag :options="sflx" :value="scope.row.regionType"/>
         </template>
       </el-table-column>
       <el-table-column label="一级区域" align="center" prop="regionDictValue">
@@ -119,14 +119,14 @@
     <!-- 添加或修改省级区域对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="secondaryRegionRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="省份代码" prop="provinceCode">
-          <el-input v-model="form.provinceCode" placeholder="请输入省份代码" />
+        <el-form-item label="区域代码" prop="regionCode">
+          <el-input v-model="form.regionCode" placeholder="请输入区域代码" />
         </el-form-item>
-        <el-form-item label="省份名称" prop="provinceName">
-          <el-input v-model="form.provinceName" placeholder="请输入省份名称" />
+        <el-form-item label="区域名称" prop="regionName">
+          <el-input v-model="form.regionName" placeholder="请输入区域名称" />
         </el-form-item>
-        <el-form-item label="省份类型" prop="provinceType">
-          <el-select v-model="form.provinceType" placeholder="请选择省份类型">
+        <el-form-item label="区域类型" prop="regionType">
+          <el-select v-model="form.regionType" placeholder="请选择区域类型">
             <el-option
               v-for="dict in sflx"
               :key="dict.value"
@@ -191,21 +191,18 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    provinceCode: null,
-    provinceName: null,
-    provinceType: null,
+    regionCode: null,
+    regionName: null,
+    regionType: null,
     regionDictValue: null,
     status: null,
   },
   rules: {
-    provinceId: [
-      { required: true, message: "省份ID不能为空", trigger: "blur" }
+    regionCode: [
+      { required: true, message: "区域代码不能为空", trigger: "blur" }
     ],
-    provinceCode: [
-      { required: true, message: "省份代码不能为空", trigger: "blur" }
-    ],
-    provinceName: [
-      { required: true, message: "省份名称不能为空", trigger: "blur" }
+    regionName: [
+      { required: true, message: "区域名称不能为空", trigger: "blur" }
     ],
     regionDictValue: [
       { required: true, message: "一级区域不能为空", trigger: "change" }
@@ -235,23 +232,23 @@ function loadAllProvinceData() {
   })
 }
 
-/** 省份代码 autocomplete 查询 */
-function queryProvinceCodeSearch(queryString, cb) {
+/** 区域代码 autocomplete 查询 */
+function queryRegionCodeSearch(queryString, cb) {
   const results = queryString
     ? allProvinceData.value.filter(item =>
-        item.provinceCode && item.provinceCode.toLowerCase().includes(queryString.toLowerCase())
-      ).map(item => ({ value: item.provinceCode }))
-    : allProvinceData.value.map(item => ({ value: item.provinceCode }))
+        item.regionCode && item.regionCode.toLowerCase().includes(queryString.toLowerCase())
+      ).map(item => ({ value: item.regionCode }))
+    : allProvinceData.value.map(item => ({ value: item.regionCode }))
   cb(results)
 }
 
-/** 省份名称 autocomplete 查询 */
-function queryProvinceNameSearch(queryString, cb) {
+/** 区域名称 autocomplete 查询 */
+function queryRegionNameSearch(queryString, cb) {
   const results = queryString
     ? allProvinceData.value.filter(item =>
-        item.provinceName && item.provinceName.includes(queryString)
-      ).map(item => ({ value: item.provinceName }))
-    : allProvinceData.value.map(item => ({ value: item.provinceName }))
+        item.regionName && item.regionName.includes(queryString)
+      ).map(item => ({ value: item.regionName }))
+    : allProvinceData.value.map(item => ({ value: item.regionName }))
   cb(results)
 }
 
@@ -264,10 +261,10 @@ function cancel() {
 // 表单重置
 function reset() {
   form.value = {
-    provinceId: null,
-    provinceCode: null,
-    provinceName: null,
-    provinceType: null,
+    regionId: null,
+    regionCode: null,
+    regionName: null,
+    regionType: null,
     regionDictValue: null,
     sortOrder: null,
     status: '0',
@@ -295,11 +292,11 @@ function resetQuery() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
-  const _provinceId = row.provinceId
-  getSecondaryRegion(_provinceId).then(response => {
+  const _regionId = row.regionId
+  getSecondaryRegion(_regionId).then(response => {
     form.value = response.data
     open.value = true
-    title.value = "修改省级区域"
+    title.value = "修改二级区域"
   })
 }
 
@@ -307,7 +304,7 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["secondaryRegionRef"].validate(valid => {
     if (valid) {
-      if (form.value.provinceId != null) {
+      if (form.value.regionId != null) {
         updateSecondaryRegion(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
@@ -328,14 +325,14 @@ function submitForm() {
 function handleAdd() {
   reset()
   open.value = true
-  title.value = "添加省级区域"
+  title.value = "添加二级区域"
 }
 
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const _provinceIds = row.provinceId
-  proxy.$modal.confirm('是否确认删除省级区域编号为"' + _provinceIds + '"的数据项？').then(function() {
-    return delSecondaryRegion(_provinceIds)
+  const _regionIds = row.regionId
+  proxy.$modal.confirm('是否确认删除二级区域编号为"' + _regionIds + '"的数据项？').then(function() {
+    return delSecondaryRegion(_regionIds)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
