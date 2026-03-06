@@ -473,43 +473,18 @@ const handleSortChange = ({ column, prop, order }) => {
 /** 查询部门下拉树结构 */
 function getDeptTree() {
   fetchDeptTree().then(response => {
-    // 平铺列表先构建树，再过滤只保留第三级及以下的部门
-    const deptData = response.data.map((dept) => ({
+    // 与项目列表保持一致：用 ancestors 判断层级，只保留三级及以下机构
+    const level3AndBelowDepts = (response.data || []).filter(dept => {
+      if (!dept.ancestors) return false
+      return dept.ancestors.split(',').length >= 3
+    })
+    const deptData = level3AndBelowDepts.map((dept) => ({
       ...dept,
       id: dept.deptId,
       label: dept.deptName
     }))
-    const tree = proxy.handleTree(deptData, "id")
-    deptOptions.value = filterDeptFromLevel3(tree)
+    deptOptions.value = proxy.handleTree(deptData, "id", "parentId")
   })
-}
-
-/** 过滤部门树，从第三级开始展示 */
-function filterDeptFromLevel3(deptTree, level = 1) {
-  if (!deptTree || !Array.isArray(deptTree)) {
-    return []
-  }
-
-  const result = []
-
-  for (const dept of deptTree) {
-    if (level >= 3) {
-      // 第三级及以下，保留该节点
-      const newDept = { ...dept }
-      if (dept.children && dept.children.length > 0) {
-        newDept.children = filterDeptFromLevel3(dept.children, level + 1)
-      }
-      result.push(newDept)
-    } else {
-      // 第一级和第二级，只递归处理子节点
-      if (dept.children && dept.children.length > 0) {
-        const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
-        result.push(...childrenResult)
-      }
-    }
-  }
-
-  return result
 }
 
 /** 查询客户列表 */

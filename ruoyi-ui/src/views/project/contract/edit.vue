@@ -375,37 +375,17 @@ const selectedProjects = ref([])
 // 加载部门树
 function getDeptTree() {
   fetchDeptTree().then(response => {
-    const deptData = response.data.map((dept) => ({
+    const level3AndBelowDepts = (response.data || []).filter(dept => {
+      if (!dept.ancestors) return false
+      return dept.ancestors.split(',').length >= 3
+    })
+    const deptData = level3AndBelowDepts.map((dept) => ({
       ...dept,
       id: dept.deptId,
       label: dept.deptName
     }))
-    const tree = proxy.handleTree(deptData, "id")
-    deptOptions.value = filterDeptFromLevel3(tree)
+    deptOptions.value = proxy.handleTree(deptData, "id", "parentId")
   })
-}
-
-/** 过滤部门树，从第三级开始展示 */
-function filterDeptFromLevel3(deptTree, level = 1) {
-  if (!deptTree || !Array.isArray(deptTree)) {
-    return []
-  }
-  const result = []
-  for (const dept of deptTree) {
-    if (level >= 3) {
-      const newDept = { ...dept }
-      if (dept.children && dept.children.length > 0) {
-        newDept.children = filterDeptFromLevel3(dept.children, level + 1)
-      }
-      result.push(newDept)
-    } else {
-      if (dept.children && dept.children.length > 0) {
-        const childrenResult = filterDeptFromLevel3(dept.children, level + 1)
-        result.push(...childrenResult)
-      }
-    }
-  }
-  return result
 }
 
 // 加载客户列表
