@@ -15,15 +15,9 @@
           :class="{ 'is-disabled': disabled }"
         >
           <span v-if="selectedUsers.length === 0" class="placeholder">{{ placeholder }}</span>
-          <template v-else>
-            <el-tag
-              v-for="user in selectedUsers"
-              :key="user.userId"
-              size="small"
-              type="info"
-              style="margin: 2px 4px 2px 0"
-            >{{ user.nickName }}</el-tag>
-          </template>
+          <span v-else class="selected-text">
+            已选 {{ selectedUsers.length }} 人：{{ displayNames }}
+          </span>
           <el-icon class="arrow-icon"><ArrowDown /></el-icon>
         </div>
       </template>
@@ -104,6 +98,11 @@ const checkedKeys = computed(() => props.modelValue || [])
 // 选中的用户对象列表
 const selectedUsers = computed(() => {
   return (props.modelValue || []).map(id => userMap.value[id]).filter(Boolean)
+})
+
+// 展示文本
+const displayNames = computed(() => {
+  return selectedUsers.value.map(u => u.nickName).join('、')
 })
 
 /** 过滤节点 */
@@ -199,9 +198,8 @@ onMounted(loadData)
 .org-user-select__trigger {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  min-height: 32px;
-  padding: 2px 32px 2px 11px;
+  height: 32px;
+  padding: 0 11px;
   border: 1px solid var(--el-border-color);
   border-radius: var(--el-border-radius-base);
   background: #fff;
@@ -209,7 +207,6 @@ onMounted(loadData)
   box-sizing: border-box;
   transition: border-color 0.2s;
   font-size: 14px;
-  position: relative;
 }
 .org-user-select__trigger:hover {
   border-color: var(--el-color-primary);
@@ -220,13 +217,18 @@ onMounted(loadData)
 }
 .placeholder {
   color: var(--el-text-color-placeholder);
+  flex: 1;
+}
+.selected-text {
+  flex: 1;
+  color: var(--el-text-color-regular);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .arrow-icon {
   color: var(--el-text-color-placeholder);
-  position: absolute;
-  right: 11px;
-  top: 50%;
-  transform: translateY(-50%);
+  margin-left: 4px;
   flex-shrink: 0;
 }
 .org-user-select__panel {
