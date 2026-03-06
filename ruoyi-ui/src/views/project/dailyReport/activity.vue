@@ -14,16 +14,23 @@
         </el-select>
       </el-form-item>
       <el-form-item label="项目部门">
-        <el-tree-select
+        <project-dept-select
+          ref="projectDeptSelectRef"
           v-model="queryParams.deptId"
-          :data="deptTree"
-          :props="{ label: 'label', value: 'value', children: 'children' }"
-          placeholder="请选择项目部门"
-          check-strictly
-          clearable
-          filterable
           style="width: 220px;"
           @change="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="项目名称">
+        <el-autocomplete
+          v-model="queryParams.projectName"
+          :fetch-suggestions="fetchProjectSuggestions"
+          placeholder="输入关键字搜索"
+          clearable
+          style="width: 200px;"
+          value-key="projectName"
+          @select="handleProjectSelect"
+          @clear="handleQuery"
         />
       </el-form-item>
       <el-form-item>
@@ -93,7 +100,7 @@
             <div v-if="!queryParams.userId" class="cell-people">
               <div v-for="person in getCellPeople(dateStr).slice(0, 4)" :key="person.userId"
                 class="person-chip" :class="getChipClass(person.totalWorkHours)"
-                @click.stop="selectPerson(person.userId)">
+                @click.stop="getCellPeople(dateStr).length === 1 ? openDrawer(dateStr) : selectPerson(person.userId)">
                 <span class="chip-name">{{ person.nickName }}</span>
                 <span class="chip-hours">{{ person.totalWorkHours }}h</span>
               </div>
@@ -175,10 +182,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { User } from '@element-plus/icons-vue'
-import { getMonthlyReports } from '@/api/project/dailyReport'
+import { getMonthlyReports, getProjectNameSuggestions } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
-import { getDeptTree } from '@/api/project/project'
-import { handleTree } from '@/utils/ruoyi'
 import request from '@/utils/request'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
 
@@ -192,11 +197,10 @@ const currentYearMonth = ref((() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 })())
-const queryParams = ref({ userId: null, deptId: null })
+const queryParams = ref({ userId: null, deptId: null, projectName: null })
 const reportData = ref([]) // 月度完整数据
 const userList = ref([])
-const deptTree = ref([])
-const deptFlatList = ref([])
+const projectDeptSelectRef = ref(null)
 const workCalendarMap = ref({}) // { 'yyyy-MM-dd': { dayType, dayName } }
 const drawerVisible = ref(false)
 const drawerTitle = ref('')
@@ -220,9 +224,18 @@ function getProjectColor(projectId) {
 }
 
 const currentDeptName = computed(() => {
-  if (!queryParams.value.deptId) return '全部部门'
-  const d = deptFlatList.value.find(x => x.deptId === queryParams.value.deptId)
-  return d?.deptName || ''
+  if (!queryParams.value.deptId) return ''
+  const findLabel = (nodes, id) => {
+    for (const node of nodes) {
+      if (node.id === id) return node.label
+      if (node.children?.length) {
+        const found = findLabel(node.children, id)
+        if (found) return found
+      }
+    }
+    return ''
+  }
+  return findLabel(projectDeptSelectRef.value?.deptOptions || [], queryParams.value.deptId) || ''
 })
 
 const selectedUserName = computed(() => {
@@ -237,10 +250,23 @@ const selectedUserDept = computed(() => {
 
 const selectedUserColor = computed(() => getPersonColor(queryParams.value.userId))
 
+// 当项目名称过滤时，二次裁剪 detailList 并重算该项目的工时
+const displayReportData = computed(() => {
+  if (!queryParams.value.projectName) return reportData.value
+  const keyword = queryParams.value.projectName.toLowerCase()
+  return reportData.value.map(r => {
+    const filteredDetails = (r.detailList || []).filter(d =>
+      d.projectName?.toLowerCase().includes(keyword)
+    )
+    const filteredHours = filteredDetails.reduce((s, d) => s + Number(d.workHours || 0), 0)
+    return { ...r, detailList: filteredDetails, totalWorkHours: filteredHours }
+  })
+})
+
 // 按日期分组数据
 const dataByDate = computed(() => {
   const map = {}
-  reportData.value.forEach(r => {
+  displayReportData.value.forEach(r => {
     const day = r.reportDate?.substring(0, 10)
     if (!day) return
     if (!map[day]) map[day] = []
@@ -254,17 +280,22 @@ const teamStats = computed(() => {
   const todayData = dataByDate.value[todayStr] || []
   const todayTotalH = todayData.reduce((s, r) => s + Number(r.totalWorkHours || 0), 0)
   const avgH = todayData.length > 0 ? (todayTotalH / todayData.length).toFixed(1) : '0.0'
+  // 有项目筛选时：团队人数 = 本月内有该项目填报记录的不重复用户数
+  // 无筛选时：团队人数 = 数据权限范围内的全部用户数
+  const total = queryParams.value.projectName
+    ? new Set(displayReportData.value.map(r => r.userId)).size
+    : userList.value.length
   return {
-    total: userList.value.length,
+    total,
     reported: todayData.length,
-    unreported: userList.value.length - todayData.length,
+    unreported: total - todayData.length,
     avgHours: avgH
   }
 })
 
 // 个人统计
 const personStats = computed(() => {
-  const userReports = reportData.value.filter(r => r.userId === queryParams.value.userId)
+  const userReports = displayReportData.value.filter(r => r.userId === queryParams.value.userId)
   const totalH = userReports.reduce((s, r) => s + Number(r.totalWorkHours || 0), 0)
   const fullDays = userReports.filter(r => Number(r.totalWorkHours) >= 8).length
   const avgH = userReports.length > 0 ? (totalH / userReports.length).toFixed(1) : '0.0'
@@ -389,42 +420,43 @@ async function loadData() {
   const params = { yearMonth: currentYearMonth.value }
   if (queryParams.value.userId) params.userId = queryParams.value.userId
   if (queryParams.value.deptId) params.deptId = queryParams.value.deptId
+  if (queryParams.value.projectName) params.projectName = queryParams.value.projectName
   const res = await getMonthlyReports(params)
   reportData.value = res.data || []
 }
 
 async function loadUsers() {
-  const res = await request({ url: '/project/project/users', method: 'get' })
+  const params = {}
+  if (queryParams.value.deptId) params.deptId = queryParams.value.deptId
+  const res = await request({ url: '/project/dailyReport/activityUsers', method: 'get', params })
   userList.value = (res.data || []).map(u => ({
     userId: u.userId,
     nickName: u.nickName,
-    deptName: u.dept?.deptName || ''
+    deptName: u.deptName || ''
   }))
 }
 
-async function loadDeptTree() {
-  const response = await getDeptTree()
-  deptFlatList.value = response.data
-  // 过滤三级及以下部门
-  const level3AndBelow = response.data.filter(dept => {
-    if (!dept.ancestors) return false
-    const level = dept.ancestors.split(',').length + 1
-    return level >= 3
-  })
-  const deptData = level3AndBelow.map(dept => ({
-    deptId: dept.deptId,
-    parentId: dept.parentId,
-    value: dept.deptId,
-    label: dept.deptName
-  }))
-  deptTree.value = handleTree(deptData, 'deptId', 'parentId', 'children')
-}
-
-function handleQuery() { loadData() }
-
-function handleReset() {
-  queryParams.value = { userId: null, deptId: null }
+async function handleQuery() {
+  await loadUsers()
   loadData()
+}
+
+async function handleReset() {
+  queryParams.value = { userId: null, deptId: null, projectName: null }
+  await loadUsers()
+  loadData()
+}
+
+async function fetchProjectSuggestions(keyword, callback) {
+  try {
+    const res = await getProjectNameSuggestions(keyword || undefined)
+    callback(res.data || [])
+  } catch { callback([]) }
+}
+
+function handleProjectSelect(item) {
+  queryParams.value.projectName = item.projectName
+  handleQuery()
 }
 
 // MonthCalendar 事件
@@ -437,10 +469,9 @@ function handleYearChange(year) {
   loadWorkCalendar(year)
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadWorkCalendar()
-  loadUsers()
-  loadDeptTree()
+  await loadUsers()
   loadData()
 })
 </script>

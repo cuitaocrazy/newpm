@@ -3,7 +3,6 @@ package com.ruoyi.project.service;
 import java.util.List;
 import java.util.Map;
 import com.ruoyi.project.domain.DailyReport;
-
 /**
  * 工作日报Service接口
  *
@@ -66,4 +65,12 @@ public interface IDailyReportService
      * @return 结果
      */
     public int deleteDailyReportByIds(Long[] reportIds);
+
+    /**
+     * 查询活动页用户列表（数据权限过滤）
+     *
+     * @param query 查询条件（deptId）
+     * @return 用户列表
+     */
+    public List<Map<String, Object>> selectActivityUsers(DailyReport query);
 }

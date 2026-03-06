@@ -107,4 +107,15 @@ public class DailyReportController extends BaseController
     {
         return toAjax(dailyReportService.deleteDailyReportByIds(reportIds));
     }
+
+    /**
+     * 获取活动页用户列表（数据权限过滤）
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:activity')")
+    @GetMapping("/activityUsers")
+    public AjaxResult activityUsers(DailyReport dailyReport)
+    {
+        List<Map<String, Object>> list = dailyReportService.selectActivityUsers(dailyReport);
+        return success(list);
+    }
 }

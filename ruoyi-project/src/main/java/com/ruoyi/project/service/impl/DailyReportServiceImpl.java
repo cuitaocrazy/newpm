@@ -201,4 +201,17 @@ public class DailyReportServiceImpl implements IDailyReportService
         // 再软删除主记录
         return dailyReportMapper.deleteDailyReportByIds(reportIds);
     }
+
+    /**
+     * 查询活动页用户列表（数据权限过滤）
+     *
+     * @param query 查询条件（deptId）
+     * @return 用户列表
+     */
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public List<Map<String, Object>> selectActivityUsers(DailyReport query)
+    {
+        return dailyReportMapper.selectActivityUsers(query);
+    }
 }

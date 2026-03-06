@@ -303,14 +303,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null"> and c.customer_id = #{customerId}</if>
             <if test="customerName != null and customerName != ''"> and cust.customer_simple_name like concat('%', #{customerName}, '%')</if>
-            <if test="deptId != null"> and c.dept_id = #{deptId}</if>
+            <if test="deptId != null">
+                and (c.dept_id = #{deptId}
+                     or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
             <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
             <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
             <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
-            <if test="params.expectedQuarter != null and params.expectedQuarter != ''"> and p.expected_quarter = #{params.expectedQuarter}</if>
+            <if test="expectedQuarter != null and expectedQuarter != ''"> and p.expected_quarter = #{expectedQuarter}</if>
             <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
             <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
@@ -332,14 +335,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="contractName != null and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null"> and c.customer_id = #{customerId}</if>
             <if test="customerName != null and customerName != ''"> and cust.customer_simple_name like concat('%', #{customerName}, '%')</if>
-            <if test="deptId != null"> and c.dept_id = #{deptId}</if>
+            <if test="deptId != null">
+                and (c.dept_id = #{deptId}
+                     or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
             <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
             <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
             <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
-            <if test="params.expectedQuarter != null and params.expectedQuarter != ''"> and p.expected_quarter = #{params.expectedQuarter}</if>
+            <if test="expectedQuarter != null and expectedQuarter != ''"> and p.expected_quarter = #{expectedQuarter}</if>
             <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
             <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>

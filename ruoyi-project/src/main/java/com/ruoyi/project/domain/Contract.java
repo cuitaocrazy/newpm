@@ -113,6 +113,9 @@ public class Contract extends BaseEntity
     /** 合同状态名称（扩展字段，用于列表展示） */
     private String contractStatusName;
 
+    /** 查询条件：预计回款季度（付款里程碑） */
+    private String expectedQuarter;
+
     /** 创建人姓名（扩展字段，用于审计信息展示） */
     private String createByName;
 
@@ -398,6 +401,16 @@ public class Contract extends BaseEntity
     public String getContractStatusName()
     {
         return contractStatusName;
+    }
+
+    public void setExpectedQuarter(String expectedQuarter)
+    {
+        this.expectedQuarter = expectedQuarter;
+    }
+
+    public String getExpectedQuarter()
+    {
+        return expectedQuarter;
     }
 
     public void setCreateByName(String createByName)

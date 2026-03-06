@@ -65,6 +65,9 @@ public class DailyReport extends BaseEntity
     /** 查询条件：年月(如 2026-02) */
     private String yearMonth;
 
+    /** 查询条件：项目名称（模糊） */
+    private String projectName;
+
     public void setReportId(Long reportId)
     {
         this.reportId = reportId;
@@ -193,6 +196,16 @@ public class DailyReport extends BaseEntity
     public String getYearMonth()
     {
         return yearMonth;
+    }
+
+    public void setProjectName(String projectName)
+    {
+        this.projectName = projectName;
+    }
+
+    public String getProjectName()
+    {
+        return projectName;
     }
 
     @Override

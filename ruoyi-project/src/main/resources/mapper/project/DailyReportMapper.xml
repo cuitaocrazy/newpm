@@ -89,12 +89,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 公共查询条件 -->
     <sql id="queryConditions">
         <if test="userId != null"> and r.user_id = #{userId}</if>
-        <if test="deptId != null"> and r.dept_id = #{deptId}</if>
+        <if test="deptId != null">
+            and (r.dept_id = #{deptId}
+                 or r.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+        </if>
         <if test="reportDate != null"> and r.report_date = #{reportDate}</if>
         <if test="reportDateStart != null"> and r.report_date &gt;= #{reportDateStart}</if>
         <if test="reportDateEnd != null"> and r.report_date &lt;= #{reportDateEnd}</if>
         <if test="yearMonth != null and yearMonth != ''"> and DATE_FORMAT(r.report_date, '%Y-%m') = #{yearMonth}</if>
         <if test="params.nickName != null and params.nickName != ''"> and u.nick_name like concat('%', #{params.nickName}, '%')</if>
+        <if test="projectName != null and projectName != ''">
+            and exists (
+                select 1 from pm_daily_report_detail dd_filter
+                inner join pm_project p_filter on dd_filter.project_id = p_filter.project_id
+                where dd_filter.report_id = r.report_id
+                  and dd_filter.del_flag = '0'
+                  and p_filter.project_name like concat('%', #{projectName}, '%')
+            )
+        </if>
         ${params.dataScope}
     </sql>
 
@@ -189,5 +201,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{reportId}
         </foreach>
     </update>
+
+    <!-- 查询活动页用户列表（数据权限 + 部门过滤） -->
+    <select id="selectActivityUsers" parameterType="DailyReport" resultType="java.util.Map">
+        select u.user_id as userId, u.nick_name as nickName, d.dept_name as deptName
+        from sys_user u
+        left join sys_dept d on u.dept_id = d.dept_id
+        <where>
+            u.del_flag = '0' and u.status = '0'
+            <if test="deptId != null">
+                and (u.dept_id = #{deptId}
+                     or u.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+            ${params.dataScope}
+        </where>
+        order by d.dept_name, u.nick_name
+    </select>
 
 </mapper>

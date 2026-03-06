@@ -1,6 +1,7 @@
 package com.ruoyi.project.mapper;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.DailyReport;
 
@@ -76,4 +77,12 @@ public interface DailyReportMapper
      * @return 结果
      */
     public int deleteDailyReportByIds(Long[] reportIds);
+
+    /**
+     * 查询活动页可见用户列表（按数据权限 + deptId 过滤）
+     *
+     * @param query 查询条件（deptId + dataScope）
+     * @return 用户列表
+     */
+    public List<Map<String, Object>> selectActivityUsers(DailyReport query);
 }
