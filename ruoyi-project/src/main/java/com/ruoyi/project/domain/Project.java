@@ -212,8 +212,8 @@ public class Project extends BaseEntity
     /** 删除标志(0正常 1删除) */
     private String delFlag;
 
-    /** 收入确认状态（字典:sys_srqrzt 未确认、待确认、已确认、无法确认） */
-    @Excel(name = "确认状态", dictType = "sys_srqrzt", sort = 120)
+    /** 收入确认状态（字典:sys_qrzt 未确认、待确认、已确认、无法确认） */
+    @Excel(name = "确认状态", dictType = "sys_qrzt", sort = 120)
     private String revenueConfirmStatus;
 
     /** 收入确认年度 */

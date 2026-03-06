@@ -143,7 +143,7 @@
       <el-form-item label="收入确认状态" prop="revenueConfirmStatus">
         <dict-select
           v-model="queryParams.revenueConfirmStatus"
-          dict-type="sys_srqrzt"
+          dict-type="sys_qrzt"
           placeholder="请选择收入确认状态"
           clearable
           style="width: 240px"
@@ -239,10 +239,14 @@
           <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" v-if="columns.revenueConfirmYear.visible" />
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" v-if="columns.revenueConfirmYear.visible">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_ndgl" :value="scope.row.revenueConfirmYear" />
+        </template>
+      </el-table-column>
       <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120" v-if="columns.revenueConfirmStatus.visible">
         <template #default="scope">
-          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus" />
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_qrzt" :value="scope.row.revenueConfirmStatus" />
         </template>
       </el-table-column>
       <el-table-column label="合同状态" align="center" prop="contractStatus" min-width="100" v-if="columns.contractStatus.visible">
@@ -402,7 +406,7 @@ import { checkPermi } from "@/utils/permission"
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
-const { industry, sys_yjqy, sys_ndgl, sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, sys_srqrzt, sys_htzt } = proxy.useDict('industry', 'sys_yjqy', 'sys_ndgl', 'sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_srqrzt', 'sys_htzt')
+const { industry, sys_yjqy, sys_ndgl, sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_qrzt } = proxy.useDict('industry', 'sys_yjqy', 'sys_ndgl', 'sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_qrzt')
 
 const projectList = ref([])
 const loading = ref(true)

@@ -77,7 +77,7 @@
       </el-table-column>
       <el-table-column label="确认状态" align="center" prop="revenueConfirmStatus" width="110">
         <template #default="scope">
-          <dict-tag :options="sys_srqrzt" :value="scope.row.revenueConfirmStatus" />
+          <dict-tag :options="sys_qrzt" :value="scope.row.revenueConfirmStatus" />
         </template>
       </el-table-column>
       <el-table-column label="项目部门" align="center" prop="projectDept" min-width="160" show-overflow-tooltip>
@@ -187,7 +187,7 @@ import { searchProjects } from "@/api/project/project"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmjd, sys_htzt, sys_srqrzt } = proxy.useDict('sys_xmjd', 'sys_htzt', 'sys_srqrzt')
+const { sys_xmjd, sys_htzt, sys_qrzt } = proxy.useDict('sys_xmjd', 'sys_htzt', 'sys_qrzt')
 
 const projectStageChangeList = ref([])
 const loading = ref(true)
