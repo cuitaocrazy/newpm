@@ -22,7 +22,7 @@
             <el-descriptions-item label="项目名称" :span="2">{{ form.projectName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="项目分类">{{ getDictLabel(sys_xmfl, form.projectCategory) }}</el-descriptions-item>
             <el-descriptions-item label="项目部门">{{ form.deptName || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="预计工作量">{{ form.estimatedWorkload != null ? form.estimatedWorkload + ' 人天' : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="预估工作量">{{ form.estimatedWorkload != null ? form.estimatedWorkload + ' 人天' : '-' }}</el-descriptions-item>
             <el-descriptions-item label="实际人天">{{ form.actualWorkload != null ? form.actualWorkload + ' 人天' : '-' }}</el-descriptions-item>
             <el-descriptions-item label="项目状态">{{ getDictLabel(sys_xmzt, form.projectStatus) }}</el-descriptions-item>
             <el-descriptions-item label="验收状态"><dict-tag :options="sys_yszt" :value="form.acceptanceStatus"/></el-descriptions-item>
@@ -64,20 +64,27 @@
           <!-- 时间规划 -->
           <div class="section-title">时间规划</div>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="启动日期">{{ parseTime(form.startDate, '{y}-{m}-{d}') }}</el-descriptions-item>
-            <el-descriptions-item label="结束日期">{{ parseTime(form.endDate, '{y}-{m}-{d}') }}</el-descriptions-item>
-            <el-descriptions-item label="上线日期">{{ parseTime(form.productionDate, '{y}-{m}-{d}') }}</el-descriptions-item>
-            <el-descriptions-item label="验收日期">{{ parseTime(form.acceptanceDate, '{y}-{m}-{d}') }}</el-descriptions-item>
+            <el-descriptions-item label="启动日期">{{ parseTime(form.startDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="结束日期">{{ parseTime(form.endDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="实施年度" :span="2">{{ form.reservedField1 || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="投产日期">{{ parseTime(form.productionDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="验收日期">{{ parseTime(form.acceptanceDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
           </el-descriptions>
 
           <!-- 成本预算 -->
           <div class="section-title">成本预算</div>
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="项目费用" :span="2">{{ form.projectCost != null ? formatAmount(form.projectCost) + ' 元' : '- 元' }}</el-descriptions-item>
-            <el-descriptions-item label="费用预算" :span="2">{{ form.expenseBudget != null ? formatAmount(form.expenseBudget) + ' 元' : '- 元' }}</el-descriptions-item>
-            <el-descriptions-item label="成本预算" :span="2">{{ form.costBudget != null ? formatAmount(form.costBudget) + ' 元' : '- 元' }}</el-descriptions-item>
-            <el-descriptions-item label="人力费用" :span="2">{{ form.laborCost != null ? formatAmount(form.laborCost) + ' 元' : '- 元' }}</el-descriptions-item>
-            <el-descriptions-item label="采购成本" :span="2">{{ form.purchaseCost != null ? formatAmount(form.purchaseCost) + ' 元' : '- 元' }}</el-descriptions-item>
+            <el-descriptions-item label="项目费用">{{ form.projectCost != null ? formatAmount(form.projectCost) + ' 元' : '- 元' }}</el-descriptions-item>
+            <el-descriptions-item label="费用预算">{{ form.expenseBudget != null ? formatAmount(form.expenseBudget) + ' 元' : '- 元' }}</el-descriptions-item>
+            <el-descriptions-item label="成本预算">{{ form.costBudget != null ? formatAmount(form.costBudget) + ' 元' : '- 元' }}</el-descriptions-item>
+            <el-descriptions-item label="人力费用">{{ form.laborCost != null ? formatAmount(form.laborCost) + ' 元' : '- 元' }}</el-descriptions-item>
+            <el-descriptions-item label="采购成本">{{ form.purchaseCost != null ? formatAmount(form.purchaseCost) + ' 元' : '- 元' }}</el-descriptions-item>
+          </el-descriptions>
+
+          <!-- 其他信息 -->
+          <div class="section-title">其他信息</div>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="备注"><span style="white-space: pre-line;">{{ form.remark || '-' }}</span></el-descriptions-item>
           </el-descriptions>
         </el-card>
       </el-col>

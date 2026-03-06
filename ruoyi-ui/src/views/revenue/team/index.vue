@@ -397,12 +397,11 @@
     />
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog :title="title" v-model="open" width="900px" append-to-body>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
-        <!-- 主表信息 -->
-        <el-divider content-position="left">项目信息</el-divider>
+    <el-dialog :title="dialogTitle" v-model="open" width="960px" append-to-body>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
+        <!-- 项目（全宽） -->
         <el-row>
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="项目" prop="projectId">
               <project-select
                 ref="projectSelectRef"
@@ -414,38 +413,77 @@
               />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <!-- 预算金额 | 合同金额 -->
+        <el-row>
           <el-col :span="12">
             <el-form-item label="预算金额(元)">
-              <el-input v-model="form.projectBudget" disabled />
+              <el-input :model-value="formatAmountDisplay(form.projectBudget)" disabled />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row>
           <el-col :span="12">
             <el-form-item label="合同金额(元)">
-              <el-input v-model="form.contractAmount" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="公司确认金额(元)">
-              <el-input v-model="form.confirmAmount" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="12">
-            <el-form-item label="确认年度">
-              <el-input v-model="form.revenueConfirmYear" disabled />
+              <el-input :model-value="formatAmountDisplay(form.contractAmount)" disabled />
             </el-form-item>
           </el-col>
         </el-row>
 
-        <!-- 明细列表 -->
-        <el-divider content-position="left">团队确认明细</el-divider>
-        <el-button type="primary" size="small" icon="Plus" @click="handleAddDetail" style="margin-bottom: 10px">添加明细</el-button>
+        <!-- 公司确认金额 | 确认年度 -->
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="公司确认金额(元)">
+              <el-input :model-value="formatAmountDisplay(form.confirmAmount)" disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="确认年度">
+              <el-input :model-value="form.revenueConfirmYear ? form.revenueConfirmYear + '年' : '-'" disabled />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 计划参与人员 | 实际参与人员 -->
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="计划参与人员">
+              <span class="participants-text">{{ form.participantsNames || '暂无' }}</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际参与人员">
+              <span class="participants-text">暂无</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <!-- 参与人员工时（折叠） -->
+        <div class="worktime-section">
+          <div class="worktime-header" @click="worktimeExpanded = !worktimeExpanded">
+            <span class="worktime-title">参与人员工时</span>
+            <span class="worktime-stats">
+              <span class="stat-people">{{ participantCount }} 人</span>
+              <span class="stat-hours">总工时 0.0 小时</span>
+              <span>合计 {{ form.actualWorkload || 0 }} 人天</span>
+            </span>
+            <el-icon :class="['worktime-arrow', { expanded: worktimeExpanded }]"><ArrowDown /></el-icon>
+          </div>
+          <div v-show="worktimeExpanded" class="worktime-body">
+            <div class="worktime-empty">
+              <el-empty description="暂无工时记录" :image-size="60" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 确认明细标题行 -->
+        <div class="detail-header">
+          <span class="detail-header-label">确认明细</span>
+          <el-button type="primary" size="small" @click="handleAddDetail">+ 添加确认记录</el-button>
+        </div>
+
         <el-table :data="form.detailList" border style="width: 100%">
-          <el-table-column label="序号" type="index" width="60" align="center" />
-          <el-table-column label="部门" prop="deptId" width="200">
+          <el-table-column label="序号" type="index" width="55" align="center" />
+          <el-table-column label="部门" prop="deptId" min-width="180">
             <template #default="scope">
               <el-tree-select
                 v-model="scope.row.deptId"
@@ -459,49 +497,43 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="确认金额(元)" prop="confirmAmount" width="150">
+          <el-table-column label="确认金额(元)" prop="confirmAmount" width="160">
             <template #default="scope">
               <el-input-number
                 v-model="scope.row.confirmAmount"
                 :precision="2"
                 :min="0"
                 controls-position="right"
-                @change="calculateTotalAmount"
                 style="width: 100%"
               />
             </template>
           </el-table-column>
-          <el-table-column label="确认人" prop="confirmUserName" width="100">
+          <el-table-column label="确认人" prop="confirmUserName" width="100" align="center">
             <template #default="scope">
-              <span>{{ scope.row.confirmUserName }}</span>
+              <span class="confirm-user-name">{{ scope.row.confirmUserName }}</span>
             </template>
           </el-table-column>
           <el-table-column label="备注" prop="remark" min-width="150">
             <template #default="scope">
-              <el-input v-model="scope.row.remark" placeholder="请输入备注" />
+              <el-input v-model="scope.row.remark" placeholder="如：预付款、中期款、尾款等" />
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="80" align="center">
+          <el-table-column label="操作" width="70" align="center">
             <template #default="scope">
-              <el-button
-                link
-                type="danger"
-                icon="Delete"
-                @click="handleDeleteDetail(scope.$index)"
-              >删除</el-button>
+              <el-button link type="danger" icon="Delete" @click="handleDeleteDetail(scope.$index)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
 
-        <!-- 合计 -->
-        <div style="margin-top: 10px; text-align: right; font-size: 14px; font-weight: bold;">
-          合计金额：{{ totalAmount }} 元
+        <!-- 合计金额 -->
+        <div class="total-amount-row">
+          合计金额：¥ {{ totalAmount }}
         </div>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
           <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确 定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -542,6 +574,7 @@ const marketManagerSelectRef = ref(null)
 const allUsersSelectRef = ref(null)
 const hiddenAllUsersValue = ref(null)
 const projectSelectRef = ref(null)
+const worktimeExpanded = ref(false)
 
 // 显隐列配置
 const columns = ref([
@@ -576,10 +609,14 @@ const columns = ref([
 const data = reactive({
   form: {
     projectId: null,
+    projectName: null,
     projectBudget: null,
     contractAmount: null,
     confirmAmount: null,
     revenueConfirmYear: null,
+    participantsNames: null,
+    participants: null,
+    actualWorkload: null,
     detailList: []
   },
   queryParams: {
@@ -621,12 +658,35 @@ const totalAmount = computed(() => {
   return t.toFixed(2)
 })
 
+/** 对话框标题（动态拼入项目名） */
+const dialogTitle = computed(() => {
+  if (form.value.projectName) return `项目【${form.value.projectName}】收入确认管理`
+  return '团队收入确认管理'
+})
+
+/** 计划参与人员数量 */
+const participantCount = computed(() => {
+  if (!form.value.participants) return 0
+  const ids = typeof form.value.participants === 'string'
+    ? form.value.participants.split(',').filter(id => id.trim())
+    : (Array.isArray(form.value.participants) ? form.value.participants : [])
+  return ids.length
+})
+
 /** 格式化金额为千分位，保留2位小数 */
 function formatAmount(amount) {
   if (amount === null || amount === undefined || amount === '') return '0.00'
   const num = parseFloat(amount)
   if (isNaN(num)) return '0.00'
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/** 对话框禁用 input 的金额展示（含 ¥ 前缀） */
+function formatAmountDisplay(amount) {
+  if (amount === null || amount === undefined || amount === '') return '-'
+  const num = parseFloat(amount)
+  if (isNaN(num)) return '-'
+  return '¥' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 /** 格式化工作量（取整，不显示小数） */
@@ -844,6 +904,9 @@ function handleUpdate(row) {
       contractAmount: project.contractAmount,
       confirmAmount: project.confirmAmount,
       revenueConfirmYear: project.revenueConfirmYear,
+      participantsNames: project.participantsNames,
+      participants: project.participants,
+      actualWorkload: project.actualWorkload,
       detailList: detailList.map(item => ({
         teamConfirmId: item.teamConfirmId,
         deptId: item.deptId,
@@ -903,6 +966,10 @@ function handleProjectChange(projectId) {
     form.value.contractAmount = response.data.contractAmount
     form.value.confirmAmount = response.data.confirmAmount
     form.value.revenueConfirmYear = response.data.revenueConfirmYear
+    form.value.projectName = response.data.projectName
+    form.value.participantsNames = response.data.participantsNames
+    form.value.participants = response.data.participants
+    form.value.actualWorkload = response.data.actualWorkload
   })
 }
 
@@ -930,12 +997,17 @@ function calculateTotalAmount() {}
 function reset() {
   form.value = {
     projectId: null,
+    projectName: null,
     projectBudget: null,
     contractAmount: null,
     confirmAmount: null,
     revenueConfirmYear: null,
+    participantsNames: null,
+    participants: null,
+    actualWorkload: null,
     detailList: []
   }
+  worktimeExpanded.value = false
   proxy.resetForm("formRef")
 }
 
@@ -1063,5 +1135,88 @@ getList()
 ::v-deep .summary-row {
   background-color: #f5f7fa;
   font-weight: bold;
+}
+
+/* 弹窗内部样式 */
+.participants-text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.worktime-section {
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+.worktime-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  background: #f5f7fa;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 4px;
+}
+.worktime-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #303133;
+  flex-shrink: 0;
+}
+.worktime-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #606266;
+  flex: 1;
+}
+.stat-people {
+  color: #409eff;
+  font-weight: 600;
+}
+.stat-hours {
+  color: #e6a23c;
+  font-weight: 600;
+}
+.worktime-arrow {
+  margin-left: auto;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.worktime-arrow.expanded {
+  transform: rotate(180deg);
+}
+.worktime-body {
+  padding: 0 14px 10px;
+}
+.worktime-empty {
+  display: flex;
+  justify-content: center;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.detail-header-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.confirm-user-name {
+  color: #67c23a;
+  font-weight: 500;
+}
+
+.total-amount-row {
+  margin-top: 12px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: bold;
+  color: #303133;
 }
 </style>
