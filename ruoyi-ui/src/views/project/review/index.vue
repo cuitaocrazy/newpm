@@ -6,10 +6,11 @@
           v-model="queryParams.projectName"
           filterable
           remote
+          allow-create
           clearable
           :remote-method="remoteQueryProjectNames"
           :loading="loadingProjectNames"
-          placeholder="请选择或输入项目名称"
+          placeholder="输入关键字搜索，或直接选择下拉数据"
           style="width: 240px"
           @keyup.enter="handleQuery"
           @focus="remoteQueryProjectNames('')"

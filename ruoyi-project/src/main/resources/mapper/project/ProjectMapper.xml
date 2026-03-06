@@ -214,7 +214,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             ${params.dataScope}
         </where>
-        ORDER BY COALESCE(p.update_time, p.create_time) DESC
+        ORDER BY p.update_time DESC
     </select>
 
     <!-- 查询收入确认汇总（全量筛选，不分页） -->
@@ -794,7 +794,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         FROM sys_dept d
         WHERE d.del_flag = '0'
         AND d.status = '0'
-        ${params.dataScope}
         ORDER BY d.parent_id, d.order_num
     </select>
 

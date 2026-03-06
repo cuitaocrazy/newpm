@@ -179,7 +179,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             AND latest_change.create_time BETWEEN #{params.beginChangeTime} AND #{params.endChangeTime}
         </if>
         ${params.dataScope}
-        ORDER BY p.create_time DESC
+        ORDER BY COALESCE(p.update_time, p.create_time) DESC
     </select>
 
     <!-- 查询项目的完整变更历史 -->

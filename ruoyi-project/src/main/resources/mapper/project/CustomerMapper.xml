@@ -74,8 +74,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="region != null  and region != ''"> and c.region = #{region}</if>
             <if test="salesManagerId != null "> and c.sales_manager_id = #{salesManagerId}</if>
         </where>
+        ORDER BY c.update_time DESC
     </select>
-    
+
     <select id="selectCustomerByCustomerId" parameterType="Long" resultMap="CustomerCustomerContactResult">
         select
             c.customer_id,

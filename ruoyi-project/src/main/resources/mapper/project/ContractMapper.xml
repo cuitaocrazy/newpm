@@ -98,7 +98,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="confirmYear != null  and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
             ${params.dataScope}
         </where>
-        order by COALESCE(c.update_time, c.create_time) desc
+        order by c.update_time desc
     </select>
 
     <select id="selectContractByContractId" parameterType="Long" resultMap="ContractResult">

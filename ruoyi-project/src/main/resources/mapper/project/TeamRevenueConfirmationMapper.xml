@@ -53,7 +53,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="confirmUserId != null "> and t.confirm_user_id = #{confirmUserId}</if>
             ${params.dataScope}
         </where>
-        ORDER BY COALESCE(t.update_time, t.create_time) DESC
+        ORDER BY t.update_time DESC
     </select>
     
     <select id="selectTeamRevenueConfirmationByTeamConfirmId" parameterType="Long" resultMap="TeamRevenueConfirmationResult">

@@ -1,0 +1,459 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_project_member
+  tableComment: 项目人员管理表
+  className: ProjectMember
+  functionAuthor: ruoyi
+  remark: ""
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+columns:
+  member_id:
+    columnComment: 成员主键ID
+    columnType: bigint
+    javaType: Long
+    javaField: memberId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 项目ID
+    columnType: bigint
+    javaType: Long
+    javaField: projectId
+    isInsert: true
+    isEdit: true
+    isList: false    # 列表以 projectName 显示（GROUP_CONCAT 聚合），不直接显示 ID
+    isQuery: false   # 查询通过 projectName（模糊匹配），后端用 LIKE
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  user_id:
+    columnComment: 用户ID
+    columnType: bigint
+    javaType: Long
+    javaField: userId
+    isInsert: true
+    isEdit: true
+    isList: false    # 列表以 memberNames（聚合昵称字符串）展示，不展示单条 userId
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  join_date:
+    columnComment: 加入日期
+    columnType: date
+    javaType: Date
+    javaField: joinDate
+    isInsert: true
+    isEdit: false    # 加入日期由后端 updateProjectMembers 写入当前时间，不提供前端编辑
+    isList: true     # 详情 Dialog 成员子表中展示（非主列表列）
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  leave_date:
+    columnComment: 离开日期
+    columnType: date
+    javaType: Date
+    javaField: leaveDate
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  is_active:
+    columnComment: 是否在项目中(1是 0否)
+    columnType: char(1)
+    javaType: String
+    javaField: isActive
+    isInsert: true
+    isEdit: false    # 由后端控制，不提供前端编辑
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: radio
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志(0正常 1删除)
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: projectMember
+  functionName: 项目人员管理
+  parentMenuId: 2146    # 项目管理一级菜单 menu_id
+
+# ============================
+# 定制需求（超出标准模板的组件/交互/接口需求）
+# ============================
+customizations:
+
+  # ==================
+  # 核心设计理念
+  # ==================
+  design_philosophy:
+    intent: "以项目为中心的人员管理，而非成员记录管理"
+    spec: |
+      列表展示每个项目及其当前参与人员（聚合显示）。
+      不提供独立的人员新增/删除行，所有成员编辑通过"编辑"Dialog 一次性替换（删旧插新）。
+      点击"详情"查看成员子表（含加入时间、部门）；点击"编辑"弹出 UserSelect 多选组件完成成员更新。
+      编辑成员同步更新 pm_project.participants 字段（逗号分隔的 userId 字符串）。
+
+  # ==================
+  # 后端实现说明
+  # ==================
+  backend_implementation:
+    intent: "后端数据结构与查询逻辑"
+    spec: |
+      1. 域对象 ProjectMember（pm_project_member）
+         字段：memberId, projectId, userId, joinDate, leaveDate, isActive, delFlag
+         关联查询字段（非 DB 列，ResultMap 映射）：userName, nickName, deptName
+
+      2. 列表查询 selectProjectWithMembers（返回 Map<String,Object>）
+         - 主表：pm_project p（WHERE p.del_flag = '0'）
+         - LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
+         - LEFT JOIN pm_project_member m ON p.project_id = m.project_id
+             AND m.is_active = '1' AND m.del_flag = '0'
+         - LEFT JOIN sys_user u ON m.user_id = u.user_id
+         - SELECT GROUP_CONCAT(u.nick_name ORDER BY u.nick_name SEPARATOR '、') AS memberNames
+         - GROUP BY p.project_id, p.project_name, p.project_code, d.dept_name, p.project_dept
+         - 动态条件：projectName（LIKE）、deptId（p.project_dept =）
+         - ORDER BY p.update_time DESC
+         - 返回字段：projectId, projectName, projectCode, deptName, deptId, memberNames
+
+      3. 成员详情查询 selectMembersByProjectId（返回 List<ProjectMember>）
+         - JOIN sys_user u ON m.user_id = u.user_id
+         - LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+         - WHERE m.project_id = #{projectId} AND m.is_active = '1' AND m.del_flag = '0'
+         - ORDER BY m.join_date ASC
+         - 返回：member_id, user_id, join_date + 关联字段 user_name, nick_name, dept_name
+
+      4. 更新项目成员 updateProjectMembers（事务）
+         步骤：
+         a. deleteByProjectId(projectId)         → DELETE FROM pm_project_member WHERE project_id = ?
+         b. batchInsert(members)                 → 批量插入新成员（join_date = NOW，is_active = '1'）
+         c. projectMapper.updateProject(project) → 同步 pm_project.participants = "uid1,uid2,..."
+
+      5. Mapper 接口（ProjectMemberMapper）
+         - selectMembersByProjectId(Long projectId) → List<ProjectMember>
+         - selectProjectIdsByUserId(Long userId)     → List<Long>（被 DailyReport 等使用）
+         - selectProjectWithMembers(Map params)      → List<Map<String,Object>>
+         - insertProjectMember(ProjectMember)
+         - deleteByProjectId(Long projectId)
+         - batchInsert(List<ProjectMember>)
+
+      6. Service 接口（IProjectMemberService）
+         - selectProjectMemberList(Map params)         → List<Map<String,Object>>
+         - selectProjectMemberDetail(Long projectId)   → List<ProjectMember>
+         - updateProjectMembers(Long projectId, Long[] userIds) → int
+
+  # ==================
+  # API 接口说明
+  # ==================
+  api_endpoints:
+    intent: "控制器接口清单（/project/member/）"
+    spec: |
+      GET  /list
+        - 查询项目列表（带成员聚合信息）
+        - 查询参数：projectName（String，LIKE），deptId（Long，精确）
+        - 返回：TableDataInfo（rows 为 Map 列表，字段：projectId/projectName/projectCode/deptName/deptId/memberNames）
+        - 分页：startPage() 生效
+        - 权限：project:member:list
+
+      GET  /{projectId}
+        - 查询指定项目的成员详情列表
+        - 返回：AjaxResult，data 为 List<ProjectMember>
+          每个成员包含：memberId, userId, nickName, deptName, joinDate
+        - 权限：project:member:query 或 project:member:edit（hasAnyPermi）
+
+      PUT  /
+        - 更新项目成员（删旧插新，同步 participants）
+        - RequestBody JSON：{ "projectId": Long, "userIds": [Long, ...] }
+        - 返回：AjaxResult
+        - 权限：project:member:edit
+        - @Log(title = "项目人员管理", businessType = UPDATE)
+
+  # ==================
+  # 查询表单
+  # ==================
+  query_form:
+    intent: "列表页查询条件"
+    spec: |
+      1. 项目部门（prop="deptId"）
+         - <project-dept-select> 自定义组件，v-model="queryParams.deptId"
+         - 提交 deptId（Long），后端 WHERE p.project_dept = #{deptId}
+         - style="width: 220px"
+
+      2. 项目名称（prop="projectName"）
+         - el-select，filterable + remote + clearable
+         - :remote-method="remoteSearchProject"，输入触发远程搜索
+         - @visible-change="(v) => v && loadProjectOptions()"（展开时加载初始列表）
+         - 选项显示：projectName；提交值为 projectName（String，后端 LIKE 匹配）
+         - 数据来源：GET /project/project/search?projectName={keyword}，res.data
+         - style="width: 240px"
+
+  # ==================
+  # 列表设计
+  # ==================
+  list_design:
+    intent: "列表列顺序与展示"
+    spec: |
+      列顺序：序号 → 项目名称 → 项目编号 → 所属部门 → 参与人员 → 操作
+
+      列配置：
+      - 序号：type="index", width=55, align=center
+      - 项目名称：align=left, header-align=center, width=220
+        点击触发 handleDetail(row)，蓝色字体（color: #409eff），cursor: pointer
+        文字换行：word-break: break-all; white-space: normal; line-height: 1.5
+      - 项目编号：align=center, width=160
+      - 所属部门：align=center, prop=deptName, width=150
+      - 参与人员：align=left, prop=memberNames, min-width=250
+        使用 el-tag 展示（v-for name in memberNames.split('、')），size=small，margin: 2px 4px 2px 0
+        无成员时显示灰色"暂无成员"（<span style="color: #ccc;">暂无成员</span>）
+      - 操作：align=center, width=150
+
+      工具栏（el-row）：
+      - right-toolbar（仅显隐搜索，无新增/导出按钮）
+
+      操作列按钮：
+      - 详情（link type=primary，v-hasPermi project:member:query）→ handleDetail(row)
+      - 编辑（link type=primary，v-hasPermi project:member:edit）→ handleEdit(row)
+
+      表格属性：border, stripe, style="width: 100%"
+
+  # ==================
+  # 详情 Dialog
+  # ==================
+  detail_dialog:
+    intent: "展示项目基本信息 + 当前成员子表"
+    spec: |
+      触发：操作列"详情"按钮或点击项目名称 → handleDetail(row)
+
+      Dialog：title="项目人员详情", width=700px, append-to-body
+
+      布局：
+      1. 项目信息（el-descriptions :column=2 border）：
+         - 项目名称（来自 currentProject.projectName）
+         - 项目编号（来自 currentProject.projectCode）
+
+      2. 参与人员区域：
+         - <h4> 标题："参与人员"（margin: 16px 0 10px）
+         - el-table（border, stripe, size=small, v-loading="memberLoading"）：
+             列：序号（type=index, width=55）、姓名（nickName）、部门（deptName）、加入时间（joinDate, width=120）
+         - 无成员时显示 el-empty description="暂无成员"（v-if="!memberLoading && memberList.length === 0"）
+
+      数据加载：
+        getProjectMemberDetail(row.projectId) → GET /project/member/{projectId}
+        response.data → memberList（List，每项：{ userId, nickName, deptName, joinDate }）
+
+      底部按钮：关闭
+
+      detail-container 样式：max-height: 500px; overflow-y: auto
+
+  # ==================
+  # 编辑 Dialog
+  # ==================
+  edit_dialog:
+    intent: "多选 UserSelect 一次性替换项目成员"
+    spec: |
+      触发：操作列"编辑"按钮 → handleEdit(row)
+
+      Dialog：title="编辑项目人员", width=600px, append-to-body
+
+      打开前预加载：
+        getProjectMemberDetail(row.projectId) → 提取 userId 列表 → editForm.userIds = members.map(m => m.userId)
+
+      表单字段：
+      1. 项目（只读展示）：el-tag type=info，显示 currentProject.projectName
+
+      2. 参与人员（prop="userIds"，必填）：
+         - <user-select> 自定义组件
+         - multiple（多选模式）
+         - filterable
+         - collapse-tags，:collapse-tags-tooltip="true"，:max-collapse-tags="3"
+         - v-model="editForm.userIds"（Long[] userId 数组）
+         - style="width: 100%"
+         - 验证规则：required, message="请选择参与人员", trigger="change"
+
+      提交（submitEdit）：
+        updateProjectMembers({ projectId, userIds }) → PUT /project/member
+        成功后：msgSuccess("修改成功")，关闭 Dialog，刷新列表
+
+      editForm 结构：{ projectId: null, userIds: [] }
+
+  # ==================
+  # 分页与布局
+  # ==================
+  layout:
+    intent: "容器布局与高度计算"
+    spec: |
+      容器：class="app-container project-member-container"
+      flex 纵向布局：height: 100%; display: flex; flex-direction: column
+
+      高度计算（calcTableHeight）：
+        tableHeight = windowHeight - searchHeight(100 when visible) - toolbarHeight(50)
+                    - paginationHeight(50) - padding(120)
+      onMounted 初始计算，window resize 监听，showSearch watch 重算，onUnmounted 移除监听
+
+      分页：v-show="total > 0"
+
+  # ==================
+  # 数据加载
+  # ==================
+  data_loading:
+    intent: "onMounted 初始化加载顺序"
+    spec: |
+      onMounted：
+      1. calcTableHeight()     → 计算表格高度
+      2. getList()             → 加载项目人员列表
+
+      getList：
+        listProjectMember(queryParams) → GET /project/member/list
+        response.rows → projectList，response.total → total
+
+      loadProjectOptions（初始 + 远程搜索）：
+        searchProjects(query || '') → GET /project/project/search?projectName={keyword}
+        res.data → projectOptions（用于项目名称下拉）
+
+      remoteSearchProject(query)：
+        调用 loadProjectOptions(query)
+
+  # ==================
+  # 前端 API 文件
+  # ==================
+  frontend_api:
+    intent: "src/api/project/projectMember.js"
+    spec: |
+      listProjectMember(query)          → GET  /project/member/list      （query: { projectName, deptId, pageNum, pageSize }）
+      getProjectMemberDetail(projectId) → GET  /project/member/{projectId}
+      updateProjectMembers(data)        → PUT  /project/member           （data: { projectId, userIds: [] }）
+
+      另需从 @/api/project/project 引入：
+      searchProjects(keyword)           → GET  /project/project/search?projectName={keyword}，res.data
+
+  # ==================
+  # 菜单权限
+  # ==================
+  menu_permissions:
+    intent: "菜单权限码与 sys_menu 条目"
+    spec: |
+      父菜单：项目管理（menu_id: 2146）
+
+      菜单条目（menu_id: 2165）：
+        name=项目人员管理, parent=2146, order=5, path=projectMember
+        component=project/projectMember/index, icon=peoples
+        perms=project:member:list, type=C
+
+      权限按钮：
+        menu_id 2166: 详情   project:member:query
+        menu_id 2167: 编辑   project:member:edit
+        menu_id 2248: 查询   project:member:list  （order=0，列表查询权限）
