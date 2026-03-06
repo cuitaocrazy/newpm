@@ -188,7 +188,7 @@ public class ProjectController extends BaseController
     /**
      * 获取部门树（三级及以下机构）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:payment:list,revenue:company:list,revenue:team:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity,project:projectStageChange:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:project:add,project:project:edit,project:payment:list,revenue:company:list,revenue:team:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity,project:projectStageChange:list,project:approval:list')")
     @GetMapping("/deptTree")
     public AjaxResult getDeptTree()
     {

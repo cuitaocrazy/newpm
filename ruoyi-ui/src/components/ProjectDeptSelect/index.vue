@@ -18,6 +18,7 @@
 <script setup name="ProjectDeptSelect">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { handleTree } from '@/utils/ruoyi'
 
 // Props
 const props = defineProps({
@@ -90,10 +91,15 @@ function filterDeptTree(depts, level = 1) {
 /** 获取部门树 */
 function loadDeptTree() {
   request({
-    url: '/system/dept/treeselect',
+    url: '/project/project/deptTree',
     method: 'get'
   }).then(response => {
-    const allDepts = response.data || []
+    const flatList = (response.data || []).map((d) => ({
+      id: d.deptId,
+      label: d.deptName,
+      parentId: d.parentId
+    }))
+    const allDepts = handleTree(flatList, 'id', 'parentId')
     // 过滤掉前两级，只显示三级及以下机构
     deptOptions.value = filterDeptTree(allDepts)
   })
