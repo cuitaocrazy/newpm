@@ -991,8 +991,8 @@ customizations:
           - LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id → sr.region_name
           - LEFT JOIN pm_project_contract_rel pcr → pcr.contract_id
           - LEFT JOIN pm_contract c → c.contract_name, c.contract_amount, c.contract_status
-          - LEFT JOIN sys_user u_upd → u_upd.nick_name AS update_by_name
-          - LEFT JOIN sys_user u1 → u1.nick_name AS project_manager_name
+          - LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name → u_upd.nick_name AS update_by_name
+          - LEFT JOIN sys_user u1 ON ... → u1.nick_name AS project_manager_name
 
       11. Collation 注意事项
           - pm_project 使用 utf8mb4_0900_ai_ci，sys_user 使用 utf8mb4_unicode_ci
@@ -1001,6 +1001,19 @@ customizations:
       12. adjust_workload（调整工作量）
           - 数据库字段，默认值 0.00
           - 当前前端列表/新增/编辑页面未显示，保留供后续功能扩展使用
+
+      13. 申请人昵称（createByName）— 非数据库字段
+          - 实体类扩展字段 createByName（private String createByName）
+          - selectReviewList（立项审核列表）通过 LEFT JOIN sys_user u1 ON p.create_by COLLATE utf8mb4_unicode_ci = u1.user_name 获取
+          - 立项审核列表显示为"申请人"列，prop="createByName"
+          - selectProjectList 不包含此字段（项目列表用 updateByName 显示更新人）
+
+      14. 立项审核（selectReviewList）排序与默认过滤
+          - 支持动态排序：ORDER BY 通过 <choose><when> 判断 params.orderByColumn
+          - projectBudget 列支持 sortable="custom"（表头点击升序/降序），SQL 映射 p.project_budget
+          - 默认排序：p.update_time DESC（所有列表统一）
+          - 立项审核查询条件：项目名称(el-select远程)、项目部门(el-tree-select)、项目分类、一级区域、二级区域(联动)、项目经理(UserSelect post-code=pm)、市场经理(UserSelect post-code=scjl)、审核状态
+          - 默认 approvalStatus='0'（待审核），queryParams 初始化时预设
 
   # ==================
   # 前端字段绑定说明
@@ -1078,15 +1091,29 @@ customizations:
       编辑页面：只读显示，不可修改
 
   project_name_autocomplete:
-    intent: "项目名称查询条件自动完成"
+    intent: "项目名称查询条件支持选择和模糊查询"
     component:
-      type: "el-autocomplete"
+      type: "el-select"
       props:
-        fetch-suggestions: "queryProjectNames"
+        filterable: true
+        remote: true
+        reserve-keyword: true
         clearable: true
-        placeholder: "请输入项目名称"
+        ":remote-method": "remoteQueryProjectNames"
+        ":loading": "projectSearchLoading"
+        "@visible-change": "(v) => v && remoteQueryProjectNames('')"
+        placeholder: "请选择或输入项目名称"
         style: "width: 240px"
-    bindTo: "project_name"
+    bindTo: "projectName"
+    service:
+      endpoint: "GET /project/project/search?projectName={query}"
+      returns: "项目列表: projectId, projectName, projectCode（res.data，max 20条）"
+    spec: |
+      - 下拉框展开时立即加载所有项目（@visible-change 触发空串查询）
+      - 远程搜索：用户输入关键字触发 remoteQueryProjectNames(query)
+      - 选项显示：主显 projectName，右侧灰色显示 projectCode
+      - 值绑定：queryParams.projectName（文本值，LIKE 查询）或 queryParams.projectId（ID 精确查询，按需选择）
+      - import: { searchProjects } from "@/api/project/project"
 
   region_id_dynamic_loading:
     intent: "二级区域根据一级区域动态加载"
@@ -1517,18 +1544,18 @@ customizations:
   approval_workflow:
     intent: "项目审核流程"
     spec: |
-      审核状态流转（字典:sys_spzt）：
+      审核状态流转（字典:sys_spzt，仅3个值）：
       - 新增项目 → 待审核(0)
       - 审核通过 → 审核通过(1)
       - 审核拒绝 → 审核拒绝(2)，必填拒绝原因
-      - 退回 → 退回待审核(3)，已通过项目可退回重新审核
+      - 退回 → 退回至待审核(0)，已通过项目可退回重新审核（无独立"退回"状态）
       - 编辑已拒绝项目并提交 → 重新变为待审核(0)，自动生成 pm_project_approval 记录
 
       ProjectApprovalController 额外接口（/project/approval/）：
       - POST /approve   → 审批操作，body: { projectId, approvalStatus, approvalReason }
                           approvalStatus=2时 approvalReason 必填
       - POST /rollback  → 退回已通过项目，body: { projectId, rollbackReason }
-                          审核状态改为"退回待审核(3)"
+                          审核状态改回待审核(0)，同时更新 pm_project 和 pm_project_approval 两张表
       - GET  /history/{projectId} → 查询项目的完整审核历史（返回 pm_project_approval 记录列表）
       - GET  /projectList         → 审核专用项目列表（权限: project:approval:list，查 pm_project）
       - GET  /projectSummary      → 审核列表的预算合计汇总
@@ -1541,6 +1568,7 @@ customizations:
       - ProjectController.edit() 检测原审核状态
       - 已拒绝(2)项目修改时自动变为待审核(0)
       - 自动生成 pm_project_approval 审核记录
+      - rollbackProject() 将 pm_project.approval_status 和 pm_project_approval 中最新记录均改为 '0'
 
   # ==================
   # 收入确认相关
