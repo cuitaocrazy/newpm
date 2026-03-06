@@ -2,6 +2,7 @@ package com.ruoyi.project.domain.vo;
 
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 项目经理变更视图对象（以项目为中心）
@@ -9,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  * @author ruoyi
  * @date 2026-02-14
  */
-public class ProjectManagerChangeVO
+public class ProjectManagerChangeVO extends BaseEntity
 {
     /** 项目ID */
     private Long projectId;

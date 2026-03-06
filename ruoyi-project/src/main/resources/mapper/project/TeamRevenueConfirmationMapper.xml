@@ -40,16 +40,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_team_revenue_confirmation t
         left join sys_dept d on t.dept_id = d.dept_id
         left join sys_user u on t.confirm_user_id = u.user_id
+        left join sys_user u_create on t.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
     </sql>
 
     <select id="selectTeamRevenueConfirmationList" parameterType="TeamRevenueConfirmation" resultMap="TeamRevenueConfirmationResult">
         <include refid="selectTeamRevenueConfirmationVo"/>
-        <where>  
-            <if test="projectId != null "> and project_id = #{projectId}</if>
-            <if test="deptId != null "> and dept_id = #{deptId}</if>
-            <if test="confirmAmount != null "> and confirm_amount = #{confirmAmount}</if>
-            <if test="confirmTime != null "> and confirm_time = #{confirmTime}</if>
-            <if test="confirmUserId != null "> and confirm_user_id = #{confirmUserId}</if>
+        <where>
+            <if test="projectId != null "> and t.project_id = #{projectId}</if>
+            <if test="deptId != null "> and t.dept_id = #{deptId}</if>
+            <if test="confirmAmount != null "> and t.confirm_amount = #{confirmAmount}</if>
+            <if test="confirmTime != null "> and t.confirm_time = #{confirmTime}</if>
+            <if test="confirmUserId != null "> and t.confirm_user_id = #{confirmUserId}</if>
+            ${params.dataScope}
         </where>
         ORDER BY COALESCE(t.update_time, t.create_time) DESC
     </select>

@@ -63,6 +63,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             GROUP BY project_id
         ) pcr ON p.project_id = pcr.project_id
         LEFT JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         LEFT JOIN (
             SELECT change_id, project_id, old_stage, new_stage, change_reason, create_by, create_time
             FROM (
@@ -77,6 +79,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.del_flag = '0'
             <if test="projectId != null">AND p.project_id = #{projectId}</if>
             <if test="projectStage != null and projectStage != ''">AND p.project_stage = #{projectStage}</if>
+            ${params.dataScope}
         </where>
         ORDER BY p.update_time DESC
     </select>

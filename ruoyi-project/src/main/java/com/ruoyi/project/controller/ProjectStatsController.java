@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.domain.vo.ProjectStatsVO;
 import com.ruoyi.project.service.IProjectStatsService;
 
@@ -37,8 +38,10 @@ public class ProjectStatsController extends BaseController
             @RequestParam(defaultValue = "1")  int pageNum,
             @RequestParam(defaultValue = "10") int pageSize)
     {
-        long total = projectStatsService.countProjects(projectName);
-        List<ProjectStatsVO> rows = projectStatsService.selectProjectStatsList(projectName, pageNum, pageSize);
+        Project query = new Project();
+        query.setProjectName(projectName);
+        long total = projectStatsService.countProjects(query);
+        List<ProjectStatsVO> rows = projectStatsService.selectProjectStatsList(query, pageNum, pageSize);
 
         Map<String, Object> result = new HashMap<>();
         result.put("total", total);

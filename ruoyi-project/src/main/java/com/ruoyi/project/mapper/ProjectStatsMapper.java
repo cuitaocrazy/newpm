@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.apache.ibatis.annotations.Param;
+import com.ruoyi.project.domain.Project;
 
 /**
  * 项目人天统计 Mapper
@@ -13,14 +14,14 @@ public interface ProjectStatsMapper
     /**
      * 统计符合条件的项目总数（用于分页）
      */
-    long countProjects(@Param("projectName") String projectName);
+    long countProjects(Project query);
 
     /**
      * 分页查询项目人天统计（按项目+阶段平铺）
      * 先按项目分页，再取各项目的阶段明细，避免 rowspan 被截断
      */
     List<Map<String, Object>> selectProjectStatsByStageWithPage(
-            @Param("projectName") String projectName,
+            @Param("query") Project query,
             @Param("offset") long offset,
             @Param("pageSize") int pageSize);
 

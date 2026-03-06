@@ -15,10 +15,10 @@ public interface IProjectMemberService
     /**
      * 查询项目列表（带成员聚合信息，用于分页列表）
      *
-     * @param params 查询参数（projectName, deptId）
+     * @param query 查询参数（projectName, deptId）
      * @return 项目+成员聚合列表
      */
-    public List<Map<String, Object>> selectProjectMemberList(Map<String, Object> params);
+    public List<Map<String, Object>> selectProjectMemberList(ProjectMember query);
 
     /**
      * 查询项目成员详情（完整成员列表）

@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.annotation.DataScope;
+import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.domain.vo.ProjectStatsVO;
 import com.ruoyi.project.domain.vo.StageStatsVO;
 import com.ruoyi.project.mapper.ProjectStatsMapper;
@@ -22,16 +24,18 @@ public class ProjectStatsServiceImpl implements IProjectStatsService
     private ProjectStatsMapper projectStatsMapper;
 
     @Override
-    public long countProjects(String projectName)
+    @DataScope(deptAlias = "d", userAlias = "u_create")
+    public long countProjects(Project query)
     {
-        return projectStatsMapper.countProjects(projectName);
+        return projectStatsMapper.countProjects(query);
     }
 
     @Override
-    public List<ProjectStatsVO> selectProjectStatsList(String projectName, int pageNum, int pageSize)
+    @DataScope(deptAlias = "d", userAlias = "u_create")
+    public List<ProjectStatsVO> selectProjectStatsList(Project query, int pageNum, int pageSize)
     {
         long offset = (long) (pageNum - 1) * pageSize;
-        List<Map<String, Object>> rows = projectStatsMapper.selectProjectStatsByStageWithPage(projectName, offset, pageSize);
+        List<Map<String, Object>> rows = projectStatsMapper.selectProjectStatsByStageWithPage(query, offset, pageSize);
 
         // 按 projectId 聚合（保持 ORDER BY 顺序）
         Map<Long, ProjectStatsVO> projectMap = new LinkedHashMap<>();

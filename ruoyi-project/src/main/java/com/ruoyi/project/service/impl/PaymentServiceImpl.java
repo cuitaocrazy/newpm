@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 import jakarta.servlet.http.HttpServletResponse;
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,7 @@ public class PaymentServiceImpl implements IPaymentService
      * @return 款项管理
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u1")
     public List<Payment> selectPaymentList(Payment payment)
     {
         return paymentMapper.selectPaymentList(payment);

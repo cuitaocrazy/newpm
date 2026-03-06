@@ -146,6 +146,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ) tc ON p.project_id = tc.project_id
         LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
         LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
@@ -210,6 +212,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="confirmDeptId != null and confirmDeptId != -1">
                 AND EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2 WHERE tc2.project_id = p.project_id AND tc2.dept_id = #{confirmDeptId} AND tc2.del_flag = '0')
             </if>
+            ${params.dataScope}
         </where>
         ORDER BY COALESCE(p.update_time, p.create_time) DESC
     </select>
@@ -234,6 +237,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
             GROUP BY pcr.project_id
         ) ca ON p.project_id = ca.project_id
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
@@ -250,6 +255,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="revenueConfirmStatus != null  and revenueConfirmStatus != ''"> and p.revenue_confirm_status = #{revenueConfirmStatus}</if>
             <if test="revenueConfirmYear != null  and revenueConfirmYear != ''"> and p.revenue_confirm_year = #{revenueConfirmYear}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and ca.contract_status = #{contractStatus}</if>
+            ${params.dataScope}
         </where>
     </select>
 
@@ -280,6 +286,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             WHERE t.del_flag = '0'
             GROUP BY t.project_id
         ) tc ON p.project_id = tc.project_id
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
@@ -311,6 +319,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="confirmDeptId != null and confirmDeptId != -1">
                 AND EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2 WHERE tc2.project_id = p.project_id AND tc2.dept_id = #{confirmDeptId} AND tc2.del_flag = '0')
             </if>
+            ${params.dataScope}
         </where>
     </select>
 
@@ -775,17 +784,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 获取部门树（返回所有部门,前端过滤三级及以下用于选择） -->
-    <select id="selectDeptTree" resultType="map">
+    <select id="selectDeptTree" parameterType="Project" resultType="map">
         SELECT
-            dept_id AS deptId,
-            parent_id AS parentId,
-            dept_name AS deptName,
-            ancestors,
-            order_num AS orderNum
-        FROM sys_dept
-        WHERE del_flag = '0'
-        AND status = '0'
-        ORDER BY parent_id, order_num
+            d.dept_id AS deptId,
+            d.parent_id AS parentId,
+            d.dept_name AS deptName,
+            d.ancestors,
+            d.order_num AS orderNum
+        FROM sys_dept d
+        WHERE d.del_flag = '0'
+        AND d.status = '0'
+        ${params.dataScope}
+        ORDER BY d.parent_id, d.order_num
     </select>
 
     <!-- 查询待审核项目列表 -->

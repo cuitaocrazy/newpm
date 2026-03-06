@@ -2,7 +2,6 @@ package com.ruoyi.project.mapper;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.ProjectMember;
 
 /**
@@ -56,8 +55,8 @@ public interface ProjectMemberMapper
     /**
      * 查询项目列表（带成员聚合信息）
      *
-     * @param params 查询参数（projectName, deptId）
+     * @param query 查询参数（projectName, deptId via params.dataScope）
      * @return 项目+成员聚合列表
      */
-    public List<Map<String, Object>> selectProjectWithMembers(Map<String, Object> params);
+    public List<Map<String, Object>> selectProjectWithMembers(ProjectMember query);
 }

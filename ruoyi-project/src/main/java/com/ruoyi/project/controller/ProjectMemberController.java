@@ -1,6 +1,5 @@
 package com.ruoyi.project.controller;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,13 +36,10 @@ public class ProjectMemberController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:member:list')")
     @GetMapping("/list")
-    public TableDataInfo list(String projectName, Long deptId)
+    public TableDataInfo list(ProjectMember query)
     {
         startPage();
-        Map<String, Object> params = new HashMap<>();
-        params.put("projectName", projectName);
-        params.put("deptId", deptId);
-        List<Map<String, Object>> list = projectMemberService.selectProjectMemberList(params);
+        List<Map<String, Object>> list = projectMemberService.selectProjectMemberList(query);
         return getDataTable(list);
     }
 

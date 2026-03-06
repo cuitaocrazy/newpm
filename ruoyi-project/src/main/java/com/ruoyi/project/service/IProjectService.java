@@ -109,9 +109,10 @@ public interface IProjectService
     /**
      * 获取部门树（三级及以下机构）
      *
+     * @param project 查询参数（用于数据权限过滤）
      * @return 部门树
      */
-    public List<Map<String, Object>> getDeptTree();
+    public List<Map<String, Object>> getDeptTree(Project project);
 
     /**
      * 生成项目编号

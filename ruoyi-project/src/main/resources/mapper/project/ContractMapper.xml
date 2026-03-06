@@ -96,6 +96,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null  and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            ${params.dataScope}
         </where>
         order by COALESCE(c.update_time, c.create_time) desc
     </select>
@@ -314,6 +315,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
+            ${params.dataScope}
         </where>
         order by c.create_time desc, p.create_time asc
     </select>

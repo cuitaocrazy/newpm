@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -58,6 +59,7 @@ public class ProjectServiceImpl implements IProjectService
      * 查询收入确认汇总（全量筛选，不分页）
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
     public Map<String, Object> selectRevenueSummary(Project project)
     {
         return projectMapper.selectRevenueSummary(project);
@@ -70,6 +72,7 @@ public class ProjectServiceImpl implements IProjectService
      * @return 项目管理
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
     public List<Project> selectProjectList(Project project)
     {
         List<Project> list = projectMapper.selectProjectList(project);
@@ -91,6 +94,7 @@ public class ProjectServiceImpl implements IProjectService
     }
 
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
     public Map<String, Object> selectProjectSummary(Project project)
     {
         return projectMapper.selectProjectSummary(project);
@@ -207,9 +211,10 @@ public class ProjectServiceImpl implements IProjectService
      * @return 部门树
      */
     @Override
-    public List<Map<String, Object>> getDeptTree()
+    @DataScope(deptAlias = "d")
+    public List<Map<String, Object>> getDeptTree(Project project)
     {
-        return projectMapper.selectDeptTree();
+        return projectMapper.selectDeptTree(project);
     }
 
     /**

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.DailyReportDetail;
@@ -66,6 +67,7 @@ public class DailyReportServiceImpl implements IDailyReportService
      * @return 工作日报集合
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
     public List<DailyReport> selectDailyReportList(DailyReport query)
     {
         return dailyReportMapper.selectDailyReportList(query);
@@ -78,6 +80,7 @@ public class DailyReportServiceImpl implements IDailyReportService
      * @return 工作日报集合（含明细）
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
     public List<DailyReport> selectMonthlyReports(DailyReport query)
     {
         return dailyReportMapper.selectMonthlyReports(query);

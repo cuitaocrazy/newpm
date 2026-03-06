@@ -1,6 +1,7 @@
 package com.ruoyi.project.service.impl;
 
 import java.util.List;
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -110,6 +111,7 @@ public class ProjectManagerChangeServiceImpl implements IProjectManagerChangeSer
      * @return 项目列表
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
     public List<ProjectManagerChangeVO> selectProjectListWithLatestChange(ProjectManagerChangeVO vo)
     {
         return projectManagerChangeMapper.selectProjectListWithLatestChange(vo);

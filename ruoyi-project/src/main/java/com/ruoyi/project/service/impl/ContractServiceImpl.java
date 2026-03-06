@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.ProjectContractRel;
@@ -97,6 +98,7 @@ public class ContractServiceImpl implements IContractService
      * @return 合同管理
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u1")
     public List<Contract> selectContractList(Contract contract)
     {
         List<Contract> contractList = contractMapper.selectContractList(contract);
@@ -364,6 +366,7 @@ public class ContractServiceImpl implements IContractService
      * @return 合同及付款里程碑列表
      */
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u1")
     public List<Contract> selectContractWithPaymentsList(Contract contract)
     {
         return contractMapper.selectContractWithPaymentsList(contract);

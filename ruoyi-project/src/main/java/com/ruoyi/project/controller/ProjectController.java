@@ -192,7 +192,7 @@ public class ProjectController extends BaseController
     @GetMapping("/deptTree")
     public AjaxResult getDeptTree()
     {
-        return success(projectService.getDeptTree());
+        return success(projectService.getDeptTree(new Project()));
     }
 
     /**

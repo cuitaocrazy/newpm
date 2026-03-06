@@ -54,6 +54,12 @@ public class ProjectMember extends BaseEntity
     @Excel(name = "部门名称")
     private String deptName;
 
+    /** 项目名称（查询条件，非DB字段） */
+    private String projectName;
+
+    /** 部门ID（查询条件，非DB字段） */
+    private Long deptId;
+
     public void setMemberId(Long memberId)
     {
         this.memberId = memberId;
@@ -152,6 +158,26 @@ public class ProjectMember extends BaseEntity
     public String getDeptName()
     {
         return deptName;
+    }
+
+    public void setProjectName(String projectName)
+    {
+        this.projectName = projectName;
+    }
+
+    public String getProjectName()
+    {
+        return projectName;
+    }
+
+    public void setDeptId(Long deptId)
+    {
+        this.deptId = deptId;
+    }
+
+    public Long getDeptId()
+    {
+        return deptId;
     }
 
     @Override

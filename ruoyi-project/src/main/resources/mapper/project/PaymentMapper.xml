@@ -82,6 +82,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''">
                 and date_format(p.actual_payment_date,'%Y-%m-%d') &lt;= date_format(#{params.actualPaymentDateEnd},'%Y-%m-%d')
             </if>
+            ${params.dataScope}
         </where>
         order by COALESCE(p.update_time, p.create_time) desc
     </select>

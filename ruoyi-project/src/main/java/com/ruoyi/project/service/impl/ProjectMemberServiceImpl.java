@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,9 +36,10 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
      * 查询项目列表（带成员聚合信息）
      */
     @Override
-    public List<Map<String, Object>> selectProjectMemberList(Map<String, Object> params)
+    @DataScope(deptAlias = "d", userAlias = "u_create")
+    public List<Map<String, Object>> selectProjectMemberList(ProjectMember query)
     {
-        return projectMemberMapper.selectProjectWithMembers(params);
+        return projectMemberMapper.selectProjectWithMembers(query);
     }
 
     /**

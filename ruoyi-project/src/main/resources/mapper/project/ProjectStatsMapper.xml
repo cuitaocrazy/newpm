@@ -5,13 +5,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="com.ruoyi.project.mapper.ProjectStatsMapper">
 
     <!-- 统计符合条件的项目总数 -->
-    <select id="countProjects" resultType="long">
-        SELECT COUNT(*)
-        FROM pm_project
-        WHERE del_flag = '0'
+    <select id="countProjects" parameterType="Project" resultType="long">
+        SELECT COUNT(DISTINCT p.project_id)
+        FROM pm_project p
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
+        WHERE p.del_flag = '0'
         <if test="projectName != null and projectName != ''">
-            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
         </if>
+        ${params.dataScope}
     </select>
 
     <!--
@@ -26,30 +29,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             u.nick_name                                   AS projectManagerName,
             p.estimated_workload                          AS estimatedWorkload,
             p.adjust_workload                             AS adjustWorkload,
-            d.project_stage                               AS projectStage,
-            ROUND(COALESCE(SUM(d.work_hours), 0) / 8, 2) AS stageDays
+            d2.project_stage                              AS projectStage,
+            ROUND(COALESCE(SUM(d2.work_hours), 0) / 8, 2) AS stageDays
         FROM pm_project p
         LEFT JOIN sys_user u
                ON u.user_id = p.project_manager_id AND u.del_flag = '0'
-        LEFT JOIN pm_daily_report_detail d
-               ON d.project_id = p.project_id AND d.del_flag = '0'
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
+        LEFT JOIN pm_daily_report_detail d2
+               ON d2.project_id = p.project_id AND d2.del_flag = '0'
         LEFT JOIN pm_daily_report r
-               ON r.report_id = d.report_id AND r.del_flag = '0'
+               ON r.report_id = d2.report_id AND r.del_flag = '0'
         WHERE p.del_flag = '0'
           AND p.project_id IN (
-              SELECT project_id FROM (
-                  SELECT project_id FROM pm_project
-                  WHERE del_flag = '0'
-                  <if test="projectName != null and projectName != ''">
-                      AND project_name LIKE CONCAT('%', #{projectName}, '%')
+              SELECT paged.project_id FROM (
+                  SELECT p2.project_id
+                  FROM pm_project p2
+                  LEFT JOIN sys_dept d3 ON CAST(p2.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d3.dept_id AS CHAR)
+                  LEFT JOIN sys_user u3 ON p2.create_by COLLATE utf8mb4_unicode_ci = u3.user_name
+                  WHERE p2.del_flag = '0'
+                  <if test="query.projectName != null and query.projectName != ''">
+                      AND p2.project_name LIKE CONCAT('%', #{query.projectName}, '%')
                   </if>
-                  ORDER BY project_id
+                  ${query.params.dataScope}
+                  ORDER BY p2.project_id
                   LIMIT #{offset}, #{pageSize}
-              ) paged_ids
+              ) paged
           )
         GROUP BY p.project_id, p.project_name, u.nick_name,
-                 p.estimated_workload, p.adjust_workload, d.project_stage
-        ORDER BY p.project_id, d.project_stage
+                 p.estimated_workload, p.adjust_workload, d2.project_stage
+        ORDER BY p.project_id, d2.project_stage
     </select>
 
     <!-- 更新调整人天 -->

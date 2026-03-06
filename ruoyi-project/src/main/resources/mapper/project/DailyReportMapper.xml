@@ -95,6 +95,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <if test="reportDateEnd != null"> and r.report_date &lt;= #{reportDateEnd}</if>
         <if test="yearMonth != null and yearMonth != ''"> and DATE_FORMAT(r.report_date, '%Y-%m') = #{yearMonth}</if>
         <if test="params.nickName != null and params.nickName != ''"> and u.nick_name like concat('%', #{params.nickName}, '%')</if>
+        ${params.dataScope}
     </sql>
 
     <!-- 查询日报列表（不含明细） -->

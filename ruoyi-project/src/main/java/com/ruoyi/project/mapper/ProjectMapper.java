@@ -117,9 +117,10 @@ public interface ProjectMapper
     /**
      * 获取部门树（三级及以下机构）
      *
+     * @param project 查询参数（用于数据权限过滤）
      * @return 部门树
      */
-    public List<Map<String, Object>> selectDeptTree();
+    public List<Map<String, Object>> selectDeptTree(Project project);
 
     /**
      * 查询待审核项目列表
