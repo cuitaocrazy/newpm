@@ -196,6 +196,16 @@ public class ProjectController extends BaseController
     }
 
     /**
+     * 获取全量部门树（不限数据权限，用于参与人员选择）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:project:add,project:project:edit,project:member:edit')")
+    @GetMapping("/deptTreeAll")
+    public AjaxResult getAllDeptTree()
+    {
+        return success(projectService.getAllDeptTree());
+    }
+
+    /**
      * 生成项目编号
      * @param params 包含：industryCode, regionCode, provinceCode, shortName, establishedYear
      */

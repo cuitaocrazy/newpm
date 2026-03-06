@@ -133,6 +133,11 @@ public interface ProjectMapper
     public List<Map<String, Object>> selectDeptTree(Project project);
 
     /**
+     * 获取全量部门树（不限数据权限）
+     */
+    public List<Map<String, Object>> selectAllDeptTree();
+
+    /**
      * 查询待审核项目列表
      *
      * @param project 项目查询条件

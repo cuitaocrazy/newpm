@@ -275,6 +275,7 @@
                   v-model="form.participants"
                   placeholder="请选择参与人员"
                   style="width: 100%"
+                  :no-data-scope="true"
                 />
               </el-form-item>
             </el-col>

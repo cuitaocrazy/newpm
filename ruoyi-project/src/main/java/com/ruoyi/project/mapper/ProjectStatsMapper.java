@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.WorkloadCorrectLog;
 
 /**
  * 项目人天统计 Mapper
@@ -35,4 +36,19 @@ public interface ProjectStatsMapper
      * 项目名称 autocomplete 查询
      */
     List<Map<String, Object>> selectProjectNameSuggestions(@Param("keyword") String keyword);
+
+    /**
+     * 查询项目当前调整人天值（用于记录补正前值）
+     */
+    BigDecimal selectCurrentAdjustWorkload(@Param("projectId") Long projectId);
+
+    /**
+     * 插入补正日志
+     */
+    int insertCorrectLog(WorkloadCorrectLog log);
+
+    /**
+     * 查询项目补正日志列表（按时间倒序）
+     */
+    List<WorkloadCorrectLog> selectCorrectLogsByProjectId(@Param("projectId") Long projectId);
 }

@@ -7,8 +7,11 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.annotation.DataScope;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.WorkloadCorrectLog;
 import com.ruoyi.project.domain.vo.ProjectStatsVO;
 import com.ruoyi.project.domain.vo.StageStatsVO;
 import com.ruoyi.project.mapper.ProjectStatsMapper;
@@ -83,9 +86,32 @@ public class ProjectStatsServiceImpl implements IProjectStatsService
     }
 
     @Override
-    public int updateAdjustWorkload(Long projectId, BigDecimal adjustWorkload)
+    @Transactional
+    public void correctAdjustWorkload(Long projectId, Integer direction, BigDecimal delta,
+                                      BigDecimal afterAdjust, String reason)
     {
-        return projectStatsMapper.updateAdjustWorkload(projectId, adjustWorkload);
+        BigDecimal beforeAdjust = projectStatsMapper.selectCurrentAdjustWorkload(projectId);
+        if (beforeAdjust == null) beforeAdjust = BigDecimal.ZERO;
+
+        // 更新项目表
+        projectStatsMapper.updateAdjustWorkload(projectId, afterAdjust);
+
+        // 记录补正日志
+        WorkloadCorrectLog log = new WorkloadCorrectLog();
+        log.setProjectId(projectId);
+        log.setDirection(direction);
+        log.setDelta(delta);
+        log.setBeforeAdjust(beforeAdjust);
+        log.setAfterAdjust(afterAdjust);
+        log.setReason(reason);
+        log.setCreateBy(SecurityUtils.getUsername());
+        projectStatsMapper.insertCorrectLog(log);
+    }
+
+    @Override
+    public List<WorkloadCorrectLog> selectCorrectLogs(Long projectId)
+    {
+        return projectStatsMapper.selectCorrectLogsByProjectId(projectId);
     }
 
     @Override

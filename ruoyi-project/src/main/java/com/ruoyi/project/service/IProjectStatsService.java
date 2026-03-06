@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import com.ruoyi.project.domain.Project;
+import com.ruoyi.project.domain.WorkloadCorrectLog;
 import com.ruoyi.project.domain.vo.ProjectStatsVO;
 
 /**
@@ -27,9 +28,21 @@ public interface IProjectStatsService
     List<ProjectStatsVO> selectProjectStatsList(Project query, int pageNum, int pageSize);
 
     /**
-     * 更新调整人天
+     * 更新调整人天并记录补正日志
+     *
+     * @param projectId     项目ID
+     * @param direction     调整方向(0=增加,1=减少)
+     * @param delta         调整人天数
+     * @param afterAdjust   调整后值（由前端计算传入）
+     * @param reason        补正理由
      */
-    int updateAdjustWorkload(Long projectId, BigDecimal adjustWorkload);
+    void correctAdjustWorkload(Long projectId, Integer direction, BigDecimal delta,
+                               BigDecimal afterAdjust, String reason);
+
+    /**
+     * 查询项目补正日志列表
+     */
+    List<WorkloadCorrectLog> selectCorrectLogs(Long projectId);
 
     /**
      * 项目名称 autocomplete

@@ -217,6 +217,12 @@ public class ProjectServiceImpl implements IProjectService
         return projectMapper.selectDeptTree(project);
     }
 
+    @Override
+    public List<Map<String, Object>> getAllDeptTree()
+    {
+        return projectMapper.selectAllDeptTree();
+    }
+
     /**
      * 生成项目编号
      * 格式：{行业代码}-{一级区域代码}-{二级区域代码}-{简称}-{立项年份}

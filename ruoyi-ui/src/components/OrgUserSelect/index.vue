@@ -80,6 +80,10 @@ const props = defineProps({
   popoverWidth: {
     type: Number,
     default: 320
+  },
+  noDataScope: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -113,8 +117,9 @@ function filterNode(value, data) {
 
 /** 构建组织机构树（部门 + 用户） */
 async function loadData() {
+  const deptUrl = props.noDataScope ? '/project/project/deptTreeAll' : '/project/project/deptTree'
   const [deptRes, userRes] = await Promise.all([
-    request({ url: '/project/project/deptTree', method: 'get' }),
+    request({ url: deptUrl, method: 'get' }),
     getUsersByPost(null)
   ])
 

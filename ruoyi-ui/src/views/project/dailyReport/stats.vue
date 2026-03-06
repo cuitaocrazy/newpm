@@ -24,7 +24,6 @@
     <el-table
       v-loading="loading"
       :data="tableRows"
-      :span-method="spanMethod"
       :height="tableHeight"
       border
       style="width: 100%"
@@ -39,23 +38,13 @@
       <el-table-column label="预估工作量(人天)" prop="estimatedWorkload" align="center" />
       <el-table-column label="实际人天" prop="actualDays" align="center" />
       <el-table-column label="日报人天(合计)" prop="totalActualDays" align="center" />
-      <el-table-column label="调整人天" min-width="150" align="center">
+      <el-table-column label="调整人天" prop="adjustWorkload" align="center" />
+      <el-table-column label="操作" width="130" align="center">
         <template #default="scope">
-          <el-input-number
-            v-model="scope.row.adjustWorkload"
-            :precision="2"
-            :step="1"
-            style="width: 138px"
-            @change="(val) => handleAdjustChange(scope.row, val)"
-          />
+          <el-button type="primary" link @click="openCorrectDialog(scope.row)">补正</el-button>
+          <el-button type="info" link @click="openLogDialog(scope.row)">日志</el-button>
         </template>
       </el-table-column>
-      <el-table-column label="项目阶段" prop="projectStage" align="center">
-        <template #default="scope">
-          <dict-tag :options="sys_xmjd" :value="scope.row.projectStage" />
-        </template>
-      </el-table-column>
-      <el-table-column label="日报人天" prop="stageDays" align="center" />
     </el-table>
 
     <!-- 分页 -->
@@ -66,19 +55,70 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 补正对话框 -->
+    <el-dialog v-model="correctDialog.visible" title="人天补正" width="480px" @close="resetCorrectForm">
+      <el-form :model="correctForm" ref="correctFormRef" :rules="correctRules" label-width="80px">
+        <el-form-item label="调整人天" prop="delta">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <el-select v-model="correctForm.direction" style="width: 90px">
+              <el-option label="增加" :value="0" />
+              <el-option label="减少" :value="1" />
+            </el-select>
+            <el-input-number
+              v-model="correctForm.delta"
+              :min="0"
+              :precision="2"
+              :step="1"
+              style="width: 150px"
+            />
+            <span>人天</span>
+          </div>
+        </el-form-item>
+        <el-form-item label="理由" prop="reason">
+          <el-input v-model="correctForm.reason" placeholder="请输入补正理由" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="correctDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="correctDialog.saving" @click="saveCorrect">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 补正日志对话框 -->
+    <el-dialog v-model="logDialog.visible" :title="`补正日志 — ${logDialog.projectName}`" width="780px">
+      <el-table :data="logDialog.list" v-loading="logDialog.loading" border stripe size="small">
+        <el-table-column type="index" label="序号" width="55" align="center" />
+        <el-table-column label="操作时间" prop="createTime" width="160" align="center" />
+        <el-table-column label="操作人" prop="createByName" width="100" align="center" />
+        <el-table-column label="方向" width="70" align="center">
+          <template #default="scope">
+            <el-tag :type="scope.row.direction === 0 ? 'success' : 'danger'" size="small">
+              {{ scope.row.direction === 0 ? '增加' : '减少' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="调整数" prop="delta" width="90" align="center" />
+        <el-table-column label="调整前" prop="beforeAdjust" width="90" align="center" />
+        <el-table-column label="调整后" prop="afterAdjust" width="90" align="center" />
+        <el-table-column label="理由" prop="reason" min-width="150" show-overflow-tooltip />
+      </el-table>
+      <el-empty v-if="!logDialog.loading && logDialog.list.length === 0" description="暂无补正记录" />
+      <template #footer>
+        <el-button @click="logDialog.visible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="ProjectStats">
 import { ref, nextTick, onMounted, onUnmounted, getCurrentInstance } from 'vue'
-import { getProjectStats, getProjectNameSuggestions, updateAdjustWorkload } from '@/api/project/dailyReport'
+import { getProjectStats, getProjectNameSuggestions, correctAdjustWorkload, getCorrectLogs } from '@/api/project/dailyReport'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmjd } = proxy.useDict('sys_xmjd')
 
 const loading = ref(false)
 const tableRows = ref([])
-const spanMap = ref([])
 const total = ref(0)
 const tableHeight = ref(600)
 
@@ -88,10 +128,22 @@ const queryParams = ref({
   pageSize: 10
 })
 
+// 补正对话框
+const correctDialog = ref({ visible: false, saving: false, row: null })
+const correctFormRef = ref(null)
+const correctForm = ref({ direction: 0, delta: 0, reason: '' })
+const correctRules = {
+  delta: [{ required: true, message: '请输入调整人天数', trigger: 'blur' }],
+  reason: [{ required: true, message: '请输入补正理由', trigger: 'blur' }]
+}
+
+// 日志对话框
+const logDialog = ref({ visible: false, loading: false, list: [], projectName: '' })
+
 function calcTableHeight() {
   nextTick(() => {
     const searchHeight = 50
-    const paginationHeight = 65  // 50px 高度 + 15px margin-top
+    const paginationHeight = 65
     const padding = 120
     tableHeight.value = window.innerHeight - searchHeight - paginationHeight - padding
   })
@@ -122,61 +174,74 @@ async function getList() {
   }
 }
 
-/** 将项目列表展开为平铺行，计算 rowspan */
+/** 将项目列表构建为表格行（每项目一行） */
 function buildTableRows(list) {
-  const rows = []
-  const map = []
-
-  for (const project of list) {
-    const stages = project.stages && project.stages.length > 0
-      ? project.stages
-      : [{ projectStage: null, stageDays: null }]
-    const rowspan = stages.length
-
-    stages.forEach((stage, idx) => {
-      rows.push({
-        projectId: project.projectId,
-        projectName: project.projectName,
-        projectManagerName: project.projectManagerName,
-        estimatedWorkload: project.estimatedWorkload,
-        actualDays: project.actualDays,
-        totalActualDays: project.totalActualDays,
-        adjustWorkload: project.adjustWorkload,
-        projectStage: stage.projectStage,
-        stageDays: stage.stageDays
-      })
-      map.push(idx === 0 ? rowspan : 0)
-    })
-  }
-
-  tableRows.value = rows
-  spanMap.value = map
+  tableRows.value = list.map(project => ({
+    projectId: project.projectId,
+    projectName: project.projectName,
+    projectManagerName: project.projectManagerName,
+    estimatedWorkload: project.estimatedWorkload,
+    actualDays: project.actualDays,
+    totalActualDays: project.totalActualDays,
+    adjustWorkload: project.adjustWorkload
+  }))
 }
 
-/** 前7列按项目合并，后2列（项目阶段/日报人天）不合并 */
-function spanMethod({ rowIndex, columnIndex }) {
-  if (columnIndex <= 6) {
-    const s = spanMap.value[rowIndex]
-    return s > 0 ? { rowspan: s, colspan: 1 } : { rowspan: 0, colspan: 0 }
-  }
-  return { rowspan: 1, colspan: 1 }
+function openCorrectDialog(row) {
+  correctDialog.value.row = row
+  correctForm.value = { direction: 0, delta: 0, reason: '' }
+  correctDialog.value.visible = true
 }
 
-/** 调整人天修改：同步前端、自动保存 */
-async function handleAdjustChange(row, val) {
-  const adjust = val ?? 0
-  // 同步同一项目的所有行（actualDays = totalActualDays + adjustWorkload）
-  tableRows.value.forEach(r => {
-    if (r.projectId === row.projectId) {
-      r.adjustWorkload = adjust
-      r.actualDays = +((r.totalActualDays || 0) + adjust).toFixed(2)
-    }
-  })
+function resetCorrectForm() {
+  correctFormRef.value?.resetFields()
+}
+
+async function saveCorrect() {
+  const valid = await correctFormRef.value?.validate().catch(() => false)
+  if (!valid) return
+
+  const row = correctDialog.value.row
+  const current = row.adjustWorkload || 0
+  const delta = correctForm.value.delta || 0
+  const afterAdjust = correctForm.value.direction === 0
+    ? +((current + delta).toFixed(2))
+    : +((current - delta).toFixed(2))
+
+  correctDialog.value.saving = true
   try {
-    await updateAdjustWorkload(row.projectId, adjust)
-    proxy.$modal.msgSuccess('调整人天已保存')
+    await correctAdjustWorkload(row.projectId, {
+      direction: correctForm.value.direction,
+      delta,
+      afterAdjust,
+      reason: correctForm.value.reason
+    })
+    // 同步前端所有同项目行
+    tableRows.value.forEach(r => {
+      if (r.projectId === row.projectId) {
+        r.adjustWorkload = afterAdjust
+        r.actualDays = +((r.totalActualDays || 0) + afterAdjust).toFixed(2)
+      }
+    })
+    proxy.$modal.msgSuccess('补正已保存')
+    correctDialog.value.visible = false
   } catch {
     proxy.$modal.msgError('保存失败，请重试')
+  } finally {
+    correctDialog.value.saving = false
+  }
+}
+
+async function openLogDialog(row) {
+  logDialog.value.projectName = row.projectName
+  logDialog.value.list = []
+  logDialog.value.visible = true
+  logDialog.value.loading = true
+  try {
+    const res = await getCorrectLogs(row.projectId)
+    logDialog.value.list = res.data || []
+  } finally {
+    logDialog.value.loading = false
   }
 }
 

@@ -117,7 +117,7 @@
           <el-tag type="info">{{ currentProject.projectName }}</el-tag>
         </el-form-item>
         <el-form-item label="参与人员" prop="userIds">
-          <org-user-select v-model="editForm.userIds" style="width: 100%" />
+          <org-user-select v-model="editForm.userIds" style="width: 100%" :no-data-scope="true" />
         </el-form-item>
       </el-form>
       <template #footer>

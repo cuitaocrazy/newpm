@@ -68,12 +68,20 @@ export function getProjectStats(projectName, pageNum, pageSize) {
   })
 }
 
-// 更新调整人天
-export function updateAdjustWorkload(projectId, adjustWorkload) {
+// 人天补正（更新调整人天并记录日志）
+export function correctAdjustWorkload(projectId, data) {
   return request({
-    url: `/project/dailyReport/projectStats/${projectId}/adjustWorkload`,
-    method: 'put',
-    params: { adjustWorkload }
+    url: `/project/dailyReport/projectStats/${projectId}/correct`,
+    method: 'post',
+    data
+  })
+}
+
+// 查询项目补正日志
+export function getCorrectLogs(projectId) {
+  return request({
+    url: `/project/dailyReport/projectStats/${projectId}/correctLog`,
+    method: 'get'
   })
 }
 

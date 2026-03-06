@@ -257,6 +257,7 @@
               v-model="participantIds"
               placeholder="请选择参与人员"
               style="width: 100%"
+              :no-data-scope="true"
               @blur="validateOnBlur('participants')"
             />
             <div v-if="participantIds.length > 0" style="margin-top: 6px; color: #606266; font-size: 13px;">已选 {{ participantIds.length }} 人</div>

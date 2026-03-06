@@ -814,6 +814,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY d.parent_id, d.order_num
     </select>
 
+    <!-- 获取全量部门树（不限数据权限，用于参与人员选择） -->
+    <select id="selectAllDeptTree" resultType="map">
+        SELECT
+            d.dept_id AS deptId,
+            d.parent_id AS parentId,
+            d.dept_name AS deptName,
+            d.ancestors,
+            d.order_num AS orderNum
+        FROM sys_dept d
+        WHERE d.del_flag = '0'
+        AND d.status = '0'
+        ORDER BY d.parent_id, d.order_num
+    </select>
+
     <!-- 查询待审核项目列表 -->
     <select id="selectReviewList" parameterType="Project" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
