@@ -1073,4 +1073,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </select>
 
+    <!-- 根据项目ID更新实际工作量(小时) -->
+    <update id="updateActualWorkload">
+        update pm_project
+        set actual_workload = #{actualWorkload},
+            update_time = now()
+        where project_id = #{projectId}
+    </update>
+
 </mapper>

@@ -1,5 +1,6 @@
 package com.ruoyi.project.mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.apache.ibatis.annotations.Param;
@@ -57,6 +58,15 @@ public interface ProjectMapper
      * @return 结果
      */
     public int updateProject(Project project);
+
+    /**
+     * 更新项目实际工作量(小时)
+     *
+     * @param projectId      项目ID
+     * @param actualWorkload 实际工作量(小时)
+     * @return 结果
+     */
+    public int updateActualWorkload(@Param("projectId") Long projectId, @Param("actualWorkload") BigDecimal actualWorkload);
 
     /**
      * 删除项目管理

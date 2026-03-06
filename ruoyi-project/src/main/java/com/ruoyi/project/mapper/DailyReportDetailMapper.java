@@ -1,5 +1,6 @@
 package com.ruoyi.project.mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import com.ruoyi.project.domain.DailyReportDetail;
 
@@ -34,6 +35,14 @@ public interface DailyReportDetailMapper
      * @return 结果
      */
     public int batchInsert(List<DailyReportDetail> list);
+
+    /**
+     * 统计指定项目在所有日报中的总工时(小时)
+     *
+     * @param projectId 项目ID
+     * @return 总工时
+     */
+    public BigDecimal sumWorkHoursByProjectId(Long projectId);
 
     /**
      * 根据日报ID删除明细（物理删除）

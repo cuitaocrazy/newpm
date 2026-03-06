@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -166,6 +168,18 @@ public class DailyReportServiceImpl implements IDailyReportService
                 detail.setCreateBy(username);
             }
             detailMapper.batchInsert(detailList);
+        }
+
+        // 更新受影响项目的实际工作量(小时) = 该项目所有日报明细工时之和
+        Set<Long> affectedProjectIds = (detailList != null ? detailList : java.util.Collections.<DailyReportDetail>emptyList())
+                .stream()
+                .filter(d -> d.getProjectId() != null)
+                .map(DailyReportDetail::getProjectId)
+                .collect(Collectors.toSet());
+        for (Long projectId : affectedProjectIds)
+        {
+            BigDecimal totalHours = detailMapper.sumWorkHoursByProjectId(projectId);
+            projectMapper.updateActualWorkload(projectId, totalHours);
         }
 
         return rows;
