@@ -106,7 +106,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
         </if>
         <if test="deptId != null">
-            AND d.dept_id = #{deptId}
+            AND (p.project_dept = #{deptId}
+                 OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{deptId}, ancestors) > 0))
         </if>
         ${params.dataScope}
         GROUP BY p.project_id, p.project_name, p.project_code, d.dept_name, p.project_dept

@@ -202,10 +202,15 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
    - Employees submit daily work reports linked to projects
    - Master-detail: `pm_daily_report` (header with date) → `pm_daily_report_detail` (items per project)
    - Track actual workload (person-days) per project per day
-   - Two views: write/edit page (`write.vue`) and activity feed (`activity.vue`)
+   - Three views: write/edit page (`write.vue`), activity feed (`activity.vue`), and stats (`stats.vue`)
    - Work calendar integration (`pm_work_calendar`) for tracking working/non-working days
-   - Calendar view for team daily reports
    - Statistics: project person-day aggregation, team reports
+
+   **"我的日报" page layout (`write.vue`):**
+   - **Left (7/24)**: `MonthCalendar` — displays each day's total work hours sourced from `pm_daily_report.total_work_hours` (via `GET /project/dailyReport/list?yearMonth=`). Day badges: green=≥8h, orange=<8h, grey=no report.
+   - **Right (17/24)**: project list sourced from **`pm_project_member`** (via `GET /project/dailyReport/myProjects`) — shows all projects where the current user is a member. Each row: project name + stage tag + hour slider + work content textarea.
+   - **Clicking a date on the left calendar**: right panel loads that day's daily report detail from `pm_daily_report_detail` (via `GET /project/dailyReport/my/{reportDate}`). Returns `{ detailList: [{projectId, workHours, workContent, ...}] }`. Projects with no entry get `workHours=0`.
+   - **Save**: filters entries where `workHours > 0 && workContent non-empty`, posts to `POST /project/dailyReport`. Upsert logic on backend (insert or update by userId + reportDate).
 
 5. **Revenue Recognition (收入确认):**
    - Comprehensive revenue confirmation view with multi-dimensional filtering
@@ -704,6 +709,25 @@ Map to a separate display field — **not** to `updateBy` (which is managed by `
 <result property="updateByName" column="update_by_name"/>
 ```
 
+### Department Filter: Use ancestors Hierarchy
+
+When filtering by `projectDept` (or any dept field), use `FIND_IN_SET` to include child departments — never do an exact match alone:
+
+```xml
+<!-- Wrong — misses child depts when a parent dept is selected -->
+<if test="projectDept != null and projectDept != ''">
+    and p.project_dept = #{projectDept}
+</if>
+
+<!-- Correct — matches the dept itself OR any descendant -->
+<if test="projectDept != null and projectDept != ''">
+    and (p.project_dept = #{projectDept}
+         or p.project_dept in (select dept_id from sys_dept where find_in_set(#{projectDept}, ancestors) > 0))
+</if>
+```
+
+This applies to all PM mapper queries that accept a `projectDept` filter parameter (list, review, revenue queries, etc.).
+
 ### Hard Delete Exception: pm_project
 
 `pm_project` uses **hard delete** (`DELETE FROM pm_project`) instead of the standard soft-delete (`del_flag = '1'`). All other PM tables use soft delete. When filtering deleted records from project joins, check only `p.del_flag = '0'` for other tables.
@@ -815,3 +839,13 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 - **Frontend build errors**: Delete `node_modules/` + `package-lock.json` and reinstall; port 80 may need sudo; delete `node_modules/.vite/` for cache issues
 - **Code generation**: Build CLI first (`mvn clean package -pl ruoyi-gen-cli -am`); ensure valid MySQL 8.0 DDL; check menu SQL imported
 - **Collation mismatch**: Add `COLLATE utf8mb4_unicode_ci` when joining system tables
+
+### Person-Days (实际人天) Calculation
+
+Workload fields in daily reports and project stats are stored as **hours** in DB but displayed as **person-days**:
+
+```
+实际人天 = 工时(小时) ÷ 8，保留3位小数
+```
+
+Apply this conversion in MyBatis XML or service layer whenever querying/aggregating workload — never display raw hour values as person-days directly.

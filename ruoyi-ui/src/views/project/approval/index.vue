@@ -33,6 +33,9 @@
       <el-form-item label="审核状态" prop="approvalStatus">
         <dict-select v-model="queryParams.approvalStatus" dict-type="sys_spzt" placeholder="请选择审核状态" clearable style="width: 200px" />
       </el-form-item>
+      <el-form-item label="项目部门" prop="projectDept">
+        <project-dept-select v-model="queryParams.projectDept" style="width: 200px" />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -221,6 +224,7 @@ const queryParams = ref({
   region: null,
   projectStatus: null,
   approvalStatus: null,
+  projectDept: null,
 })
 
 const deptFlatList = ref([])

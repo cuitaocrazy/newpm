@@ -158,7 +158,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="shortName != null  and shortName != ''"> and p.short_name like concat('%', #{shortName}, '%')</if>
             <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
             <if test="projectCategory != null  and projectCategory != ''"> and p.project_category = #{projectCategory}</if>
-            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="projectDept != null  and projectDept != ''">
+                and (p.project_dept = #{projectDept}
+                     or p.project_dept in (select dept_id from sys_dept where find_in_set(#{projectDept}, ancestors) > 0))
+            </if>
             <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
             <if test="projectStage != null  and projectStage != ''"> and p.project_stage = #{projectStage}</if>
             <if test="acceptanceStatus != null  and acceptanceStatus != ''"> and p.acceptance_status = #{acceptanceStatus}</if>
@@ -246,7 +249,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="regionId != null "> and p.region_id = #{regionId}</if>
             <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
             <if test="projectCategory != null  and projectCategory != ''"> and p.project_category = #{projectCategory}</if>
-            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="projectDept != null  and projectDept != ''">
+                and (p.project_dept = #{projectDept}
+                     or p.project_dept in (select dept_id from sys_dept where find_in_set(#{projectDept}, ancestors) > 0))
+            </if>
             <if test="projectStage != null  and projectStage != ''"> and p.project_stage = #{projectStage}</if>
             <if test="acceptanceStatus != null  and acceptanceStatus != ''"> and p.acceptance_status = #{acceptanceStatus}</if>
             <if test="projectManagerId != null "> and p.project_manager_id = #{projectManagerId}</if>
@@ -298,7 +304,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="shortName != null  and shortName != ''"> and p.short_name like concat('%', #{shortName}, '%')</if>
             <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
             <if test="projectCategory != null  and projectCategory != ''"> and p.project_category = #{projectCategory}</if>
-            <if test="projectDept != null  and projectDept != ''"> and p.project_dept = #{projectDept}</if>
+            <if test="projectDept != null  and projectDept != ''">
+                and (p.project_dept = #{projectDept}
+                     or p.project_dept in (select dept_id from sys_dept where find_in_set(#{projectDept}, ancestors) > 0))
+            </if>
             <if test="projectStatus != null  and projectStatus != ''"> and p.project_status = #{projectStatus}</if>
             <if test="projectStage != null  and projectStage != ''"> and p.project_stage = #{projectStage}</if>
             <if test="acceptanceStatus != null  and acceptanceStatus != ''"> and p.acceptance_status = #{acceptanceStatus}</if>
@@ -603,7 +612,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         t.del_flag = '0'
         AND p.del_flag = '0'
         <if test="projectName != null and projectName != ''"> AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
-        <if test="projectDept != null and projectDept != ''"> AND p.project_dept = #{projectDept}</if>
+        <if test="projectDept != null and projectDept != ''">
+            AND (p.project_dept = #{projectDept}
+                 OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
+        </if>
         <if test="confirmDeptId != null and confirmDeptId > 0"> AND t.dept_id = #{confirmDeptId}</if>
         <if test="revenueConfirmYear != null and revenueConfirmYear != ''"> AND p.revenue_confirm_year = #{revenueConfirmYear}</if>
         <if test="projectCategory != null and projectCategory != ''"> AND p.project_category = #{projectCategory}</if>
@@ -710,7 +722,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             p.del_flag = '0'
             <if test="projectName != null and projectName != ''"> AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
-            <if test="projectDept != null and projectDept != ''"> AND p.project_dept = #{projectDept}</if>
+            <if test="projectDept != null and projectDept != ''">
+            AND (p.project_dept = #{projectDept}
+                 OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
+        </if>
             <if test="revenueConfirmYear != null and revenueConfirmYear != ''"> AND p.revenue_confirm_year = #{revenueConfirmYear}</if>
             <if test="projectCategory != null and projectCategory != ''"> AND p.project_category = #{projectCategory}</if>
             <if test="region != null and region != ''"> AND p.region = #{region}</if>
@@ -841,7 +856,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             AND p.project_category = #{projectCategory}
         </if>
         <if test="projectDept != null">
-            AND p.project_dept = #{projectDept}
+            AND (p.project_dept = #{projectDept}
+                 OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
         </if>
         <if test="region != null and region != ''">
             AND p.region = #{region}
@@ -893,7 +909,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             AND p.project_category = #{projectCategory}
         </if>
         <if test="projectDept != null">
-            AND p.project_dept = #{projectDept}
+            AND (p.project_dept = #{projectDept}
+                 OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
         </if>
         <if test="region != null and region != ''">
             AND p.region = #{region}

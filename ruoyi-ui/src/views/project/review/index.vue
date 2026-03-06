@@ -24,16 +24,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
-        <el-tree-select
-          v-model="queryParams.projectDept"
-          :data="deptTree"
-          :props="{ label: 'label', value: 'value', children: 'children' }"
-          placeholder="请选择项目部门"
-          check-strictly
-          clearable
-          filterable
-          style="width: 240px"
-        />
+        <project-dept-select v-model="queryParams.projectDept" style="width: 240px" />
       </el-form-item>
       <el-form-item label="项目分类" prop="projectCategory">
         <dict-select v-model="queryParams.projectCategory" dict-type="sys_xmfl" placeholder="请选择项目分类" clearable style="width: 240px" />
@@ -326,7 +317,7 @@
 
 <script setup name="Review">
 import { listReview, getReviewSummary, getReview, approveProject, rollbackProject } from "@/api/project/review"
-import { searchProjects, getDeptTree } from "@/api/project/project"
+import { searchProjects } from "@/api/project/project"
 import { WarningFilled } from '@element-plus/icons-vue'
 import { parseTime } from "@/utils/ruoyi"
 
@@ -508,9 +499,6 @@ function calcTableHeight() {
 onMounted(() => {
   calcTableHeight()
   window.addEventListener('resize', calcTableHeight)
-  getDeptTree().then(res => {
-    deptTree.value = proxy.handleTree(res.data.map(d => ({ ...d, id: d.deptId, label: d.deptName })), 'id')
-  })
 })
 
 onUnmounted(() => {
