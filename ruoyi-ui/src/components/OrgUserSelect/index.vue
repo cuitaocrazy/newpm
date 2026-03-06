@@ -197,9 +197,9 @@ onMounted(loadData)
 <style scoped>
 .org-user-select__trigger {
   display: flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 11px;
+  align-items: flex-start;
+  min-height: 32px;
+  padding: 6px 11px;
   border: 1px solid var(--el-border-color);
   border-radius: var(--el-border-radius-base);
   background: #fff;
@@ -222,9 +222,9 @@ onMounted(loadData)
 .selected-text {
   flex: 1;
   color: var(--el-text-color-regular);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.5;
 }
 .arrow-icon {
   color: var(--el-text-color-placeholder);
