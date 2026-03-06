@@ -133,7 +133,7 @@ async function loadData() {
 
   // 先用 handleTree 建立部门层级
   const deptTree = handleTree(
-    validDepts.map(d => ({ ...d, nodeId: `d_${d.deptId}` })),
+    validDepts.map(d => ({ ...d, nodeId: `d_${d.deptId}`, label: d.deptName })),
     'deptId',
     'parentId'
   )
