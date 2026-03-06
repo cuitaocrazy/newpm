@@ -19,7 +19,7 @@ columns:
     javaField: changeId
     isInsert: false
     isEdit: false
-    isList: false    # VO列表不展示变更记录ID，以项目为中心展示
+    isList: false    # VO 列表不展示变更记录 ID，以项目为中心展示
     isQuery: false
     queryType: EQ
     isRequired: false
@@ -48,7 +48,7 @@ columns:
     isInsert: true
     isEdit: true
     isList: false    # 列表通过 VO 的 oldManagerName 显示
-    isQuery: false   # 查询条件不使用 oldManagerId，使用 currentManagerId（VO字段）
+    isQuery: false   # 查询条件不使用 oldManagerId，使用 currentManagerId（VO 字段）
     queryType: EQ
     isRequired: false
     htmlType: select
@@ -97,7 +97,7 @@ columns:
     dictType: ""
 
   create_by:
-    columnComment: 创建者
+    columnComment: 创建者（即变更操作人用户名）
     columnType: varchar(64)
     javaType: String
     javaField: createBy
@@ -190,85 +190,141 @@ customizations:
     intent: "以项目为中心的变更管理，而非变更记录管理"
     spec: |
       列表展示每个项目及其最新一次经理变更信息（ProjectManagerChangeVO），
-      而非逐条展示变更记录。点击"详情"可查看该项目的完整变更历史（时间轴）。
+      而非逐条展示变更记录。点击"详情"或项目名称可查看该项目的完整变更历史（时间轴）。
       不提供独立的变更记录新增/编辑/删除页面，所有变更操作通过 Dialog 完成。
 
   # ==================
-  # 后端实现说明
+  # 后端数据结构
   # ==================
-  backend_implementation:
-    intent: "后端数据结构与查询逻辑"
+  backend_domain:
+    intent: "VO 类与实体类说明"
     spec: |
-      1. ProjectManagerChangeVO（视图对象）
+      1. ProjectManagerChange（实体，对应 pm_project_manager_change 表）
+         核心字段：changeId, projectId, oldManagerId, newManagerId, changeReason,
+                   createBy（变更操作人用户名）, createTime（变更时间）
+         扩展字段（ResultMap 关联，非数据库列）：
+           projectName, projectCode（来自 pm_project）
+           oldManagerName（来自 sys_user，按 old_manager_id 关联）
+           newManagerName（来自 sys_user，按 new_manager_id 关联）
+
+      2. ProjectManagerChangeVO（视图对象，用于列表接口）
          字段：projectId, projectName, projectCode, projectCreateTime,
                currentManagerId, currentManagerName（来自 pm_project.project_manager_id）,
                oldManagerId, oldManagerName（最新变更记录中的 old_manager_id）,
-               changeReason, changeBy, changeByName, changeTime（最新变更的 create_time）
+               changeReason（最新变更原因）,
+               changeBy（最新变更记录的 create_by 用户名）,
+               changeByName（create_by 对应的 nick_name）,
+               changeTime（最新变更的 create_time）
 
-      2. selectProjectListWithLatestChange 核心 SQL
-         - 主表：pm_project p（WHERE p.del_flag = '0'）
-         - 子查询获取每个项目最新变更：
-             SELECT c1.* FROM pm_project_manager_change c1
-             INNER JOIN (SELECT project_id, MAX(create_time) FROM pm_project_manager_change
-                         WHERE del_flag = '0' GROUP BY project_id) c2
-             ON c1.project_id = c2.project_id AND c1.create_time = c2.max_time
-             WHERE c1.del_flag = '0'
-         - JOIN sys_user 解析昵称：u_current（当前经理）、u_old（原经理）、u_changer（变更人）
-         - u_changer 用 create_by COLLATE utf8mb4_unicode_ci = user_name 关联（collation 处理）
-         - 排序：ORDER BY p.create_time DESC
+  # ==================
+  # 后端查询逻辑
+  # ==================
+  backend_queries:
+    intent: "Mapper SQL 实现说明"
+    spec: |
+      1. selectProjectListWithLatestChange（入参：ProjectManagerChangeVO）
+         返回：List<ProjectManagerChangeVO>，分页，ORDER BY p.create_time DESC
+         主表：pm_project p（WHERE p.del_flag = '0'）
+         LEFT JOIN 最新变更子查询：
+           SELECT c1.* FROM pm_project_manager_change c1
+           INNER JOIN (
+             SELECT project_id, MAX(create_time) as max_time
+             FROM pm_project_manager_change WHERE del_flag = '0' GROUP BY project_id
+           ) c2 ON c1.project_id = c2.project_id AND c1.create_time = c2.max_time
+           WHERE c1.del_flag = '0'
+         关联用户解析：
+           u_current → p.project_manager_id = u_current.user_id（当前经理）
+           u_old     → latest_change.old_manager_id = u_old.user_id（原经理）
+           u_changer → latest_change.create_by COLLATE utf8mb4_unicode_ci = u_changer.user_name（变更人）
+         动态查询条件（projectId/projectName/currentManagerId 支持精确或模糊）：
+           changeTime 日期范围：
+             <if test="changeTime != null">
+               AND latest_change.create_time BETWEEN #{params.beginChangeTime} AND #{params.endChangeTime}
+             </if>
+             （queryParams 传 changeTime=非null 作为触发标记，实际范围在 params.beginChangeTime/endChangeTime）
 
-      3. selectProjectChangeHistory
-         - 查询指定项目的所有变更记录（del_flag='0'）
-         - JOIN sys_user 解析 old_manager_name、new_manager_name
-         - ORDER BY pmc.create_time DESC
+      2. selectProjectChangeHistory（入参：projectId）
+         返回：List<ProjectManagerChange>，ORDER BY create_time DESC
+         关联 pm_project（projectName/projectCode）、sys_user（oldManagerName/newManagerName）
+         WHERE del_flag = '0' AND project_id = #{projectId}
 
-      4. changeProjectManager（单个变更）
-         - 读取当前 pm_project.project_manager_id 作为 oldManagerId
-         - 插入 pm_project_manager_change 记录
-         - 更新 pm_project.project_manager_id = newManagerId
+      3. Collation 注意事项
+         pm_project_manager_change 使用 utf8mb4_unicode_ci
+         pm_project 使用 utf8mb4_0900_ai_ci
+         create_by（varchar）关联 sys_user.user_name 需加 COLLATE utf8mb4_unicode_ci
+
+  # ==================
+  # 后端业务逻辑
+  # ==================
+  backend_service:
+    intent: "Service 层核心方法"
+    spec: |
+      1. changeProjectManager（单个变更）@Transactional
+         - 查询 pm_project，获取 project.projectManagerId 作为 oldManagerId
+         - 更新 pm_project.project_manager_id = newManagerId（调 projectMapper.updateProject）
+         - 插入 pm_project_manager_change 记录（changeId 自动生成）
+           createBy = SecurityUtils.getUsername()，createTime = DateUtils.getNowDate()
          - 权限：project:managerChange:change
 
-      5. batchChangeProjectManager（批量变更）
-         - 循环处理每个 projectId，同上逻辑
+      2. batchChangeProjectManager（批量变更）@Transactional
+         - 循环 projectIds，对每个 projectId 调 changeProjectManager
          - 参数：projectIds[], newManagerId, changeReason（可选）
          - 权限：project:managerChange:batchChange
 
-      6. Collation 注意事项
-         - pm_project_manager_change 使用 utf8mb4_unicode_ci
-         - pm_project 使用 utf8mb4_0900_ai_ci
-         - create_by（varchar）关联 sys_user.user_name 需加 COLLATE utf8mb4_unicode_ci
+      3. 标准 CRUD 方法（框架保留，前端不直接使用）
+         insertProjectManagerChange / updateProjectManagerChange /
+         deleteProjectManagerChangeByChangeIds / selectProjectManagerChangeList
 
   # ==================
-  # API 接口说明
+  # API 接口清单
   # ==================
   api_endpoints:
     intent: "控制器接口清单（/project/managerChange/）"
     spec: |
-      GET  /list              → 项目列表（含最新变更信息），返回 ProjectManagerChangeVO 分页
-                                查询参数：projectId, currentManagerId, params.beginChangeTime, params.endChangeTime
-                                权限：project:managerChange:list
+      GET  /list                → 项目列表（含最新变更信息），返回 ProjectManagerChangeVO 分页
+                                  查询参数：projectId, projectName, currentManagerId,
+                                           params.beginChangeTime, params.endChangeTime
+                                  权限：project:managerChange:list
 
-      GET  /history/{projectId} → 项目完整变更历史，返回 ProjectManagerChange 列表
-                                权限：project:managerChange:query
+      GET  /history/{projectId} → 项目完整变更历史，返回 List<ProjectManagerChange>
+                                  权限：project:managerChange:query
 
-      POST /change            → 单个项目变更经理
-                                body JSON: { projectId, newManagerId, changeReason }
-                                权限：project:managerChange:change
+      POST /change              → 单个项目变更经理
+                                  RequestBody JSON: { projectId, newManagerId, changeReason }
+                                  权限：project:managerChange:change
 
-      POST /batchChange       → 批量变更项目经理
-                                params: projectIds[]（数组）, newManagerId, changeReason（可选）
-                                权限：project:managerChange:batchChange
+      POST /batchChange         → 批量变更项目经理
+                                  @RequestParam: projectIds[]（数组）, newManagerId, changeReason（可选）
+                                  权限：project:managerChange:batchChange
 
-      POST /export            → 导出变更记录 Excel
-                                权限：project:managerChange:export
+      POST /export              → 导出变更记录 Excel（导出 ProjectManagerChange 列表）
+                                  权限：project:managerChange:export
 
-      GET  /{changeId}        → 获取单条变更记录详情
-                                权限：project:managerChange:query
+      GET  /{changeId}          → 获取单条变更记录详情
+                                  权限：project:managerChange:query
 
-      标准 CRUD（后台管理用，前端页面不直接使用）：
-      POST /      → 新增变更记录（project:managerChange:add）
-      PUT  /      → 修改变更记录（project:managerChange:edit）
-      DELETE /{changeIds} → 删除变更记录（project:managerChange:remove）
+      标准 CRUD（框架保留，前端不直接调用）：
+        POST /      → 新增（project:managerChange:add）
+        PUT  /      → 修改（project:managerChange:edit）
+        DELETE /{changeIds} → 删除（project:managerChange:remove）
+
+  # ==================
+  # 前端 API 层
+  # ==================
+  frontend_api:
+    intent: "src/api/project/managerChange.js 方法说明"
+    spec: |
+      listManagerChange(query)          → GET /project/managerChange/list
+      getProjectChangeHistory(projectId) → GET /project/managerChange/history/{projectId}
+      changeManager(data)               → POST /project/managerChange/change（body JSON）
+      batchChangeManager(projectIds, newManagerId, changeReason)
+                                        → POST /project/managerChange/batchChange
+                                           params 格式（非 body）：
+                                           { projectIds: [...], newManagerId, changeReason }
+
+      依赖其他模块 API：
+        getUsersByPost('pm') from '@/api/project/project'
+        直接使用 request({ url: '/project/project/search', ... })
 
   # ==================
   # 查询表单
@@ -278,24 +334,32 @@ customizations:
     spec: |
       1. 项目名称（prop="projectId"）
          - el-select，filterable + remote + reserve-keyword + clearable
-         - :remote-method="remoteSearchProject"，输入触发远程搜索
-         - @visible-change 展开时加载初始项目列表
-         - 选项显示：项目名称（右侧灰色小字显示项目编号）
-         - 提交：projectId（Long）
-         - 数据来源：GET /project/project/search?projectName={keyword}，res.data
+         - :remote-method="remoteSearchProject"，输入时触发（始终调 loadProjectOptions(query)）
+         - @visible-change="handleProjectSelectVisible"，展开时懒加载项目列表
+         - 选项模板：
+             <el-option :key="project.projectId" :label="project.projectName" :value="project.projectId">
+               <span>{{ project.projectName }}</span>
+               <span style="float:right; color:#8492a6; font-size:12px;">{{ project.projectCode }}</span>
+             </el-option>
+         - 数据来源：GET /project/project/search?projectName={query}，res.data
+         - 变量：projectOptions（ref），projectSearchLoading（ref）
          - style="width: 280px"
 
       2. 当前经理（prop="currentManagerId"）
          - el-select，filterable + clearable，style="width: 200px"
-         - 数据来源：getUsersByPost('pm')，GET /project/project/users?postCode=pm，res.data
+         - 数据来源：getUsersByPost('pm')，res.data → managerList
          - 显示 nickName，提交 userId
          - onMounted 加载
 
       3. 变更时间（daterange）
          - el-date-picker，type="daterange"，value-format="YYYY-MM-DD"
          - v-model="daterangeChangeTime"（独立 ref，非 queryParams 字段）
-         - 查询时转为 queryParams.params.beginChangeTime / endChangeTime
-         - style="width: 308px"
+         - range-separator="-"，start-placeholder="开始日期"，end-placeholder="结束日期"
+         - style="width: 308px"（el-form-item）
+         - 搜索时：queryParams.params.beginChangeTime = daterangeChangeTime[0]
+                  queryParams.params.endChangeTime   = daterangeChangeTime[1]
+                  并设置 queryParams.changeTime = true（触发 Mapper 日期条件）
+         - 重置时：daterangeChangeTime.value = []
 
   # ==================
   # 列表设计
@@ -303,27 +367,33 @@ customizations:
   list_design:
     intent: "列表列顺序与展示"
     spec: |
+      列顺序：
       多选列（checkbox）→ 序号 → 项目名称 → 项目编号 → 立项时间 → 当前项目经理
       → 原项目经理 → 变更原因 → 变更人 → 变更时间 → 操作
 
       列配置：
-      - 项目名称：align=left, header-align=center, width=220，点击触发 handleDetail(row)（蓝色可点击）
-      - 项目编号：align=center, width=150
-      - 立项时间：align=center, width=110（来自 projectCreateTime，格式 yyyy-MM-dd）
-      - 当前项目经理：align=center, width=120（currentManagerName）
-      - 原项目经理：align=center, width=120（oldManagerName，无值显示"-"）
-      - 变更原因：align=left, min-width=150，show-overflow-tooltip（无值显示"-"）
-      - 变更人：align=center, width=100（changeByName，无值显示"-"）
-      - 变更时间：align=center, width=160（changeTime，无值显示"-"）
-      - 操作：align=center, width=150
+      - 多选：type="selection"，width=55
+      - 序号：type="index"，width=55
+      - 项目名称：align=left，header-align=center，width=220
+        点击触发 handleDetail(row)（cursor:pointer，color:#409eff）
+        模板用 div.project-name-cell（word-break: break-all，white-space: normal）
+      - 项目编号：align=center，width=150
+      - 立项时间：align=center，width=110（projectCreateTime，不需格式化）
+      - 当前项目经理：align=center，width=120（currentManagerName）
+      - 原项目经理：align=center，width=120（oldManagerName），无值显示灰色"-"
+      - 变更原因：align=left，min-width=150，show-overflow-tooltip，无值显示灰色"-"
+      - 变更人：align=center，width=100（changeByName），无值显示灰色"-"
+      - 变更时间：align=center，width=160（changeTime），无值显示灰色"-"
+      - 操作：align=center，width=150，class-name="small-padding fixed-width"
 
-      工具栏按钮（el-row）：
-      - 批量变更（primary plain，图标 Edit，:disabled="multiple"，v-hasPermi batchChange）
-      - right-toolbar（显隐搜索）
+      工具栏按钮（el-row :gutter=10 .mb8）：
+      - 批量变更：type=primary plain，icon=Edit，:disabled="multiple"
+        @click="handleBatchChange"，v-hasPermi=['project:managerChange:batchChange']
+      - right-toolbar：v-model:showSearch，@queryTable="getList"
 
       操作列按钮：
-      - 详情（link type=primary，v-hasPermi project:managerChange:query）→ handleDetail(row)
-      - 变更（link type=primary，v-hasPermi project:managerChange:change）→ handleChange(row)
+      - 详情：link type=primary，v-hasPermi=['project:managerChange:query']，@click="handleDetail(row)"
+      - 变更：link type=primary，v-hasPermi=['project:managerChange:change']，@click="handleChange(row)"
 
   # ==================
   # 变更 Dialog
@@ -332,22 +402,35 @@ customizations:
     intent: "单个/批量变更共用 Dialog"
     spec: |
       触发方式：
-      - 单个：操作列"变更"按钮 → handleChange(row)，isBatchChange=false
-      - 批量：工具栏"批量变更"按钮 → handleBatchChange()，isBatchChange=true（需勾选项目）
+      - 单个：操作列"变更" → handleChange(row)，isBatchChange=false
+      - 批量：工具栏"批量变更" → handleBatchChange()，isBatchChange=true（需勾选项目，否则提示错误）
 
-      Dialog 宽度：600px，:title="changeTitle"（单个："变更项目经理"，批量："批量变更项目经理"）
+      Dialog：width=600px，:title="changeTitle"
+        单个标题："变更项目经理"，批量标题："批量变更项目经理"
+        v-model="changeDialogOpen"，append-to-body
 
-      表单字段：
-      1. 项目（v-if="!isBatchChange"）：el-tag type=info，显示 currentProject.projectName
-      2. 选中项目（v-if="isBatchChange"）：el-tag 列表，遍历 selectedProjects
-      3. 当前项目经理（v-if="!isBatchChange"）：el-input disabled，显示 currentProject.currentManagerName
-      4. 新项目经理（prop="newManagerId"，必填）：el-select filterable，数据来源 managerList（同查询）
-      5. 变更原因：el-input type=textarea，rows=4，maxlength=500，show-word-limit（选填）
+      表单（ref="changeFormRef"，label-width=120px）：
+      1. 项目（v-if="!isBatchChange"，label="项目"）
+         <el-tag type="info">{{ currentProject.projectName }}</el-tag>
+      2. 选中项目（v-if="isBatchChange"，label="选中项目"）
+         <el-tag v-for="item in selectedProjects" style="margin-right:5px">{{ item.projectName }}</el-tag>
+      3. 当前项目经理（v-if="!isBatchChange"，label="当前项目经理"）
+         <el-input v-model="currentProject.currentManagerName" disabled />
+      4. 新项目经理（prop="newManagerId"，必填，label="新项目经理"）
+         el-select filterable，数据来源 managerList（同查询），style="width:100%"
+      5. 变更原因（prop="changeReason"，选填，label="变更原因"）
+         el-input type=textarea，rows=4，maxlength=500，show-word-limit
+         placeholder="请输入变更原因（选填，最多500字）"
 
-      提交逻辑：
-      - 单个：调用 changeManager({ projectId, newManagerId, changeReason })，POST /change
-      - 批量：调用 batchChangeManager(projectIds[], newManagerId, changeReason)，POST /batchChange（params 格式）
-      - 成功后刷新列表
+      表单校验：
+        newManagerId: [{ required: true, message: "新项目经理不能为空", trigger: "change" }]
+
+      Footer 按钮：确定（submitChange）/ 取消（cancelChange → resetForm）
+
+      提交逻辑（submitChange）：
+      - 单个：changeManager({ projectId, newManagerId, changeReason }) → POST /change（body JSON）
+      - 批量：batchChangeManager(ids, newManagerId, changeReason) → POST /batchChange（params 格式）
+      - 成功后：msgSuccess + 关闭 Dialog + getList()
 
   # ==================
   # 详情 Dialog
@@ -356,43 +439,66 @@ customizations:
     intent: "项目信息 + 变更历史时间轴"
     spec: |
       触发：操作列"详情"或点击项目名称 → handleDetail(row)
+        handleDetail 设置 currentProject = {...row}，打开 Dialog，
+        同时调 getProjectChangeHistory(row.projectId) 加载变更历史 → changeHistoryList
 
-      Dialog 宽度：700px，标题："项目经理变更详情"
+      Dialog：width=700px，title="项目经理变更详情"，v-model="detailDialogOpen"，append-to-body
 
-      布局：
-      1. 项目信息区（el-descriptions :column=2 border）：
-         - 项目名称、项目编号、当前项目经理、立项时间
+      内容布局（div.detail-container，max-height:500px，overflow-y:auto）：
 
-      2. 变更历史区（el-timeline）：
-         - 无记录时：el-empty description="暂无变更记录"
-         - 每条记录：el-timeline-item，:timestamp=item.createTime，placement=top
+      1. 项目信息区（div.project-info，margin-bottom:20px）
+         <h3>项目信息</h3>
+         el-descriptions :column=2 border：
+           - 项目名称（currentProject.projectName）
+           - 项目编号（currentProject.projectCode）
+           - 当前项目经理（currentProject.currentManagerName）
+           - 立项时间（currentProject.projectCreateTime）
+
+      2. 变更历史区（div.change-history）
+         <h3>变更历史</h3>
+         无记录时：<el-empty description="暂无变更记录" />
+         有记录时：el-timeline
+           el-timeline-item v-for，:key="item.changeId"，:timestamp="item.createTime"，placement=top
            el-card 内容：
-           - h4：项目经理变更: {oldManagerName||'无'} → {newManagerName}
-           - p（v-if changeReason）：变更原因: {changeReason}
-           - p 灰色小字：变更人: {createBy}
+             <h4>项目经理变更: {{ item.oldManagerName || '无' }} → {{ item.newManagerName }}</h4>
+             <p v-if="item.changeReason">变更原因: {{ item.changeReason }}</p>
+             <p style="color:#999; font-size:12px;">变更人: {{ item.createBy }}</p>
 
-      数据加载：getProjectChangeHistory(projectId)，GET /history/{projectId}
+      Footer：关闭按钮（detailDialogOpen = false）
 
   # ==================
-  # 分页与布局
+  # 前端状态与响应式数据
   # ==================
-  layout:
-    intent: "容器布局与分页固定底部"
+  frontend_state:
+    intent: "script setup 中的 ref/reactive 定义"
     spec: |
-      容器：class="app-container manager-change-container"，height:100%，flex 纵向布局
+      列表相关：
+        projectList   ref([])   → 列表数据（ProjectManagerChangeVO[]）
+        managerList   ref([])   → 项目经理下拉（来自 getUsersByPost('pm')）
+        changeHistoryList ref([]) → 变更历史（详情 Dialog 用）
+        projectOptions ref([])  → 项目搜索下拉选项
+        projectSearchLoading ref(false) → 项目搜索 loading 状态
+        loading       ref(true) → 列表 loading
+        showSearch    ref(true) → 搜索区显隐
+        ids           ref([])   → 选中项目 ID 数组
+        selectedProjects ref([]) → 选中项目对象数组（含 projectName 用于批量 Dialog 展示）
+        single        ref(true) → 是否只选了一个（工具栏按钮控制）
+        multiple      ref(true) → 是否没有选中（批量变更按钮 disabled 控制）
+        total         ref(0)    → 分页总数
+        daterangeChangeTime ref([]) → 变更时间范围（独立于 queryParams）
+        tableHeight   ref(600)  → 动态表格高度
 
-      表格：
-      - :height="tableHeight"（动态计算）
-      - border + stripe
-      - @selection-change="handleSelectionChange"
+      Dialog 相关：
+        changeDialogOpen  ref(false) → 变更 Dialog 开关
+        detailDialogOpen  ref(false) → 详情 Dialog 开关
+        isBatchChange     ref(false) → 当前是否为批量变更
+        changeTitle       ref("")    → 变更 Dialog 标题
+        currentProject    ref({})    → 当前操作的项目行数据
 
-      高度计算（calcTableHeight）：
-      - tableHeight = windowHeight - searchHeight(100px when visible) - toolbarHeight(50px)
-                    - paginationHeight(50px) - padding(120px)
-      - onMounted 初始计算，window resize 监听，showSearch 变化时重算
-      - onUnmounted 移除 resize 监听
-
-      分页：v-show="total>0"，紧跟 el-table 后
+      reactive data（toRefs 解构）：
+        queryParams: { pageNum:1, pageSize:10, projectId:null, currentManagerId:null, changeTime:null }
+        changeForm:  { projectId:null, newManagerId:null, changeReason:null }
+        changeRules: { newManagerId: [required] }
 
   # ==================
   # 数据加载
@@ -401,17 +507,69 @@ customizations:
     intent: "onMounted 初始化加载顺序"
     spec: |
       onMounted：
-      1. calcTableHeight()       → 计算表格高度
-      2. loadManagerList()       → getUsersByPost('pm')，加载项目经理下拉
-      3. loadProjectOptions()    → GET /project/project/search?projectName=''，加载初始项目选项
-      4. getList()               → 加载列表数据
-      window.addEventListener('resize', calcTableHeight)
+      1. calcTableHeight()          → 计算表格高度
+      2. window.addEventListener('resize', calcTableHeight)
+      3. loadManagerList()          → getUsersByPost('pm') → managerList
+      4. getList()                  → 加载列表
+
+      onUnmounted：
+        window.removeEventListener('resize', calcTableHeight)
+
+      watch(showSearch, calcTableHeight)
 
       loadManagerList：
-        getUsersByPost('pm') → res.data → managerList（用于查询筛选和变更 Dialog）
+        getUsersByPost('pm').then(res => managerList.value = res.data)
 
-      loadProjectOptions（初始）：
-        request({ url: '/project/project/search', method: 'get', params: { projectName: '' } }) → res.data
+      loadProjectOptions(query)（懒加载，非 onMounted 调用）：
+        request({ url: '/project/project/search', method: 'get', params: { projectName: query || '' } })
+        → projectOptions.value = res.data || []
+        在 catch 中重置 projectSearchLoading = false
 
-      remoteSearchProject（输入触发）：
-        query 非空时远程搜索；query 为空时显示 loadProjectOptions 结果
+      remoteSearchProject(query)：
+        直接调 loadProjectOptions(query)（query 空字符串时 API 返回全部初始列表）
+
+      handleProjectSelectVisible(visible)：
+        if (visible) → loadProjectOptions()（展开时懒加载全部项目）
+
+      getList()：
+        设置 queryParams.params = {}
+        if daterangeChangeTime 非空：
+          queryParams.params.beginChangeTime = daterangeChangeTime[0]
+          queryParams.params.endChangeTime   = daterangeChangeTime[1]
+          queryParams.changeTime = true（触发 Mapper 日期过滤条件）
+        调 listManagerChange(queryParams) → projectList / total
+
+  # ==================
+  # 布局与样式
+  # ==================
+  layout:
+    intent: "容器布局、表格高度、SCSS"
+    spec: |
+      容器：class="app-container manager-change-container"
+
+      表格：
+      - :height="tableHeight"（动态计算）
+      - border + stripe
+      - @selection-change="handleSelectionChange"
+
+      高度计算（calcTableHeight，nextTick 内执行）：
+        searchHeight = showSearch ? 100 : 0
+        tableHeight = window.innerHeight - searchHeight - 50(toolbar) - 50(pagination) - 120(padding)
+
+      SCSS（scoped）：
+      .manager-change-container {
+        height: 100%; display: flex; flex-direction: column;
+        :deep(.el-form--inline .el-form-item) { margin-right: 20px; margin-bottom: 15px; }
+        :deep(.el-table) {
+          font-size: 13px;
+          .el-table__header th { background-color: #f5f7fa; color: #606266; font-weight: 600; }
+          .el-table__body tr:hover > td { background-color: #f5f7fa !important; }
+        }
+        :deep(.el-pagination) { margin-top: 15px; text-align: right; }
+      }
+      .detail-container { max-height: 500px; overflow-y: auto; }
+      .project-info { margin-bottom: 20px; }
+      .project-info h3, .change-history h3 { margin-bottom: 10px; font-size: 16px; font-weight: bold; }
+      .project-name-cell { word-break: break-all; white-space: normal; line-height: 1.5; text-align: left; }
+
+      分页：v-show="total>0"，紧跟 el-table 后

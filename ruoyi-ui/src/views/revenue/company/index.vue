@@ -8,7 +8,7 @@
               v-model="queryParams.projectName"
               :fetch-suggestions="queryProjectNames"
               clearable
-              placeholder="输入关键字搜索，或直接输入后查询"
+              placeholder="输入关键字搜索，或直接选择下拉数据"
               style="width: 100%"
             />
           </el-form-item>

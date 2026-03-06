@@ -2,15 +2,16 @@
   <div class="app-container">
     <!-- 查询区域 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="80px">
-      <el-form-item label="项目名称" prop="projectId">
+      <el-form-item label="项目名称" prop="projectName">
         <el-select
-          v-model="queryParams.projectId"
+          v-model="queryParams.projectName"
           filterable
           remote
+          allow-create
           clearable
           :remote-method="remoteSearchProject"
           :loading="projectSearchLoading"
-          placeholder="请选择或输入项目名称"
+          placeholder="输入关键字搜索，或直接选择下拉数据"
           style="width: 240px"
           @keyup.enter="handleQuery"
           @visible-change="(v) => v && loadProjectOptions()"
@@ -19,7 +20,7 @@
             v-for="p in projectOptions"
             :key="p.projectId"
             :label="p.projectName"
-            :value="p.projectId"
+            :value="p.projectName"
           />
         </el-select>
       </el-form-item>
@@ -200,7 +201,7 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
-    projectId: null,
+    projectName: null,
     projectStage: null,
   }
 })

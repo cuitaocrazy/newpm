@@ -223,14 +223,17 @@ customizations:
 
         el-table 属性：border stripe :height="tableHeight" :row-class-name="tableRowClassName"
 
-        数据加载：getList() 同时调用两个接口（Promise.all）：
+        数据加载：getList() 串行调用两个接口：
         1. getApprovalProjectList(queryParams) → GET /project/approval/projectList
            - 后端委托 projectService.selectProjectList(project) 查询 pm_project 表
-        2. getApprovalProjectSummary(queryParams) → GET /project/approval/projectSummary
+           - 返回后立即渲染列表，合计行先用占位符 '-'
+        2. 在 .then() 内异步调用 getApprovalProjectSummary(queryParams) → GET /project/approval/projectSummary
            - 后端委托 projectService.selectProjectSummary(project) 聚合预算合计
+           - 返回后更新 projectList[0]（合计行）为格式化金额
 
         合计行（summary row）：
-        - 当 rows.length > 0 时，在列表最前面插入一个合计行对象：
+        - 当 rows.length > 0 时，先在列表最前面插入占位合计行 { isSummaryRow: true, projectBudget: '-' }
+        - summary 接口返回后更新为：
           { isSummaryRow: true, projectBudget: formatAmount(summaryRes.data.projectBudget) }
         - tableRowClassName：isSummaryRow 返回 'summary-row'
         - 合计行只在"序号"列显示"合计"文字（加粗），在"项目预算(元)"列显示格式化后的金额（加粗）

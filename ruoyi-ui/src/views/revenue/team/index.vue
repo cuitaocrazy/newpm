@@ -9,10 +9,11 @@
               v-model="queryParams.projectName"
               filterable
               remote
+              allow-create
               clearable
               :remote-method="remoteSearchProjects"
               :loading="projectSearchLoading"
-              placeholder="点击展示全部，输入模糊搜索"
+              placeholder="输入关键字搜索，或直接选择下拉数据"
               @visible-change="(v) => v && remoteSearchProjects('')"
               style="width: 100%"
             >

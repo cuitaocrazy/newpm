@@ -11,7 +11,7 @@ basicInfo:
 # ============================
 # Tab 2: 字段信息（物理表字段）
 # ============================
-# DDL 使用 utf8mb4_0900_ai_ci，与 sys_user（utf8mb4_unicode_ci）JOIN 时两侧都须加 COLLATE utf8mb4_unicode_ci
+# DDL 使用 utf8mb4_0900_ai_ci；与 sys_user（utf8mb4_unicode_ci）JOIN 时两侧都须加 COLLATE utf8mb4_unicode_ci
 columns:
   change_id:
     columnComment: 变更记录ID
@@ -35,7 +35,7 @@ columns:
     isInsert: true
     isEdit: false
     isList: false
-    isQuery: false    # 查询通过 projectNameQuery autocomplete 填入，不直接暴露 ID 查询框
+    isQuery: true     # 通过 el-select filterable remote 选择项目后填入，不直接暴露输入框
     queryType: EQ
     isRequired: true
     htmlType: input
@@ -84,7 +84,7 @@ columns:
     dictType: ""
 
   del_flag:
-    columnComment: 删除标志（0=正常, 1=删除）
+    columnComment: 删除标志（0=正常, 1=删除）；DDL DEFAULT '0'，Service 层也显式写入 '0'
     columnType: char(1)
     javaType: String
     javaField: delFlag
@@ -96,7 +96,6 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
-    notes: "Service 层固定写入 '0'，不从前端接收"
 
   create_by:
     columnComment: 创建者（用户名，由 Service 通过 SecurityUtils.getUsername() 自动填充）
@@ -214,7 +213,7 @@ domainExtensions:
     notes: |
       JOIN sys_user ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
       优先取昵称，用户不存在时回退用户名
-      注意：两侧都须加 COLLATE，因为 pm_project_stage_change 使用 utf8mb4_0900_ai_ci
+      两侧都须加 COLLATE，因为 pm_project_stage_change 使用 utf8mb4_0900_ai_ci
 
   - field: changeTime
     javaType: Date
@@ -257,7 +256,12 @@ menuConfig:
       perms: project:projectStageChange:remove
     - name: 项目阶段变更导出
       perms: project:projectStageChange:export
-  notes: "变更（单个）和批量变更均使用 add 权限"
+    - name: 项目阶段批量变更
+      perms: project:projectStageChange:batchChange
+  notes: |
+    单个变更操作使用 add 权限；
+    批量变更操作使用独立的 batchChange 权限（Controller 对应 @PreAuthorize batchChange，前端 v-hasPermi batchChange）；
+    变更记录历史查看按钮前端使用 query 权限控制可见性，对应后端 /history/{projectId} 端点以 list 权限保护。
 
 # ============================
 # 定制需求
@@ -277,14 +281,17 @@ customizations:
     intent: "列表查询条件"
     spec: |
       1. 项目名称（prop="projectId"）
-         - el-autocomplete，:fetch-suggestions="queryProjectList"，:debounce=300，:trigger-on-focus=false
-         - v-model="projectNameQuery"（独立 ref，非 queryParams 字段）
-         - @select="handleProjectSelect" → 设置 queryParams.projectId = item.projectId
-         - @input="handleProjectInput" → 清空 queryParams.projectId（防止文字改变未重选）
-         - 重置时同步清空 projectNameQuery 和 queryParams.projectId
-         - style="width: 220px"
-         - 数据来源：GET /project/project/list?projectName={keyword}&pageSize=10&pageNum=1
-           返回 res.rows，suggestion 格式：{ value: projectName, projectId }
+         - el-select，filterable，remote，clearable，style="width: 240px"
+         - v-model="queryParams.projectId"（直接绑定 ID，el-option 的 :value="p.projectId"）
+         - :remote-method="remoteSearchProject"（输入时触发远程搜索）
+         - :loading="projectSearchLoading"
+         - @keyup.enter="handleQuery"
+         - @visible-change="(v) => v && loadProjectOptions()"（下拉打开时预加载全部项目）
+         - el-option：v-for="p in projectOptions" :key="p.projectId" :label="p.projectName" :value="p.projectId"
+         - loadProjectOptions(query)：调用 searchProjects(query || '') → res.data（项目列表）
+           searchProjects 对应 GET /project/project/search，返回 res.data（非 res.rows）
+         - remoteSearchProject(query)：调用 loadProjectOptions(query)
+         - 重置时 queryParams.projectId = null（proxy.resetForm 自动处理）
 
       2. 当前阶段（prop="projectStage"）
          - el-select，clearable，style="width: 160px"
@@ -296,7 +303,7 @@ customizations:
     intent: "以项目为主体的列表列顺序与展示"
     spec: |
       多选列（checkbox, 55） → 序号（type=index, 55）
-      → 项目名称（align=left, header-align=center, width=220, project-name-cell class）
+      → 项目名称（align=left, header-align=center, width=220, project-name-cell class，word-break:break-all, white-space:normal）
       → 收入确认年度（align=center, 120）
       → 确认金额(元)（align=center, 150, formatAmountYuan）
       → 合同状态（align=center, 100, dict-tag sys_htzt）
@@ -311,12 +318,12 @@ customizations:
       → 操作（align=center, 160, fixed=right）
 
       工具栏：
-      - 批量变更（icon=Switch, plain, :disabled="multiple", v-hasPermi add）
+      - 批量变更（icon=Switch, plain, :disabled="multiple", v-hasPermi=['project:projectStageChange:batchChange']）
       - right-toolbar（显隐搜索）
 
       操作列：
-      - 变更（icon=Edit, link, v-hasPermi project:projectStageChange:add）→ handleChange(row)
-      - 变更记录（icon=Document, link）→ handleHistory(row)
+      - 变更（icon=Edit, link, v-hasPermi=['project:projectStageChange:add']）→ handleChange(row)
+      - 变更记录（icon=Document, link, v-hasPermi=['project:projectStageChange:query']）→ handleHistory(row)
 
   # ── 4. 后端 SQL 逻辑 ──────────────────────────────────────────────────────
   backend_sql:
@@ -324,7 +331,7 @@ customizations:
     spec: |
       主表：pm_project p（WHERE p.del_flag = '0'）
 
-      合同 JOIN（取每个项目最小 contract_id 的合同）：
+      合同 JOIN（取每个项目最小 contract_id 的有效合同）：
         LEFT JOIN (
             SELECT project_id, MIN(contract_id) AS contract_id
             FROM pm_project_contract_rel
@@ -352,77 +359,116 @@ customizations:
       Collation 注意：pm_project_stage_change 使用 utf8mb4_0900_ai_ci，sys_user 使用 utf8mb4_unicode_ci，
       两侧都须显式指定 COLLATE utf8mb4_unicode_ci
 
+      ─── Mapper 辅助方法 ───
+
       selectHistoryByProjectId（变更历史弹窗）：
         SELECT psc.change_id, psc.project_id, psc.old_stage, psc.new_stage, psc.change_reason,
-               COALESCE(u.nick_name, psc.create_by) AS create_by,   ← 映射到 createBy 字段
+               COALESCE(u.nick_name, psc.create_by) AS create_by,
                psc.create_time
         FROM pm_project_stage_change psc
         LEFT JOIN sys_user u ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
         WHERE psc.project_id = #{projectId} AND psc.del_flag = '0'
         ORDER BY psc.create_time DESC, psc.change_id DESC
+        返回字段映射到 createBy（昵称 COALESCE）和 createTime
+
+      selectProjectStageByProjectId：
+        SELECT project_stage FROM pm_project WHERE project_id = #{projectId} AND del_flag = '0'
+        供批量变更 Service 层获取各项目的当前阶段
+
+      updateProjectStageByProjectId：
+        UPDATE pm_project SET project_stage = #{projectStage}, update_time = NOW()
+        WHERE project_id = #{projectId}
+        供 insertProjectStageChange 和 batchChange 同步更新 pm_project.project_stage
 
   # ── 5. 单项变更 Dialog ───────────────────────────────────────────────────
   single_change_dialog:
     intent: "操作列'变更'按钮，弹出 Dialog 为单个项目记录新的阶段变更"
     spec: |
-      el-dialog：title="变更项目阶段 - {changeForm.projectName}"，width=520px
+      el-dialog：title="变更项目阶段 - " + changeForm.projectName，width=520px，append-to-body
 
       表单（label-width=90px）：
-      - 新阶段（prop="newStage"，必填）：el-select，sys_xmjd，style="width:100%"
+      - 新阶段（prop="newStage"，必填，required 校验触发 change）：
+          el-select，sys_xmjd，style="width:100%"
       - 变更原因：el-input，type=textarea，rows=4，maxlength=500，show-word-limit（选填）
       - 变更项目数：只读文字 "1 个项目"
 
       handleChange(row) 初始化：
-        changeForm = { projectId, projectName, currentStage: row.projectStage, newStage: null, changeReason: null }
+        changeForm = {
+          projectId: row.projectId,
+          projectName: row.projectName,
+          currentStage: row.projectStage,
+          newStage: null,
+          changeReason: null
+        }
 
       submitChange 提交体（POST /project/projectStageChange，@RequestBody JSON）：
         { projectId, oldStage: changeForm.currentStage, newStage, changeReason }
+        调用 addProjectStageChange(data) → API: POST /project/projectStageChange
 
       Service 逻辑（insertProjectStageChange）：
-        - 自动填充 delFlag='0', createBy=SecurityUtils.getUsername(), createTime=DateUtils.getNowDate()
-        - 同步更新 pm_project.project_stage = newStage, update_time = NOW()
-        - @Transactional
+        @Transactional
+        1. 设置 delFlag='0'，createBy=SecurityUtils.getUsername()，createTime=DateUtils.getNowDate()
+        2. insertProjectStageChange（写入 pm_project_stage_change）
+        3. 若 insert 成功且 projectId/newStage 不为空，调用
+           updateProjectStageByProjectId(projectId, newStage)
+           同步更新 pm_project.project_stage + update_time=NOW()
 
   # ── 6. 变更记录 Dialog ───────────────────────────────────────────────────
   change_history_dialog:
     intent: "操作列'变更记录'按钮，展示该项目全部阶段变更历史（倒序，不分页）"
     spec: |
-      el-dialog：title="变更记录"，width=820px
+      el-dialog：title="变更记录"，width=820px，append-to-body
 
-      标题区：项目：<strong>{{ currentProjectName }}</strong>
+      标题区（mb8, font-size:13px, color:#606266）：
+        项目：<strong>{{ currentProjectName }}</strong>
 
       只读 el-table（border, v-loading="historyLoading"）：
       - 序号（type=index, 55）
-      - 原阶段（130, dict-tag sys_xmjd, prop="oldStage"）
-      - 新阶段（130, dict-tag sys_xmjd, prop="newStage"）
+      - 原阶段（width=130, dict-tag sys_xmjd, prop="oldStage"）
+      - 新阶段（width=130, dict-tag sys_xmjd, prop="newStage"）
       - 变更原因（min-width=150, show-overflow-tooltip, prop="changeReason"）
-      - 变更人（100, prop="createBy"）   ← 注意：返回的是 ProjectStageChange，用 createBy
-      - 变更时间（180, prop="createTime"）← 注意：返回的是 ProjectStageChange，用 createTime
+      - 变更人（width=100, prop="createBy"）← 后端已 COALESCE 为昵称，映射到 createBy
+      - 变更时间（width=180, prop="createTime"）
 
-      数据加载：historyByProject(projectId) → GET /project/projectStageChange/history/{projectId}
-      返回：AjaxResult，前端取 res.data（List<ProjectStageChange>，createBy 已被 COALESCE 为昵称）
+      数据加载：handleHistory(row) → historyByProject(row.projectId)
+        API: GET /project/projectStageChange/history/{projectId}
+        后端权限：@PreAuthorize("@ss.hasPermi('project:projectStageChange:list')")
+        前端按钮可见性：v-hasPermi=['project:projectStageChange:query']
+        返回：AjaxResult，前端取 res.data（List<ProjectStageChange>）
 
   # ── 7. 批量变更 Dialog ───────────────────────────────────────────────────
   batch_change_dialog:
     intent: "工具栏'批量变更'按钮（勾选后激活），批量为多个项目记录阶段变更"
     spec: |
-      工具栏按钮：icon=Switch, plain, v-hasPermi add, :disabled="multiple"（无勾选时禁用）
+      工具栏按钮：icon=Switch, plain, :disabled="multiple"（无勾选时禁用）
+        v-hasPermi=['project:projectStageChange:batchChange']
 
-      el-dialog：title="批量变更项目阶段"，width=520px
+      el-dialog：title="批量变更项目阶段"，width=520px，append-to-body
 
       表单（label-width=90px）：
-      - 新阶段（prop="newStage"，必填）：el-select，sys_xmjd，style="width:100%"
+      - 新阶段（prop="newStage"，必填，required 校验触发 change）：
+          el-select，sys_xmjd，style="width:100%"
       - 变更原因：el-input，type=textarea，rows=4，maxlength=500，show-word-limit（选填）
       - 变更项目数：动态显示 "{{ selectedRows.length }} 个项目"
 
+      handleBatchChange()：初始化 batchForm = { newStage: null, changeReason: null }，打开弹窗
+
       submitBatchChange 提交（POST /project/projectStageChange/batchChange，@RequestBody JSON）：
         { projectIds: selectedRows.map(r => r.projectId), newStage, changeReason }
+        调用 batchChangeStage(data)
+
+      Controller：@PreAuthorize("@ss.hasPermi('project:projectStageChange:batchChange')")
+        从 @RequestBody ProjectStageChange request 中取 projectIds/newStage/changeReason
+        调用 service.batchChange(projectIds, newStage, changeReason)
 
       Service 逻辑（batchChange）：
         @Transactional，循环每个 projectId：
-          1. selectProjectStageByProjectId → 得到 oldStage
-          2. insertProjectStageChange（含 delFlag/createBy/createTime）
-          3. updateProjectStageByProjectId（同步更新 pm_project.project_stage + update_time=NOW()）
+          1. selectProjectStageByProjectId(projectId) → oldStage
+          2. 构造 ProjectStageChange（projectId, oldStage, newStage, changeReason, delFlag='0',
+             createBy=SecurityUtils.getUsername(), createTime=DateUtils.getNowDate()）
+          3. insertProjectStageChange(change)
+          4. updateProjectStageByProjectId(projectId, newStage)
+        返回 projectIds.length
 
   # ── 8. 辅助函数 ──────────────────────────────────────────────────────────
   utility_functions:
@@ -432,31 +478,44 @@ customizations:
         if (val == null || val === '') return '-'
         return parseFloat(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
+      loadDepts()（组件 setup 阶段直接调用，非 onMounted）：
+        request({ url: '/project/project/deptTree', method: 'get' }).then(res => {
+          const map = {}
+          ;(res.data || []).forEach(d => { map[d.deptId] = d })
+          deptMap.value = map
+        })
+        注意：使用代理接口 /project/project/deptTree（不直接调用 /system/dept/list）
+
       formatDeptPath(deptId)：
-        - 数据来源：onMounted 调用 GET /project/project/deptTree → res.data（扁平列表）
-          建立 deptMap = { deptId: deptObj } 缓存
-        - 算法：取 dept.ancestors 逗号分割 + 当前 deptId 组成完整 id 链
-          fullPath.length > 2 ? fullPath.slice(2) : fullPath
-          map(did => deptMap[did]?.deptName || String(did)).join(' - ')
-        - 注意：使用代理接口 /project/project/deptTree，不直接调用 /system/dept/list
+        if (!deptId) return '-'
+        const id = parseInt(deptId); if (!id) return deptId
+        const dept = deptMap.value[id]; if (!dept) return deptId
+        const ancestorIds = (dept.ancestors || '').split(',').map(Number).filter(n => n > 0)
+        const fullPath = [...ancestorIds, id]
+        const displayIds = fullPath.length > 2 ? fullPath.slice(2) : fullPath
+        return displayIds.map(did => deptMap.value[did]?.deptName || String(did)).join(' - ')
+
+      searchProjects(query)：
+        来自 @/api/project/project，对应 GET /project/project/search
+        返回 res.data（项目数组，含 projectId, projectName），非 res.rows
 
 # ============================
 # 后端 API 汇总
 # ============================
 apiSummary:
-  - "GET    /project/projectStageChange/list                → 以项目为主体的分页列表"
-  - "GET    /project/projectStageChange/history/{projectId} → 某项目全部变更历史（不分页）"
-  - "GET    /project/projectStageChange/{changeId}          → 单条变更记录详情"
-  - "POST   /project/projectStageChange                     → 新增变更记录（同步更新项目阶段）"
-  - "POST   /project/projectStageChange/batchChange         → 批量变更阶段（@RequestBody JSON）"
-  - "PUT    /project/projectStageChange                     → 修改变更记录"
-  - "DELETE /project/projectStageChange/{changeIds}         → 删除变更记录"
-  - "POST   /project/projectStageChange/export              → 导出 Excel"
+  - "GET    /project/projectStageChange/list                → 以项目为主体的分页列表（list 权限）"
+  - "GET    /project/projectStageChange/history/{projectId} → 某项目全部变更历史，不分页（list 权限）"
+  - "GET    /project/projectStageChange/{changeId}          → 单条变更记录详情（query 权限）"
+  - "POST   /project/projectStageChange                     → 新增变更记录，同步更新 pm_project.project_stage（add 权限）"
+  - "POST   /project/projectStageChange/batchChange         → 批量变更阶段，@RequestBody JSON（batchChange 权限）"
+  - "PUT    /project/projectStageChange                     → 修改变更记录（edit 权限）"
+  - "DELETE /project/projectStageChange/{changeIds}         → 软删除变更记录（remove 权限）"
+  - "POST   /project/projectStageChange/export              → 导出 Excel（export 权限）"
 
 # ============================
 # 字典依赖
 # ============================
 dictDependencies:
-  - sys_xmjd:   "项目阶段（旧阶段/新阶段/当前阶段/查询下拉）"
+  - sys_xmjd:   "项目阶段（原阶段/新阶段/当前阶段/查询下拉）"
   - sys_htzt:   "合同状态"
   - sys_srqrzt: "收入确认状态"
