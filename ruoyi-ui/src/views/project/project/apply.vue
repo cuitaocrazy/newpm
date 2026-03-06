@@ -253,11 +253,9 @@
       <el-row :gutter="20">
         <el-col :span="24">
           <el-form-item label="参与人员" prop="participants" data-prop="participants">
-            <user-select
+            <org-user-select
               v-model="participantIds"
               placeholder="请选择参与人员"
-              multiple
-              filterable
               style="width: 100%"
               @blur="validateOnBlur('participants')"
             />

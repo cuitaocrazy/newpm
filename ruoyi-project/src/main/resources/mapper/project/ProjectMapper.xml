@@ -732,6 +732,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             u.user_id AS userId,
             u.user_name AS userName,
             u.nick_name AS nickName,
+            u.dept_id AS deptId,
             u.phonenumber AS phonenumber
         FROM sys_user u
         LEFT JOIN sys_user_post up ON u.user_id = up.user_id

@@ -271,32 +271,11 @@
           <el-row :gutter="20">
             <el-col :span="24">
               <el-form-item label="参与人员" prop="participants" data-prop="participants">
-                <!-- 已选人员标签展示 -->
-                <div class="selected-participants" v-if="selectedParticipants.length > 0" style="margin-bottom: 10px;">
-                  <el-tag v-for="user in selectedParticipants" :key="user.userId"
-                    closable @close="removeParticipant(user.userId)"
-                    type="info" class="participant-tag" style="margin-right: 8px; margin-bottom: 8px;">
-                    {{ user.nickName }}
-                  </el-tag>
-                </div>
-
-                <!-- 多选下拉框 -->
-                <el-select
+                <org-user-select
                   v-model="form.participants"
-                  placeholder="请选择参与人员（可多选）"
-                  multiple
-                  filterable
-                  clearable
-                  @change="handleParticipantsChange"
-                  style="width: 100%">
-                  <el-option v-for="user in allUsers" :key="user.userId"
-                    :label="user.nickName"
-                    :value="user.userId">
-                    <span>{{ user.nickName }}</span>
-                    <span style="color: #8492a6; font-size: 13px; margin-left: 8px;">（{{ user.userName }}）</span>
-                  </el-option>
-                </el-select>
-                <div v-if="form.participants && form.participants.length > 0" style="margin-top: 6px; color: #606266; font-size: 13px;">已选 {{ form.participants.length }} 人</div>
+                  placeholder="请选择参与人员"
+                  style="width: 100%"
+                />
               </el-form-item>
             </el-col>
           </el-row>
@@ -477,7 +456,7 @@
 <script setup name="ProjectApply">
 import { ref, reactive, computed, toRefs, watch, getCurrentInstance, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, updateProject, getUsersByPost } from '@/api/project/project'
+import { getProject, updateProject } from '@/api/project/project'
 import request from '@/utils/request'
 import { useFormValidation } from '@/composables/useFormValidation'
 
@@ -592,10 +571,6 @@ const { form, rules } = toRefs(data)
 const submitLoading = ref(false)
 const contractInfo = ref({})
 const secondaryRegionOptions = ref([])
-const allUsers = ref([])
-const selectedParticipants = ref([])
-const participantInput = ref('')
-const participantAutocomplete = ref(null)
 const customerOptions = ref([])
 const contactOptions = ref([])
 const customerContactPhone = ref('')
@@ -628,14 +603,6 @@ function handleSalesManagerChange(userId, user) {
   } else {
     form.value.salesContact = ''
   }
-}
-
-/** 过滤部门树，只保留三级及以下机构 */
-// 加载所有用户（用于参与人员选择）
-function loadAllUsers() {
-  getUsersByPost().then(response => {
-    allUsers.value = response.data || []
-  })
 }
 
 // 加载客户列表（根据区域过滤）
@@ -685,17 +652,6 @@ function handleContactChange(contactId) {
   if (contact) {
     customerContactPhone.value = contact.contactPhone || ''
   }
-}
-
-// 参与人员变化时同步更新已选人员列表
-function handleParticipantsChange(userIds) {
-  selectedParticipants.value = allUsers.value.filter(user => userIds.includes(user.userId))
-}
-
-// 删除参与人员（从标签删除）
-function removeParticipant(userId) {
-  form.value.participants = form.value.participants.filter(id => id !== userId)
-  selectedParticipants.value = selectedParticipants.value.filter(p => p.userId !== userId)
 }
 
 // 提交表单
@@ -829,7 +785,6 @@ function loadProjectData() {
 
 // 页面加载时初始化
 onMounted(() => {
-  loadAllUsers()
   loadCustomers()
   loadProjectData()
 })
