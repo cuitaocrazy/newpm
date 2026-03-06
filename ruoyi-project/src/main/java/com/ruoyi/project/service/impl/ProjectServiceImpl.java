@@ -211,6 +211,7 @@ public class ProjectServiceImpl implements IProjectService
      * @return 部门树
      */
     @Override
+    @DataScope(deptAlias = "d")
     public List<Map<String, Object>> getDeptTree(Project project)
     {
         return projectMapper.selectDeptTree(project);

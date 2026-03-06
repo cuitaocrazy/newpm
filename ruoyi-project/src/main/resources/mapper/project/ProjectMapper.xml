@@ -794,6 +794,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         FROM sys_dept d
         WHERE d.del_flag = '0'
         AND d.status = '0'
+        ${params.dataScope}
         ORDER BY d.parent_id, d.order_num
     </select>
 
