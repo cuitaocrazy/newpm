@@ -63,45 +63,23 @@ const emit = defineEmits(['update:modelValue', 'change', 'blur'])
 // Data
 const deptOptions = ref([])
 
-/** 过滤部门树，只保留三级及以下机构 */
-function filterDeptTree(depts, level = 1) {
-  if (!depts || depts.length === 0) return []
-
-  // 如果当前是第1或第2级，继续递归子节点
-  if (level < 3) {
-    let result = []
-    depts.forEach(dept => {
-      if (dept.children && dept.children.length > 0) {
-        const filtered = filterDeptTree(dept.children, level + 1)
-        result = result.concat(filtered)
-      }
-    })
-    return result
-  }
-
-  // 第3级及以下，保留当前节点及其子节点
-  return depts.map(dept => ({
-    ...dept,
-    children: dept.children && dept.children.length > 0
-      ? filterDeptTree(dept.children, level + 1)
-      : undefined
-  }))
-}
-
 /** 获取部门树 */
 function loadDeptTree() {
   request({
     url: '/project/project/deptTree',
     method: 'get'
   }).then(response => {
-    const flatList = (response.data || []).map((d) => ({
+    // 与 index.vue 保持一致：用 ancestors 判断层级，只保留三级及以下机构
+    const level3AndBelowDepts = (response.data || []).filter(dept => {
+      if (!dept.ancestors) return false
+      return dept.ancestors.split(',').length >= 3
+    })
+    const flatList = level3AndBelowDepts.map((d) => ({
       id: d.deptId,
       label: d.deptName,
       parentId: d.parentId
     }))
-    const allDepts = handleTree(flatList, 'id', 'parentId')
-    // 过滤掉前两级，只显示三级及以下机构
-    deptOptions.value = filterDeptTree(allDepts)
+    deptOptions.value = handleTree(flatList, 'id', 'parentId')
   })
 }
 
