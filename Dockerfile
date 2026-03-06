@@ -80,7 +80,8 @@ public class SpaController
     @GetMapping(value = {
         "/{path:[^\\.]*}",
         "/{path:[^\\.]*}/{subpath:[^\\.]*}",
-        "/{path:[^\\.]*}/{subpath:[^\\.]*}/{subsubpath:[^\\.]*}"
+        "/{path:[^\\.]*}/{subpath:[^\\.]*}/{subsubpath:[^\\.]*}",
+        "/{path:[^\\.]*}/{subpath:[^\\.]*}/{subsubpath:[^\\.]*}/{id:[^\\.]*}"
     })
     public String forward()
     {
