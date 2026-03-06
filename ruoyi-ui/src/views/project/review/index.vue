@@ -325,7 +325,6 @@ const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_xmzt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_xmzt', 'industry')
 
 const reviewList = ref([])
-const deptTree = ref([])
 const projectNameOptions = ref([])
 const loadingProjectNames = ref(false)
 const loading = ref(true)
