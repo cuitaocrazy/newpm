@@ -224,6 +224,19 @@ public class ProjectController extends BaseController
     }
 
     /**
+     * 检查项目编号是否与已有项目冲突，返回建议编号
+     * @param projectCode      待检查的基础编号
+     * @param excludeProjectId 编辑时排除自身（新增不传此参数）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:project:add,project:project:edit')")
+    @GetMapping("/checkCode")
+    public AjaxResult checkProjectCode(@RequestParam String projectCode,
+                                       @RequestParam(required = false) Long excludeProjectId)
+    {
+        return success(projectService.checkProjectCode(projectCode, excludeProjectId));
+    }
+
+    /**
      * 查询收入确认汇总（全量筛选，不分页）
      */
     @PreAuthorize("@ss.hasPermi('revenue:company:list')")

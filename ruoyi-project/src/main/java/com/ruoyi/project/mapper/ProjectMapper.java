@@ -214,4 +214,15 @@ public interface ProjectMapper
      * @return 合计（teamConfirmAmount）
      */
     public Map<String, Object> selectTeamRevenueFlatSummary(Project project);
+
+    /**
+     * 按项目编号前缀查询项目列表（用于编号冲突检测）
+     * 返回与 codePrefix 完全相同 或 以 codePrefix- 开头的所有项目
+     *
+     * @param codePrefix      基础项目编号（不含后缀）
+     * @param excludeProjectId 编辑时排除自身（新增传 null）
+     * @return 编号冲突相关项目列表（projectId, projectCode, projectName）
+     */
+    public List<Map<String, Object>> selectProjectsByCodePrefix(@Param("codePrefix") String codePrefix,
+                                                                @Param("excludeProjectId") Long excludeProjectId);
 }

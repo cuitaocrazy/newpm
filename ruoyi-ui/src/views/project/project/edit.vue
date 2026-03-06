@@ -457,9 +457,13 @@
 <script setup name="ProjectApply">
 import { ref, reactive, computed, toRefs, watch, getCurrentInstance, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, updateProject } from '@/api/project/project'
+import { getProject, updateProject, checkProjectCode } from '@/api/project/project'
+import { ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { useFormValidation } from '@/composables/useFormValidation'
+
+// 竞态防护：保证只有最新一次 generateProjectCode 调用的结果被应用
+let codeGenSeq = 0
 
 const router = useRouter()
 const route = useRoute()
@@ -576,12 +580,12 @@ const customerOptions = ref([])
 const contactOptions = ref([])
 const customerContactPhone = ref('')
 
-// 项目编号自动生成
+// 项目编号自动生成（带重复校验）
 watch([() => form.value.industry, () => form.value.region,
        () => form.value.regionCode, () => form.value.shortName, () => form.value.establishedYear],
   ([industry, region, regionCode, shortName, establishedYear]) => {
     if (industry && region && regionCode && shortName && establishedYear) {
-      form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+      generateProjectCode()
     }
   }
 )
@@ -720,10 +724,35 @@ function handleSecondaryRegionChange(regionCode) {
   }
 }
 
-function generateProjectCode() {
-  const { industry, region, regionCode, shortName, establishedYear } = form.value
-  if (industry && region && regionCode && shortName && establishedYear) {
-    form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+async function generateProjectCode() {
+  const { industry, region, regionCode, shortName, establishedYear, projectId } = form.value
+  if (!(industry && region && regionCode && shortName && establishedYear)) return
+
+  const mySeq = ++codeGenSeq
+  const baseCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+
+  const res = await checkProjectCode(baseCode, projectId || null)
+  if (mySeq !== codeGenSeq) return
+
+  const { exists, existingProject, suggestedCode } = res.data
+
+  if (!exists) {
+    form.value.projectCode = baseCode
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `该项目编号【${existingProject.projectCode}】已被项目【${existingProject.projectName}】使用，请确认是否继续进行立项申请操作？`,
+      '项目编号重复提示',
+      { confirmButtonText: '继续', cancelButtonText: '取消', type: 'warning' }
+    )
+    if (mySeq !== codeGenSeq) return
+    form.value.projectCode = suggestedCode
+  } catch {
+    if (mySeq !== codeGenSeq) return
+    form.value.projectCode = ''
+    form.value.shortName = ''
   }
 }
 

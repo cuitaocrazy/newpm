@@ -1094,5 +1094,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = now()
         where project_id = #{projectId}
     </update>
+    <!-- 按项目编号前缀查询（精确匹配 或 带"-xx"后缀），用于编号冲突检测 -->
+    <select id="selectProjectsByCodePrefix" resultType="map">
+        SELECT project_id AS projectId,
+               project_code AS projectCode,
+               project_name AS projectName
+        FROM pm_project
+        WHERE (project_code = #{codePrefix}
+               OR project_code LIKE CONCAT(#{codePrefix}, '-%'))
+        <if test="excludeProjectId != null">
+            AND project_id != #{excludeProjectId}
+        </if>
+    </select>
 
 </mapper>

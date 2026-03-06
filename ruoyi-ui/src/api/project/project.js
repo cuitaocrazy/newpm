@@ -105,6 +105,16 @@ export function generateProjectCode(data) {
   })
 }
 
+// 检查项目编号是否与已有项目冲突，返回建议编号
+// excludeProjectId: 编辑时传入当前项目ID以排除自身，新增时不传
+export function checkProjectCode(projectCode, excludeProjectId) {
+  return request({
+    url: '/project/project/checkCode',
+    method: 'get',
+    params: { projectCode, excludeProjectId }
+  })
+}
+
 // 根据部门查询项目列表（用于合同关联，可排除已关联的项目）
 export function listProjectByDept(deptId, excludeContractId) {
   return request({

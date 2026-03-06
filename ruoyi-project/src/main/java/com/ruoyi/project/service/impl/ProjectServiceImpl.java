@@ -272,6 +272,44 @@ public class ProjectServiceImpl implements IProjectService
     }
 
     /**
+     * 检查项目编号是否与已有项目冲突，并返回建议编号
+     */
+    @Override
+    public Map<String, Object> checkProjectCode(String projectCode, Long excludeProjectId)
+    {
+        Map<String, Object> result = new HashMap<>();
+
+        List<Map<String, Object>> existing = projectMapper.selectProjectsByCodePrefix(projectCode, excludeProjectId);
+
+        // 精确匹配：是否有完全相同的编号
+        Map<String, Object> exactMatch = existing.stream()
+            .filter(p -> projectCode.equals(p.get("projectCode")))
+            .findFirst()
+            .orElse(null);
+
+        if (exactMatch == null)
+        {
+            result.put("exists", false);
+            result.put("suggestedCode", projectCode);
+            return result;
+        }
+
+        // 有冲突 → 找后缀最大值，推荐下一个可用编号
+        result.put("exists", true);
+        result.put("existingProject", exactMatch);
+
+        int maxSuffix = existing.stream()
+            .map(p -> String.valueOf(p.get("projectCode")))
+            .filter(code -> code.matches(projectCode + "-\\d{2}"))
+            .mapToInt(code -> Integer.parseInt(code.substring(code.lastIndexOf("-") + 1)))
+            .max()
+            .orElse(0);
+
+        result.put("suggestedCode", String.format("%s-%02d", projectCode, maxSuffix + 1));
+        return result;
+    }
+
+    /**
      * 根据部门查询项目列表（用于合同关联，可排除已关联的项目）
      *
      * @param deptId 部门ID

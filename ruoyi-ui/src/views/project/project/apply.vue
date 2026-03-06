@@ -513,9 +513,13 @@
 <style scoped src="@/assets/styles/form-validation.scss"></style>
 
 <script setup name="ProjectApply">
-import { addProject } from "@/api/project/project"
+import { addProject, checkProjectCode } from "@/api/project/project"
+import { ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { useFormValidation } from '@/composables/useFormValidation'
+
+// 竞态防护：每次 generateProjectCode 调用时递增，请求返回后比对，旧请求结果直接丢弃
+let codeGenSeq = 0
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -700,11 +704,40 @@ function handleContactChange(contactId) {
   }
 }
 
-/** 生成项目编号 */
-function generateProjectCode() {
+/** 生成项目编号（带重复校验） */
+async function generateProjectCode() {
   const { industry, region, regionCode, shortName, establishedYear } = form.value
-  if (industry && region && regionCode && shortName && establishedYear) {
-    form.value.projectCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+  if (!(industry && region && regionCode && shortName && establishedYear)) return
+
+  const mySeq = ++codeGenSeq  // 本次调用的序号
+  const baseCode = `${industry}-${region}-${regionCode}-${shortName}-${establishedYear}`
+
+  const res = await checkProjectCode(baseCode)
+  // 有更新的调用已发出，丢弃本次结果（解决 @input 击键竞态）
+  if (mySeq !== codeGenSeq) return
+
+  const { exists, existingProject, suggestedCode } = res.data
+
+  if (!exists) {
+    form.value.projectCode = baseCode
+    return
+  }
+
+  // 编号冲突 → 弹框让用户决策
+  try {
+    await ElMessageBox.confirm(
+      `该项目编号【${existingProject.projectCode}】已被项目【${existingProject.projectName}】使用，请确认是否继续进行立项申请操作？`,
+      '项目编号重复提示',
+      { confirmButtonText: '继续', cancelButtonText: '取消', type: 'warning' }
+    )
+    // 弹框期间没有新调用才应用结果
+    if (mySeq !== codeGenSeq) return
+    form.value.projectCode = suggestedCode
+  } catch {
+    // 用户点击"取消" → 清空编号
+    if (mySeq !== codeGenSeq) return
+    form.value.projectCode = ''
+    form.value.shortName = ''
   }
 }
 

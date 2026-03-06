@@ -179,4 +179,13 @@ public interface IProjectService
      * @return 合计（teamConfirmAmount）
      */
     public Map<String, Object> selectTeamRevenueFlatSummary(Project project);
+
+    /**
+     * 检查项目编号是否与已有项目冲突，并返回建议编号
+     *
+     * @param projectCode      待检查的基础编号
+     * @param excludeProjectId 编辑时排除自身（新增传 null）
+     * @return Map 包含：exists(boolean), existingProject(Map{projectCode,projectName}), suggestedCode(String)
+     */
+    public Map<String, Object> checkProjectCode(String projectCode, Long excludeProjectId);
 }
