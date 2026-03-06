@@ -32,9 +32,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_project_member m
         left join sys_user u on m.user_id = u.user_id
         left join sys_dept d on u.dept_id = d.dept_id
+        left join pm_project p on m.project_id = p.project_id
         where m.project_id = #{projectId}
           and m.is_active = '1'
           and m.del_flag = '0'
+          and (p.market_manager_id is null or m.user_id != p.market_manager_id)
         order by m.join_date asc
     </select>
 
@@ -97,6 +99,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         LEFT JOIN pm_project_member m ON p.project_id = m.project_id AND m.is_active = '1' AND m.del_flag = '0'
+                                     AND (p.market_manager_id IS NULL OR m.user_id != p.market_manager_id)
         LEFT JOIN sys_user u ON m.user_id = u.user_id
         WHERE p.del_flag = '0'
         <if test="projectName != null and projectName != ''">

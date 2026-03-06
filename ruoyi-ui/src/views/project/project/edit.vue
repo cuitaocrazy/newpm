@@ -687,14 +687,15 @@ function cancel() {
 function getSecondaryRegions(regionDictValue) {
   if (!regionDictValue) {
     secondaryRegionOptions.value = []
-    return
+    return Promise.resolve([])
   }
-  request({
+  return request({
     url: '/project/secondaryRegion/listByRegion',
     method: 'get',
     params: { regionDictValue: regionDictValue }
   }).then(response => {
     secondaryRegionOptions.value = response.data || []
+    return secondaryRegionOptions.value
   })
 }
 
@@ -753,9 +754,14 @@ function loadProjectData() {
       form.value.projectDept = Number(form.value.projectDept)
     }
 
-    // 如果有一级区域，加载对应的二级区域列表
+    // 如果有一级区域，加载对应的二级区域列表，并通过 regionId 回显二级区域
     if (data.region) {
-      getSecondaryRegions(data.region)
+      getSecondaryRegions(data.region).then(options => {
+        if (!form.value.regionCode && data.regionId && options.length) {
+          const matched = options.find(o => o.regionId === data.regionId)
+          if (matched) form.value.regionCode = matched.regionCode
+        }
+      })
     }
 
     // 如果有客户ID，加载对应的联系人列表
