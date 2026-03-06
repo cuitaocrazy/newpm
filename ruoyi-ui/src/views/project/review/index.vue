@@ -6,6 +6,7 @@
           v-model="queryParams.projectName"
           filterable
           remote
+          allow-create
           clearable
           :remote-method="remoteQueryProjectNames"
           :loading="loadingProjectNames"
