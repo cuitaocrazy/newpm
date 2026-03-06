@@ -281,7 +281,7 @@ columns:
     dictType: ""
 
   actual_workload:
-    columnComment: 实际人天
+    columnComment: 实际人天（存储单位为小时，列表/详情显示时÷8换算为人天）
     columnType: decimal(10,2)
     javaType: BigDecimal
     javaField: actualWorkload
@@ -345,10 +345,12 @@ customizations:
 
       查询条件字段（14个，顺序即表单排列顺序）：
       第1行：
-      1. 项目名称 - el-select（filterable + remote），@visible-change 打开时调 API 全量加载，输入时模糊搜索
-         remote-method="loadProjectNameOptions"，@visible-change="(v) => v && loadProjectNameOptions('')"
-         选项来自 listRevenue({pageNum:1, pageSize:200, projectName:query})，Set 去重
+      1. 项目名称 - el-autocomplete，fetch-suggestions="queryProjectNames"，clearable
+         queryProjectNames(queryString, cb) 调用 listProjectByName({ projectName: queryString || '' })
+         返回 response.data 映射为 [{ value: item.projectName, projectId: item.projectId }]
+         placeholder="输入关键字搜索，或直接选择下拉数据"
       2. 项目部门 - el-tree-select, v-model="queryParams.projectDept", 三级及以下部门
+         :data="deptTree", :props="{ label, value, children }", check-strictly, clearable, filterable
       3. 收入确认年度 - dict-select, dict-type="sys_ndgl"
       4. 项目分类 - dict-select, dict-type="sys_xmfl"
       第2行：
@@ -380,46 +382,73 @@ customizations:
     notes: |
       列顺序（26列）：
       1. 序号（width=55, center, fixed="left"）
-      2. 项目名称（min-width=220, align=left/header=center, word-break 自动换行, fixed="left"）
-      3. 项目阶段（min-width=100, center, dict-tag :options="sys_xmjd"）← 移至项目名称列后
-      4. 项目部门（min-width=120, center, getDeptName() 显示完整路径, show-overflow-tooltip）
-      5. 项目经理（min-width=100, center, getUserName(id, projectManagerSelectRef?.userOptions)）
-      6. 项目分类（min-width=120, center, dict-tag :options="sys_xmfl"）
-      7. 二级区域（min-width=120, center, scope.row.regionName || '-', show-overflow-tooltip）
-      8. 项目预算(元)（min-width=120, align=right, formatAmount()）
-      9. 预估工作量（min-width=100, center, 原始值显示）
-      10. 实际人天（min-width=100, center, 原始值显示）
-      11. 合同名称（min-width=180, align=left/header=center, white-space:pre-line 换行展示, show-overflow-tooltip）
+      2. 项目名称（min-width=220, align=left/header=center, el-link 可点击跳详情, fixed="left"）
+      3. 项目阶段（min-width=100, center, dict-tag :options="sys_xmjd"）← columns[0]
+      4. 项目部门（min-width=120, center, getDeptName() 显示完整路径, show-overflow-tooltip）← columns[1]
+      5. 项目经理（min-width=100, center, getUserName(id, projectManagerSelectRef?.userOptions)）← columns[2]
+      6. 项目分类（min-width=120, center, dict-tag :options="sys_xmfl"）← columns[3]
+      7. 二级区域（min-width=120, center, scope.row.regionName || '-', show-overflow-tooltip）← columns[4]
+      8. 项目预算(元)（min-width=120, align=right, formatAmount()）← columns[5]
+      9. 预估工作量（人天）（min-width=130, center, 原始值直接显示）← columns[6]
+      10. 实际人天（min-width=100, center, actualWorkload / 8 保留3位小数）← columns[7]
+          - 数据行：scope.row.actualWorkload != null ? (scope.row.actualWorkload / 8).toFixed(3) : '-'
+          - 合计行：(Number(summaryRes.data?.actualWorkload || 0) / 8).toFixed(3)
+      11. 合同名称（min-width=180, align=left/header=center, white-space:pre-line 换行展示, show-overflow-tooltip）← columns[8]
           - 多合同时每行一个合同名称（后端 GROUP_CONCAT '\n' 分隔）
           - 无合同显示 '-'；合计行不显示
-      12. 合同金额(元)（min-width=120, align=right, formatAmount()）
-      13. 合同状态（min-width=100, center, dict-tag :options="sys_htzt"）
-      14. 收入确认年度（min-width=120, center, plain column）
-      15. 收入确认状态（min-width=120, center, dict-tag :options="sys_qrzt"）
-      16. 确认金额（元）（min-width=130, align=right, formatAmount()）
-      17. 参与人员（min-width=150, center, getParticipantsNames(), show-overflow-tooltip）
-      18. 启动日期（width=100, center）
-      19. 结束日期（width=100, center）
-      20. 验收日期（width=100, center）
-      21. 审核状态（min-width=100, center, dict-tag :options="sys_spzt"）
-      22. 项目状态（min-width=100, center, dict-tag :options="sys_xmzt"）
-      23. 验收状态（min-width=100, center, dict-tag :options="sys_yszt"）
-      24. 更新人（min-width=100, center, prop="updateByName", plain column）
-      25. 更新时间（width=160, center）
+      12. 合同金额(元)（min-width=120, align=right, formatAmount()）← columns[9]
+      13. 合同状态（min-width=100, center, dict-tag :options="sys_htzt"）← columns[10]
+      14. 收入确认年度（min-width=120, center, plain column）← columns[11]
+      15. 收入确认状态（min-width=120, center, dict-tag :options="sys_qrzt"）← columns[12]
+      16. 验收状态（min-width=100, center, dict-tag :options="sys_yszt"）← columns[13]（紧接收入确认状态之后）
+      17. 确认金额（元）（min-width=130, align=right, formatAmount()）← columns[14]
+      18. 参与人员（min-width=150, center, getParticipantsNames(), show-overflow-tooltip）← columns[15]
+      19. 启动日期（width=100, center）← columns[16]
+      20. 结束日期（width=100, center）← columns[17]
+      21. 验收日期（width=100, center）← columns[18]
+      22. 审核状态（min-width=100, center, dict-tag :options="sys_spzt"）← columns[19]
+      23. 项目状态（min-width=100, center, dict-tag :options="sys_xmzt"）← columns[20]
+      24. 更新人（min-width=100, center, prop="updateByName", plain column）← columns[21]
+      25. 更新时间（width=160, center）← columns[22]
       26. 操作（width=200, center, fixed="right"）
 
       已移除列：
       - 税后金额列（删除）
 
       操作列按钮逻辑（两个按钮始终同时显示）：
-      - 收入查看按钮（type=primary, icon=View, 权限 revenue:company:view）→ mode='view'
-      - 收入确认按钮（type=success, icon=Money, 权限 revenue:company:edit）→ mode='edit'
-      - 两个按钮无 v-if 互斥，任何状态下均可点击（Q1确认：选项A）
+      - 收入查看按钮（link type=primary, icon=View, 权限 revenue:company:view）→ handleRevenueView
+      - 收入确认按钮（link type=success, icon=Money, 权限 revenue:company:edit）→ handleRevenue
+      - 两个按钮无 v-if 互斥，任何状态下均可点击
+      - 合计行（isSummaryRow）不显示操作按钮（v-if="!scope.row.isSummaryRow" 包裹整个操作区）
 
       列显隐（右上角面板）：
-      - right-toolbar 加 :columns="columns"，23个中间列均加 v-if="columns[i].visible"
-      - 默认显示：项目阶段/部门/经理/分类、合同名称/状态、收入确认年度/状态/金额、启动/结束日期、验收状态
-      - 默认隐藏：二级区域、预算、工作量、合同金额、参与人员、验收日期、审核状态、项目状态、更新人/时间
+      - right-toolbar 加 :columns="columns"，columns[0]~columns[22] 共23列均加 v-if="columns[i].visible"
+      - 当前实现：所有23列默认 visible: true（全部显示）
+
+      columns 数组定义（23个，key 0~22）：
+      { key: 0,  label: '项目阶段',         visible: true }
+      { key: 1,  label: '项目部门',         visible: true }
+      { key: 2,  label: '项目经理',         visible: true }
+      { key: 3,  label: '项目分类',         visible: true }
+      { key: 4,  label: '二级区域',         visible: true }
+      { key: 5,  label: '项目预算(元)',      visible: true }
+      { key: 6,  label: '预估工作量(人天)',  visible: true }
+      { key: 7,  label: '实际人天',         visible: true }
+      { key: 8,  label: '合同名称',         visible: true }
+      { key: 9,  label: '合同金额(元)',      visible: true }
+      { key: 10, label: '合同状态',         visible: true }
+      { key: 11, label: '收入确认年度',     visible: true }
+      { key: 12, label: '收入确认状态',     visible: true }
+      { key: 13, label: '验收状态',         visible: true }
+      { key: 14, label: '确认金额(元)',      visible: true }
+      { key: 15, label: '参与人员',         visible: true }
+      { key: 16, label: '启动日期',         visible: true }
+      { key: 17, label: '结束日期',         visible: true }
+      { key: 18, label: '验收日期',         visible: true }
+      { key: 19, label: '审核状态',         visible: true }
+      { key: 20, label: '项目状态',         visible: true }
+      { key: 21, label: '更新人',           visible: true }
+      { key: 22, label: '更新时间',         visible: true }
 
       useDict 依赖（9个）：
       sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_qrzt, sys_ndgl, sys_htzt, sys_xmzt
@@ -437,8 +466,8 @@ customizations:
          <user-select ref="allUsersSelectRef" v-model="hiddenAllUsersValue" style="display: none" />
       2. getParticipantsNames(participants) 函数：
          - 解析 participants 字段（逗号分隔的用户ID字符串或数组）
-         - 通过 allUsersSelectRef.value?.userOptions || [] 获取用户列表（注意：不需要额外 .value）
-         - 根据 userId 匹配 nickName，返回逗号分隔的姓名字符串
+         - 通过 allUsersSelectRef.value?.userOptions || [] 获取用户列表
+         - 根据 userId 匹配 nickName，返回逗号+空格分隔的姓名字符串（', ' 分隔）
          - 无匹配时返回 '-'
       3. 合计行（isSummaryRow）不显示参与人员
 
@@ -454,10 +483,11 @@ customizations:
       - 使用 toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       - null/undefined/'' 或 NaN 返回 '0.00'（无合同/未填写时统一显示 0.00）
       - 应用于：项目预算(元)、合同金额(元)、确认金额（元）
-      - 税后金额列已移除，不再计算
 
-      工作量列（预估工作量、实际人天）：
-      - 直接显示原始值，无 formatWorkload 函数（与团队收入确认不同）
+      工作量列：
+      - 预估工作量（列[6]）：直接显示原始值，无格式化
+      - 实际人天（列[7]）：actualWorkload ÷ 8，toFixed(3) 保留3位小数；null时显示'-'
+        合计行同样 ÷ 8：(Number(actualWorkload || 0) / 8).toFixed(3)
 
       更新人列：
       - prop="updateByName"，后端 LEFT JOIN sys_user u_upd 取 nick_name
@@ -478,8 +508,18 @@ customizations:
       实现方式（非 computed，非 Element Plus show-summary，非本地累加）：
       1. getList() 使用 Promise.all 同时调用 listRevenue 和 getRevenueSummary
       2. summaryRes.data 来自后端 SUM 聚合，反映全量筛选结果（跨所有分页）
-      3. 合计值用 Number(x || 0).toFixed(2) 格式化后插入列表开头
+      3. 合计行仅在有数据时插入（listRes.rows.length > 0），无数据时 revenueList 为空数组
       4. 合计行插入列表开头：revenueList.value = [summary, ...listRes.rows]
+
+      合计行对象结构：
+      {
+        isSummaryRow: true,
+        projectBudget:     Number(summaryRes.data?.projectBudget || 0).toFixed(2),
+        estimatedWorkload: Number(summaryRes.data?.estimatedWorkload || 0).toFixed(2),
+        actualWorkload:    (Number(summaryRes.data?.actualWorkload || 0) / 8).toFixed(3),  // ÷8换算人天
+        contractAmount:    Number(summaryRes.data?.contractAmount || 0).toFixed(2),
+        confirmAmount:     Number(summaryRes.data?.confirmAmount || 0).toFixed(2)
+      }
 
       后端 SQL（selectRevenueSummary）：
       - 与 selectProjectList 相同的 JOIN 和 WHERE 条件，不加 LIMIT 分页
@@ -489,13 +529,13 @@ customizations:
       合计字段（5个）：
       - projectBudget（项目预算）
       - estimatedWorkload（预估工作量）
-      - actualWorkload（实际人天）
+      - actualWorkload（实际人天，后端存储单位为小时，合计行÷8换算为人天）
       - contractAmount（合同金额）
       - confirmAmount（确认金额）
 
       合计行样式：
       - 序号列显示"合计"（加粗）
-      - 所有数值列加粗显示
+      - 所有数值列加粗显示（CSS: .summary-row td { color: #409eff; font-weight: bold; }）
       - 字典列/用户名列/操作列不显示（v-if="!scope.row.isSummaryRow"）
 
   list_pagination_fixed:
@@ -565,6 +605,11 @@ customizations:
       projectManagerSelectRef 即查询条件的项目经理选择器 ref，无需额外的隐藏组件
       getUserName(scope.row.projectManagerId, projectManagerSelectRef?.userOptions)
 
+      getUserName(userId, userList) 实现：
+      - const list = userList?.value || userList || []  // 兼容 ref 和原始数组
+      - 在模板中调用时 projectManagerSelectRef 已被 Vue 自动解包，.userOptions 为数组
+      - 返回 user.nickName 或 '-'
+
   region_cascade_select:
     intent: "一级区域与二级区域联动选择"
     component:
@@ -590,17 +635,22 @@ customizations:
       spec: "getDeptName() 辅助函数"
     bindTo: project_dept
     service:
-      endpoint: "GET /system/dept/list"
-      source: "复用 SysDeptService.selectDeptList"
-      returns: "[{ deptId, deptName, ancestors, ... }]"
+      endpoint: "GET /project/project/deptTree"
+      source: "复用 ProjectController 代理接口，返回扁平列表"
+      returns: "[{ deptId, deptName, ancestors, parentId, ... }]"
       newApi: false
     notes: |
       实现逻辑：
-      1. onMounted 调用 loadDeptTree() 加载部门扁平列表到 deptOptions
-      2. getDeptName(deptId)：根据 deptId 找到部门，解析 ancestors 字段（格式 "0,100,101,102"）
-      3. 从第三级开始（ancestors.split(',') 索引2起），查找各级部门名称
-      4. 用"-"连接：如"事业部-开发部-研发组"
-      5. 合计行不显示部门
+      1. loadDeptTree() 拆分两份数据：
+         - deptFlatList：保存所有部门的扁平列表（用于 getDeptName 路径查找）
+         - deptTree：仅取三级及以下部门（ancestors.split(',').length >= 3），
+           映射 deptId→value, deptName→label 后，handleTree() 构建树供下拉选择
+      2. getDeptName(deptId)：
+         - 从 deptFlatList 找到目标部门，解析 ancestors（格式 "0,100,101"，过滤"0"和空值）
+         - 从第3级开始（ancestorIds 索引2起）收集各级部门名称
+         - 加上当前部门名，用"-"连接：如"事业部-开发部-研发组"
+         - 找不到或无路径返回'-'
+      3. 合计行不显示部门（v-if="!scope.row.isSummaryRow"）
 
   # ========== 详情页面定制 ==========
   detail_page_layout:
@@ -615,79 +665,95 @@ customizations:
       returns: "Project 对象（含 confirmAmount, taxRate, afterTaxAmount, revenueConfirmYear, revenueConfirmStatus, contractAmount, contractStatus, contractName 等）"
       newApi: false
     notes: |
-      页面顶部：el-page-header，动态 title（"收入确认" 或 "收入查看"），@back 返回列表
+      页面顶部：el-page-header，动态 title（由 computed pageTitle 驱动）
+      - isViewMode=true  → '收入确认详情'
+      - isViewMode=false → '收入确认编辑'
+      isViewMode = computed(() => route.query.mode === 'view' 或 mode 默认值为 'view')
 
-      左侧（span=14）共 5 个分组，第一个为重构后的"项目基本信息"：
+      左侧（span=14）单个 el-card，内含 6 个分组，均使用 section-title CSS类分隔：
 
-      1. 项目基本信息（column=2, border）— 字段顺序：
-         行业、一级区域
-         二级区域、立项年度
-         项目编号、项目预算
+      ① 项目基本信息（column=2, border）— 字段顺序：
+         行业（dict-tag industry）、一级区域（getDictLabel）
+         二级区域（form.regionName）、立项年度（dict-tag sys_ndgl）
+         项目编号（form.projectCode）、项目预算（formatAmount + '元'）
          项目名称（span=2）
-         项目分类、项目部门
-         预计工作量、实际人天
-         项目状态、验收状态
-         合同金额、审核状态
-         合同状态、合同名称（white-space:pre-line 换行）
-         收入确认状态、收入确认年度
-         确认金额（含税）、税率
-         税后金额（span=2）
+         项目分类（getDictLabel sys_xmfl）、项目部门（form.deptName）
+         预估工作量（form.estimatedWorkload + '人天' 或 '-'）、实际人天（form.actualWorkload + '人天' 或 '-'）
+         项目状态（getDictLabel sys_xmzt）、验收状态（dict-tag sys_yszt）
+         合同金额（formatAmount + '元'）、审核状态（getDictLabel sys_spzt）
+         合同状态（dict-tag sys_htzt）、合同名称（white-space:pre-line 换行）
+         收入确认状态（dict-tag sys_qrzt）、收入确认年度（form.revenueConfirmYear）
+         确认金额（含税）（formatAmount + '元'）、税率（form.taxRate + '%' 或 '-'）
+         税后金额（span=2，formatAmount + '元'）
          项目地址（span=2）
-         项目计划（span=2）
-         项目描述（span=2）
+         项目计划（span=2，white-space:pre-line）
+         项目描述（span=2，white-space:pre-line）
          审核意见（span=2）
 
-         字典字段均通过 getDictLabel(dicts, value) 转换为中文标签
+         字典字段：行业/验收状态/合同状态/收入确认状态 使用 dict-tag（带颜色标签）
+         其余字典字段通过 getDictLabel(dicts, value) 转换为中文标签
          金额字段通过 formatAmount() 格式化（无值显示 '-'）
          工作量字段格式：值 + ' 人天'，null 时显示 '-'
          税率字段格式：值 + '%'，null 时显示 '-'
 
-      2. 人员配置（column=2, border）：
-         项目经理、市场经理（同行）
-         销售负责人（span=2，独占一行）
-         销售联系方式（span=2，独占一行）
-         参与人员（span=2，独占一行）
-      3. 客户信息（column=2, border）：
-         客户名称（span=2，独占一行）
-         客户联系人、客户联系方式（同行）
-         商户联系人、商户联系方式（同行）
-      4. 时间规划（column=2, border）：
-         启动日期、结束日期（均用 parseTime 格式化）
-         上线日期、验收日期（均用 parseTime 格式化）
-      5. 成本预算（column=2, border，5个字段均 span=2 独占一行）：
-         项目费用（projectCost）
-         费用预算（expenseBudget）
-         成本预算（costBudget）
-         人力费用（laborCost）
-         采购成本（purchaseCost）
+      ② 人员配置（column=2, border）：
+         项目经理（form.projectManagerName）、市场经理（form.marketManagerName）（同行）
+         销售负责人（span=2，form.salesManagerName || '-'）
+         销售联系方式（span=2，form.salesContact || '-'）
+         参与人员（span=2，form.participantsNames，无默认'-'）
+
+      ③ 客户信息（column=2, border）：
+         客户名称（span=2，form.customerName || '-'）
+         客户联系人（form.customerContactName）、客户联系方式（form.customerContactPhone）（同行）
+         商户联系人（form.merchantContact）、商户联系方式（form.merchantPhone）（同行）
+
+      ④ 时间规划（column=2, border）：
+         启动日期、结束日期（parseTime '{y}-{m}-{d}' || '-'，同行）
+         实施年度（span=2，form.reservedField1 || '-'）
+         投产日期（parseTime form.productionDate || '-'）、验收日期（parseTime form.acceptanceDate || '-'）（同行）
+
+      ⑤ 成本预算（column=2, border，两两并排显示，无 span=2）：
+         项目费用（projectCost）、费用预算（expenseBudget）（同行）
+         成本预算（costBudget）、人力费用（laborCost）（同行）
+         采购成本（purchaseCost）（独行）
          空值统一显示"- 元"；有值时用 formatAmount() 格式化 + ' 元'
+
+      ⑥ 其他信息（column=1, border）：
+         备注（form.remark || '-'，white-space:pre-line）
 
       右侧（span=10）收入确认表单卡片：
       - 详见 detail_revenue_form 定制
 
-      新增辅助函数：
-      - getDictLabel(dicts, value)：dicts?.find() 匹配字典值返回 label，无值返回 '-'
-        注意：<script setup> 模板中 ref 自动解包，dicts 传入时已是数组而非 ref，
-        必须用 dicts?.find() 而非 dicts.value?.find()，否则返回原始字典码
-      - formatAmount(amount)：千分位格式化，无值返回 '-'（与列表页区分）
+      辅助函数：
+      - getDictLabel(dicts, value)：
+        const dictArr = Array.isArray(dicts) ? dicts : (dicts?.value || [])
+        const dict = dictArr.find(d => String(d.value) === String(value))
+        return dict ? dict.label : (value || '-')
+        注意：模板中 ref 自动解包，dicts 传入时已是数组，需兼容两种形式
+      - formatAmount(amount)：千分位格式化，无值返回 '-'（与列表页返回 '0.00' 区分）
 
       useDict 依赖（9个）：
       sys_qrzt, sys_ndgl, sys_xmfl, sys_yjqy, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, industry
 
-      后端变更：selectProjectByProjectId 补合同子查询（GROUP_CONCAT 合同名称）
-      pm_customer 别名从 c 改为 cust，避免与合同子查询内部别名冲突
+      数据加载：
+      - getDetail() 和 getTeamDetail() 在脚本初始化阶段直接调用（无 onMounted 包裹）
+      - watch(() => route.params.projectId) 监听：路由参数变化时重新调用两个加载函数（组件复用场景）
+      - watch(pageTitle) 监听：模式切换时同步标签页标题（proxy.$tab.updatePage）
 
       进入方式：
       - 列表"收入确认"按钮 → router.push({ path: '/revenue/company/detail/' + projectId, query: { mode: 'edit' } })
       - 列表"收入查看"按钮 → router.push({ path: '/revenue/company/detail/' + projectId, query: { mode: 'view' } })
+      - 查看模式"编辑收入确认"按钮 → router.push(`/revenue/company/detail/${projectId}?mode=edit`)
+      - 路由配置：/revenue/company/detail/:projectId(\\d+)，name='CompanyRevenueDetail'
 
-      注意：详情页面无 onActivated 或 watch(route.params) 数据刷新机制，仅在初始化时加载一次数据
+      后端变更：selectProjectByProjectId 补合同子查询（GROUP_CONCAT 合同名称）
+      pm_customer 别名从 c 改为 cust，避免与合同子查询内部别名冲突
 
   detail_revenue_form:
     intent: "右侧分两部分：上方公司收入确认信息，下方团队收入确认明细表格"
     component:
       type: custom
-      spec: "查看模式只读 el-descriptions + 编辑模式 el-form；团队明细 el-table"
+      spec: "查看模式只读自定义卡片式布局 + 编辑模式 el-form；团队明细 el-table"
     bindTo: revenueConfirm
     service:
       endpoint: "PUT /project/project/revenue（更新）; GET /revenue/team/{projectId}（团队明细）"
@@ -698,31 +764,34 @@ customizations:
       右侧上方卡片标题：公司收入确认信息（header 右侧在编辑模式显示"编辑中" warning tag）
 
       查看模式（isViewMode=true）：自定义卡片式布局（非 el-descriptions）
-      - 状态横幅（status-banner）：根据 revenueConfirmStatus 动态背景色
-        0=灰色(status-gray), 1=绿色(status-green), 2=橙色(status-orange), 3=蓝色(status-blue)
+      - 状态横幅（status-banner div）：根据 revenueConfirmStatus 查字典 elTagType 动态映射颜色
+        从 sys_qrzt 字典找到对应项，读取 dict.elTagType（success/warning/danger/primary/info/default）
+        映射到 CSS 类：status-success/status-warning/status-danger/status-primary/status-info/status-default
+        CSS 颜色对应：success=绿(#67c23a/#f0f9eb), warning=橙(#e6a23c/#fdf6ec),
+          danger=红(#f56c6c/#fef0f0), primary=蓝(#409eff/#ecf5ff), info/default=灰(#909399/#f4f4f5)
         文字：getDictLabel(sys_qrzt, form.revenueConfirmStatus)
       - 验收状态：dict-tag :options="sys_yszt"
       - 确认年度：info-row 行（Calendar 图标）
       - 确认金额(含税)：虚线边框盒子（amount-box），大字红色 ¥ xxx
-      - 税后金额：info-row，蓝色加粗 ¥ xxx
+      - 税后金额：info-row，蓝色加粗 ¥ xxx（.amount-blue-bold）
       - 税率：info-row，xxx%
       - el-divider 分隔线
       - 确认人：info-row（User 图标）
       - 确认时间：info-row（Clock 图标）
-      - 按钮（全宽堆叠）：
-        [编辑收入确认（primary，全宽，Edit 图标）]
-        [返回列表（default，全宽，margin-top:8px margin-left:0）]
+      - 按钮（全宽堆叠，.action-buttons div 包裹）：
+        [编辑收入确认（primary，全宽，Edit 图标）] → goEdit()
+        [返回列表（default，全宽，margin-top:8px margin-left:0）] → goBack()
 
       编辑模式（isViewMode=false）：
       el-form（label-width=120px），7个字段：
-      1. 收入确认状态（必填）- el-select 可编辑，sys_qrzt 字典，prop="revenueConfirmStatus"
-      2. 验收状态 - el-select 可编辑，sys_yszt 字典，非必填
-      3. 收入确认年度 - el-select（clearable），sys_ndgl 字典，非必填
+      1. 收入确认状态（必填，prop="revenueConfirmStatus"）- el-select，sys_qrzt 字典选项
+      2. 验收状态 - el-select，sys_yszt 字典选项，非必填
+      3. 收入确认年度 - el-select（clearable），sys_ndgl 字典选项，非必填
       4. 确认金额(含税) - el-input type="number"，#append="元"，非必填，@blur="formatConfirmAmount"
       5. 税率 - el-input type="number"，#append="%"，非必填，@blur="formatTaxRate"
-         下方快捷按钮：常用税率 [6%] [13%]（.tax-quick-btns）
-      6. 税后金额 - el-input disabled，#prefix="¥"，非必填，自动计算
-         下方蓝色提示条（.calc-tip）：根据确认金额和税率自动计算：税后金额 = 确认金额 / (1 + 税率/100)
+         下方快捷按钮：常用税率 [6%] [13%]（.tax-quick-btns div）
+      6. 税后金额 - el-input disabled，#prefix="¥"，非必填，自动计算（不可编辑）
+         下方蓝色提示条（.calc-tip，背景#409eff白字）：InfoFilled图标 + "根据确认金额和税率自动计算：税后金额 = 确认金额 / (1 + 税率/100)"
       7. 备注 - el-input type="textarea" :rows=4，maxlength=500，show-word-limit，非必填
 
       编辑模式按钮（每个单独 el-form-item，全宽）：
@@ -730,42 +799,40 @@ customizations:
       [重置] → resetFormData()（还原至接口原始快照 formOrigin）
       [取消] → goBack()
 
-      税后金额自动计算（watch 监听 confirmAmount 和 taxRate）：
+      税后金额自动计算（watch 监听 [form.confirmAmount, form.taxRate] 数组）：
       afterTaxAmount = confirmAmount / (1 + taxRate / 100)，保留2位小数
+      金额或税率无效时 afterTaxAmount = null
 
       重置逻辑：
-      - formOrigin ref 在 getDetail() 时保存原始数据快照（浅拷贝）
+      - formOrigin ref 在 getDetail() 时保存原始数据快照（{ ...response.data }）
       - resetFormData() → form.value = { ...formOrigin.value } + clearValidate()
 
-      默认税率初始化（initTaxRate，仅当 taxRate 为空时）：
+      默认税率初始化（initTaxRate，仅当 taxRate 为空时执行）：
       - 项目分类='1'（软件开发类）→ 税率 6
       - 项目分类='2'（硬件销售类）→ 税率 13
 
       提交逻辑（submitForm）：
-      - 不再硬编码 revenueConfirmStatus，直接提交表单当前值
-      - 调用 updateRevenue(form.value)，成功后 msgSuccess("提交成功") + goBack()
+      - 表单校验通过后调用 updateRevenue(form.value)
+      - 成功后 proxy.$modal.msgSuccess("提交成功") + goBack()
 
-      mode 默认值：'view'（原为 'edit'）
+      formatConfirmAmount / formatTaxRate：
+      - @blur 时将值格式化为 toFixed(2)，超出合法范围（taxRate: 0-100）时置 null
+      - 负数确认金额置 null
+
+      goBack()：router.push("/revenue/company")（固定跳转列表页）
+      goEdit()：router.push(`/revenue/company/detail/${projectId.value}?mode=edit`)
 
       右侧下方卡片（margin-top=16px）：
       标题：团队收入确认明细
-      el-table border size="small"，数据来源 teamList（初始化时调用 getTeamRevenue(projectId)）
-      列：
+      el-table border size="small"，empty-text="暂无团队收入确认数据"
+      数据来源 teamList（初始化时调用 getTeamRevenue(projectId)，取 response.data?.detailList || []）
+      列（5列）：
       - 部门名称（prop=deptName, min-width=120, show-overflow-tooltip）
       - 确认金额（prop=confirmAmount, min-width=110, right, formatAmount() + ' 元'）
       - 确认时间（prop=confirmTime, min-width=100, parseTime 格式化 '{y}-{m}-{d}'）
       - 确认人（prop=confirmUserName, min-width=90, show-overflow-tooltip）
       - 备注（prop=remark, min-width=120, show-overflow-tooltip）
-      无数据时显示提示文字"暂无团队收入确认数据"
-
-      数据加载：
-      - getDetail() 加载项目及公司收入确认数据
-      - getTeamDetail() 调用 getTeamRevenue(projectId)，取 response.data?.detailList || []
-      - 两个函数在脚本初始化阶段直接调用（无 onMounted 包裹）
-
-      新增 CSS 类（scoped）：
-      .amount-red { color: #F56C6C; font-weight: bold; }
-      .amount-blue { color: #409EFF; font-weight: bold; }
+      无数据时额外显示文字提示（v-if="teamList.length === 0" div）
 
       新增 import：
       import { getTeamRevenue } from "@/api/revenue/team"
@@ -815,9 +882,11 @@ customizations:
       详情查询：
       - 使用 selectProjectByProjectId，关联查询部门名称、经理名称、客户信息等
       - 额外 JOIN：sys_dept, sys_user(项目经理/市场经理/销售负责人), pm_customer, pm_customer_contact
+      - pm_customer 别名为 cust（避免与合同子查询内别名冲突）
+      - GROUP_CONCAT 合同名称（'\n' 分隔）
 
       收入确认更新：
-      - 更新字段：confirmAmount, taxRate, afterTaxAmount, revenueConfirmYear, revenueConfirmStatus
+      - 更新字段：confirmAmount, taxRate, afterTaxAmount, revenueConfirmYear, revenueConfirmStatus, acceptanceStatus, remark
       - 后端也独立计算 afterTaxAmount（不依赖前端传值）
       - 设置 companyRevenueConfirmedBy 和 companyRevenueConfirmedTime
 
@@ -825,6 +894,7 @@ customizations:
       - 列表查询：revenue:company:list 或 project:review:query
       - 详情查看：revenue:company:view
       - 确认编辑：revenue:company:edit
+      - 导出：revenue:company:export
 
 # ============================
 # 字典依赖
@@ -859,6 +929,10 @@ dictionaries:
   sys_qrzt:
     name: 确认状态（收入确认状态）
     values: { 1: 1-未确认, 2: 2-待确认收入, 3: 3-已确认收入, 4: 4-无法确认 }
+    note: 详情状态横幅颜色从各字典项的 elTagType 属性读取，非硬编码
+
+  sys_xmzt:
+    name: 项目状态
 
 # ============================
 # 实现总结
@@ -868,27 +942,28 @@ implementation_summary:
 
   key_features:
     - "基于 pm_project 表查询，关联合同金额和区域信息"
-    - "列表25列（24数据列+1操作列），序号和项目名称列左侧冻结，操作列右侧冻结"
+    - "列表26列（25数据列+1操作列），序号和项目名称列左侧冻结，操作列右侧冻结"
     - "支持14个查询条件的多维度筛选，4列网格布局（el-row/el-col :span=6）"
-    - "合计行显示在表头和第一行数据之间，统计5个数值字段（移除税后金额）"
-    - "金额字段千分位格式化（formatAmount），表头标注(元)并右对齐"
-    - "工作量列直接显示原始值（无 formatWorkload 函数）"
+    - "项目名称查询使用 el-autocomplete（fetch-suggestions），支持模糊搜索"
+    - "合计行显示在表头和第一行数据之间，统计5个数值字段（移除税后金额）；无数据时不显示合计行"
+    - "金额字段千分位格式化（formatAmount），表头标注(元)并右对齐；无值列表显示0.00"
+    - "实际人天列：原始值÷8换算，toFixed(3)保留3位小数；合计行同样÷8"
+    - "预估工作量列：直接显示原始值（无换算）"
     - "更新人列显示中文昵称（prop=updateByName，后端 JOIN sys_user）"
     - "参与人员通过隐藏 UserSelect 组件加载用户列表，getParticipantsNames() 转换为姓名"
-    - "项目经理通过隐藏 UserSelect 组件 + getUserName() 显示昵称"
-    - "项目部门通过 getDeptName() 显示完整层级路径（第三级起，-连接）"
+    - "项目经理通过查询条件 UserSelect 组件 ref（projectManagerSelectRef?.userOptions）显示昵称"
+    - "项目部门列表通过 getDeptName() 显示完整层级路径（第三级起，-连接）"
     - "一级区域联动二级区域（DictSelect + SecondaryRegionSelect）"
     - "使用通用选择器组件（DictSelect、UserSelect、SecondaryRegionSelect）减少重复代码"
-    - "详情页面左14右10布局：左侧5个分组，右侧分两卡片（公司收入确认信息 + 团队收入确认明细）"
-    - "右侧上方：查看模式 el-descriptions 只读（确认金额红色、税后金额蓝色）+ 编辑入口按钮；编辑模式表单"
+    - "列显隐控制23列，当前全部默认visible=true（无隐藏列）"
+    - "列顺序：验收状态（columns[13]）位于收入确认状态之后，确认金额（columns[14]）之前"
+    - "详情页左14右10布局：左侧6个分组（含其他信息），右侧两卡片（公司收入确认信息+团队明细）"
+    - "右侧上方：查看模式自定义卡片式只读布局 + 编辑入口按钮；编辑模式表单"
     - "右侧下方：团队收入确认明细 el-table，调用 getTeamRevenue 加载，展示5列含备注"
-    - "收入确认表单：确认金额+税率→自动计算税后金额，默认税率按项目分类初始化"
-    - "收入确认状态字典改为 sys_qrzt（4值：1=1-未确认, 2=2-待确认收入, 3=3-已确认收入, 4=4-无法确认），原 sys_srqrzt 已废弃"
-    - "项目名称查询改为 el-select remote，打开下拉时全量加载，输入时模糊过滤（loadProjectNameOptions）"
-    - "列表新增显隐列操作（right-toolbar :columns），23个中间列可独立控制显隐"
-    - "详情右侧查看模式重构为卡片式布局：状态横幅（4色）+ 信息行 + 金额虚线框 + 堆叠全宽按钮"
-    - "编辑模式：收入确认状态改为必填可编辑，新增验收状态字段，新增备注文本域，保存改提交，新增重置按钮"
-    - "左侧描述列表：行业/立项年度/验收状态/合同状态/收入确认状态改为 dict-tag 带颜色标签展示"
+    - "收入确认表单：确认金额+税率→watch自动计算税后金额，默认税率按项目分类初始化"
+    - "收入确认状态字典使用 sys_qrzt（4值），状态横幅颜色从字典 elTagType 动态读取"
+    - "详情页有 watch(route.params.projectId) 监听，路由参数变化时重新加载数据"
+    - "详情页有 watch(pageTitle) 同步标签页标题（proxy.$tab.updatePage）"
     - "操作列两个按钮始终同时展示（收入查看+收入确认），无互斥 v-if 逻辑"
     - "导出按钮与查询/重置按钮同行（查询表单按钮组），不再单独放置工具栏"
     - "分页组件固定底部，表格高度动态计算（searchHeight=255px 对应5行查询条件含按钮行）"
@@ -897,12 +972,16 @@ implementation_summary:
     - "Composition API（setup script）"
     - "合计行：后端 GET /revenue/summary 接口全量 SUM + Promise.all 并行调用 + 数组前插（非本地累加，非 show-summary）"
     - "合计行零值处理：Number(x || 0).toFixed(2)，确保值为0也正确格式化"
-    - "隐藏 UserSelect 通过 ref?.userOptions 获取用户列表（不需要额外 .value）"
+    - "实际人天÷8换算：数据行 toFixed(3)，合计行同样÷8 toFixed(3)"
+    - "项目名称查询：el-autocomplete + fetch-suggestions 回调模式，调用 listProjectByName API"
+    - "隐藏 UserSelect 通过 allUsersSelectRef.value?.userOptions 获取用户列表"
+    - "状态横幅从字典 elTagType 动态映射颜色，与 dict-tag 颜色保持一致"
     - "后端 JOIN sys_user 需 COLLATE utf8mb4_unicode_ci 解决排序规则不一致"
     - "详情表单三个输入框格式统一：el-input type='number' + template #append 显示单位"
     - "税后金额 watch 自动计算：afterTaxAmount = confirmAmount / (1 + taxRate / 100)"
     - "数据权限：后端使用 @DataScope 注解控制部门数据可见性"
     - "收入确认接口在 ProjectController（/project/project/revenue/**），非 ProjectReviewController"
+    - "详情 formatAmount 无值返回'-'；列表 formatAmount 无值返回'0.00'（两处行为不同）"
 
   related_files:
     frontend:

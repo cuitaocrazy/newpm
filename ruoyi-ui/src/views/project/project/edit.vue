@@ -464,6 +464,9 @@ import { useFormValidation } from '@/composables/useFormValidation'
 
 // 竞态防护：保证只有最新一次 generateProjectCode 调用的结果被应用
 let codeGenSeq = 0
+// 编号字段快照（null 表示数据尚未加载完）及用户是否已主动修改过编号字段
+const originalCodeFields = ref(null)
+let codeFieldsUserModified = false
 
 const router = useRouter()
 const route = useRoute()
@@ -584,6 +587,28 @@ const customerContactPhone = ref('')
 watch([() => form.value.industry, () => form.value.region,
        () => form.value.regionCode, () => form.value.shortName, () => form.value.establishedYear],
   ([industry, region, regionCode, shortName, establishedYear]) => {
+    // 数据尚未加载完，忽略
+    if (!originalCodeFields.value) return
+
+    const o = originalCodeFields.value
+
+    // 首次触发时：对比当前值与快照，全部相同则说明用户还没改过，忽略
+    if (!codeFieldsUserModified) {
+      const changed = industry !== o.industry || region !== o.region ||
+                      regionCode !== o.regionCode || shortName !== o.shortName ||
+                      establishedYear !== o.establishedYear
+      if (!changed) return
+      codeFieldsUserModified = true
+    }
+
+    // 当前 5 个字段已完全还原为原始值 → 直接恢复原始编号，无需 API 检查
+    if (industry === o.industry && region === o.region &&
+        regionCode === o.regionCode && shortName === o.shortName &&
+        establishedYear === o.establishedYear) {
+      form.value.projectCode = o.projectCode
+      return
+    }
+
     if (industry && region && regionCode && shortName && establishedYear) {
       generateProjectCode()
     }
@@ -785,14 +810,26 @@ function loadProjectData() {
     }
 
     // 如果有一级区域，加载对应的二级区域列表，并通过 regionId 回显二级区域
-    if (data.region) {
-      getSecondaryRegions(data.region).then(options => {
-        if (!form.value.regionCode && data.regionId && options.length) {
-          const matched = options.find(o => o.regionId === data.regionId)
-          if (matched) form.value.regionCode = matched.regionCode
-        }
-      })
-    }
+    const afterRegionLoad = data.region
+      ? getSecondaryRegions(data.region).then(options => {
+          if (!form.value.regionCode && data.regionId && options.length) {
+            const matched = options.find(o => o.regionId === data.regionId)
+            if (matched) form.value.regionCode = matched.regionCode
+          }
+        })
+      : Promise.resolve()
+
+    afterRegionLoad.then(() => nextTick()).then(() => {
+      // 所有字段就绪后快照，watch 从此刻起才开始响应用户操作
+      originalCodeFields.value = {
+        industry: form.value.industry,
+        region: form.value.region,
+        regionCode: form.value.regionCode,
+        shortName: form.value.shortName,
+        establishedYear: form.value.establishedYear,
+        projectCode: form.value.projectCode
+      }
+    })
 
     // 如果有客户ID，加载对应的联系人列表
     if (data.customerId) {

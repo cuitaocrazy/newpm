@@ -62,7 +62,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="简称" prop="shortName" data-prop="shortName">
+          <el-form-item label="简称" prop="shortName" data-prop="shortName" required>
             <el-input v-model="form.shortName" placeholder="请输入简称" @input="generateProjectCode" @blur="validateOnBlur('shortName')" />
           </el-form-item>
         </el-col>
@@ -576,6 +576,7 @@ const rules = ref({
   industry: [{ required: true, message: "行业不能为空", trigger: "change" }],
   region: [{ required: true, message: "一级区域不能为空", trigger: "change" }],
   regionCode: [{ required: true, message: "二级区域不能为空", trigger: "change" }],
+  shortName: [{ required: true, message: "简称不能为空", trigger: "blur" }],
   establishedYear: [{ required: true, message: "立项年度不能为空", trigger: "change" }],
   projectName: [{ required: true, message: "项目名称不能为空", trigger: "blur" }],
   projectCategory: [{ required: true, message: "项目分类不能为空", trigger: "change" }],

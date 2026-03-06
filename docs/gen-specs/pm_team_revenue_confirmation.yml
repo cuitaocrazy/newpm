@@ -74,7 +74,7 @@ columns:
     dictType: ""
 
   confirm_time:
-    columnComment: 确认时间
+    columnComment: 确认时间（后端自动设置为当前时间，前端无需传入）
     columnType: datetime
     javaType: Date
     javaField: confirmTime
@@ -204,10 +204,10 @@ customizations:
 
   # ========== 列表页面定制 ==========
   list_query_conditions:
-    intent: "查询条件与公司收入确认保持一致，支持多维度筛选"
+    intent: "查询条件支持多维度筛选，含确认团队和合同状态，共15个条件"
     component:
       type: custom
-      spec: "复用公司收入确认的查询表单"
+      spec: "label-width=120px，共15个查询字段，4列网格布局（el-row/el-col :span=6）"
     bindTo: page
     service:
       endpoint: "GET /revenue/team/list"
@@ -215,50 +215,170 @@ customizations:
       returns: "项目列表，包含收入确认相关字段"
       newApi: false
     notes: |
-      查询条件字段：
-      - 项目名称（autocomplete）
-      - 项目部门（tree-select）
-      - 收入确认年度、项目分类、一级区域、二级区域
-      - 项目经理、市场经理、立项年度
-      - 项目阶段、审核状态、验收状态、收入确认状态
-      查询主表使用 IProjectService.selectProjectList()，确保与公司收入确认数据一致
+      布局：el-form（无 inline），label-width="120px"，5行 el-row :gutter=10
+      第1~4行每行4个 el-col :span=6（第4行仅3个条件）；第5行1个 el-col :span=24（按钮组独占全宽）
+
+      查询条件顺序（15个，4列布局）：
+      行1：项目名称 | 项目部门 | 确认团队 | 收入确认年度
+      行2：项目分类 | 一级区域 | 二级区域 | 项目经理
+      行3：市场经理 | 立项年度 | 审核状态 | 验收状态
+      行4：合同状态 | 项目阶段 | 收入确认状态（3个条件，第4格留空）
+      行5：[查询（primary） 重置 导出（warning plain，v-hasPermi='revenue:team:export'）
+            新增（primary plain，v-hasPermi='revenue:team:add'）] → el-col :span=24，label-width="0"
+
+      各字段说明：
+      - 项目名称（el-select，filterable + remote + allow-create，clearable）
+        - :remote-method="remoteSearchProjects"：输入时调用 searchProjects(query)
+        - @visible-change="(v) => v && remoteSearchProjects('')"：每次展开时重新加载全量
+        - :loading="projectSearchLoading"
+        - 选项列表 projectOptions ref，来自 searchProjects API 返回的 response.data
+        - el-option :value="item.projectName"（值为名称字符串，非ID）
+        - 注意：无 projectSelectLoaded ref 守卫，每次展开均重新调用
+      - 项目部门（el-tree-select，deptTree，三级及以下部门，check-strictly，clearable，filterable）
+      - 确认团队（el-tree-select，confirmDeptTree，check-strictly，clearable，filterable）
+        - confirmDeptTree = [{ label: '无确认团队', value: -1, children: [] }, ...deptTree]
+        - 首项为固定虚节点"无确认团队"（value=-1），其余与 deptTree 相同
+        - queryParams.confirmDeptId，传给后端：-1 → NOT EXISTS 子查询，正常ID → EXISTS 子查询
+      - 收入确认年度（dict-select，sys_ndgl）
+      - 项目分类（dict-select，sys_xmfl）
+      - 一级区域（dict-select，sys_yjqy）
+      - 二级区域（secondary-region-select，:region-dict-value="queryParams.region"）
+      - 项目经理（user-select，post-code=pm，ref="projectManagerSelectRef"）
+      - 市场经理（user-select，post-code=scjl，ref="marketManagerSelectRef"）
+      - 立项年度（dict-select，sys_ndgl）
+      - 审核状态（dict-select，sys_spzt）
+      - 验收状态（dict-select，sys_yszt）
+      - 合同状态（dict-select，sys_htzt）
+      - 项目阶段（dict-select，sys_xmjd）
+      - 收入确认状态（dict-select，sys_qrzt）
+
+      queryParams 字段（16个，含分页）：
+      pageNum, pageSize, projectName, projectDept, confirmDeptId, revenueConfirmYear,
+      projectCategory, region, regionId, projectManagerId, marketManagerId,
+      establishedYear, projectStage, approvalStatus, acceptanceStatus,
+      contractStatus, revenueConfirmStatus
+
+      后端支持：
+      - confirmDeptId 在 selectProjectList WHERE 中：
+        - confirmDeptId == -1 → AND NOT EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2
+                                WHERE tc2.project_id = p.project_id AND tc2.del_flag = '0')
+        - confirmDeptId 正常值 → AND EXISTS (...AND tc2.dept_id = #{confirmDeptId}...)
+      - 对应 Project 实体新增字段 confirmDeptId（Long，非DB字段，查询条件用）
 
   list_table_columns:
-    intent: "列表表格显示字段与项目管理列表保持一致，共25列（24数据列+1操作列）"
+    intent: "列表表格支持显隐列，共28列（序号+26数据列+操作列），表格启用 border，支持行合并"
     component:
       type: custom
-      spec: "表格列与项目管理列表对齐，额外保留收入确认特有字段"
+      spec: "el-table border + span-method 行合并 + right-toolbar :columns 显隐列控制"
     bindTo: table
     service: null
     notes: |
-      列顺序（25列）：
-      1. 序号（55px）
-      2. 项目名称（min-width=220, align=left, 自动换行）
-      3. 项目部门（120px）
-      4. 项目经理（100px）
-      5. 项目分类（120px）
-      6. 二级区域（120px）
-      7. 项目预算(元)（120px, align=right）
-      8. 预估工作量（100px）
-      9. 实际人天（100px）
-      10. 合同金额(元)（120px, align=right）
-      11. 收入确认年度（120px）
-      12. 合同状态（100px）
-      13. 收入确认状态（120px）
-      14. 确认金额(含税)(元)（120px, align=right）
-      15. 税后金额（120px）- 收入确认特有字段
-      16. 参与人员（150px）
-      17. 启动日期（100px）
-      18. 结束日期（100px）
-      19. 验收日期（100px）
-      20. 审核状态（100px）
-      21. 项目阶段（100px）
-      22. 验收状态（100px）
-      23. 更新人（100px, prop="updateByName"）
-      24. 更新时间（160px）
-      25. 操作（150px, fixed=right）
+      表格属性：border，:height="tableHeight"，:row-class-name="tableRowClassName"，
+               :span-method="tableSpanMethod"
 
-      字典依赖：sys_htzt（合同状态）、sys_spzt（审核状态）、sys_yszt（验收状态）、sys_srqrzt（收入确认状态）、sys_xmfl（项目分类）、sys_xmjd（项目阶段）
+      列顺序（28列，序号/操作列固定，其余26列支持显隐）：
+      1.  序号（55px，fixed="left"，合计行显示"合计"加粗）
+      2.  项目名称（min-width=220, align=left/header-align=center, el-link 可点击跳详情, fixed="left"）【columns[0]】
+      3.  项目阶段（100px, dict-tag sys_xmjd）【columns[1]】
+      4.  项目部门（120px, getDeptName() 显示完整路径, show-overflow-tooltip）【columns[2]】
+      5.  项目经理（100px, prop="projectManagerName", 直接显示后端关联的 scope.row.projectManagerName）【columns[3]】
+      6.  项目分类（120px, dict-tag sys_xmfl）【columns[4]】
+      7.  二级区域（120px, scope.row.regionName || '-', show-overflow-tooltip）【columns[5]】
+      8.  项目预算(元)（130px, align=right, formatAmount()）【columns[6]】
+      9.  预估工作量（人天）（130px, align=center, formatWorkload()）【columns[7]】
+      10. 实际人天（100px, align=center, formatWorkload()）【columns[8]】
+      11. 合同名称（180px, align=left/header-align=center, white-space:pre-line 换行, show-overflow-tooltip）【columns[9]】
+      12. 合同金额(元)（130px, align=right, formatAmount()）【columns[10]】
+      13. 合同状态（100px, dict-tag sys_htzt）【columns[11]】
+      14. 收入确认年度（120px, plain column）【columns[12]】
+      15. 收入确认状态（120px, dict-tag sys_qrzt）【columns[13]】
+      16. 确认金额(元)（130px, align=right, formatAmount()）【columns[14]】
+      17. 确认团队（150px, prop="teamDeptName", scope.row.teamDeptName || '-', show-overflow-tooltip）【columns[15]】
+      18. 团队确认收入(元)（150px, align=right, formatAmount(), 颜色 #67C23A 绿色，合计行同色加粗）【columns[16]】
+      19. 参与人员（150px, getParticipantsNames(), show-overflow-tooltip）【columns[17]】
+      20. 启动日期（100px, v-if isDataRow，plain column）【columns[18]】
+      21. 结束日期（100px, v-if isDataRow，plain column）【columns[19]】
+      22. 验收日期（100px, v-if isDataRow，plain column）【columns[20]】
+      23. 审核状态（100px, dict-tag sys_spzt）【columns[21]】
+      24. 项目状态（100px, dict-tag sys_xmzt）【columns[22]】
+      25. 验收状态（100px, dict-tag sys_yszt）【columns[23]】
+      26. 更新人（100px, prop="updateByName", v-if isDataRow）【columns[24]】
+      27. 更新时间（160px, v-if isDataRow）【columns[25]】
+      28. 操作（180px, fixed=right，v-if isDataRow，查看/编辑/删除按钮）
+
+      删除列：税后金额（已移除）
+
+      列显隐（columns 数组，26项，全部默认 visible: true）：
+      { key: 0,  label: '项目名称',          visible: true }
+      { key: 1,  label: '项目阶段',          visible: true }
+      { key: 2,  label: '项目部门',          visible: true }
+      { key: 3,  label: '项目经理',          visible: true }
+      { key: 4,  label: '项目分类',          visible: true }
+      { key: 5,  label: '二级区域',          visible: true }
+      { key: 6,  label: '项目预算(元)',      visible: true }
+      { key: 7,  label: '预估工作量（人天）', visible: true }
+      { key: 8,  label: '实际人天',          visible: true }
+      { key: 9,  label: '合同名称',          visible: true }
+      { key: 10, label: '合同金额(元)',      visible: true }
+      { key: 11, label: '合同状态',          visible: true }
+      { key: 12, label: '收入确认年度',      visible: true }
+      { key: 13, label: '收入确认状态',      visible: true }
+      { key: 14, label: '确认金额(元)',      visible: true }
+      { key: 15, label: '确认团队',          visible: true }
+      { key: 16, label: '团队确认收入(元)',  visible: true }
+      { key: 17, label: '参与人员',          visible: true }
+      { key: 18, label: '启动日期',          visible: true }
+      { key: 19, label: '结束日期',          visible: true }
+      { key: 20, label: '验收日期',          visible: true }
+      { key: 21, label: '审核状态',          visible: true }
+      { key: 22, label: '项目状态',          visible: true }
+      { key: 23, label: '验收状态',          visible: true }
+      { key: 24, label: '更新人',            visible: true }
+      { key: 25, label: '更新时间',          visible: true }
+
+      操作列按钮（三个，仅数据行显示）：
+      - 查看（link, primary, icon=View, v-hasPermi='revenue:team:query'）→ handleDetail(row)
+      - 编辑（link, primary, icon=Edit, v-hasPermi='revenue:team:edit'）→ handleUpdate(row)
+      - 删除（link, danger, icon=Delete, v-hasPermi='revenue:team:remove'）→ handleDelete(row)
+
+      isDataRow(row) 函数：return !row.isSummaryRow（辅助判断，替代直接 v-if）
+
+      字典依赖（useDict 9个）：
+      sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_qrzt, sys_ndgl, sys_htzt, sys_xmzt
+
+      新增字段（Project实体，非DB字段，来自 selectProjectList JOIN 聚合）：
+      - teamDeptName（String）：GROUP_CONCAT 确认团队部门名称（后端聚合列名 team_dept_name）
+      - teamConfirmAmount（BigDecimal）：SUM confirm_amount 团队确认收入汇总
+      - contractName（String）：GROUP_CONCAT 合同名称，\n 分隔（已存在于实体）
+
+  list_row_merge:
+    intent: "同一项目的多条团队确认明细在列表中合并项目公共列，避免重复展示"
+    component:
+      type: custom
+      spec: "el-table :span-method 行合并"
+    bindTo: table
+    service: null
+    notes: |
+      需要合并的列（PROJECT_MERGE_COLS Set，按列 label 匹配）：
+      '序号', '项目名称', '项目阶段', '项目部门', '项目经理', '项目分类',
+      '二级区域', '项目预算(元)', '预估工作量（人天）', '实际人天',
+      '合同名称', '合同金额(元)', '合同状态', '收入确认年度', '收入确认状态', '确认金额(元)'
+      共16列（columns[0]~columns[14] + 序号列）
+
+      buildProjectSpanMap(rows)：
+      - 遍历 rows，跳过 isSummaryRow 和无 projectId 行
+      - 按 projectId 分组（要求同一项目行连续排列）
+      - 构建 Map：{ [projectId]: { firstIndex: number, span: number } }
+      - 存入 projectSpanMap ref
+
+      tableSpanMethod({ row, column, rowIndex })：
+      - 合计行返回 { rowspan: 1, colspan: 1 }
+      - 列 label 不在 PROJECT_MERGE_COLS 中返回 { rowspan: 1, colspan: 1 }
+      - 找到 info = projectSpanMap[String(row.projectId)]
+      - info.firstIndex === rowIndex → { rowspan: info.span, colspan: 1 }（显示并占位）
+      - 其他行 → { rowspan: 0, colspan: 0 }（被合并隐藏）
+
+      每次 getList() 更新数据后调用 buildProjectSpanMap(teamRevenueList.value)
 
   list_participants_display:
     intent: "参与人员列通过隐藏的 UserSelect 组件加载所有用户，将用户ID转为姓名显示"
@@ -273,52 +393,92 @@ customizations:
          <user-select ref="allUsersSelectRef" v-model="hiddenAllUsersValue" style="display: none" />
       2. getParticipantsNames(participants) 函数：
          - 解析 participants 字段（逗号分隔的用户ID字符串或数组）
-         - 通过 allUsersSelectRef.value?.userOptions || [] 获取用户列表（注意：不需要额外 .value）
-         - 根据 userId 匹配 nickName，返回逗号分隔的姓名字符串
+         - 通过 allUsersSelectRef.value?.userOptions || [] 获取用户列表
+         - 根据 userId 匹配 nickName，返回 ', ' 分隔的姓名字符串
          - 无匹配时返回 '-'
-      3. 合计行（isSummaryRow）不显示参与人员
+      3. 合计行（isSummaryRow）不显示参与人员（isDataRow 判断）
 
   list_amount_format:
     intent: "金额字段千分位格式化，工作量字段取整显示"
     component:
       type: custom
-      spec: "formatAmount() 和 formatWorkload() 格式化函数"
+      spec: "formatAmount()、formatAmountDisplay()、formatWorkload() 三个格式化函数"
     bindTo: table
     service: null
     notes: |
-      formatAmount(amount)：
+      formatAmount(amount)（列表表格用）：
       - 使用 toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-      - null/undefined/'' 返回空字符串
+      - null/undefined/'' 或 NaN 返回 '0.00'
       - 金额列表头标注单位(元)，align=right
 
-      formatWorkload(value)：
+      formatAmountDisplay(amount)（弹窗 disabled input 专用）：
+      - null/undefined/'' 或 NaN 返回 '-'
+      - 有效值返回 '¥X,XXX.00'（带 ¥ 前缀，千分位）
+      - 用于：预算金额(元)、合同金额(元)、公司确认金额(元) 的只读展示
+
+      formatWorkload(value)（工作量列）：
       - 使用 parseInt() 取整，不显示小数
-      - null/undefined/'' 返回空字符串
+      - null/undefined/'' 返回空字符串（''）
+      - 应用于：预估工作量（人天）、实际人天两列
 
       更新人列：
-      - prop="updateByName"，后端 JOIN sys_user 取 nick_name 作为关联字段
+      - prop="updateByName"，后端 JOIN sys_user u_upd 取 nick_name
+      - JOIN 条件需 COLLATE utf8mb4_unicode_ci：p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
 
-  list_summary_row:
-    intent: "列表添加合计行，显示在表头和第一行数据之间"
+  list_column_visibility:
+    intent: "支持列显隐切换，用户可按需隐藏不需要的列"
     component:
-      type: custom
-      spec: "displayList computed 属性动态生成包含合计行的数据列表"
-    bindTo: displayList
+      type: RightToolbar
+      props:
+        columns: "columns ref 数组（26项，每项含 key/label/visible）"
+    bindTo: toolbar
     service: null
     notes: |
+      在 right-toolbar 组件传入 :columns="columns"：
+      <right-toolbar v-model:showSearch="showSearch" :columns="columns" @queryTable="getList" />
+
+      columns 数组 26项（key 0~25），全部默认 visible: true
+      表格列使用 v-if="columns[n].visible" 控制显隐，序号列和操作列不加 v-if（始终显示）
+
+  list_summary_row:
+    intent: "列表合计行显示所有筛选数据的全量合计（跨分页），来自后端 API，直接追加到 teamRevenueList 前端"
+    component:
+      type: custom
+      spec: "Promise.all 并行请求 + summaryRow 对象前插 teamRevenueList"
+    bindTo: teamRevenueList
+    service:
+      endpoint: "GET /revenue/team/summary"
+      source: "TeamRevenueConfirmationController.summary() → projectService.selectProjectSummary()"
+      returns: "{ projectBudget, estimatedWorkload, actualWorkload, contractAmount, confirmAmount, teamConfirmAmount }"
+      newApi: true
+    notes: |
       实现逻辑：
-      1. displayList computed 遍历 teamRevenueList 累加6个数值字段
-      2. 合计行对象：{ isSummaryRow: true, ...各字段合计值 }
-      3. 金额字段（confirmAmount, afterTaxAmount, projectBudget, contractAmount）使用 .toFixed(2) 格式化
-      4. 工作量字段（estimatedWorkload, actualWorkload）使用 Math.round() 取整
-      5. 合计行插入列表开头：[summaryRow, ...teamRevenueList.value]
-      6. el-table 使用 :data="displayList"
+      1. getList() 使用 Promise.all([listTeamRevenue(params), getTeamRevenueSummary(params)])
+      2. 仅当 rows.length > 0 时插入合计行，否则 teamRevenueList = []
+      3. summaryRow 直接插入 teamRevenueList 开头：teamRevenueList.value = [summaryRow, ...rows]
+      4. el-table 使用 :data="teamRevenueList"（非 computed displayList）
+      5. 每次更新数据后调用 buildProjectSpanMap(teamRevenueList.value) 重建行合并映射
+
+      summaryRow 对象结构：
+      {
+        isSummaryRow: true,
+        projectBudget:     Number(s.projectBudget     || 0).toFixed(2),
+        estimatedWorkload: Number(s.estimatedWorkload || 0),      // 原始值，不取整
+        actualWorkload:    Number(s.actualWorkload    || 0),       // 原始值，不toFixed
+        contractAmount:    Number(s.contractAmount    || 0).toFixed(2),
+        confirmAmount:     Number(s.confirmAmount     || 0).toFixed(2),
+        teamConfirmAmount: Number(s.teamConfirmAmount || 0).toFixed(2),
+      }
+      工作量显示使用 formatWorkload() 即 parseInt()，视觉效果与取整相同
 
       合计行样式：
-      - :row-class-name="tableRowClassName" 给合计行添加 'summary-row' 类
-      - .summary-row { background-color: #f5f7fa; font-weight: bold; }
-      - 序号列、操作列在合计行不显示
-      - 项目名称列在合计行显示"合计"文字（加粗）
+      - :row-class-name="tableRowClassName" 给合计行添加 'summary-row' CSS类
+      - ::v-deep .summary-row { background-color: #f5f7fa; font-weight: bold; }
+      - 数值列合计值通过 :style 内联设置加粗+蓝色（#409EFF），团队确认收入列为绿色（#67C23A）
+      - 序号列显示"合计"文字（font-weight: bold）
+      - 非数值列（dict-tag、文本列）使用 isDataRow(row) / v-if 过滤，合计行不显示
+
+      效果：翻页后合计行数值不变，仅修改查询条件重新查询后才更新
 
   list_pagination_fixed:
     intent: "分页组件固定在页面底部，表格高度动态计算"
@@ -330,38 +490,107 @@ customizations:
     notes: |
       容器：className="revenue-team-container", height: 100%, display: flex, flex-direction: column
       表格高度：tableHeight = windowHeight - searchHeight - toolbarHeight - paginationHeight - padding
-      - searchHeight: 200px（showSearch 为 true 时）
+      - searchHeight: 255px（showSearch 为 true 时，5行查询条件含按钮行）
       - toolbarHeight: 50px, paginationHeight: 50px, padding: 120px
       生命周期：
       - onMounted: calcTableHeight() + window.addEventListener('resize', calcTableHeight)
       - onUnmounted: window.removeEventListener('resize', calcTableHeight)
       - watch showSearch: 搜索框显隐时重新计算表格高度
 
-  # ========== 新增/编辑页面定制 ==========
+  # ========== 新增/编辑弹窗定制 ==========
+  dialog_layout:
+    intent: "新增/编辑统一使用 el-dialog 弹窗，宽度960px，动态标题"
+    component:
+      type: el-dialog
+      props:
+        width: "960px"
+        appendToBody: true
+    bindTo: dialog
+    service: null
+    notes: |
+      弹窗标题：:title="dialogTitle"（computed，非静态 title ref）
+      dialogTitle computed：
+        if (form.value.projectName) return `项目【${form.value.projectName}】收入确认管理`
+        return '团队收入确认管理'
+
+      弹窗内表单布局（label-width="120px"，el-row el-col 分列）：
+
+      区块1：项目（全宽 span=24）
+        - ProjectSelect 组件，ref="projectSelectRef"，@change="handleProjectChange"
+        - v-model="form.projectId"，placeholder="请选择项目"，clearable
+
+      区块2：预算金额 | 合同金额（各 span=12，只读）
+        - 预算金额(元)：el-input :model-value="formatAmountDisplay(form.projectBudget)" disabled
+        - 合同金额(元)：el-input :model-value="formatAmountDisplay(form.contractAmount)" disabled
+
+      区块3：公司确认金额 | 确认年度（各 span=12，只读）
+        - 公司确认金额(元)：el-input :model-value="formatAmountDisplay(form.confirmAmount)" disabled
+        - 确认年度：el-input :model-value="form.revenueConfirmYear ? form.revenueConfirmYear + '年' : '-'" disabled
+
+      区块4：计划参与人员 | 实际参与人员（各 span=12，纯文字展示）
+        - 计划参与人员：<span class="participants-text">{{ form.participantsNames || '暂无' }}</span>
+        - 实际参与人员：<span class="participants-text">暂无</span>（固定显示，无数据来源）
+
+      区块5：参与人员工时（可折叠 .worktime-section div）
+        - worktime-header（可点击，切换 worktimeExpanded）：
+          - worktime-title："参与人员工时"
+          - worktime-stats：participantCount 人 / 总工时 0.0 小时 / 合计 form.actualWorkload 人天
+          - worktime-arrow：ArrowDown 图标，展开时旋转180度
+        - worktime-body（v-show="worktimeExpanded"）：
+          - <el-empty description="暂无工时记录" :image-size="60" />
+
+      区块6：确认明细标题行（.detail-header div）
+        - 左侧：<span class="detail-header-label">确认明细</span>
+        - 右侧：<el-button type="primary" size="small" @click="handleAddDetail">+ 添加确认记录</el-button>
+
+      区块7：确认明细表格（el-table :data="form.detailList"，border）
+        - 序号（index，55px）
+        - 部门（el-tree-select，deptTree，check-strictly，min-width=180）
+        - 确认金额(元)（el-input-number，:precision=2，:min=0，controls-position=right，width=160）
+        - 确认人（.confirm-user-name span，绿色文字，只读显示 scope.row.confirmUserName，width=100）
+        - 备注（el-input，placeholder="如：预付款、中期款、尾款等"，min-width=150）
+        - 操作（el-button link danger Delete，handleDeleteDetail(scope.$index)，width=70）
+
+      区块8：合计金额（.total-amount-row div，右对齐，加粗）
+        - 显示：合计金额：¥ {{ totalAmount }}
+        - totalAmount computed = 所有 detailList[i].confirmAmount 之和，toFixed(2)
+
+      弹窗底部按钮（dialog footer slot）：
+        - 取消（默认样式） → cancel()
+        - 确定（primary） → submitForm()
+
   project_select_hybrid:
-    intent: "项目选择支持下拉选择和远程搜索两种方式"
+    intent: "项目选择使用全局 ProjectSelect 组件，支持远程搜索，编辑时回显项目名称"
     component:
       type: ProjectSelect
       props:
-        remote: true
-        filterable: true
         clearable: true
-        remoteMethod: "无搜索词时加载全部项目，有搜索词时远程搜索"
-        visibleChange: "首次打开下拉框时加载全部项目"
     bindTo: project_id
     service:
-      endpoint: "GET /project/project/listByName?projectName={keyword}"
-      source: "复用 IProjectService.selectProjectList()"
+      endpoint: "GET /project/project/search?projectName={keyword}"
+      source: "searchProjects API，listProjectByName API"
       returns: "[{ projectId, projectName }]"
       newApi: false
     notes: |
-      表单中项目选择后，自动带出项目预算、合同金额、公司确认金额、确认年度等字段
+      表单中项目选择后，通过 handleProjectChange(projectId) 自动带出以下字段：
+      - projectBudget（项目预算）
+      - contractAmount（合同金额）
+      - confirmAmount（公司确认金额）
+      - revenueConfirmYear（收入确认年度）
+      - projectName（项目名称，用于 dialogTitle computed）
+      - participantsNames（计划参与人员姓名字符串）
+      - participants（参与人员ID列表）
+      - actualWorkload（实际人天，用于工时折叠面板显示）
+      以上来自 GET /revenue/team/project/{projectId} 接口，需包含全部字段
 
-      编辑时项目名称回显：
-      - handleUpdate() 中先 open.value = true 打开对话框
-      - 再通过 nextTick(() => { projectSelectRef.value.projectOptions.push({...}) }) 注入当前项目
-      - 必须先打开对话框再 nextTick，否则 projectSelectRef.value 为 null（组件未挂载）
-      - 注入对象需包含 projectId 和 projectName
+      编辑时项目名称回显（handleUpdate）：
+      1. 在 getTeamRevenue(projectId).then() 回调中设置 form.value 后再 open.value = true
+      2. nextTick(() => {
+           if (projectSelectRef.value && project.projectId && project.projectName) {
+             projectSelectRef.value.projectOptions.push({ projectId, projectName })
+           }
+         })
+      3. 必须先等 open.value = true 渲染组件后再 nextTick 注入，否则 projectSelectRef.value 为 null
 
   dept_tree_select_filtered:
     intent: "部门选择只显示三级及以下机构，支持树形结构选择"
@@ -372,61 +601,117 @@ customizations:
         checkStrictly: true
         filterable: true
         clearable: true
-        renderAfterExpand: false
     bindTo: dept_id
     service:
-      endpoint: "GET /system/dept/treeselect"
-      source: "复用 SysDeptService，前端过滤三级及以下部门"
-      returns: "部门树数据"
+      endpoint: "GET /project/project/deptTree"
+      source: "复用 ProjectController 代理接口，返回扁平列表"
+      returns: "[{ deptId, deptName, ancestors, parentId, ... }]"
       newApi: false
-    notes: "loadDeptTree() 中过滤：const level = dept.ancestors.split(',').length; return level >= 3"
+    notes: |
+      loadDeptTree() 处理逻辑：
+      1. deptFlatList 保存所有部门扁平列表（用于 getDeptName 路径查找）
+      2. 过滤三级及以下：dept.ancestors.split(',').length >= 3
+      3. 映射 deptId→value, deptName→label，handleTree() 构建树形结构
+      4. deptTree.value = builtTree（表单明细部门选择器使用）
+      5. confirmDeptTree.value = [{ label: '无确认团队', value: -1, children: [] }, ...builtTree]
+         （查询条件确认团队选择器使用，首项为固定虚节点）
+
+      getDeptName(deptId) 函数（列表部门列显示路径）：
+      - 从 deptFlatList 找到目标部门，解析 ancestors（过滤 '0' 和空值）
+      - 从第3级开始（ancestorIds 索引2起）收集各级部门名
+      - 加上当前部门名，用 '-' 连接
+      - 找不到返回 '-'
 
   confirm_user_readonly:
     intent: "确认人默认当前登录用户，只读不可编辑"
     component:
       type: text
-      spec: "明细表格中确认人列显示为文本，不可编辑"
+      spec: "明细表格中确认人列显示为带绿色样式的文本，不可编辑"
     bindTo: confirm_user_id
     service: null
-    notes: "使用 Pinia userStore.id（注意不是 userId！）和 userStore.nickName。添加明细时自动填充当前用户，表格中只显示姓名文本"
+    notes: |
+      使用 Pinia userStore（import useUserStore from '@/store/modules/user'）：
+      - userStore.id → confirmUserId（注意：是 id 不是 userId）
+      - userStore.nickName → confirmUserName（绿色显示）
+
+      添加明细时（handleAddDetail）自动填充：
+      form.value.detailList.push({
+        deptId: null,
+        confirmAmount: 0,
+        confirmUserId: userStore.id,
+        confirmUserName: userStore.nickName,
+        remark: ''
+      })
+
+      表格中仅显示姓名文本（.confirm-user-name span），不可编辑：
+      <span class="confirm-user-name">{{ scope.row.confirmUserName }}</span>
+      CSS: .confirm-user-name { color: #67c23a; font-weight: 500; }
 
   detail_list_management:
     intent: "明细列表的添加、删除和金额计算"
     component:
       type: custom
-      spec: "el-table 显示明细列表，支持添加/删除行，自动计算合计金额"
+      spec: "el-table 显示明细列表，支持添加/删除行，computed 自动计算合计金额"
     bindTo: form
     service: null
     notes: |
       - 添加明细：handleAddDetail() 新行默认 confirmUserId=userStore.id, confirmUserName=userStore.nickName, confirmAmount=0
-      - 删除明细：handleDeleteDetail(index) 删除指定行
-      - 合计金额：computed totalAmount 自动计算所有明细的 confirmAmount 总和
+      - 删除明细：handleDeleteDetail(index) → splice + calculateTotalAmount()（calculateTotalAmount 为空函数兼容占位）
+      - 合计金额：computed totalAmount 自动累加 detailList 中所有 confirmAmount，toFixed(2)
       - 表单提交前验证每条明细的 deptId、confirmAmount、confirmUserId 不能为空
-      - 提交时过滤 confirmUserName（后端不需要）
+      - 提交时仅发送：teamConfirmId, deptId, confirmAmount, confirmUserId, remark（过滤 confirmUserName）
 
   form_validation:
-    intent: "表单提交前的前端和后端双重验证"
+    intent: "表单提交前的前端验证"
     component:
       type: custom
-      spec: "前端验证 + 后端验证"
+      spec: "前端多层验证"
     bindTo: form
     service: null
     notes: |
-      前端验证（submitForm）：
-      - 至少添加一条确认明细
-      - 每条明细的部门、确认金额、确认人不能为空
+      submitForm() 验证逻辑（顺序执行）：
+      1. el-form validate：projectId 必填（"请选择项目"）
+      2. form.value.detailList.length === 0 → msgError("请至少添加一条确认明细")
+      3. 遍历每条明细：
+         - !detail.deptId → msgError(`第 ${i+1} 条明细的部门不能为空`)
+         - confirmAmount === null || undefined → msgError(`第 ${i+1} 条明细的确认金额不能为空`)
+         - !detail.confirmUserId → msgError(`第 ${i+1} 条明细的确认人不能为空`)
+      4. 校验通过后构建 submitData = { projectId, detailList: [...] }
 
-      后端验证（Controller.add/edit）：
-      - projectId、deptId、confirmAmount、confirmUserId 不为 null
-      - 使用 Map.get() 前先判空
-      - 返回友好的中文错误提示
+      新增/编辑判断（无单独 mode 标志位）：
+      - form.value.detailList.some(item => item.teamConfirmId) → PUT updateTeamRevenue（编辑）
+      - 否则 → POST addTeamRevenue（新增）
+
+      form 表单重置（reset()）：
+      form.value = { projectId: null, projectName: null, projectBudget: null, contractAmount: null,
+                     confirmAmount: null, revenueConfirmYear: null, participantsNames: null,
+                     participants: null, actualWorkload: null, detailList: [] }
+      worktimeExpanded.value = false
+      proxy.resetForm("formRef")
+
+  delete_operation:
+    intent: "删除团队确认记录，无记录时给出友好提示"
+    component:
+      type: custom
+      spec: "handleDelete 包含前置检查"
+    bindTo: table
+    service:
+      endpoint: "DELETE /revenue/team/{teamConfirmIds}"
+      source: "delTeamRevenue(row.teamConfirmId)"
+      returns: "AjaxResult"
+      newApi: false
+    notes: |
+      handleDelete(row) 逻辑：
+      1. if (!row.teamConfirmId) → proxy.$modal.msgWarning("该项目暂无团队确认记录")，return
+      2. proxy.$modal.confirm('确认删除该团队确认记录？') → delTeamRevenue(row.teamConfirmId)
+      3. 成功后 msgSuccess("删除成功") + getList()
 
   # ========== 详情页面定制 ==========
   detail_page_layout:
-    intent: "详情页面左右布局，左侧13列显示完整项目信息，右侧11列显示收入确认和团队明细"
+    intent: "详情页面左右布局，左侧 span=14 显示完整项目信息，右侧 span=10 显示收入确认和团队明细"
     component:
       type: custom
-      spec: "el-row + el-col 布局，左侧 span=13，右侧 span=11"
+      spec: "el-row + el-col 布局，左侧 span=14，右侧 span=10"
     bindTo: page
     service:
       endpoint: "GET /revenue/team/{projectId}"
@@ -434,47 +719,62 @@ customizations:
       returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
       newApi: false
     notes: |
-      左侧（span=13）6个卡片：
-      1. 项目基本信息（el-descriptions, 2列）
-      2. 人员配置（参与人员用 el-tag 标签显示）
-      3. 客户信息
-      4. 时间规划
-      5. 成本预算（不含项目预算，已移至基本信息卡片）
-      6. 备注
+      页面顶部：el-page-header，title="团队收入确认详情"，@back="goBack"（router.back()）
 
-      右侧（span=11）2个卡片：
-      1. 公司收入确认信息（el-descriptions, 1列）
-      2. 团队收入确认明细（el-table + 合计金额 footer）
+      左侧（span=14）单个 el-card（shadow="never"），内含 6 个分组，均使用 section-title CSS类分隔：
 
-  detail_project_info_complete:
-    intent: "左侧项目信息与项目管理详情页面完全一致"
-    component:
-      type: custom
-      spec: "完整显示项目信息卡片：基本信息、人员配置、客户信息、时间规划、成本预算、备注"
-    bindTo: project
-    service: null
-    notes: |
-      项目基本信息字段：
-      - 行业、一级区域（dict-tag）、简称、二级区域（regionName）
-      - 立项年份、项目编号
-      - 项目名称、项目分类、项目部门（完整路径）
-      - 预估工作量、项目预算
-      - 实际工作量、项目阶段
-      - 验收状态、审核状态
-      - 项目地址、项目计划、项目描述、审核意见
+      ① 项目基本信息（column=2, border）— 字段顺序：
+         行业（dict-tag industry）、一级区域（getDictLabel sys_yjqy）
+         二级区域（form.regionName）、立项年度（dict-tag sys_ndgl）
+         项目编号（form.projectCode）、项目预算（formatAmount + '元'）
+         项目名称（span=2）
+         项目分类（getDictLabel sys_xmfl）、项目部门（deptPath || form.deptName）
+         预估工作量（form.estimatedWorkload + '人天' 或 '-'）、实际人天（form.actualWorkload + '人天' 或 '-'）
+         项目状态（getDictLabel sys_xmzt）、验收状态（dict-tag sys_yszt）
+         合同金额（formatAmount + '元'）、审核状态（getDictLabel sys_spzt）
+         合同状态（dict-tag sys_htzt）、合同名称（white-space:pre-line）
+         收入确认状态（dict-tag sys_qrzt）、收入确认年度（form.revenueConfirmYear）
+         确认金额（含税）（formatAmount + '元'）、税率（form.taxRate + '%' 或 '-'）
+         税后金额（span=2，formatAmount + '元'）
+         项目地址（span=2）
+         项目计划（span=2，white-space:pre-line）
+         项目描述（span=2，white-space:pre-line）
+         审核意见（span=2）
 
-      项目部门显示：查询部门树，解析 ancestors，只保留三级及以下部门，用"-"连接各级名称
+      ② 人员配置（column=2, border）：
+         项目经理、市场经理（同行）
+         销售负责人（span=2）、销售联系方式（span=2）
+         参与人员（span=2，form.participantsNames 直接显示字符串，非 el-tag）
 
-      参与人员显示：detail.vue 直接调用 getUsersByPost() 加载用户列表（非隐藏 UserSelect），
-      根据 participants 字段过滤并用 el-tag 标签显示
+      ③ 客户信息（column=2, border）：
+         客户名称（span=2）
+         客户联系人、客户联系方式（同行，通过 loadCustomerContactPhone 加载电话）
+         商户联系人、商户联系方式（同行）
 
-      客户联系方式：根据 customerId + customerContactId 查询联系人电话
+      ④ 时间规划（column=2, border）：
+         启动日期、结束日期（parseTime '{y}-{m}-{d}' || '-'，同行）
+         实施年度（span=2，form.reservedField1 || '-'）
+         投产日期（parseTime form.productionDate || '-'）、验收日期（parseTime form.acceptanceDate || '-'）
+
+      ⑤ 成本预算（column=2, border，两两并排，无 span=2）：
+         项目费用（projectCost）、费用预算（expenseBudget）（同行）
+         成本预算（costBudget）、人力费用（laborCost）（同行）
+         采购成本（purchaseCost）（独行）
+
+      ⑥ 其他信息（column=1, border）：
+         备注（form.remark || '-'，white-space:pre-line）
+
+      右侧（span=10）两个 el-card（shadow="never"）：
+      1. 公司收入确认信息卡片（含状态横幅、各信息行、返回按钮）
+      2. 团队收入确认明细卡片（el-table）
+
+      CSS：.section-title { border-left: 3px solid #409EFF; font-weight: bold; ... }
 
   detail_data_refresh:
-    intent: "详情页面从公司收入确认返回时自动刷新最新数据"
+    intent: "详情页面支持路由参数变化自动刷新数据"
     component:
       type: custom
-      spec: "onActivated + watch 双重机制确保数据实时更新"
+      spec: "onMounted + onActivated + watch(route.params.projectId) 三重机制"
     bindTo: detail.vue
     service:
       endpoint: "GET /revenue/team/{projectId}"
@@ -482,29 +782,66 @@ customizations:
       returns: "{ project: Project, detailList: TeamRevenueConfirmation[] }"
       newApi: false
     notes: |
-      Vue keep-alive 缓存场景下的数据刷新：
-      - onMounted()：首次加载数据
-      - onActivated()：从缓存恢复时重新加载（解决 keep-alive 缓存不刷新问题）
-      - watch(route.params.projectId)：路由参数变化时重新加载
-      使用场景：用户在公司收入确认页面填写数据后返回团队详情，无需手动刷新
+      detail.vue 数据加载机制：
+      - onMounted()：首次加载 loadAllUsers() + getDetail()
+      - onActivated()：从 keep-alive 缓存恢复时再次调用 getDetail()
+      - watch(route.params.projectId, (newId, oldId) => { if (newId && newId !== oldId) getDetail() })
+      三者结合确保 keep-alive 缓存场景、路由参数变化场景均能自动刷新
+
+      getDetail() 逻辑：
+      1. getTeamRevenue(projectId) 获取数据
+      2. form.value = response.data.project（含 participants 字段解析为数字数组）
+      3. detailList.value = response.data.detailList || []
+      4. 加载客户联系方式：loadCustomerContactPhone(customerId, customerContactId)
+      5. 加载部门路径：buildDeptPath(projectDept)
+      6. 延迟500ms解析参与人员姓名：selectedParticipants.value = allUsers.filter(...)
 
   detail_revenue_info:
-    intent: "右侧显示公司收入确认信息"
+    intent: "右侧上方显示公司收入确认信息（查看模式只读卡片式布局）"
     component:
       type: custom
-      spec: "el-descriptions 显示收入确认状态、年度、合同金额、确认金额、税率、税后金额"
+      spec: "自定义卡片式布局：状态横幅 + info-row + amount-box + 返回按钮"
     bindTo: revenueConfirm
     service: null
-    notes: "数据来源于项目表的收入确认相关字段"
+    notes: |
+      公司收入确认信息卡片内容（从上到下）：
+      - 状态横幅（.status-banner）：从 sys_qrzt 字典 elTagType 动态映射颜色
+        typeMap: success→#67c23a, warning→#e6a23c, danger→#f56c6c,
+                 primary→#409eff, info/default→#909399
+        文字：getDictLabel(sys_qrzt, form.revenueConfirmStatus)
+      - 验收状态：dict-tag sys_yszt
+      - 确认年度（Calendar图标 info-row）：form.revenueConfirmYear || '-'
+      - 确认金额(含税)（amount-box，虚线红框）：¥ formatAmount(form.confirmAmount) 大字红色
+      - 税后金额（info-row，蓝色加粗）：¥ formatAmount(form.afterTaxAmount)
+      - 税率（info-row）：form.taxRate + '%' 或 '-'
+      - el-divider
+      - 确认人（User图标 info-row）：form.companyRevenueConfirmedBy
+      - 确认时间（Clock图标 info-row）：parseTime(form.companyRevenueConfirmedTime)
+      - 返回列表按钮（default，全宽）→ goBack()
+
+      useDict 依赖（9个，含industry）：
+      industry, sys_yjqy, sys_xmfl, sys_spzt, sys_yszt, sys_qrzt, sys_ndgl, sys_xmzt, sys_htzt
 
   detail_team_list:
-    intent: "右侧显示团队收入确认明细列表"
+    intent: "右侧下方显示团队收入确认明细列表"
     component:
       type: custom
-      spec: "el-table 显示明细，包含部门、确认金额、确认时间、确认人、备注，底部显示合计金额"
+      spec: "el-table 显示明细，包含部门、确认金额、确认时间、确认人、备注"
     bindTo: detailList
     service: null
-    notes: "合计金额使用 computed totalTeamAmount 自动计算"
+    notes: |
+      el-table :data="detailList"，border，size="small"
+      列（5列）：
+      - 部门名称（prop=deptName, min-width=120, show-overflow-tooltip）
+      - 确认金额（prop=confirmAmount, min-width=110, align=right, formatAmount() + ' 元'）
+      - 确认时间（prop=confirmTime, min-width=100, parseTime '{y}-{m}-{d}'）
+      - 确认人（prop=confirmUserName, min-width=80, show-overflow-tooltip）
+      - 备注（prop=remark, min-width=100, show-overflow-tooltip）
+      empty-text="暂无团队收入确认数据"
+      额外 v-if="detailList.length === 0" 的文字提示 div（兼容提示）
+
+      detailList 来源：
+      - getDetail() 中 detailList.value = response.data.detailList || []
 
   # ========== 后端接口定制 ==========
   backend_list_query:
@@ -541,14 +878,17 @@ customizations:
       endpoint: "POST /revenue/team 和 PUT /revenue/team"
       source: |
         Controller.add/edit():
-        1. 接收 Map 参数：{ projectId, detailList: [{ deptId, confirmAmount, confirmUserId, remark }] }
+        1. 接收 Map 参数：{ projectId, detailList: [{ teamConfirmId?, deptId, confirmAmount, confirmUserId, remark }] }
         2. 验证必填字段不为空
-        3. 遍历 detailList，为每条明细设置 projectId 和 confirmTime（当前时间）
+        3. 遍历 detailList，为每条明细设置 projectId 和 confirmTime（当前时间，后端自动设置）
         4. 调用 Service.insertTeamRevenueConfirmation() 逐条保存
         5. 编辑时先删除旧明细，再保存新明细（删除后新增策略）
       returns: "AjaxResult"
       newApi: false
-    notes: "后端自动设置 confirmTime = new Date()，解决数据库字段无默认值问题"
+    notes: |
+      后端自动设置 confirmTime = new Date()，解决数据库字段无默认值问题
+      前端提交时过滤 confirmUserName（后端不需要此字段）
+      新增/编辑由前端通过 detailList.some(item => item.teamConfirmId) 判断，有 teamConfirmId 则调 PUT
 
   backend_data_validation:
     intent: "后端数据验证和错误处理"
@@ -563,21 +903,97 @@ customizations:
       - 使用 Map.get() 前先判空，避免 NullPointerException
       - 返回友好的中文错误提示
 
-  backend_data_association:
-    intent: "团队确认明细关联查询部门名称和确认人姓名"
+  backend_project_info_query:
+    intent: "新增页面选择项目后自动带出项目相关字段"
     component: null
     bindTo: backend
     service:
-      endpoint: "MyBatis XML 配置"
+      endpoint: "GET /revenue/team/project/{projectId}"
       source: |
-        TeamRevenueConfirmationMapper.xml:
-        LEFT JOIN sys_dept d ON t.dept_id = d.dept_id
-        LEFT JOIN sys_user u ON t.confirm_user_id = u.user_id
-        查询字段：d.dept_name as dept_name, u.nick_name as confirm_user_name
-        排序：ORDER BY COALESCE(t.update_time, t.create_time) DESC（注意使用表别名 t）
-      returns: "TeamRevenueConfirmation（包含 deptName 和 confirmUserName 扩展字段）"
+        Controller.getProjectInfo():
+        1. 调用 IProjectService.selectProjectByProjectId() 获取项目
+        2. 返回包含以下字段的数据对象
+      returns: |
+        { projectId, projectName, projectBudget, contractAmount, confirmAmount,
+          revenueConfirmYear, participantsNames, participants, actualWorkload }
       newApi: false
-    notes: "实体类中添加 deptName 和 confirmUserName 扩展字段用于显示"
+    notes: |
+      用于新增/编辑表单中，用户选择项目后自动填充以下字段：
+      - projectBudget（项目预算，弹窗只读展示）
+      - contractAmount（合同金额，弹窗只读展示）
+      - confirmAmount（公司确认金额，弹窗只读展示）
+      - revenueConfirmYear（收入确认年度，弹窗只读展示 + '年' 拼接）
+      - projectName（项目名称，用于 dialogTitle computed 动态显示）
+      - participantsNames（计划参与人员姓名字符串，弹窗"计划参与人员"行展示）
+      - participants（参与人员ID，用于 participantCount computed 计算人数）
+      - actualWorkload（实际人天，工时折叠面板"合计人天"展示）
+      权限：@ss.hasPermi('revenue:team:query')
+
+  backend_summary_query:
+    intent: "全量合计接口，不分页，返回所有筛选数据的数值汇总"
+    component: null
+    bindTo: backend
+    service:
+      endpoint: "GET /revenue/team/summary"
+      source: |
+        TeamRevenueConfirmationController.summary():
+        1. 接收 Project 查询参数（与 list 接口相同参数，含 confirmDeptId）
+        2. 调用 projectService.selectProjectSummary(project)
+           → projectMapper.selectProjectSummary()，SQL 不分页，返回 Map
+        3. 返回 AjaxResult.success(map)
+      returns: "{ projectBudget, estimatedWorkload, actualWorkload, contractAmount, confirmAmount, teamConfirmAmount }"
+      newApi: true
+    notes: |
+      权限：@ss.hasPermi('revenue:team:list')
+      与列表接口使用相同查询参数（含 confirmDeptId 过滤）
+      selectProjectSummary SQL 中包含 tc LEFT JOIN 聚合 pm_team_revenue_confirmation，
+      返回 COALESCE(SUM(tc.confirm_amount), 0) AS team_confirm_amount
+
+  backend_data_association:
+    intent: "列表查询关联查询部门名称、项目经理名称、更新人昵称、合同信息和团队确认汇总"
+    component: null
+    bindTo: backend
+    service:
+      endpoint: "MyBatis XML 配置 selectProjectList"
+      source: |
+        ProjectMapper.xml selectProjectList 中的 JOIN：
+        1. LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+        2. LEFT JOIN (ca 子查询) ON p.project_id = ca.project_id
+           → SUM contract_amount, MAX contract_status, GROUP_CONCAT contract_name(\n分隔)
+        3. LEFT JOIN (tc 子查询) ON p.project_id = tc.project_id
+           → GROUP_CONCAT DISTINCT dept_name（顿号分隔）AS team_dept_name
+           → SUM confirm_amount AS team_confirm_amount
+           → FROM pm_team_revenue_confirmation t JOIN sys_dept d WHERE t.del_flag = '0'
+        4. LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        5. LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
+
+        Project 实体新增非DB关联字段：
+        - teamDeptName（String）：确认团队部门名称（column="team_dept_name"）
+        - teamConfirmAmount（BigDecimal）：团队确认收入汇总（column="team_confirm_amount"）
+        - confirmDeptId（Long）：查询条件字段（-1=无确认团队，正常值=指定部门）
+        - projectManagerName（String）：项目经理姓名（u1.nick_name，列表直接展示，无需前端 getUserName）
+
+        resultMap 新增映射：
+        <result property="teamDeptName" column="team_dept_name"/>
+        <result property="teamConfirmAmount" column="team_confirm_amount"/>
+        <result property="projectManagerName" column="project_manager_name"/>
+
+        WHERE 新增过滤（confirmDeptId）：
+        confirmDeptId == -1 → AND NOT EXISTS (SELECT 1 FROM pm_team_revenue_confirmation tc2
+                               WHERE tc2.project_id = p.project_id AND tc2.del_flag = '0')
+        confirmDeptId 正常值 → AND EXISTS (... AND tc2.dept_id = #{confirmDeptId} ...)
+
+        selectProjectSummary 同步：加入 tc LEFT JOIN，SELECT 增加 team_confirm_amount，
+        WHERE 同步增加 confirmDeptId 过滤
+      returns: "Project（包含 teamDeptName 和 teamConfirmAmount 扩展字段）"
+      newApi: false
+    notes: |
+      TeamRevenueConfirmationMapper.xml 中明细查询：
+      LEFT JOIN sys_dept d ON t.dept_id = d.dept_id
+      LEFT JOIN sys_user u ON t.confirm_user_id = u.user_id
+      查询字段：d.dept_name as dept_name, u.nick_name as confirm_user_name
+      排序：ORDER BY COALESCE(t.update_time, t.create_time) DESC（注意使用表别名 t）
+      实体类中 deptName 和 confirmUserName 扩展字段用于显示
 
 # ============================
 # 实现总结
@@ -587,35 +1003,44 @@ implementation_summary:
 
   key_features:
     - "列表查询主表从项目表查询，与公司收入确认逻辑一致"
-    - "列表表格与项目管理列表保持一致，显示25列（24数据列+1操作列）"
-    - "列表添加合计行，显示在表头与第一行数据之间，合计6个数值字段"
-    - "金额字段千分位格式化（formatAmount），工作量字段取整显示（formatWorkload）"
-    - "更新人列显示中文昵称（prop=updateByName，后端 JOIN sys_user）"
-    - "参与人员通过隐藏 UserSelect 组件加载用户列表，getParticipantsNames() 转换为姓名"
-    - "新增/编辑页面支持批量管理明细，自动计算合计金额"
-    - "项目选择支持下拉和远程搜索双模式（ProjectSelect 组件）"
-    - "编辑时通过 nextTick 注入 projectOptions 确保项目名称正确回显"
-    - "部门选择只显示三级及以下机构（ancestors.split(',').length >= 3）"
-    - "确认人默认当前用户（userStore.id），只读不可编辑"
-    - "详情页面左13右11布局，完整展示项目信息和团队明细"
-    - "详情页面通过 onActivated + watch 双重机制支持 keep-alive 缓存自动刷新"
-    - "详情页面参与人员通过 getUsersByPost() 加载用户并用 el-tag 显示"
-    - "项目部门显示完整路径（三级及以下，用-隔开）"
-    - "一级区域与二级区域分别显示（dict-tag 和 regionName）"
-    - "后端批量保存明细，自动设置 confirmTime，编辑采用删除后新增策略"
-    - "MyBatis ORDER BY 使用表别名 t 避免多表 JOIN 字段歧义"
-    - "分页组件固定底部，表格高度动态计算"
+    - "查询条件共15个，5行布局（第4行3条件+第5行独立按钮行），label-width=120px"
+    - "项目名称改为 el-select remote 模式，每次展开重新加载全量（无 projectSelectLoaded 守卫）"
+    - "确认团队使用 el-tree-select（confirmDeptTree），首项为'无确认团队'虚节点（value=-1）"
+    - "收入确认状态使用 sys_qrzt 字典（非 sys_srqrzt）"
+    - "按钮行（第5行）包含：查询、重置、导出、新增 四个按钮"
+    - "列表表格启用 border，配合 right-toolbar :columns 支持显隐列，共28列（序号+26可控+操作）"
+    - "列表支持行合并（span-method）：同一项目多条明细时，前16列（序号+columns[0~14]）自动合并"
+    - "项目经理列直接显示后端关联的 projectManagerName，无需前端 getUserName 转换"
+    - "确认团队列字段名为 teamDeptName（非 teamConfirmDepts）"
+    - "合计行数据来自后端 GET /revenue/team/summary，直接前插 teamRevenueList（无 displayList computed）"
+    - "合计行 estimatedWorkload/actualWorkload 存储原始值（无 Math.round/toFixed），formatWorkload() 显示时 parseInt"
+    - "formatAmount 无效值返回 '0.00'（列表），formatAmountDisplay 无效值返回 '-'（弹窗只读 input）"
+    - "tableHeight 动态计算，searchHeight=255px（5行查询条件含按钮行）"
+    - "弹窗标题使用 dialogTitle computed：有项目名时 '项目【名称】收入确认管理'"
+    - "弹窗新增"计划参与人员|实际参与人员"纯文字展示行和"参与人员工时"折叠面板"
+    - "getProjectInfo 接口返回额外字段：contractAmount, participantsNames, participants, actualWorkload"
+    - "删除操作：若 row.teamConfirmId 不存在，弹出 msgWarning 提示不执行删除"
+    - "详情页左14右10布局，左侧单卡片+6个 section-title 分组（与公司收入确认样式一致）"
+    - "详情页参与人员直接显示 form.participantsNames 字符串（非 el-tag）"
+    - "详情页收入确认状态字典使用 sys_qrzt，状态横幅颜色从 elTagType 动态读取"
+    - "详情页时间规划含'实施年度'（form.reservedField1）和'投产日期'（无'简称'字段）"
+    - "详情数据刷新：onMounted + onActivated + watch(route.params.projectId) 三重机制"
 
   technical_highlights:
     - "Composition API（setup script）+ Vue 3 生命周期钩子"
     - "Pinia userStore.id（注意不是 userId）和 userStore.nickName"
-    - "displayList computed：合计行插入列表开头，金额 .toFixed(2)，工作量 Math.round()"
-    - "合计行标识 isSummaryRow: true，各列模板据此判断显示内容"
-    - "隐藏 UserSelect 通过 allUsersSelectRef.value?.userOptions || [] 获取用户（不需要额外 .value）"
-    - "编辑回显：先 open.value = true → nextTick → projectSelectRef.value.projectOptions.push()"
-    - "详情数据刷新：onActivated() + watch(route.params.projectId) 双重保障"
-    - "部门过滤：ancestors.split(',').length >= 3"
-    - "收入确认状态字典 sys_srqrzt：未确认(0)、已确认(1)"
+    - "行合并：PROJECT_MERGE_COLS Set + buildProjectSpanMap() + tableSpanMethod() + :span-method"
+    - "确认团队筛选：-1 特殊值 → SQL NOT EXISTS，正常值 → SQL EXISTS 子查询"
+    - "Promise.all 并行请求列表和合计，减少串行等待时间"
+    - "合计行前插 teamRevenueList，buildProjectSpanMap 在每次 getList 后重建映射"
+    - "right-toolbar :columns 显隐列：columns[n].visible 对应 el-table-column v-if"
+    - "tc 子查询：GROUP_CONCAT DISTINCT dept_name → team_dept_name（顿号分隔）"
+    - "合计行标识 isSummaryRow: true；isDataRow(row) 辅助函数统一判断"
+    - "隐藏 UserSelect 通过 allUsersSelectRef.value?.userOptions 获取用户列表"
+    - "编辑回显：getTeamRevenue 回调内先 open=true → nextTick → projectSelectRef.value.projectOptions.push()"
+    - "详情部门路径：buildDeptPath(deptId) 解析 ancestors，三级及以下，-连接"
+    - "详情客户联系方式：loadCustomerContactPhone(customerId, contactId) 异步加载"
+    - "详情参与人员：setTimeout(500ms) 等 allUsers 加载完成后过滤姓名"
 
   related_files:
     backend:
