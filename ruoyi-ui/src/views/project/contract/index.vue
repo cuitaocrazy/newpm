@@ -348,7 +348,7 @@
 <script setup name="Contract">
 import { listContract, getContract, delContract, searchContracts } from "@/api/project/contract"
 import { getDeptTree as fetchDeptTree } from "@/api/project/project"
-import { listCustomer } from "@/api/project/customer"
+import { listAllCustomer } from "@/api/project/customer"
 import { listProject } from "@/api/project/project"
 import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, listAttachmentLog } from "@/api/project/attachment"
 import { getToken } from "@/utils/auth"
@@ -489,8 +489,8 @@ function getDeptTree() {
 
 /** 查询客户列表 */
 function getCustomerList() {
-  listCustomer().then(response => {
-    customerOptions.value = response.rows
+  listAllCustomer().then(response => {
+    customerOptions.value = response.data
   })
 }
 
