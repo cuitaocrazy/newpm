@@ -734,7 +734,7 @@ CREATE TABLE `pm_project` (
   `project_stage` varchar(50) DEFAULT NULL COMMENT '项目阶段',
   `acceptance_status` varchar(50) DEFAULT NULL COMMENT '验收状态',
   `estimated_workload` decimal(10,2) DEFAULT NULL COMMENT '预估工作量(人天)',
-  `actual_workload` decimal(10,2) DEFAULT '0.00' COMMENT '实际工作量(小时)',
+  `actual_workload` decimal(10,2) DEFAULT '0.00' COMMENT '实际工作量(小时)由日报明细表汇总工时(小时)汇总项目工时',
   `adjust_workload` decimal(10,2) DEFAULT '0.00' COMMENT '调整工作量(人天)',
   `project_address` varchar(500) DEFAULT NULL COMMENT '项目地址',
   `project_plan` text COMMENT '项目计划',
@@ -1097,7 +1097,23 @@ CREATE TABLE `pm_project_stage_change` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目阶段变更记录表';
 
 
+-- ----------------------------
+-- 19. 工作量补正日志表
+-- ----------------------------
 
+CREATE TABLE IF NOT EXISTS `pm_workload_correct_log` (
+  `log_id`        BIGINT       NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `project_id`    BIGINT       NOT NULL                COMMENT '项目ID',
+  `direction`     TINYINT      NOT NULL                COMMENT '调整方向(0=增加,1=减少)',
+  `delta`         DECIMAL(10,2) NOT NULL               COMMENT '调整人天数',
+  `before_adjust` DECIMAL(10,2) NOT NULL               COMMENT '调整前调整人天值',
+  `after_adjust`  DECIMAL(10,2) NOT NULL               COMMENT '调整后调整人天值',
+  `reason`        VARCHAR(500)  DEFAULT NULL            COMMENT '补正理由',
+  `create_by`     VARCHAR(64)   DEFAULT ''             COMMENT '创建者',
+  `create_time`   DATETIME      DEFAULT NULL            COMMENT '创建时间',
+  PRIMARY KEY (`log_id`),
+  KEY `idx_project_id` (`project_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作量补正日志';
 
 
 

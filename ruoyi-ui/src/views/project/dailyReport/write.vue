@@ -99,6 +99,9 @@ import { Loading } from '@element-plus/icons-vue'
 import { getMyReport, getMyProjects, saveDailyReport, listDailyReport } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
+import useUserStore from '@/store/modules/user'
+
+const userStore = useUserStore()
 
 function formatDateStr(date) {
   const d = new Date(date)
@@ -205,7 +208,7 @@ async function loadDayReport(dateStr) {
 
 // 加载月度概览（日历标注用）
 async function loadMonthOverview() {
-  const res = await listDailyReport({ yearMonth: currentYearMonth.value, userId: undefined })
+  const res = await listDailyReport({ yearMonth: currentYearMonth.value, userId: userStore.id })
   const map = {}
   if (res.rows) {
     res.rows.forEach(r => {

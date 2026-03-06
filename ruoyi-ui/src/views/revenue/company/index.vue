@@ -250,7 +250,7 @@
       <el-table-column v-if="columns[7].visible" label="实际人天" align="center" prop="actualWorkload" min-width="100">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow">{{ scope.row.actualWorkload }}</span>
-          <span v-else>{{ scope.row.actualWorkload != null ? (scope.row.actualWorkload / 8).toFixed(3) : '-' }}</span>
+          <span v-else>{{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(3) : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column v-if="columns[8].visible" label="合同名称" align="left" header-align="center" prop="contractName" min-width="180" show-overflow-tooltip>
@@ -429,7 +429,7 @@ function getList() {
       isSummaryRow: true,
       projectBudget: Number(summaryRes.data?.projectBudget || 0).toFixed(2),
       estimatedWorkload: Number(summaryRes.data?.estimatedWorkload || 0).toFixed(2),
-      actualWorkload: (Number(summaryRes.data?.actualWorkload || 0) / 8).toFixed(3),
+      actualWorkload: Number(summaryRes.data?.actualWorkload || 0).toFixed(3),
       contractAmount: Number(summaryRes.data?.contractAmount || 0).toFixed(2),
       confirmAmount: Number(summaryRes.data?.confirmAmount || 0).toFixed(2)
     }

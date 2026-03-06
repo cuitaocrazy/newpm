@@ -197,7 +197,7 @@
             <el-descriptions-item label="项目部门">{{ reviewForm.deptName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload || 0 }} 人天</el-descriptions-item>
             <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget || 0 }} 元</el-descriptions-item>
-            <el-descriptions-item label="实际工作量">{{ reviewForm.actualWorkload || 0 }} 人天</el-descriptions-item>
+            <el-descriptions-item label="实际人天">{{ reviewForm.actualWorkload != null ? parseFloat(reviewForm.actualWorkload).toFixed(3) : '0.000' }} 人天</el-descriptions-item>
             <el-descriptions-item label="项目阶段">
               <dict-tag :options="sys_xmjd" :value="reviewForm.projectStage"/>
             </el-descriptions-item>

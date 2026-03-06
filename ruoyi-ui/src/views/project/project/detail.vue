@@ -51,7 +51,7 @@
           <dict-tag :options="sys_yszt" :value="form.acceptanceStatus" />
         </el-descriptions-item>
         <el-descriptions-item label="实际人天">
-          {{ form.actualWorkload || 0 }} 人天
+          {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000' }} 人天
         </el-descriptions-item>
         <el-descriptions-item label="审核状态">
           <dict-tag :options="sys_spzt" :value="form.approvalStatus" />

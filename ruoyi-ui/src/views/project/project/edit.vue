@@ -189,8 +189,8 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="实际工作量" prop="actualWorkload" data-prop="actualWorkload">
-                <el-input v-model="form.actualWorkload" placeholder="请输入实际工作量" @blur="validateOnBlur('actualWorkload')">
+              <el-form-item label="实际人天" prop="actualWorkload">
+                <el-input :value="form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000'" disabled>
                   <template #append>人天</template>
                 </el-input>
               </el-form-item>

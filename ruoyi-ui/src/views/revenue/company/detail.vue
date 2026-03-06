@@ -23,7 +23,7 @@
             <el-descriptions-item label="项目分类">{{ getDictLabel(sys_xmfl, form.projectCategory) }}</el-descriptions-item>
             <el-descriptions-item label="项目部门">{{ form.deptName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="预估工作量">{{ form.estimatedWorkload != null ? form.estimatedWorkload + ' 人天' : '-' }}</el-descriptions-item>
-            <el-descriptions-item label="实际人天">{{ form.actualWorkload != null ? form.actualWorkload + ' 人天' : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="实际人天">{{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) + ' 人天' : '-' }}</el-descriptions-item>
             <el-descriptions-item label="项目状态">{{ getDictLabel(sys_xmzt, form.projectStatus) }}</el-descriptions-item>
             <el-descriptions-item label="验收状态"><dict-tag :options="sys_yszt" :value="form.acceptanceStatus"/></el-descriptions-item>
             <el-descriptions-item label="合同金额">{{ formatAmount(form.contractAmount) }} 元</el-descriptions-item>

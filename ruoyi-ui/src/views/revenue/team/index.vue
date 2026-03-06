@@ -464,7 +464,7 @@
             <span class="worktime-stats">
               <span class="stat-people">{{ participantCount }} 人</span>
               <span class="stat-hours">总工时 0.0 小时</span>
-              <span>合计 {{ form.actualWorkload || 0 }} 人天</span>
+              <span>合计 {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000' }} 人天</span>
             </span>
             <el-icon :class="['worktime-arrow', { expanded: worktimeExpanded }]"><ArrowDown /></el-icon>
           </div>
@@ -691,9 +691,9 @@ function formatAmountDisplay(amount) {
 
 /** 格式化工作量（取整，不显示小数） */
 function formatWorkload(value) {
-  if (value === null || value === undefined || value === '') return ''
-  const num = parseInt(value)
-  return isNaN(num) ? '' : num
+  if (value === null || value === undefined || value === '') return '-'
+  const num = parseFloat(value)
+  return isNaN(num) ? '-' : num.toFixed(3)
 }
 
 /** 判断是否为普通数据行（排除合计行） */
@@ -760,7 +760,7 @@ function getList() {
         isSummaryRow: true,
         projectBudget: Number(s.projectBudget || 0).toFixed(2),
         estimatedWorkload: Number(s.estimatedWorkload || 0),
-        actualWorkload: Number(s.actualWorkload || 0),
+        actualWorkload: Number(s.actualWorkload || 0).toFixed(3),
         contractAmount: Number(s.contractAmount || 0).toFixed(2),
         confirmAmount: Number(s.confirmAmount || 0).toFixed(2),
         teamConfirmAmount: Number(s.teamConfirmAmount || 0).toFixed(2),
