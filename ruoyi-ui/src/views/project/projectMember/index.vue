@@ -117,16 +117,7 @@
           <el-tag type="info">{{ currentProject.projectName }}</el-tag>
         </el-form-item>
         <el-form-item label="参与人员" prop="userIds">
-          <user-select
-            v-model="editForm.userIds"
-            placeholder="请选择参与人员"
-            multiple
-            filterable
-            collapse-tags
-            :collapse-tags-tooltip="true"
-            :max-collapse-tags="3"
-            style="width: 100%"
-          />
+          <org-user-select v-model="editForm.userIds" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>

@@ -188,7 +188,7 @@ public class ProjectController extends BaseController
     /**
      * 获取部门树（三级及以下机构）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:project:add,project:project:edit,project:payment:list,revenue:company:list,revenue:team:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity,project:projectStageChange:list,project:approval:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:project:query,project:project:add,project:project:edit,project:payment:list,revenue:company:list,revenue:team:list,revenue:team:query,project:contract:list,project:contract:query,project:contract:add,project:contract:edit,project:dailyReport:activity,project:projectStageChange:list,project:approval:list,project:review:list')")
     @GetMapping("/deptTree")
     public AjaxResult getDeptTree()
     {
@@ -336,7 +336,7 @@ public class ProjectController extends BaseController
      * @param projectName 项目名称（模糊搜索）
      * @return 返回精简字段：projectId, projectName, projectCode
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,revenue:team:list,revenue:company:list,project:managerChange:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,revenue:team:list,revenue:company:list,project:managerChange:list,project:review:list')")
     @GetMapping("/search")
     public AjaxResult searchProjects(@RequestParam(required = false) String projectName)
     {
