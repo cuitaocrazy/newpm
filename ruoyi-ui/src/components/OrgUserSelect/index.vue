@@ -1,30 +1,29 @@
 <template>
   <div class="org-user-select" :style="{ width }">
-    <!-- 触发器：仿 el-select 样式 -->
-    <div
-      class="org-user-select__trigger"
-      :class="{ 'is-disabled': disabled }"
-      @click="!disabled && (visible = !visible)"
-    >
-      <span v-if="selectedUsers.length === 0" class="placeholder">{{ placeholder }}</span>
-      <span v-else class="selected-text">
-        已选 {{ selectedUsers.length }} 人：{{ displayNames }}
-      </span>
-      <el-icon class="arrow-icon"><ArrowDown /></el-icon>
-    </div>
-
-    <!-- 弹出层 -->
     <el-popover
       v-model:visible="visible"
-      :virtual-ref="triggerRef"
-      virtual-triggering
       placement="bottom-start"
       :width="popoverWidth"
-      popper-class="org-user-select__popper"
+      trigger="click"
+      :disabled="disabled"
       @hide="onHide"
     >
+      <!-- 触发器 -->
+      <template #reference>
+        <div
+          class="org-user-select__trigger"
+          :class="{ 'is-disabled': disabled }"
+        >
+          <span v-if="selectedUsers.length === 0" class="placeholder">{{ placeholder }}</span>
+          <span v-else class="selected-text">
+            已选 {{ selectedUsers.length }} 人：{{ displayNames }}
+          </span>
+          <el-icon class="arrow-icon"><ArrowDown /></el-icon>
+        </div>
+      </template>
+
+      <!-- 弹出内容 -->
       <div class="org-user-select__panel">
-        <!-- 搜索框 -->
         <el-input
           v-model="filterText"
           placeholder="搜索姓名"
@@ -32,7 +31,6 @@
           size="small"
           style="margin-bottom: 8px"
         />
-        <!-- 组织机构树 -->
         <el-scrollbar max-height="320px">
           <el-tree
             ref="treeRef"
@@ -46,7 +44,6 @@
             @check="handleCheck"
           />
         </el-scrollbar>
-        <!-- 底部操作栏 -->
         <div class="panel-footer">
           <el-button link size="small" @click="clearAll">清空</el-button>
           <span class="count-text">已选 {{ selectedUsers.length }} 人</span>
@@ -91,7 +88,6 @@ const emit = defineEmits(['update:modelValue', 'change', 'blur'])
 const visible = ref(false)
 const filterText = ref('')
 const treeRef = ref(null)
-const triggerRef = ref(null)
 const treeData = ref([])
 // 所有用户的扁平 map，用于回显
 const userMap = ref({})
