@@ -238,6 +238,8 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 9. **Team Revenue Confirmation (团队收入确认):**
    - Department-level revenue confirmation (distinct from company-wide ProjectReview)
    - Fields: teamConfirmId, projectId, deptId, confirmAmount, confirmTime, confirmUserId
+   - **Query uses `pm_project` as main table** (not `pm_team_revenue_confirmation`) so row count aligns with company revenue view; confirmation data is aggregated via LEFT JOIN
+   - Special `confirmDeptId` filter: `-1` = projects with NO team confirmation records; other positive values = projects confirmed by that specific dept
 
 10. **Add Contract from Project (项目列表添加合同):**
    - Project list row shows a contextual button: "添加合同" (no contract yet) or "查看合同" (contract exists)
@@ -260,6 +262,7 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 - `sys_spzt` - 审核状态 (0=待审核, 1=审核通过, 2=审核拒绝, 3=退回待审核)
 - `sys_qrzt` - 确认状态 (1=1-未确认, 2=2-待确认收入, 3=3-已确认收入, 4=4-无法确认)
 - `sys_srqrzt` - 收入确认状态 (0=未确认, 1=已确认, 2=待确认, 3=已确认收入)
+- `sys_ndgl` - 年度管理 (year values used for `establishedYear` / `revenueConfirmYear` fields; rendered via `<dict-tag :options="sys_ndgl" .../>` on project detail pages)
 
 **API URL Convention:** Most PM controllers are under `/project/{entity}/**`. Full mapping:
 
