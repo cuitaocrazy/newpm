@@ -24,6 +24,9 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="项目部门" prop="projectDept">
+        <project-dept-select v-model="queryParams.projectDept" style="width: 200px" />
+      </el-form-item>
       <el-form-item label="当前阶段" prop="projectStage">
         <el-select v-model="queryParams.projectStage" placeholder="请选择阶段" clearable style="width: 160px">
           <el-option v-for="dict in sys_xmjd" :key="dict.value" :label="dict.label" :value="dict.value" />
@@ -202,6 +205,7 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     projectName: null,
+    projectDept: null,
     projectStage: null,
   }
 })

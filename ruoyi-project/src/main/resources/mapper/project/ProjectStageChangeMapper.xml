@@ -79,6 +79,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.del_flag = '0'
             <if test="projectId != null">AND p.project_id = #{projectId}</if>
             <if test="projectName != null and projectName != ''">AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
+            <if test="projectDept != null and projectDept != ''">
+                AND (p.project_dept = #{projectDept}
+                     OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
+            </if>
             <if test="projectStage != null and projectStage != ''">AND p.project_stage = #{projectStage}</if>
             ${params.dataScope}
         </where>
