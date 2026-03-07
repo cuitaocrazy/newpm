@@ -163,7 +163,9 @@
         </template>
         <div v-for="detail in person.detailList" :key="detail.detailId" class="drawer-prj">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning">{{ detail.revenueConfirmYear }}年</el-tag>
+            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning">
+              {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
+            </el-tag>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
             <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
@@ -183,12 +185,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { User } from '@element-plus/icons-vue'
 import { getMonthlyReports, getProjectNameSuggestions } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import request from '@/utils/request'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
+
+const { proxy } = getCurrentInstance()
+const { sys_ndgl } = proxy.useDict('sys_ndgl')
 
 const todayStr = (() => {
   const d = new Date()
@@ -213,6 +218,10 @@ const drawerStats = ref({ count: 0, totalHours: 0, fullCount: 0 })
 const projectColors = ['#409eff', '#67c23a', '#f56c6c', '#e6a23c', '#b37feb', '#00b894', '#fdcb6e', '#909399']
 const personColorMap = {}
 let colorIndex = 0
+
+function getDictLabel(dictList, value) {
+  return dictList?.find(d => d.value == value)?.label || value
+}
 
 function getPersonColor(userId) {
   if (!personColorMap[userId]) {

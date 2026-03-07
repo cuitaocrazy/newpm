@@ -56,7 +56,9 @@
               <!-- 第一行：项目名 + 阶段 -->
               <div class="prj-header">
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
-                <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" style="flex-shrink:0;">{{ item.revenueConfirmYear }}年</el-tag>
+                <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" style="flex-shrink:0;">
+                  {{ getDictLabel(sys_ndgl, item.revenueConfirmYear) }}
+                </el-tag>
                 <span class="prj-name">{{ item.projectName }}</span>
                 <el-tag size="small" type="info">{{ item.projectStageName || '未设置' }}</el-tag>
                 <span class="prj-workload-info">
@@ -102,13 +104,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
 import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
 import useUserStore from '@/store/modules/user'
+
+const { proxy } = getCurrentInstance()
+const { sys_ndgl } = proxy.useDict('sys_ndgl')
 
 const userStore = useUserStore()
 
@@ -163,6 +168,10 @@ function formatDate(dateStr) {
 
 function getColor(index) {
   return colors[index % colors.length]
+}
+
+function getDictLabel(dictList, value) {
+  return dictList?.find(d => d.value == value)?.label || value
 }
 
 // 日期徽章 class（结合工作日历 + 日报数据）
