@@ -27,7 +27,7 @@
           {{ form.shortName || '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="立项年份">
-          {{ form.establishedYear || '-' }} 年
+          <dict-tag :options="sys_ndgl" :value="form.establishedYear" />
         </el-descriptions-item>
         <el-descriptions-item label="项目ID">
           {{ form.projectCode || '-' }}
@@ -69,7 +69,7 @@
           {{ form.contractAmount != null ? formatAmount(form.contractAmount) + ' 元' : '-' }}
         </el-descriptions-item>
         <el-descriptions-item label="收入确认年度">
-          {{ form.revenueConfirmYear || '-' }}
+          <dict-tag :options="sys_ndgl" :value="form.revenueConfirmYear" />
         </el-descriptions-item>
         <el-descriptions-item label="收入确认状态">
           <dict-tag :options="sys_qrzt" :value="form.revenueConfirmStatus" />

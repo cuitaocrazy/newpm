@@ -407,6 +407,7 @@
             </el-input>
           </el-form-item>
         </el-col>
+        
         <el-col :span="12">
           <el-form-item label="费用预算" prop="expenseBudget" data-prop="expenseBudget">
             <el-input v-model="form.expenseBudget" placeholder="请输入费用预算" style="width: 100%"

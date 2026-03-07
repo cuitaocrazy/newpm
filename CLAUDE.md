@@ -106,12 +106,12 @@ The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use t
 ```bash
 npx playwright install                    # Install browsers (first time)
 npx playwright test                       # Run all E2E tests
-npx playwright test tests/project.spec.ts # Run specific test file
+npx playwright test contract-add-from-project.spec.ts # Run specific test file (tests are at project root)
 npx playwright test --ui                  # UI mode
 npx playwright show-report                # View report
 ```
 
-**Test Files:** `project-management.spec.js` (full lifecycle), `contract-add-from-project.spec.ts` (contract creation), `network-request-debug.spec.js` (debugging)
+**Test Files** (at project root, not in `tests/`): `project-management.spec.js` (full lifecycle), `contract-add-from-project.spec.ts` (contract creation), `network-request-debug.spec.js` (debugging)
 
 ### Unit Testing (Backend)
 
@@ -169,6 +169,7 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `DailyReportDetail` | `pm_daily_report_detail` | 工作日报明细 - Daily report detail items linked to projects |
 | `WorkCalendar` | `pm_work_calendar` | 工作日历 - Work calendar for tracking working days and holidays |
 | `ProjectStageChange` | `pm_project_stage_change` | 项目阶段变更 - Track project stage changes with old/new stage, reason, and timestamp |
+| `WorkloadCorrectLog` | `pm_workload_correct_log` | 人天补正日志 - Audit log for manual workload adjustments (direction, delta, before/after values, reason) |
 
 **Business Workflows** — full details in `docs/pm/PM需求.md`. Key points below:
 
@@ -276,7 +277,7 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `SecondaryRegionController` | `/project/secondaryRegion/**` | Secondary regions |
 | `WorkCalendarController` | `/project/workCalendar/**` | Work calendar |
 | `DailyReportController` | `/project/dailyReport/**` | Daily reports |
-| `ProjectStatsController` | `/project/dailyReport/**` | Daily report statistics (shares prefix; endpoints: `/projectStats`, `/projectNameSuggestions`) |
+| `ProjectStatsController` | `/project/dailyReport/**` | Daily report statistics (shares prefix; endpoints: `/projectStats`, `/projectNameSuggestions`, `POST /projectStats/{projectId}/correct`, `GET /projectStats/{projectId}/correctLog`) |
 | `ProjectReviewController` | `/project/review/**` | Company revenue recognition view (收入确认, NOT approval) |
 | `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue confirmation (different root) |
 
@@ -468,6 +469,12 @@ export function listUser(query: UserQueryParams): Promise<TableDataInfo<SysUser[
   return request({ url: '/system/user/list', method: 'get', params: query })
 }
 ```
+
+**API file notes:**
+- `src/api/project/managerChange.js` — project list with latest change info (for the manager change list page)
+- `src/api/project/projectManagerChange.js` — manager change record CRUD (standard CRUD operations)
+- `src/api/revenue/company.ts` — use this (typed); `company.js` is the older untyped version
+- `src/api/project/contact.js` — customer contact helper (no separate controller; CustomerController handles contacts)
 
 ### HTTP Client (`src/utils/request.ts`)
 
@@ -732,6 +739,10 @@ This applies to all PM mapper queries that accept a `projectDept` filter paramet
 
 `pm_project` uses **hard delete** (`DELETE FROM pm_project`) instead of the standard soft-delete (`del_flag = '1'`). All other PM tables use soft delete. When filtering deleted records from project joins, check only `p.del_flag = '0'` for other tables.
 
+### Market Manager is NOT a Project Member
+
+`marketManagerId` is stored directly on `pm_project` but must **not** be inserted into `pm_project_member`. The member table only holds: project manager, team leader, and participants (`participants` comma-separated IDs). Do not auto-add `marketManagerId` to `pm_project_member` when creating or updating a project.
+
 ### Frontend HTTP Request Pattern
 
 **Correct**:
@@ -778,7 +789,8 @@ When a page calls an endpoint from a different controller (e.g., contract page f
 | Endpoint | Returns | Response field |
 |---|---|---|
 | `GET /project/project/users?postCode=xxx` | All users (optionally by post code) | `res.data` (not `res.rows`) |
-| `GET /project/project/deptTree` | Flat dept list | `res.data` — **flat list**, must call `handleTree(data, 'deptId', 'parentId', 'children')` |
+| `GET /project/project/deptTree` | Flat dept list (data-scoped) | `res.data` — **flat list**, must call `handleTree(data, 'deptId', 'parentId', 'children')` |
+| `GET /project/project/deptTreeAll` | Flat dept list (no data scope) | `res.data` — use for participant selection where all depts must be visible |
 | `GET /project/project/customers` | Customer list | `res.data` |
 | `GET /project/project/search` | Project search | `res.data` |
 
@@ -826,6 +838,7 @@ Namespace: `newpm`. Configuration in `k8s/`:
 - `mysql.yml` - MySQL 8.0 StatefulSet
 - `redis.yml` - Redis deployment
 - `ingress.yml` - Traefik IngressRoute
+- `app.yml` also defines `upload-pvc` (PersistentVolumeClaim) mounted at `/app/uploadPath` — file attachments persist across pod restarts via this PVC
 
 ```bash
 kubectl apply -f k8s/
@@ -842,10 +855,15 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 
 ### Person-Days (实际人天) Calculation
 
-Workload fields in daily reports and project stats are stored as **hours** in DB but displayed as **person-days**:
+Workload is stored as **hours** (`actual_workload` column) plus a manual **adjustment** (`adjust_workload` column, in person-days). The displayed person-days formula used across all queries:
 
 ```
-实际人天 = 工时(小时) ÷ 8，保留3位小数
+实际人天 = ROUND(actual_workload / 8, 3) + COALESCE(adjust_workload, 0)
 ```
 
-Apply this conversion in MyBatis XML or service layer whenever querying/aggregating workload — never display raw hour values as person-days directly.
+In MyBatis XML this is expressed as:
+```xml
+ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload
+```
+
+Manual adjustments are recorded in `pm_workload_correct_log` (auditable). Never display raw `actual_workload` hours as person-days — always apply this formula.

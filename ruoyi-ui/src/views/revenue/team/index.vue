@@ -217,7 +217,7 @@
     </el-row>
 
     <!-- 列表表格 -->
-    <el-table v-loading="loading" :data="teamRevenueList" :height="tableHeight" :row-class-name="tableRowClassName" :span-method="tableSpanMethod" border>
+    <el-table v-loading="loading" :data="teamRevenueList" :height="tableHeight" :row-class-name="tableRowClassName" border>
       <el-table-column label="序号" width="55" align="center" fixed="left">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">合计</span>
@@ -359,7 +359,7 @@
           <span v-if="isDataRow(scope.row)">{{ scope.row.updateTime }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180" fixed="right">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120" fixed="right">
         <template #default="scope">
           <template v-if="isDataRow(scope.row)">
             <el-button
@@ -376,13 +376,6 @@
               @click="handleUpdate(scope.row)"
               v-hasPermi="['revenue:team:edit']"
             >编辑</el-button>
-            <el-button
-              link
-              type="danger"
-              icon="Delete"
-              @click="handleDelete(scope.row)"
-              v-hasPermi="['revenue:team:remove']"
-            >删除</el-button>
           </template>
         </template>
       </el-table-column>
