@@ -2,26 +2,14 @@
   <div class="app-container review-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-select
+        <el-autocomplete
           v-model="queryParams.projectName"
-          filterable
-          remote
-          allow-create
+          :fetch-suggestions="remoteQueryProjectNames"
           clearable
-          :remote-method="remoteQueryProjectNames"
-          :loading="loadingProjectNames"
           placeholder="输入关键字搜索，或直接选择下拉数据"
           style="width: 240px"
           @keyup.enter="handleQuery"
-          @focus="remoteQueryProjectNames('')"
-        >
-          <el-option
-            v-for="item in projectNameOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
         <project-dept-select v-model="queryParams.projectDept" style="width: 240px" />
@@ -105,6 +93,11 @@
       <el-table-column label="审核状态" prop="approvalStatus" align="center" min-width="110">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus" />
+        </template>
+      </el-table-column>
+      <el-table-column label="审核意见" prop="approvalReason" align="left" header-align="center" min-width="160" show-overflow-tooltip>
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow">{{ scope.row.approvalReason || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="项目部门" align="center" min-width="130" show-overflow-tooltip>
@@ -325,8 +318,6 @@ const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_xmzt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_xmzt', 'industry')
 
 const reviewList = ref([])
-const projectNameOptions = ref([])
-const loadingProjectNames = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
@@ -399,13 +390,10 @@ function handleSortChange({ prop, order }) {
   queryParams.value.isAsc = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : null
   getList()
 }
-function remoteQueryProjectNames(query) {
-  loadingProjectNames.value = true
-  searchProjects(query).then(res => {
-    projectNameOptions.value = (res.data || []).map(p => ({ value: p.projectName, label: p.projectName }))
-  }).finally(() => {
-    loadingProjectNames.value = false
-  })
+function remoteQueryProjectNames(query, callback) {
+  searchProjects(query || '').then(res => {
+    callback((res.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => callback([]))
 }
 
 function handleReview(row) {
