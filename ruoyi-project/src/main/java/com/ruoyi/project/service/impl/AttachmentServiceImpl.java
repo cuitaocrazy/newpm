@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -131,7 +132,10 @@ public class AttachmentServiceImpl implements IAttachmentService
                 return AjaxResult.error("业务数据不存在");
             }
 
-            String relativePath = businessFolder + File.separator + dateFolder + File.separator + fileName;
+            // 磁盘文件名用 UUID，避免同名覆盖和特殊字符问题
+            String uuid = UUID.randomUUID().toString().replace("-", "");
+            String storedFileName = uuid + extension;
+            String relativePath = businessFolder + "/" + dateFolder + "/" + storedFileName;
             String filePath = basePath + File.separator + relativePath;
 
             // 4. 保存文件
@@ -196,7 +200,10 @@ public class AttachmentServiceImpl implements IAttachmentService
             }
 
             String basePath = RuoYiConfig.getProfile();
-            String filePath = basePath + File.separator + attachment.getFilePath();
+            String normalizedPath = attachment.getFilePath()
+                    .replaceAll("^/?profile/", "")   // 去掉 profile/ 前缀（兼容旧数据）
+                    .replace("\\", "/");             // \ 换成 /（兼容 Windows 遗留）
+            String filePath = basePath + File.separator + normalizedPath;
             File file = new File(filePath);
 
             if (!file.exists())
