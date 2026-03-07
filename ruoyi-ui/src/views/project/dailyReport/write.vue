@@ -33,9 +33,10 @@
                   总工时: {{ totalHours }}h
                 </el-tag>
               </div>
-              <div style="display: flex; gap: 8px;">
-                <el-button type="primary" @click="handleSave" :disabled="saving">保存日报</el-button>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <el-button type="primary" @click="handleSave" :disabled="saving || !isEditable">保存日报</el-button>
                 <el-button type="danger" plain @click="handleDelete" :disabled="!currentReportId">删除日报</el-button>
+                <span v-if="!isEditable" style="font-size: 12px; color: #f56c6c;">仅限本周（周一至周日）可录入</span>
               </div>
             </div>
           </template>
@@ -136,6 +137,22 @@ const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#b37feb'
 
 const totalHours = computed(() => {
   return formList.value.reduce((sum, item) => sum + (item.workHours || 0), 0)
+})
+
+// 本周范围（周一至周日），仅本周日期可保存
+const weekBounds = (() => {
+  const today = new Date()
+  const dow = today.getDay() // 0=周日,1=周一,...,6=周六
+  const diffToMonday = dow === 0 ? -6 : 1 - dow
+  const monday = new Date(today)
+  monday.setDate(today.getDate() + diffToMonday)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  return { start: formatDateStr(monday), end: formatDateStr(sunday) }
+})()
+
+const isEditable = computed(() => {
+  return selectedDate.value >= weekBounds.start && selectedDate.value <= weekBounds.end
 })
 
 function formatDate(dateStr) {
