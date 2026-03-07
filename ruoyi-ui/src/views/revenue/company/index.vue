@@ -269,7 +269,11 @@
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[11].visible" label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120" />
+      <el-table-column v-if="columns[11].visible" label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120">
+        <template #default="scope">
+          <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_ndgl" :value="scope.row.revenueConfirmYear"/>
+        </template>
+      </el-table-column>
       <el-table-column v-if="columns[12].visible" label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_qrzt" :value="scope.row.revenueConfirmStatus"/>
