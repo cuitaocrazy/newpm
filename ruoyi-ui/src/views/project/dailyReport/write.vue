@@ -61,13 +61,13 @@
                 <span class="hours-label">工时:</span>
                 <el-slider
                   v-model="item.workHours"
-                  :min="0" :max="12" :step="0.5"
-                  :marks="{ 0: '0', 4: '4h', 8: '8h', 12: '12h' }"
+                  :min="0" :max="24" :step="1"
+                  :marks="{ 0: '0', 8: '8h', 16: '16h', 24: '24h' }"
                   style="flex: 1; margin: 0 16px;"
                 />
                 <el-input-number
                   v-model="item.workHours"
-                  :min="0" :max="24" :step="0.5" :precision="1"
+                  :min="0" :max="24" :step="1" :precision="0"
                   size="small" style="width: 100px;"
                 />
                 <span style="margin-left: 4px; color: #909399;">h</span>
