@@ -5,6 +5,18 @@
 #   - DB_PASSWORD 环境变量引用 config.yml 中的 ruoyi-secret
 #   - Spring Boot 通过 ${DB_PASSWORD} 占位符解析密码
 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: upload-pvc
+  namespace: newpm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -47,6 +59,8 @@ spec:
               mountPath: /app/config/application-k8s.yml
               subPath: application-k8s.yml
               readOnly: true
+            - name: upload-data
+              mountPath: /app/uploadPath
           readinessProbe:
             httpGet:
               path: /login
@@ -65,6 +79,9 @@ spec:
         - name: app-config
           configMap:
             name: ruoyi-app-config
+        - name: upload-data
+          persistentVolumeClaim:
+            claimName: upload-pvc
 ---
 apiVersion: v1
 kind: Service

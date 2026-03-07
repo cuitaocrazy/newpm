@@ -106,6 +106,11 @@ def migrate():
         date_folder  = row['date_folder'] or '20260101'
         type_cn      = TYPE_CN.get(btype, btype)
 
+        # 0. 跳过已经是新格式的记录（以 合同/ 项目/ 款项/ 开头）
+        if old_path_str.startswith(('合同/', '项目/', '款项/')):
+            print(f"  ⏭️  [{aid}] 已是新格式，跳过: {old_path_str}")
+            continue
+
         # 1. 提取 UUID 文件名
         uuid_filename = extract_uuid(old_path_str)
         if not uuid_filename:
