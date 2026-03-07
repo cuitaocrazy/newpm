@@ -694,49 +694,6 @@ function isDataRow(row) {
   return !row.isSummaryRow
 }
 
-// 需要跨行合并的列标签（columns[0]~columns[14] + 序号列）
-const PROJECT_MERGE_COLS = new Set([
-  '序号', '项目名称', '项目阶段', '项目部门', '项目经理', '项目分类',
-  '二级区域', '项目预算(元)', '预估工作量（人天）', '实际人天',
-  '合同名称', '合同金额(元)', '合同状态', '收入确认年度',
-  '收入确认状态', '确认金额(元)'
-])
-
-const projectSpanMap = ref({})
-
-/** 构建 projectId → { firstIndex, span } 的合并映射（要求相同项目行连续） */
-function buildProjectSpanMap(rows) {
-  const map = {}
-  let prevPid = null
-  rows.forEach((row, index) => {
-    if (row.isSummaryRow || !row.projectId) {
-      prevPid = null
-      return
-    }
-    const pid = String(row.projectId)
-    if (pid !== prevPid) {
-      map[pid] = { firstIndex: index, span: 1 }
-      prevPid = pid
-    } else {
-      map[pid].span++
-    }
-  })
-  projectSpanMap.value = map
-}
-
-/** el-table span-method：对 columns[0~14] 按项目合并行 */
-function tableSpanMethod({ row, column, rowIndex }) {
-  if (row.isSummaryRow) return { rowspan: 1, colspan: 1 }
-  if (!PROJECT_MERGE_COLS.has(column.label)) return { rowspan: 1, colspan: 1 }
-
-  const pid = String(row.projectId)
-  const info = projectSpanMap.value[pid]
-  if (!info) return { rowspan: 1, colspan: 1 }
-
-  if (info.firstIndex === rowIndex) return { rowspan: info.span, colspan: 1 }
-  return { rowspan: 0, colspan: 0 }
-}
-
 /** 查询列表（列表 + 全量合计并行请求） */
 function getList() {
   loading.value = true
@@ -759,7 +716,6 @@ function getList() {
         teamConfirmAmount: Number(s.teamConfirmAmount || 0).toFixed(2),
       }
       teamRevenueList.value = [summaryRow, ...rows]
-      buildProjectSpanMap(teamRevenueList.value)
     } else {
       teamRevenueList.value = []
     }
@@ -929,20 +885,6 @@ function handleDetail(row) {
   router.push({
     path: '/revenue/team/detail/' + row.projectId
   })
-}
-
-/** 删除按钮操作 */
-function handleDelete(row) {
-  if (!row.teamConfirmId) {
-    proxy.$modal.msgWarning("该项目暂无团队确认记录")
-    return
-  }
-  proxy.$modal.confirm('确认删除该团队确认记录？').then(() => {
-    return delTeamRevenue(row.teamConfirmId)
-  }).then(() => {
-    proxy.$modal.msgSuccess("删除成功")
-    getList()
-  }).catch(() => {})
 }
 
 /** 项目选择变化 */
