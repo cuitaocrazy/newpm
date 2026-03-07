@@ -2,128 +2,64 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Quick Start](#quick-start)
-- [Build & Run Commands](#build--run-commands)
-- [Module Architecture](#module-architecture)
-- [Backend Patterns](#backend-patterns)
-- [Frontend Patterns](#frontend-patterns)
-- [Configuration Files](#configuration-files)
-- [Database & SQL Management](#database--sql-management)
-- [Code Generation Workflow](#code-generation-workflow)
-- [Project Documentation](#project-documentation)
-- [Development Workflow](#development-workflow)
-- [Common Pitfalls](#common-pitfalls)
-- [CI/CD Pipeline](#cicd-pipeline)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-
 ## Project Overview
 
-RuoYi-Vue v3.9.1 — Enterprise admin system with separated frontend/backend, customized for **Project Management (PM)** business.
+RuoYi-Vue v3.9.1 — Enterprise admin system customized for **Project Management (PM)** business.
 
-**Base Framework:** This project is built on [RuoYi-Vue](https://gitee.com/y_project/RuoYi-Vue), an open-source rapid development platform. It uses the TypeScript branch of RuoYi-Vue3 for the frontend.
-- **Official Documentation:** http://doc.ruoyi.vip
-- **Demo Site:** http://vue.ruoyi.vip (credentials: admin/admin123)
-- **Framework Features:** User/role/menu/dept/dict management, audit logs, scheduled tasks, code generation, API docs, monitoring tools
-
-**Technology Stack:**
 - **Backend:** Java 17 / Spring Boot 3.5.8 / Spring Security / MyBatis / Redis / JWT
 - **Frontend:** Vue 3.5 / TypeScript 5.6 / Vite 6.4 / Element Plus 2.13 / Pinia
-- **Business Domain:** Project lifecycle management, customer management, contract management, approval workflows, daily reports, and revenue recognition
-
-## Quick Start
-
-**First-time setup:**
-
-```bash
-# 1. Ensure MySQL 8.x and Redis are running
-# 2. Create database and import schema
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS \`ry-vue\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysql -u root -p ry-vue < pm-sql/init/00_tables_ddl.sql
-mysql -u root -p ry-vue < pm-sql/init/01_tables_data.sql
-mysql -u root -p ry-vue < pm-sql/init/02_menu_data.sql
-
-# 3. Build and run backend
-mvn clean package -Dmaven.test.skip=true
-java -Xms512m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar
-# Or use the helper script: ./ry.sh start
-
-# 4. In another terminal, run frontend
-cd ruoyi-ui && npm install && npm run dev
-```
-
-**Access:** http://localhost (default credentials: `admin/admin123`)
-
-**Helper scripts:** `ry.sh` / `ry.bat` — start/stop/restart/status for backend server
+- **Business Domain:** Project lifecycle management, customer/contract management, approval workflows, daily reports, revenue recognition
 
 ## Build & Run Commands
 
 ### Backend (from project root)
 
 ```bash
-# Full build
-mvn clean package -Dmaven.test.skip=true        # Build all modules
-java -Xms512m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar  # Run
-# Or use: ./ry.sh start
+mvn clean package -Dmaven.test.skip=true
+java -Xms512m -Xmx1024m -jar ruoyi-admin/target/ruoyi-admin.jar
+# Or: ./ry.sh start|stop|restart|status
 
-# Module-specific build
-mvn clean package -pl ruoyi-admin -am -Dmaven.test.skip=true     # Build admin module with dependencies
-mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true   # Build CLI generator only
-mvn clean compile -pl ruoyi-project -am                          # Compile project module only
-
-# Clean
-mvn clean                                        # Clean all
-mvn clean -pl ruoyi-project                      # Clean specific module
+# Module-specific
+mvn clean package -pl ruoyi-admin -am -Dmaven.test.skip=true
+mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true
+mvn clean compile -pl ruoyi-project -am
 ```
 
-### Frontend (from ruoyi-ui/)
+### Frontend (from ruoyi-ui/ or project root)
 
 ```bash
-npm install
 npm run dev              # Vite dev server on port 80, proxies /dev-api → localhost:8080
 npm run build:prod       # Production build → dist/
-npm run build:stage      # Staging build
 ```
 
-> **Shortcut**: From the project root, `npm run dev`, `npm run build`, and `npm run preview` are also available (npm workspaces proxy to `ruoyi-ui/`).
-
-### Code Generation CLI (ruoyi-gen-cli)
+### Code Generation CLI
 
 ```bash
-mvn clean package -Dmaven.test.skip=true        # Build CLI JAR
-java -jar ruoyi-gen-cli/target/ruoyi-gen-cli.jar --sql=<ddl>.sql --config=<config>.yml --output=<output>.zip
+java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar --sql=<ddl>.sql --config=<config>.yml --output=<output>.zip
 ```
 
-The CLI generates CRUD scaffolding from DDL without requiring MySQL/Redis. Use the `/ruoyi-gen` skill for interactive code generation.
+Use the `/ruoyi-gen` skill for interactive CRUD generation.
 
 ### E2E Testing (from project root)
 
-**Config:** `playwright.config.js` — Chromium, 30s timeout, 2 retries, zh-CN locale, Asia/Shanghai timezone.
-
 ```bash
-npx playwright install                    # Install browsers (first time)
-npx playwright test                       # Run all E2E tests
-npx playwright test contract-add-from-project.spec.ts # Run specific test file (tests are at project root)
-npx playwright test --ui                  # UI mode
-npx playwright show-report                # View report
+npx playwright install && npx playwright test
+npx playwright test contract-add-from-project.spec.ts   # specific file
+npx playwright test --ui && npx playwright show-report
 ```
 
-**Test Files** (at project root, not in `tests/`): `project-management.spec.js` (full lifecycle), `contract-add-from-project.spec.ts` (contract creation), `network-request-debug.spec.js` (debugging)
-
-### Unit Testing (Backend)
-
-```bash
-mvn test                                 # Run all tests
-mvn test -pl ruoyi-project               # Specific module
-mvn test -Dtest=ProjectServiceTest       # Specific class
-```
+Test files at project root (not `tests/`): `project-management.spec.js`, `contract-add-from-project.spec.ts`, `network-request-debug.spec.js`
 
 ### Prerequisites
 
-Java 17, Maven 3.6+, MySQL 8.x (`ry-vue`, `utf8mb4_unicode_ci`, port 3306), Redis 6.x+ (port 6379), Node.js 18+. Init scripts: `pm-sql/init/00_tables_ddl.sql`, `01_tables_data.sql`, `02_menu_data.sql`.
+Java 17, Maven 3.6+, MySQL 8.x (`ry-vue`, `utf8mb4_unicode_ci`, port 3306), Redis 6.x+ (port 6379), Node.js 18+.
+
+**First-time DB setup:**
+```bash
+mysql -u root -p ry-vue < pm-sql/init/00_tables_ddl.sql
+mysql -u root -p ry-vue < pm-sql/init/01_tables_data.sql
+mysql -u root -p ry-vue < pm-sql/init/02_menu_data.sql
+```
 
 ## Module Architecture
 
@@ -132,147 +68,81 @@ ruoyi-admin       → Spring Boot entry, REST controllers (system/monitor/tool/c
 ruoyi-framework   → Security (JWT + Spring Security), AOP aspects, global exception handling
 ruoyi-system      → Business services: user/role/menu/dept/dict/config/notice + MyBatis mappers
 ruoyi-common      → Base classes, custom annotations, utilities (Excel, XSS filter, file ops)
-ruoyi-quartz      → Quartz scheduled task management
-ruoyi-generator   → Velocity-based CRUD code generator from DB tables
+ruoyi-project     → Project management business module (com.ruoyi.project)
 ruoyi-gen-cli     → Standalone CLI code generator (no MySQL/Redis required)
-ruoyi-project     → Project management business module (see details below)
-ruoyi-ui          → Vue 3 + TypeScript + Vite frontend (RuoYi-Vue3 typescript branch)
+ruoyi-ui          → Vue 3 + TypeScript + Vite frontend
 ```
 
-Dependencies flow: admin → framework → system → common. Quartz, generator, gen-cli, and project depend on common.
+Dependencies: admin → framework → system → common. Project/quartz/generator/gen-cli all depend on common.
 
-### ruoyi-project Module
-
-**Purpose:** Project management business module for handling project lifecycle, customer management, and approval workflows.
-
-**Package:** `com.ruoyi.project`
-
-**Business Entities:**
+### ruoyi-project Module — Business Entities
 
 | Entity | Table | Description |
 |--------|-------|-------------|
-| `Project` | `pm_project` | 项目管理 - Project lifecycle management with budget, workload, and approval tracking |
-| `ProjectApproval` | `pm_project_approval` | 项目审核 - Project approval workflow (pending/approved/rejected) |
-| `Customer` | `pm_customer` | 客户管理 - Customer information with industry and region classification |
-| `CustomerContact` | `pm_customer_contact` | 客户联系人 - Customer contact persons |
-| `Contract` | `pm_contract` | 合同管理 - Contract management with amount tracking and project associations |
-| `ProjectContractRel` | `pm_project_contract_rel` | 项目合同关联 - Many-to-many relationship between projects and contracts |
-| `Payment` | `pm_payment` | 款项管理 - Payment management with installment tracking and penalty handling |
-| `Attachment` | `pm_attachment` | 附件管理 - File attachment management for projects, contracts, and payments |
-| `AttachmentLog` | `pm_attachment_log` | 附件日志 - Audit log for attachment operations (upload/download/delete) |
-| `SecondaryRegion` | `pm_secondary_region` | 二级区域 - Secondary region management for hierarchical region classification |
-| `ProjectReview` | (view-based) | 公司收入确认 - Revenue recognition view with comprehensive project and contract data |
-| `ProjectManagerChange` | `pm_project_manager_change` | 项目经理变更 - Track project manager changes with old/new manager, reason, and timestamp |
-| `TeamRevenueConfirmation` | `pm_team_revenue_confirmation` | 团队收入确认 - Team-level revenue confirmation (separate from company-wide) |
-| `ProjectMember` | `pm_project_member` | 项目成员 - Project team member management |
-| `DailyReport` | `pm_daily_report` | 工作日报 - Daily work report management |
-| `DailyReportDetail` | `pm_daily_report_detail` | 工作日报明细 - Daily report detail items linked to projects |
-| `WorkCalendar` | `pm_work_calendar` | 工作日历 - Work calendar for tracking working days and holidays |
-| `ProjectStageChange` | `pm_project_stage_change` | 项目阶段变更 - Track project stage changes with old/new stage, reason, and timestamp |
-| `WorkloadCorrectLog` | `pm_workload_correct_log` | 人天补正日志 - Audit log for manual workload adjustments (direction, delta, before/after values, reason) |
+| `Project` | `pm_project` | 项目管理 - lifecycle, budget, workload, approval tracking |
+| `ProjectApproval` | `pm_project_approval` | 项目审核 - approval workflow |
+| `Customer` | `pm_customer` | 客户管理 |
+| `CustomerContact` | `pm_customer_contact` | 客户联系人 |
+| `Contract` | `pm_contract` | 合同管理 - amount tracking, project associations |
+| `ProjectContractRel` | `pm_project_contract_rel` | 项目合同关联 (many-to-many) |
+| `Payment` | `pm_payment` | 款项管理 - installment tracking |
+| `Attachment` | `pm_attachment` | 附件管理 |
+| `AttachmentLog` | `pm_attachment_log` | 附件操作审计日志 |
+| `SecondaryRegion` | `pm_secondary_region` | 二级区域 |
+| `ProjectReview` | (view-based) | 公司收入确认 |
+| `ProjectManagerChange` | `pm_project_manager_change` | 项目经理变更记录 |
+| `TeamRevenueConfirmation` | `pm_team_revenue_confirmation` | 团队收入确认 |
+| `ProjectMember` | `pm_project_member` | 项目成员 |
+| `DailyReport` | `pm_daily_report` | 工作日报 |
+| `DailyReportDetail` | `pm_daily_report_detail` | 工作日报明细 |
+| `WorkCalendar` | `pm_work_calendar` | 工作日历 |
+| `ProjectStageChange` | `pm_project_stage_change` | 项目阶段变更记录 |
+| `WorkloadCorrectLog` | `pm_workload_correct_log` | 人天补正审计日志 |
 
-**Business Workflows** — full details in `docs/pm/PM需求.md`. Key points below:
+### Business Workflows
 
-1. **Project Initiation (立项申请):**
-   - Project manager/market manager submits new project application
-   - System generates project code: `{industry}-{region}-{shortName}-{year}` format
-   - Budget: project budget, cost budget, labor cost, purchase cost (万元)
-   - Workload: estimated vs actual (person-days)
-   - Team: project manager, market manager, sales manager, team leader, participants
-   - Timeline: start/end/production/acceptance dates
-   - Status: 待审核 (pending approval)
+Full details in `docs/pm/PM需求.md`. Key notes:
 
-2. **Project Approval (项目审核):**
-   - Approval status: 0=待审核, 1=审核通过, 2=审核拒绝, 3=退回待审核
-   - Approval actions: 通过 (approve), 不通过 (reject) with comments, 退回 (rollback approved back to 退回待审核)
-   - Extra endpoints on `ProjectApprovalController` beyond standard CRUD:
-     - `POST /approve` — approve/reject with `{ projectId, approvalStatus, approvalReason }` (reason required when rejecting)
-     - `POST /rollback` — rollback an approved project with `{ projectId, rollbackReason }`
-     - `GET /history/{projectId}` — full approval history for a project
-     - `GET /projectList` — list projects using `project:approval:list` permission (queries `pm_project`)
-     - `GET /projectSummary` — aggregated budget summary for filtered projects
+1. **Project Initiation:** Code format `{industry}-{region}-{shortName}-{year}`. Status starts at 待审核.
 
-3. **Contract Management (合同管理):**
-   - Link contracts to projects via `pm_project_contract_rel` (many-to-many)
-   - Contract type/status (字典: sys_htlx, sys_htzt): 未签署/已签署
-   - Amount tracking: contract amount, received amount, remaining amount
-   - Payment tracking with multiple installments
-   - Payment status (字典: sys_fkzt): 未开未付, 已提交验收材料, 验收材料已审核, 待通知开票, 已通知
+2. **Project Approval:** Status: 0=待审核, 1=审核通过, 2=审核拒绝, 3=退回待审核. Extra endpoints:
+   - `POST /project/approval/approve` — `{ projectId, approvalStatus, approvalReason }` (reason required when rejecting)
+   - `POST /project/approval/rollback` — `{ projectId, rollbackReason }`
+   - `GET /project/approval/history/{projectId}`, `GET /project/approval/projectList`, `GET /project/approval/projectSummary`
 
-4. **Daily Reports (工作日报):**
-   - Employees submit daily work reports linked to projects
-   - Master-detail: `pm_daily_report` (header with date) → `pm_daily_report_detail` (items per project)
-   - Track actual workload (person-days) per project per day
-   - Three views: write/edit page (`write.vue`), activity feed (`activity.vue`), and stats (`stats.vue`)
-   - Work calendar integration (`pm_work_calendar`) for tracking working/non-working days
-   - Statistics: project person-day aggregation, team reports
+3. **Contract Management:** Many-to-many via `pm_project_contract_rel`. Dicts: `sys_htlx`, `sys_htzt` (未签署/已签署), `sys_fkzt` for payment status.
 
-   **"我的日报" page layout (`write.vue`):**
-   - **Left (7/24)**: `MonthCalendar` — displays each day's total work hours sourced from `pm_daily_report.total_work_hours` (via `GET /project/dailyReport/list?yearMonth=`). Day badges: green=≥8h, orange=<8h, grey=no report.
-   - **Right (17/24)**: project list sourced from **`pm_project_member`** (via `GET /project/dailyReport/myProjects`) — shows all projects where the current user is a member. Each row: project name + stage tag + hour slider + work content textarea.
-   - **Clicking a date on the left calendar**: right panel loads that day's daily report detail from `pm_daily_report_detail` (via `GET /project/dailyReport/my/{reportDate}`). Returns `{ detailList: [{projectId, workHours, workContent, ...}] }`. Projects with no entry get `workHours=0`.
-   - **Save**: filters entries where `workHours > 0 && workContent non-empty`, posts to `POST /project/dailyReport`. Upsert logic on backend (insert or update by userId + reportDate).
+4. **Daily Reports:** Master-detail: `pm_daily_report` → `pm_daily_report_detail`. Three views: `write.vue`, `activity.vue`, `stats.vue`.
 
-5. **Revenue Recognition (收入确认):**
-   - Comprehensive revenue confirmation view with multi-dimensional filtering
-   - Query conditions: project name, department, confirmation year, project category, primary/secondary region, project manager, market manager, initiation year, approval status, acceptance status, contract status, confirmation status
-   - Track confirmation status: 未确认, 待确认, 已确认, 无法确认
-   - Link to contract payments and project completion
-   - Support batch revenue confirmation operations
+   **`write.vue` layout:**
+   - Left (7/24): `MonthCalendar` — day badges from `total_work_hours` (green=≥8h, orange=<8h, grey=none). API: `GET /project/dailyReport/list?yearMonth=`
+   - Right (17/24): project list from `pm_project_member`. API: `GET /project/dailyReport/myProjects`. Hour slider (max=24h, step=1h) + work content textarea per project.
+   - Click date → load detail via `GET /project/dailyReport/my/{reportDate}`. Save → `POST /project/dailyReport`.
+   - **Week constraint**: only current calendar week (Mon–Sun) is editable. Past/future weeks are read-only.
 
-6. **Secondary Region Management (二级区域管理):**
-   - Hierarchical region classification (primary region → secondary region)
-   - Used for detailed geographical organization of projects and customers
+5. **Revenue Recognition:** Multi-dimensional filtering. Confirmation status: 未确认/待确认/已确认/无法确认. Batch operations supported. Revenue fields on `Project`: `confirmAmount`, `taxRate`, `afterTaxAmount` (= confirmAmount / (1 + taxRate/100)), `revenueConfirmStatus`, `revenueConfirmYear`.
 
-7. **Project Manager Change (项目经理变更):**
-   - Record and track project manager changes with change reason
-   - Fields: oldManagerId/Name, newManagerId/Name, changeReason, changeTime
-   - Supports single and batch change operations
-   - DTOs: `ChangeRequest` (single), `BatchChangeRequest` (batch), `ProjectManagerChangeVO` (view)
+6. **Team Revenue Confirmation:** Queries `pm_project` as main table (LEFT JOIN `pm_team_revenue_confirmation`). `confirmDeptId = -1` = projects with NO team confirmation.
 
-8. **Project Stage Change (项目阶段变更):**
-   - Record stage transitions on a project (sys_xmjd dict values)
-   - Fields: projectId, oldStage, newStage, changeReason; soft-delete via del_flag
-   - Note: table uses `utf8mb4_0900_ai_ci` collation — add `COLLATE utf8mb4_unicode_ci` when joining system tables
+7. **Project Manager Change:** DTOs: `ChangeRequest` (single), `BatchChangeRequest` (batch), `ProjectManagerChangeVO` (view).
 
-9. **Team Revenue Confirmation (团队收入确认):**
-   - Department-level revenue confirmation (distinct from company-wide ProjectReview)
-   - Fields: teamConfirmId, projectId, deptId, confirmAmount, confirmTime, confirmUserId
-   - **Query uses `pm_project` as main table** (not `pm_team_revenue_confirmation`) so row count aligns with company revenue view; confirmation data is aggregated via LEFT JOIN
-   - Special `confirmDeptId` filter: `-1` = projects with NO team confirmation records; other positive values = projects confirmed by that specific dept
+8. **Project Stage Change:** Table uses `utf8mb4_0900_ai_ci` — add `COLLATE utf8mb4_unicode_ci` when joining system tables.
 
-10. **Add Contract from Project (项目列表添加合同):**
-   - Project list row shows a contextual button: "添加合同" (no contract yet) or "查看合同" (contract exists)
-   - Clicking "添加合同" navigates to contract creation with auto-populated: projectId, project dept, customer info
-   - Alert displays: "将为项目创建合同：{projectName} ({projectCode})"
-   - Revenue confirmation fields on `Project`: `confirmAmount`, `taxRate`, `afterTaxAmount` (after-tax = confirmAmount / (1 + taxRate/100)), `revenueConfirmStatus`, `revenueConfirmYear`, `companyRevenueConfirmedBy`, `companyRevenueConfirmedTime`
+9. **Add Contract from Project:** List row shows "添加合同" / "查看合同" based on whether contract exists. Navigates to contract creation with pre-populated projectId, dept, customer.
 
-**Dictionary Dependencies:**
+### Dictionary Dependencies
 
-- `industry` - 行业分类
-- `sys_yjqy` - 区域分类 (一级区域, 二级区域)
-- `sys_xmfl` - 项目分类 (软件开发类, 硬件销售类, 系统集成类, 开发人力外包, 运维人力外包, 测试人力外包)
-- `sys_xmjd` - 项目阶段 (0=其他, 1=售前支持, 2=需求及设计, 3=开发及自测, 4=验收测试, 5=系统投产, 6=免维期维护, 7=项目结项)
-- `sys_yszt` - 验收状态
-- `sys_xmzt` - 项目状态 (未启动, 已启动, 已测试, 已投产, 已结项, 已关闭)
-- `sys_htlx` - 合同类型
-- `sys_htzt` - 合同状态 (未签署, 已签署)
-- `sys_fkzt` - 付款状态 (未开未付, 已提交验收材料, 验收材料已审核, 待通知开票, 已通知)
-- `sys_wdlx` - 文档类型
-- `sys_spzt` - 审核状态 (0=待审核, 1=审核通过, 2=审核拒绝, 3=退回待审核)
-- `sys_qrzt` - 确认状态 (1=1-未确认, 2=2-待确认收入, 3=3-已确认收入, 4=4-无法确认)
-- `sys_srqrzt` - 收入确认状态 (0=未确认, 1=已确认, 2=待确认, 3=已确认收入)
-- `sys_ndgl` - 年度管理 (year values used for `establishedYear` / `revenueConfirmYear` fields; rendered via `<dict-tag :options="sys_ndgl" .../>` on project detail pages)
+`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-7), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`)
 
-**API URL Convention:** Most PM controllers are under `/project/{entity}/**`. Full mapping:
+### API URL Convention
 
 | Controller | URL Prefix | Purpose |
 |---|---|---|
 | `ProjectController` | `/project/project/**` | Project CRUD + proxy endpoints |
-| `ProjectApprovalController` | `/project/approval/**` | Approval workflow (立项审核) |
+| `ProjectApprovalController` | `/project/approval/**` | Approval workflow |
 | `ContractController` | `/project/contract/**` | Contract management |
 | `PaymentController` | `/project/payment/**` | Payment management |
-| `CustomerController` | `/project/customer/**` | Customer + contacts (no separate contact controller) |
+| `CustomerController` | `/project/customer/**` | Customer + contacts |
 | `AttachmentController` | `/project/attachment/**` | File attachments |
 | `ProjectMemberController` | `/project/member/**` | Project members |
 | `ProjectManagerChangeController` | `/project/managerChange/**` | Manager change records |
@@ -280,29 +150,26 @@ Dependencies flow: admin → framework → system → common. Quartz, generator,
 | `SecondaryRegionController` | `/project/secondaryRegion/**` | Secondary regions |
 | `WorkCalendarController` | `/project/workCalendar/**` | Work calendar |
 | `DailyReportController` | `/project/dailyReport/**` | Daily reports |
-| `ProjectStatsController` | `/project/dailyReport/**` | Daily report statistics (shares prefix; endpoints: `/projectStats`, `/projectNameSuggestions`, `POST /projectStats/{projectId}/correct`, `GET /projectStats/{projectId}/correctLog`) |
-| `ProjectReviewController` | `/project/review/**` | Company revenue recognition view (收入确认, NOT approval) |
-| `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue confirmation (different root) |
+| `ProjectStatsController` | `/project/dailyReport/**` | Stats (shares prefix; `/projectStats`, `/projectNameSuggestions`, `POST /projectStats/{id}/correct`, `GET /projectStats/{id}/correctLog`) |
+| `ProjectReviewController` | `/project/review/**` | Company revenue view |
+| `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue (different root) |
 
-Company revenue endpoints are nested under `/project/project/revenue/**`. Frontend routes mirror these at `/project/{entity}` with additional `/revenue/company` and `/revenue/team` for revenue views.
+Company revenue endpoints: `/project/project/revenue/**`. Frontend routes: `/project/{entity}` + `/revenue/company` + `/revenue/team`.
 
 ## Backend Patterns
 
 ### Controller Convention
 
-All controllers extend `BaseController`. Standard CRUD pattern:
+All controllers extend `BaseController`. Always call `startPage()` before list queries:
 
 ```java
-// List — startPage() MUST be called before the query
 @PreAuthorize("@ss.hasPermi('module:entity:list')")
 @GetMapping("/list")
 public TableDataInfo list(Entity entity) {
-    startPage();
-    List<Entity> list = service.selectEntityList(entity);
-    return getDataTable(list);
+    startPage();  // MUST be first
+    return getDataTable(service.selectEntityList(entity));
 }
 
-// Insert/Update/Delete — wrap with toAjax() and @Log
 @Log(title = "实体名", businessType = BusinessType.INSERT)
 @PreAuthorize("@ss.hasPermi('module:entity:add')")
 @PostMapping
@@ -311,253 +178,94 @@ public AjaxResult add(@Validated @RequestBody Entity entity) {
 }
 ```
 
-### Response Types
-
-- `AjaxResult` → `{ code, msg, data }` for single-object responses
+- `AjaxResult` → `{ code, msg, data }` for single objects
 - `TableDataInfo` → `{ code, msg, total, rows }` for paginated lists
 
 ### Custom Annotations
 
 | Annotation | Purpose |
 |---|---|
-| `@Log(title, businessType)` | Operation audit log via LogAspect (async) |
-| `@DataScope(deptAlias, userAlias)` | Data permission SQL filter injection |
+| `@Log(title, businessType)` | Operation audit log (async) |
+| `@DataScope(deptAlias, userAlias)` | Data permission SQL injection into `${params.dataScope}` (1=all, 2=custom, 3=own dept, 4=dept+children, 5=self) |
 | `@DataSource` | Dynamic datasource switching |
-| `@RateLimiter(time, count)` | Redis Lua-based rate limiting |
-| `@RepeatSubmit` | Duplicate form submission prevention |
+| `@RateLimiter(time, count)` | Redis Lua rate limiting |
+| `@RepeatSubmit` | Duplicate submission prevention |
 | `@Excel(name)` | Excel import/export column config |
 | `@Anonymous` | Bypass JWT authentication |
-| `@Sensitive` | JSON serialization data masking |
-
-### Data Permission
-
-`@DataScope(deptAlias = "d", userAlias = "u")` on service methods. The aspect injects SQL into `${params.dataScope}` in MyBatis XML based on the user's role scope (1=all, 2=custom depts, 3=own dept, 4=dept+children, 5=self only).
 
 ### Entity Hierarchy
 
 - `BaseEntity` → createBy/createTime/updateBy/updateTime/remark/params(Map)
-- `TreeEntity extends BaseEntity` → parentId/ancestors for hierarchical data
+- `TreeEntity extends BaseEntity` → parentId/ancestors
 
 ### Naming Conventions
 
 - Packages: `com.ruoyi.{module}.controller|service|domain|mapper`
 - Service methods: `select*List()`, `select*ById()`, `insert*()`, `update*()`, `delete*ByIds()`
-- Permission strings: `{module}:{business}:{action}` (e.g. `system:user:list`)
+- Permission strings: `{module}:{business}:{action}`
 
 ### Master-Detail Pattern
 
-The project uses master-detail (主子表) pattern for one-to-many relationships:
+One-to-many via detail list on master entity. Service cascades insert/delete. MyBatis uses `<collection>` in resultMap. Operations must be `@Transactional`.
 
-- **Project-Contract:** Projects can have multiple contracts via `pm_project_contract_rel` junction table
-- **Contract-Payment:** Contracts can have multiple payment installments
-- **Business-Attachment:** Projects, contracts, and payments can have multiple attachments
+### Other Backend Patterns
 
-**Implementation pattern:**
-```java
-// Master entity includes detail list
-public class Contract extends BaseEntity {
-    private List<Payment> paymentList;  // Detail records
-}
-
-// Service handles cascading operations
-public int insertContract(Contract contract) {
-    int rows = contractMapper.insertContract(contract);
-    insertPayment(contract);  // Insert detail records
-    return rows;
-}
-```
-
-**MyBatis XML uses collection mapping:**
-```xml
-<resultMap id="ContractPaymentResult" type="Contract">
-    <collection property="paymentList" ofType="Payment" column="contract_id" select="selectPaymentList"/>
-</resultMap>
-```
-
-### Spring Boot 3 Specifics
-
-- Security uses `SecurityFilterChain` bean + `@EnableMethodSecurity` (not WebSecurityConfigurerAdapter)
-- Jakarta EE namespace (`jakarta.servlet.*` not `javax.servlet.*`)
-- API docs via springdoc-openapi (`/v3/api-docs`, `/swagger-ui.html`)
-- Druid starter: `druid-spring-boot-3-starter`
-- MySQL driver: `mysql-connector-j`
-
-### Logging Patterns
-
-- **Log files:** `./logs/` (60-day rotation) — `sys-info.log`, `sys-error.log`, `sys-user.log`
-- **`@Log` annotation** → async database audit via LogAspect (viewable in UI)
-- **SLF4J logger** → file logs. Use `LoggerFactory.getLogger(YourClass.class)`
-- Sensitive fields (password, etc.) auto-excluded; request params > 2000 chars truncated
-
-### Exception Handling
-
-`GlobalExceptionHandler` catches all exceptions with `@RestControllerAdvice`.
-
-- `ServiceException` — Business logic errors → `AjaxResult.error`. Use: `throw new ServiceException("项目不存在")`
-- `AccessDeniedException` — Permission denied (403)
-- `BindException` / `MethodArgumentNotValidException` — Validation errors (field error message)
-
-All exceptions logged and returned as JSON with appropriate HTTP status codes.
-
-### Transaction Management
-
-Use `@Transactional` on service methods that modify data. Auto-rollback on `RuntimeException` (including `ServiceException`). **Master-detail operations MUST be transactional.**
-
-### Async Processing
-
-- **`@Log` annotation** → auto-async via `AsyncManager`
-- **`@Async` methods** (e.g., `ProjectEmailServiceImpl.sendNotificationEmail`) → Spring task executor thread pool
-
-### Excel Export Patterns
-
-**Custom cell formatter** — implement `ExcelHandlerAdapter` and reference via `@Excel(handler = ...)`:
-
-```java
-// com.ruoyi.project.utils.AmountFormatHandler — formats BigDecimal as "1,234,567.89"
-@Excel(name = "合同金额(元)", handler = AmountFormatHandler.class, sort = 50)
-private BigDecimal contractAmount;
-```
-
-**Pre-export enrichment** — for fields that aren't stored in DB (e.g., dept full path, participant names resolved from ID lists), add an `enrichForExport(List<Entity> list)` service method and call it in the controller before `exportExcel`:
-
-```java
-// Controller
-projectService.enrichForExport(list);
-util.exportExcel(response, list, "项目数据");
-
-// Entity — non-DB display field
-@Excel(name = "项目部门路径", sort = 40)
-private String deptPathDisplay;  // populated by enrichForExport, no DB column
-```
-
-The mapper provides helper queries: `selectAllDeptsForPath()` (dept tree with ancestors) and `selectUserNickNamesByIds(List<Long> userIds)` for batch nick-name resolution.
+- **Exception**: `throw new ServiceException("message")` → caught by `GlobalExceptionHandler`, returns `AjaxResult.error`
+- **Logging**: `./logs/` (60-day rotation). `@Log` → async DB audit. SLF4J → file logs.
+- **Async**: `@Async` on service methods (e.g., `ProjectEmailServiceImpl.sendNotificationEmail`)
+- **Excel export enrichment**: `enrichForExport(list)` on service to populate non-DB display fields before `exportExcel()`
+- **Spring Boot 3**: Jakarta EE namespace, `SecurityFilterChain` bean, springdoc-openapi at `/swagger-ui.html`
 
 ## Frontend Patterns
 
-### Tech Stack
+### API Layer (`src/api/`)
 
-Vue 3 + TypeScript + Vite + Element Plus + Pinia + Vue Router 4
-
-### Directory Structure (ruoyi-ui/)
-
-```
-src/
-├── api/              → API functions (typed with interfaces from types/)
-│   ├── project/      → Project business APIs (project, contract, payment, customer, etc.)
-│   └── revenue/      → Revenue module APIs (company.js/ts, team.js)
-├── assets/           → Static assets (images, styles)
-├── components/       → Reusable Vue components
-├── directive/        → Custom directives (v-hasPermi, v-hasRole, etc.)
-├── layout/           → Layout components (navbar, sidebar, tags-view)
-├── plugins/          → Plugin configurations (modal, download, cache, etc.)
-├── router/           → Vue Router configuration
-├── store/            → Pinia stores (user, app, permission, settings, tagsView, dict)
-├── types/            → TypeScript type definitions
-│   └── api/          → API response types
-├── utils/            → Utility functions (request.ts, auth.ts, etc.)
-└── views/            → Page components
-    ├── system/       → System management pages
-    ├── project/      → Project management pages (approval, contract, customer, dailyReport,
-    │                   managerChange, payment, project, projectMember, projectStageChange,
-    │                   review, secondaryRegion, workCalendar)
-    └── revenue/      → Revenue confirmation module (company/ and team/ subdirectories)
-```
-
-### API Layer
-
-API functions in `src/api/` are fully typed with interfaces from `src/types/`. Pattern:
+- `src/api/project/` — Project business APIs
+- `src/api/revenue/company.ts` — use this (typed); `company.js` is older untyped version
+- `src/api/project/managerChange.js` — project list with latest change info
+- `src/api/project/projectManagerChange.js` — manager change CRUD
+- `src/api/project/contact.js` — customer contact helper (CustomerController handles contacts)
 
 ```typescript
-export function listUser(query: UserQueryParams): Promise<TableDataInfo<SysUser[]>> {
-  return request({ url: '/system/user/list', method: 'get', params: query })
-}
-```
-
-**API file notes:**
-- `src/api/project/managerChange.js` — project list with latest change info (for the manager change list page)
-- `src/api/project/projectManagerChange.js` — manager change record CRUD (standard CRUD operations)
-- `src/api/revenue/company.ts` — use this (typed); `company.js` is the older untyped version
-- `src/api/project/contact.js` — customer contact helper (no separate controller; CustomerController handles contacts)
-
-### HTTP Client (`src/utils/request.ts`)
-
-- Axios with `VITE_APP_BASE_API` as baseURL
-- Auto-injects `Authorization: Bearer {token}` header
-- Built-in duplicate submission prevention (configurable via `headers.repeatSubmit` and `headers.interval`)
-- Response codes: 200=success, 401=re-login prompt, 500=error, 601=warning
-
-**Usage in Vue Components:**
-
-```typescript
-// Method 1: Use encapsulated API functions (Recommended)
-import { listUser } from '@/api/system/user'
-listUser(queryParams).then(response => {
-  // response.rows, response.total
-})
-
-// Method 2: Direct request call (for custom endpoints)
 import request from '@/utils/request'
-request({
-  url: '/system/user/listByPost',
-  method: 'get',
-  params: { postCode: 'xsfzr' }
-}).then(response => {
-  // response.data
-})
-
-// WRONG: Do NOT use proxy.$http or proxy.request
-// const { proxy } = getCurrentInstance()
-// proxy.$http.get(...)  ❌ Does not exist
-// proxy.request(...)    ❌ Does not exist
+request({ url: '/project/project/list', method: 'get', params: query })
+// Response: res.rows / res.total for lists, res.data for single objects
+// DO NOT use proxy.$http or proxy.request — they don't exist
 ```
 
-### State Management (Pinia)
-
-Stores in `src/store/modules/`: user, app, permission, settings, tagsView, dict
-
-### Permission
-
-- Route-level: dynamic routes loaded from backend based on user roles/permissions
-- Element-level: `v-hasPermi` directive for component visibility
-- Route meta: `permissions: ['a:b:c']` and `roles: ['admin']`
-
-### Global Components
-
-Registered in `main.ts`: DictTag, Pagination, FileUpload, ImageUpload, ImagePreview, RightToolbar, Editor
+HTTP client auto-injects `Authorization: Bearer {token}`. Response codes: 200=success, 401=re-login, 500=error.
 
 ### Custom Business Components (`src/components/`)
 
-These project-specific components are used widely across PM views — prefer them over raw Element Plus equivalents:
-
 | Component | Usage |
 |---|---|
-| `DictSelect` | `<dict-select dict-type="sys_xmfl" v-model="..." />` — dropdown from dict type |
-| `UserSelect` | `<user-select post-code="pm" v-model="..." />` — user picker filtered by post code |
-| `SecondaryRegionSelect` | `<secondary-region-select :region-dict-value="primaryRegion" v-model="..." />` — secondary region dropdown dependent on primary |
+| `DictSelect` | `<dict-select dict-type="sys_xmfl" v-model="..." />` |
+| `UserSelect` | `<user-select post-code="pm" v-model="..." />` |
+| `SecondaryRegionSelect` | `<secondary-region-select :region-dict-value="primaryRegion" v-model="..." />` |
 | `ProjectSelect` | Project picker with search |
-| `ProjectDeptSelect` | Department tree picker scoped to project depts |
-| `MonthCalendar` | Monthly calendar view (used in daily report calendar) |
+| `ProjectDeptSelect` | Department tree picker |
+| `MonthCalendar` | Monthly calendar (used in daily report) |
 
-### Type Definitions
+Global components registered in `main.ts`: DictTag, Pagination, FileUpload, ImageUpload, ImagePreview, RightToolbar, Editor.
 
-All API types in `src/types/api/`. Key types: `AjaxResult<T>`, `TableDataInfo<T>`, `BaseEntity`, `PageDomain`
+### Permission
 
-### Development Tips
-
-- Check Network tab for API calls (look for `/dev-api` prefix)
-- Use `console.log(proxy)` in setup() to see available global properties (but don't use `proxy.$http`)
+- Route-level: dynamic routes from backend based on roles/permissions
+- Element-level: `v-hasPermi` directive
+- Route meta: `permissions: ['a:b:c']`, `roles: ['admin']`
 
 ### File Upload Pattern
 
-Unified attachment system: `AttachmentController` → `pm_attachment` + `pm_attachment_log` (audit). Business types: `project`, `contract`, `payment`. Frontend: `FileUpload`, `ImageUpload`, `ImagePreview` components. API: `src/api/project/attachment.js`.
+`AttachmentController` → `pm_attachment` + `pm_attachment_log`. Business types: `project`, `contract`, `payment`. API: `src/api/project/attachment.js`.
+
+Storage path: `{业务类型}/{ID}_{名称}/{yyyyMMdd}/{UUID}.{ext}` inside `/app/uploadPath/` (K3s PVC).
+Allowed: `doc, docx, xls, xlsx, pdf, csv, png, jpg, gif, txt, 7z, zip, gz`. Max: **30 MB**.
 
 ### Server-Side Sort Pattern
 
-Use `sortable="custom"` on `el-table-column` + `@sort-change` on `el-table`. RuoYi's `startPage()` automatically picks up `orderByColumn`/`isAsc` from the request:
-
 ```typescript
-// template: <el-table @sort-change="handleSortChange">
-// column:   <el-table-column sortable="custom" prop="projectBudget">
+// <el-table @sort-change="handleSortChange">
+// <el-table-column sortable="custom" prop="projectBudget">
 function handleSortChange({ prop, order }) {
   queryParams.value.orderByColumn = prop
   queryParams.value.isAsc = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : null
@@ -565,283 +273,140 @@ function handleSortChange({ prop, order }) {
 }
 ```
 
-The prop name must match the camelCase Java field name (e.g., `projectBudget` → `p.project_budget` via MyBatis column mapping).
+## Configuration
 
-## Configuration Files
+- `ruoyi-admin/src/main/resources/application.yml` — server port, logging, file upload path, DB, Redis, JWT
+- `ruoyi-admin/src/main/resources/application-druid.yml` — connection pool
+- `ruoyi-ui/.env.development` — `VITE_APP_BASE_API`
+- `ruoyi-ui/vite.config.ts` — Vite config, dev proxy
 
-### Backend
-- `ruoyi-admin/src/main/resources/application.yml` - Main config (server port, logging, file upload path)
-- `ruoyi-admin/src/main/resources/application-druid.yml` - Database connection pool config
-- Database connection, Redis, JWT settings are in `application.yml`
-
-### Frontend
-- `ruoyi-ui/.env.development` - Dev environment variables (`VITE_APP_BASE_API`)
-- `ruoyi-ui/.env.production` - Production environment variables
-- `ruoyi-ui/vite.config.ts` - Vite build config and dev server proxy
-
-### Redis Usage
-
-Used for: JWT token storage, session management, dictionary cache, rate limiting. Accessed via RedisTemplate/RedisCache (not Spring Cache annotations).
-
-## Ports
-
-Backend: 8080 | Frontend dev: 80 (proxies `/dev-api` → localhost:8080) | Druid: 8080/druid (`ruoyi/123456`) | Swagger: 8080/swagger-ui.html | MySQL: 3306 | Redis: 6379
+**Ports:** Backend 8080 | Frontend dev 80 (`/dev-api` → 8080) | MySQL 3306 | Redis 6379 | Swagger `/swagger-ui.html` | Druid `/druid` (`ruoyi/123456`)
 
 ## Database & SQL Management
 
 Database: `ry-vue` (MySQL 8.x, `utf8mb4_unicode_ci`). Init scripts in `pm-sql/init/`:
-- `00_tables_ddl.sql` — All table DDL definitions
+- `00_tables_ddl.sql` — All DDL
 - `01_tables_data.sql` — Initial data (dict, config)
 - `02_menu_data.sql` — Menu and permission data
 
-Legacy: `sql/` (original RuoYi). Ad-hoc fixes: `pm-sql/fix_*.sql`. New tables → `00_tables_ddl.sql`, menu changes → `02_menu_data.sql`.
-
-**When to create a `fix_*.sql` vs modifying init scripts:**
-- **Modify init scripts** (`00_tables_ddl.sql`, `02_menu_data.sql`): For new installs or when the change is purely additive (new table, new menu entry). These scripts must remain idempotent.
-- **Create `fix_*.sql`**: For data migrations or schema changes that affect existing deployed databases (column type changes, data corrections, backfills). Name clearly: `fix_<feature>_<date>.sql`.
+Ad-hoc fixes: `pm-sql/fix_*.sql`. New tables → modify `00_tables_ddl.sql`. Schema changes on deployed DBs → create `fix_<feature>_<date>.sql`.
 
 ### Running SQL on Remote K3s MySQL
 
-The production database runs in K3s namespace `newpm`, pod `mysql-0` on server `k3s001`.
-
 ```bash
-# Remote execution (use file pipe — never -e with Chinese text)
+# Remote (pipe files — never -e with Chinese text)
 cat /tmp/migration.sql | ssh k3s001 "kubectl exec -i mysql-0 -n newpm -- mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue"
 
-# Local Docker MySQL (see docker-compose.yml for container)
+# Local Docker
 CONTAINER=$(docker ps --filter "name=mysql" -q | head -1)
 cat fix_something.sql | docker exec -i $CONTAINER mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue
 ```
 
-> **Important**: Always pipe SQL files — never embed Chinese characters in `-e "..."` args (causes encoding issues).
-
 ## Code Generation Workflow
 
-Use the `/ruoyi-gen` skill for interactive CRUD generation. The skill automates the entire workflow with user confirmation at each step.
-
-### Key Files
-
+Use `/ruoyi-gen` skill for interactive generation. Key files:
 - **CLI JAR**: `ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar`
-- **DDL Source**: `pm-sql/init/00_tables_ddl.sql` (all table DDLs)
-- **Menu SQL**: `pm-sql/init/02_menu_data.sql` (menu permission SQL)
-- **Spec Files**: `docs/gen-specs/<table_name>.yml` (generation config per table)
+- **DDL Source**: `pm-sql/init/00_tables_ddl.sql`
+- **Spec Files**: `docs/gen-specs/<table_name>.yml`
 - **Default Config**: `ruoyi-generator/src/main/resources/generator.yml`
 
-### Manual Generation Process
+All generated Java code goes to `ruoyi-project` (not `ruoyi-admin`). Deploy: Java → `ruoyi-project/src/main/java/com/ruoyi/<module>/`, XML → `ruoyi-project/src/main/resources/mapper/<module>/`, Vue → `ruoyi-ui/src/views/<module>/`, API → `ruoyi-ui/src/api/<module>/`.
 
-1. **Find DDL**: Extract table DDL from `pm-sql/init/00_tables_ddl.sql`
-2. **Generate Spec**: Create YAML config in `docs/gen-specs/` with field mappings, query types, HTML types
-3. **Build CLI** (if needed): `mvn clean package -pl ruoyi-gen-cli -am -Dmaven.test.skip=true`
-4. **Run CLI**: `java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar --sql=<ddl>.sql --config=<spec>.yml --output=<out>.zip`
-5. **Deploy**: Extract ZIP and copy to:
-   - Java code → `ruoyi-project/src/main/java/com/ruoyi/<module>/`
-   - MyBatis XML → `ruoyi-project/src/main/resources/mapper/<module>/`
-   - Vue pages → `ruoyi-ui/src/views/<module>/<business>/`
-   - API functions → `ruoyi-ui/src/api/<module>/`
-6. **Menu SQL**: Append generated menu SQL to `pm-sql/init/02_menu_data.sql` (deduplicated)
+For master-detail generation: main table `tplCategory: sub`, sub table `tplCategory: crud`; set `subTableName`, `subTableFkName`, `subTableGenerateMenu` in `genInfo`.
 
-**Important**: All generated Java code goes to `ruoyi-project` module (not `ruoyi-admin`). The CLI uses Velocity templates and supports master-detail tables.
-
-### Master-Detail Table Support
-
-When generating master-detail relationships:
-- Set `tplCategory: sub` in main table config
-- Include `subTableName`, `subTableFkName`, `subTableGenerateMenu` in `genInfo`
-- Both main and sub table DDLs must be in the SQL file
-- Both table configs must be in the YAML file
-- Sub table's `tplCategory` must be `crud` (not `sub`)
-
-### Spec File Maintenance
-
-**IMPORTANT**: When making changes to any business module, check if the corresponding spec file (`docs/gen-specs/<module>.yml`) needs updating.
-
-- **NEED to update**: Field configurations, business rules, UI customizations, API endpoints, database schema changes, bug fixes
-- **NO NEED to update**: Code refactoring without behavior changes, variable renaming, performance optimizations, comments
-- **Workflow**: After changes, present recommendation (what needs/doesn't need update) → wait for user confirmation → update if confirmed
+**Spec file maintenance**: After business changes, check if `docs/gen-specs/<module>.yml` needs updating (field configs, business rules, schema changes need update; refactoring/renaming do not).
 
 ## Project Documentation
 
-- **`docs/pm/PM需求.md`** - Complete business requirements document (Chinese)
-  - Project management workflows
-  - Customer and contract management
-  - Daily reports and statistics
-  - Revenue recognition
-  - Dictionary definitions
-
-- **`docs/gen-specs/`** - Code generation specification files (YAML)
-  - One file per table: `<table_name>.yml`
-  - Contains field mappings, query types, HTML types, and customizations
-  - Used by `/ruoyi-gen` skill for interactive code generation
-
-- **`docs/plans/`** - Implementation plans and design documents
-
-## Development Workflow
-
-### Adding a New Business Module
-
-1. Design table schema and add DDL to `pm-sql/init/00_tables_ddl.sql`
-2. Run DDL in MySQL to create table
-3. Use `ruoyi-gen` skill or manual CLI to generate code
-4. Deploy generated code to `ruoyi-project` and `ruoyi-ui`
-5. Customize generated code as needed
-6. Add menu SQL to `pm-sql/init/02_menu_data.sql`
-7. Test and commit
+- **`docs/pm/PM需求.md`** — Complete business requirements (Chinese)
+- **`docs/gen-specs/`** — Code generation specs (one YAML per table)
+- **`docs/plans/`** — Implementation plans and design documents
 
 ## Common Pitfalls
 
-### Collation Mismatch Error
+### Collation Mismatch
 
-**Error**: `Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_ci,IMPLICIT)`
-
-**Cause**: New tables use MySQL 8.0 default collation `utf8mb4_0900_ai_ci`, but system tables use `utf8mb4_unicode_ci`.
-
-**Fix**: In MyBatis XML, explicitly cast when joining system tables:
+New PM tables use `utf8mb4_0900_ai_ci`; system tables use `utf8mb4_unicode_ci`. Always add `COLLATE` when joining:
 
 ```xml
-<!-- Wrong -->
-left join sys_dict_data d on t.type = d.dict_value
-
-<!-- Correct -->
 left join sys_dict_data d on t.type COLLATE utf8mb4_unicode_ci = d.dict_value
+LEFT JOIN sys_user u ON p.update_by COLLATE utf8mb4_unicode_ci = u.user_name
 ```
 
-### Username Field Join (update_by / create_by)
-
-`update_by` and `create_by` in project tables store the **username string** (not user ID). When joining `sys_user` to resolve `nick_name`, the collation must match:
-
-```xml
-LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
-```
-
-Map to a separate display field — **not** to `updateBy` (which is managed by `BaseEntity`):
-
-```xml
-<result property="updateByName" column="update_by_name"/>
-```
+Map resolved names to separate display fields (e.g., `updateByName`) — not to `updateBy` (managed by BaseEntity).
 
 ### Department Filter: Use ancestors Hierarchy
 
-When filtering by `projectDept` (or any dept field), use `FIND_IN_SET` to include child departments — never do an exact match alone:
-
 ```xml
-<!-- Wrong — misses child depts when a parent dept is selected -->
-<if test="projectDept != null and projectDept != ''">
-    and p.project_dept = #{projectDept}
-</if>
-
-<!-- Correct — matches the dept itself OR any descendant -->
+<!-- Correct — matches dept itself OR any descendant -->
 <if test="projectDept != null and projectDept != ''">
     and (p.project_dept = #{projectDept}
          or p.project_dept in (select dept_id from sys_dept where find_in_set(#{projectDept}, ancestors) > 0))
 </if>
 ```
 
-This applies to all PM mapper queries that accept a `projectDept` filter parameter (list, review, revenue queries, etc.).
+Applies to all PM mapper queries with `projectDept` filter.
 
-### Hard Delete Exception: pm_project
+### Hard Delete Exceptions
 
-`pm_project` uses **hard delete** (`DELETE FROM pm_project`) instead of the standard soft-delete (`del_flag = '1'`). All other PM tables use soft delete. When filtering deleted records from project joins, check only `p.del_flag = '0'` for other tables.
+Two tables use hard delete (not soft `del_flag = '1'`):
+- `pm_project` — `DELETE FROM pm_project`
+- `pm_daily_report` + `pm_daily_report_detail` — both hard-deleted in a transaction
+
+All other PM tables use soft delete. Do not add unique constraint workarounds for daily reports.
 
 ### Market Manager is NOT a Project Member
 
-`marketManagerId` is stored directly on `pm_project` but must **not** be inserted into `pm_project_member`. The member table only holds: project manager, team leader, and participants (`participants` comma-separated IDs). Do not auto-add `marketManagerId` to `pm_project_member` when creating or updating a project.
+`marketManagerId` on `pm_project` must **not** be inserted into `pm_project_member`. Members: project manager, team leader, participants only.
 
-### Frontend HTTP Request Pattern
+### Cross-module Permission
 
-**Correct**:
-```typescript
-import request from '@/utils/request'
-request({ url: '/api/path', method: 'get' })
-```
-
-**Wrong**:
-```typescript
-const { proxy } = getCurrentInstance()
-proxy.$http.get(...)  // Does not exist
-```
-
-### Pagination in Controller
-
-Always call `startPage()` before query:
+When a page calls endpoints from multiple controllers, use `@ss.hasAnyPermi()`:
 
 ```java
-@GetMapping("/list")
-public TableDataInfo list(Entity entity) {
-    startPage();  // MUST call this first
-    List<Entity> list = service.selectList(entity);
-    return getDataTable(list);
-}
-```
-
-### Cross-module Permission (hasAnyPermi)
-
-When a page calls an endpoint from a different controller (e.g., contract page fetches attachments), use `@ss.hasAnyPermi()` listing all valid callers — otherwise a user with only `contract` permissions gets a 403 on the `attachment` endpoint.
-
-```java
-// Wrong — blocks callers who lack 'project:attachment:list'
-@PreAuthorize("@ss.hasPermi('project:attachment:list')")
-
-// Correct — allow any of the relevant callers
-@PreAuthorize("@ss.hasAnyPermi('project:attachment:list,project:project:query,project:contract:list,project:contract:query')")
+@PreAuthorize("@ss.hasAnyPermi('project:attachment:list,project:project:query,project:contract:list')")
 ```
 
 ### Project Module Proxy APIs
 
-`ProjectController` exposes proxy endpoints for system resources so frontend pages avoid cross-module 403s. **Use these instead of `system/user/list`, `system/dept/list`, etc.:**
+Use these instead of direct `system/` endpoints (avoids 403 for PM-only users):
 
 | Endpoint | Returns | Response field |
 |---|---|---|
-| `GET /project/project/users?postCode=xxx` | All users (optionally by post code) | `res.data` (not `res.rows`) |
-| `GET /project/project/deptTree` | Flat dept list (data-scoped) | `res.data` — **flat list**, must call `handleTree(data, 'deptId', 'parentId', 'children')` |
-| `GET /project/project/deptTreeAll` | Flat dept list (no data scope) | `res.data` — use for participant selection where all depts must be visible |
-| `GET /project/project/customers` | Customer list | `res.data` |
-| `GET /project/project/search` | Project search | `res.data` |
+| `GET /project/project/users?postCode=xxx` | Users | `res.data` |
+| `GET /project/project/deptTree` | Flat dept list (data-scoped) | `res.data` — must call `handleTree()` |
+| `GET /project/project/deptTreeAll` | Flat dept list (no scope) | `res.data` |
+| `GET /project/project/customers` | Customers | `res.data` |
+| `GET /project/project/search` | Projects | `res.data` |
 
-```typescript
-// Wrong — system API, causes 403 for contract-only users
-import { listUser } from '@/api/system/user'
-listUser({}).then(res => res.rows)  // ❌ res.rows
+### Person-Days Calculation
 
-// Correct — project proxy, returns res.data
-import { getUsersByPost, getDeptTree } from '@/api/project/project'
-getUsersByPost().then(res => res.data)    // ✅ res.data
-getDeptTree().then(res => {
-  // getDeptTree returns FLAT list — must build tree manually
-  deptOptions.value = proxy.handleTree(res.data.map(d => ({...d, id: d.deptId, label: d.deptName})), 'id')
-})
+```xml
+ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload
 ```
+
+Never display raw `actual_workload` hours as person-days. Adjustments logged in `pm_workload_correct_log`.
 
 ## CI/CD Pipeline
 
-**GitHub Actions** (`.github/workflows/deploy.yml`): Pushes to `main` auto-deploy to K3s.
+**GitHub Actions** (`.github/workflows/deploy.yml`): Push to `main` → Docker build → push `cuitaocrazy/newpm:latest` → SSH → `kubectl rollout restart deployment/ruoyi-app -n newpm`.
 
-- **Trigger**: Push to `main` (ignores `k8s/`, `sql/`, `*.md`, `.github/`, `docker-compose*.yml`)
-- **Steps**: Docker build → push to Docker Hub (`cuitaocrazy/newpm:latest`) → SSH to server → `kubectl rollout restart deployment/ruoyi-app -n newpm`
-- **Secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`
+Ignores: `k8s/`, `sql/`, `*.md`, `.github/`, `docker-compose*.yml`.
 
 ## Deployment
 
-### Docker One-JAR Deployment
+### Docker (One-JAR)
 
-3-stage multi-stage build bundling Vue frontend into Spring Boot JAR. **Source code modified at build time** (not in repo):
+3-stage multi-stage build. **Source modified at build time** (not in repo):
+1. Node 20: Build Vue, set `VITE_APP_BASE_API=/`
+2. Maven+JDK17: SecurityConfig GET permits, SpaController, Linux upload path, console-only logback, `mvn package`
+3. JRE Alpine: `java -Xms256m -Xmx1024m -jar app.jar`
 
-1. **Stage 1 (Node 20)**: Build Vue, change `VITE_APP_BASE_API` to `/` (same-origin)
-2. **Stage 2 (Maven + JDK 17)**: Patches (SecurityConfig permits GET, SpaController for history mode, Linux upload path, console-only logback), copy Vue dist to static, `mvn package`
-3. **Stage 3 (JRE Alpine)**: `java -Xms256m -Xmx1024m -jar app.jar`
+Local: `docker-compose up -d` (MySQL 8.0 + Redis 7)
 
-Local: `docker-compose up -d` (includes MySQL 8.0 + Redis 7)
+### Kubernetes
 
-### Kubernetes Deployment
-
-Namespace: `newpm`. Configuration in `k8s/`:
-
-- `namespace.yml` - Namespace definition
-- `app.yml` - Backend deployment (image: `cuitaocrazy/newpm:latest`)
-- `config.yml` - ConfigMap with Spring application config (profiles: `druid,k8s`)
-- `mysql.yml` - MySQL 8.0 StatefulSet
-- `redis.yml` - Redis deployment
-- `ingress.yml` - Traefik IngressRoute
-- `app.yml` also defines `upload-pvc` (PersistentVolumeClaim) mounted at `/app/uploadPath` — file attachments persist across pod restarts via this PVC
+Namespace: `newpm`. Config in `k8s/`: namespace, app deployment, ConfigMap (profiles: `druid,k8s`), MySQL StatefulSet, Redis, Traefik IngressRoute. Attachments persist via `upload-pvc` mounted at `/app/uploadPath`.
 
 ```bash
 kubectl apply -f k8s/
@@ -851,22 +416,7 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 
 ## Troubleshooting
 
-- **Backend won't start**: Check MySQL (port 3306, db `ry-vue`), Redis (port 6379), Java 17, port 8080 conflict, DB init scripts
-- **Frontend build errors**: Delete `node_modules/` + `package-lock.json` and reinstall; port 80 may need sudo; delete `node_modules/.vite/` for cache issues
-- **Code generation**: Build CLI first (`mvn clean package -pl ruoyi-gen-cli -am`); ensure valid MySQL 8.0 DDL; check menu SQL imported
+- **Backend won't start**: Check MySQL (3306, `ry-vue`), Redis (6379), Java 17, port 8080, DB init scripts
+- **Frontend build errors**: Delete `node_modules/` + reinstall; port 80 needs sudo; delete `node_modules/.vite/` for cache
+- **Code generation**: Build CLI first; ensure valid MySQL 8.0 DDL; check menu SQL imported
 - **Collation mismatch**: Add `COLLATE utf8mb4_unicode_ci` when joining system tables
-
-### Person-Days (实际人天) Calculation
-
-Workload is stored as **hours** (`actual_workload` column) plus a manual **adjustment** (`adjust_workload` column, in person-days). The displayed person-days formula used across all queries:
-
-```
-实际人天 = ROUND(actual_workload / 8, 3) + COALESCE(adjust_workload, 0)
-```
-
-In MyBatis XML this is expressed as:
-```xml
-ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload
-```
-
-Manual adjustments are recorded in `pm_workload_correct_log` (auditable). Never display raw `actual_workload` hours as person-days — always apply this formula.
