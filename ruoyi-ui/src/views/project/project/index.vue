@@ -2,27 +2,14 @@
   <div class="app-container project-container">
         <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="项目名称" prop="projectName">
-        <el-select
+        <el-autocomplete
           v-model="queryParams.projectName"
-          filterable
-          remote
-          allow-create
+          :fetch-suggestions="remoteQueryProjectNames"
           clearable
-          :remote-method="remoteQueryProjectNames"
-          :loading="loadingProjectNames"
           placeholder="输入关键字搜索，或直接选择下拉数据"
           style="width: 240px"
           @keyup.enter="handleQuery"
-          @focus="remoteQueryProjectNames('')"
-          value-key="value"
-        >
-          <el-option
-            v-for="item in projectNameOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item label="项目部门" prop="projectDept">
         <el-tree-select
@@ -459,8 +446,6 @@ const approvalHistory = ref([])
 // 辅助数据源
 const deptTree = ref([])
 const deptFlatList = ref([])  // 扁平部门列表，用于快速查找
-const projectNameOptions = ref([])
-const loadingProjectNames = ref(false)
 
 // 使用 UserSelect 组件的 ref 来获取用户列表
 const projectManagerSelectRef = ref(null)
@@ -623,13 +608,10 @@ function formatAmount(value) {
 }
 
 /** 项目名称远程搜索 */
-function remoteQueryProjectNames(query) {
-  loadingProjectNames.value = true
-  searchProjects(query).then(res => {
-    projectNameOptions.value = (res.data || []).map(p => ({ value: p.projectName, label: p.projectName }))
-  }).finally(() => {
-    loadingProjectNames.value = false
-  })
+function remoteQueryProjectNames(query, callback) {
+  searchProjects(query || '').then(res => {
+    callback((res.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => callback([]))
 }
 
 /** 搜索按钮操作 */
