@@ -34,7 +34,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_daily_report_detail dd
         left join pm_project p on dd.project_id = p.project_id
         left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
-        where dd.report_id = #{reportId} and dd.del_flag = '0'
+        where dd.report_id = #{reportId}
         order by dd.detail_id
     </select>
 
@@ -88,7 +88,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select coalesce(sum(work_hours), 0)
         from pm_daily_report_detail
         where project_id = #{projectId}
-          and del_flag = '0'
     </select>
 
     <!-- 根据日报ID批量删除明细（物理删除） -->

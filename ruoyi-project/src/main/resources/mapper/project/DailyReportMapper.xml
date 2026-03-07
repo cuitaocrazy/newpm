@@ -85,7 +85,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_daily_report r
         left join sys_user u on r.user_id = u.user_id
         left join sys_dept d on r.dept_id = d.dept_id
-        left join pm_daily_report_detail dd on r.report_id = dd.report_id and dd.del_flag = '0'
+        left join pm_daily_report_detail dd on r.report_id = dd.report_id
         left join pm_project p on dd.project_id = p.project_id
         left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
     </sql>
@@ -118,7 +118,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectDailyReportList" parameterType="DailyReport" resultMap="DailyReportResult">
         <include refid="selectReportBase"/>
         <where>
-            r.del_flag = '0'
             <include refid="queryConditions"/>
         </where>
         order by r.report_date desc, r.user_id
@@ -128,7 +127,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectMonthlyReports" parameterType="DailyReport" resultMap="DailyReportWithDetailResult">
         <include refid="selectReportWithDetail"/>
         <where>
-            r.del_flag = '0'
             <include refid="queryConditions"/>
         </where>
         order by r.report_date desc, r.user_id
@@ -137,13 +135,20 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 根据ID查询日报详情（含明细） -->
     <select id="selectDailyReportById" parameterType="Long" resultMap="DailyReportWithDetailResult">
         <include refid="selectReportWithDetail"/>
-        where r.report_id = #{reportId} and r.del_flag = '0'
+        where r.report_id = #{reportId}
     </select>
 
     <!-- 根据用户ID和日期查询日报（含明细） -->
     <select id="selectByUserAndDate" resultMap="DailyReportWithDetailResult">
         <include refid="selectReportWithDetail"/>
-        where r.user_id = #{userId} and r.report_date = #{reportDate} and r.del_flag = '0'
+        where r.user_id = #{userId} and r.report_date = #{reportDate}
+    </select>
+
+    <!-- 根据用户ID和日期查询日报ID（轻量存在性检查） -->
+    <select id="selectReportIdByUserAndDate" resultType="Long">
+        select report_id from pm_daily_report
+        where user_id = #{userId} and report_date = #{reportDate}
+        limit 1
     </select>
 
     <!-- 新增日报 -->

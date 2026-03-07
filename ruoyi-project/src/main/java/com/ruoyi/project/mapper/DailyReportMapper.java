@@ -31,6 +31,15 @@ public interface DailyReportMapper
     public DailyReport selectByUserAndDate(@Param("userId") Long userId, @Param("reportDate") String reportDate);
 
     /**
+     * 根据用户ID和日期查询日报ID（简单查询，用于存在性检查）
+     *
+     * @param userId 用户ID
+     * @param reportDate 日报日期(yyyy-MM-dd)
+     * @return 日报ID，不存在则返回null
+     */
+    public Long selectReportIdByUserAndDate(@Param("userId") Long userId, @Param("reportDate") String reportDate);
+
+    /**
      * 查询工作日报列表（不含明细）
      *
      * @param query 查询条件

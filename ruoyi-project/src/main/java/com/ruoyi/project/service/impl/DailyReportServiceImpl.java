@@ -136,20 +136,20 @@ public class DailyReportServiceImpl implements IDailyReportService
         // 格式化日报日期为 yyyy-MM-dd 字符串
         String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(report.getReportDate());
 
-        // 检查是否已存在该日期的日报
-        DailyReport existing = dailyReportMapper.selectByUserAndDate(userId, dateStr);
+        // 检查是否已存在该日期的日报（使用简单查询，避免复杂JOIN导致的结果映射问题）
+        Long existingReportId = dailyReportMapper.selectReportIdByUserAndDate(userId, dateStr);
 
         int rows;
-        if (existing != null)
+        if (existingReportId != null)
         {
             // 更新已有日报
-            report.setReportId(existing.getReportId());
+            report.setReportId(existingReportId);
             report.setUpdateBy(username);
             report.setUpdateTime(DateUtils.getNowDate());
             rows = dailyReportMapper.updateDailyReport(report);
 
             // 删除旧明细，插入新明细
-            detailMapper.deleteByReportId(existing.getReportId());
+            detailMapper.deleteByReportId(existingReportId);
         }
         else
         {
@@ -198,7 +198,7 @@ public class DailyReportServiceImpl implements IDailyReportService
     {
         // 先物理删除明细
         detailMapper.deleteByReportIds(reportIds);
-        // 再软删除主记录
+        // 再物理删除主记录
         return dailyReportMapper.deleteDailyReportByIds(reportIds);
     }
 
