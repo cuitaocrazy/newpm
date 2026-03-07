@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>工作日报动态 - 方案B: 日期分组卡片流</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; color: #303133; }
+  .page { max-width: 1000px; margin: 0 auto; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; padding: 16px 20px; background: #fff; border-radius: 8px; margin-bottom: 16px; }
+  .query-bar { display: flex; gap: 12px; align-items: center; padding: 16px 20px; background: #fff; border-radius: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .query-bar label { font-size: 14px; color: #606266; }
+  .query-bar input, .query-bar select { height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; }
+  .query-bar input:focus, .query-bar select:focus { border-color: #409eff; }
+  .query-bar input[type="date"] { width: 145px; }
+  .sep { color: #c0c4cc; }
+  .btn { height: 32px; padding: 0 16px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; }
+  .btn-primary { background: #409eff; color: #fff; }
+  .btn-default { background: #fff; border: 1px solid #dcdfe6; color: #606266; }
+
+  /* 时间线 */
+  .timeline { position: relative; padding-left: 36px; }
+  .timeline::before { content: ''; position: absolute; left: 13px; top: 0; bottom: 0; width: 2px; background: #e4e7ed; }
+  .day-group { position: relative; margin-bottom: 28px; }
+  .day-dot { position: absolute; left: -36px; top: 5px; width: 24px; height: 24px; border-radius: 50%; background: #409eff; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .day-dot .inner { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
+
+  .day-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .day-date { font-size: 18px; font-weight: 700; }
+  .day-wk { font-size: 13px; color: #909399; }
+  .day-tag { font-size: 11px; background: #ecf5ff; color: #409eff; padding: 2px 8px; border-radius: 10px; }
+  .day-sum { margin-left: auto; font-size: 13px; color: #909399; display: flex; gap: 16px; }
+  .day-sum .hl { color: #409eff; font-weight: 700; }
+
+  /* 人员卡片 */
+  .p-card { background: #fff; border-radius: 8px; border: 1px solid #ebeef5; margin-bottom: 10px; overflow: hidden; transition: box-shadow 0.2s; }
+  .p-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .p-head { display: flex; align-items: center; padding: 14px 18px; gap: 12px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .p-info { flex: 1; }
+  .p-name { font-size: 15px; font-weight: 600; }
+  .p-dept { font-size: 12px; color: #909399; margin-top: 1px; }
+  .p-hours { font-size: 16px; font-weight: 700; padding: 4px 14px; border-radius: 16px; }
+  .p-hours.ok { background: #f0f9eb; color: #67c23a; }
+  .p-hours.warn { background: #fdf6ec; color: #e6a23c; }
+  .p-hours.over { background: #ecf5ff; color: #409eff; }
+
+  .p-body { padding: 0 18px 14px; }
+  .prj-row { display: flex; align-items: flex-start; padding: 10px 0; border-top: 1px solid #f5f7fa; gap: 10px; }
+  .prj-bar { width: 4px; border-radius: 2px; align-self: stretch; flex-shrink: 0; min-height: 36px; }
+  .prj-detail { flex: 1; }
+  .prj-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+  .prj-name { font-size: 14px; font-weight: 500; }
+  .stg-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #f5f7fa; color: #909399; }
+  .prj-h { margin-left: auto; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .prj-content { font-size: 13px; color: #606266; line-height: 1.6; }
+  .prj-time { font-size: 11px; color: #c0c4cc; margin-top: 3px; }
+
+  .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 28px; }
+  .pg { width: 32px; height: 32px; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .pg.act { background: #409eff; color: #fff; border-color: #409eff; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-title">工作日报动态 — 方案B：日期分组卡片流（直接展示详情）</div>
+  <div class="query-bar">
+    <label>日报日期：</label>
+    <input type="date" value="2026-02-24">
+    <span class="sep">~</span>
+    <input type="date" value="2026-02-26">
+    <label style="margin-left:8px;">姓名：</label>
+    <input type="text" placeholder="模糊搜索" style="width:120px;">
+    <label style="margin-left:8px;">项目部门：</label>
+    <select><option>全部部门</option><option>产品研发部</option><option>质量保障部</option><option>技术架构部</option></select>
+    <button class="btn btn-primary">查询</button>
+    <button class="btn btn-default">重置</button>
+  </div>
+
+  <div class="timeline" id="timeline"></div>
+
+  <div class="pagination">
+    <button class="pg">&lt;</button>
+    <button class="pg act">1</button>
+    <button class="pg">2</button>
+    <button class="pg">3</button>
+    <button class="pg">&gt;</button>
+  </div>
+</div>
+
+<script>
+const people = [
+  {n:'张三',d:'产品研发部 / 开发一组',c:'#409eff'},
+  {n:'李四',d:'产品研发部 / 测试组',c:'#e6a23c'},
+  {n:'王五',d:'产品研发部 / 开发二组',c:'#67c23a'},
+  {n:'赵六',d:'技术架构部',c:'#f56c6c'},
+  {n:'孙七',d:'产品研发部 / 开发一组',c:'#909399'}
+];
+const projs = [
+  {name:'智慧城市管理平台',stage:'开发及自测',bar:'#409eff'},
+  {name:'数据中台建设项目',stage:'需求及设计',bar:'#67c23a'},
+  {name:'金融风控系统',stage:'验收测试',bar:'#f56c6c'},
+  {name:'运维监控平台升级',stage:'售前支持',bar:'#e6a23c'},
+  {name:'客户关系管理系统',stage:'开发及自测',bar:'#b37feb'}
+];
+
+const days = [
+  { date:'2月26日', wk:'周三', tag:'今天', data:[
+    {p:0, items:[{pi:0,h:4,c:'完成用户权限模块RBAC接口开发，包括角色分配、菜单权限树、数据权限过滤三个接口',t:'17:32'},{pi:1,h:4,c:'参加需求评审会议，整理会议纪要，更新需求规格说明书v2.3版本',t:'17:45'}]},
+    {p:1, items:[{pi:0,h:4.5,c:'执行第三轮回归测试，覆盖核心业务流程用例68条，发现缺陷3个（严重1个、一般2个）',t:'16:20'},{pi:2,h:2,c:'编写风控规则引擎性能测试用例，搭建压测环境',t:'16:20'}]},
+    {p:2, items:[{pi:2,h:5,c:'完成规则引擎核心模块开发，支持动态配置风控规则链，实现Drools规则热加载，单测覆盖85%',t:'18:10'},{pi:1,h:3,c:'开发数据源管理模块的MySQL/PostgreSQL连接适配器',t:'18:10'}]},
+    {p:3, items:[{pi:0,h:5,c:'配置生产环境K8s集群，完成应用部署编排，配置HPA自动伸缩策略和健康检查探针',t:'19:05'},{pi:1,h:4,c:'设计数据中台技术架构方案，输出设计文档v1.0，完成Flink vs Spark Streaming选型对比',t:'19:05'}]},
+    {p:4, items:[{pi:0,h:7,c:'开发地图可视化模块，集成高德地图SDK，实现设备点位标注和区域围栏绘制功能',t:'17:00'}]}
+  ]},
+  { date:'2月25日', wk:'周二', tag:null, data:[
+    {p:0, items:[{pi:0,h:8,c:'完成告警管理模块前后端开发，包括告警规则配置、实时WebSocket推送、告警历史查询和统计面板',t:'18:20'}]},
+    {p:1, items:[{pi:0,h:5,c:'执行告警模块功能测试，验证WebSocket推送稳定性（模拟500并发连接），测试告警规则触发',t:'17:50'},{pi:2,h:3,c:'编写风控决策接口集成测试用例，覆盖正常/异常/边界场景共45条',t:'17:50'}]},
+    {p:2, items:[{pi:2,h:7,c:'开发信用评分模型在线推理服务，集成PMML模型加载和实时特征计算，优化响应至50ms',t:'17:30'}]},
+    {p:3, items:[{pi:1,h:8,c:'完成数据治理模块概要设计，定义数据血缘追踪方案（基于Apache Atlas），评估元数据管理可行性',t:'18:00'}]}
+  ]},
+  { date:'2月24日', wk:'周一', tag:null, data:[
+    {p:0, items:[{pi:0,h:6,c:'开发设备管理模块，实现设备注册、状态监控、固件升级三个核心接口，对接IoT网关MQTT协议',t:'18:15'},{pi:1,h:2,c:'准备数据中台项目技术方案PPT，协助售前团队进行客户演示',t:'18:15'}]},
+    {p:1, items:[{pi:0,h:8,c:'执行设备管理模块全量测试，覆盖CRUD、批量导入（1000条）、状态流转、权限控制，提交缺陷5个',t:'17:40'}]},
+    {p:2, items:[{pi:2,h:9,c:'紧急修复风控规则引擎内存泄漏问题（线上P1），排查为规则缓存未设TTL，修复验证后上线',t:'20:30'}]},
+    {p:3, items:[{pi:0,h:4,c:'协助运维团队进行生产环境灰度发布，监控系统指标正常，回滚预案已就绪',t:'17:00'},{pi:2,h:4,c:'协助排查P1内存泄漏，提供JVM堆内存分析和GC日志诊断，确认根因并review修复方案',t:'19:00'}]},
+    {p:4, items:[{pi:0,h:8,c:'开发数据大屏可视化页面，使用ECharts实现设备在线率趋势图、告警分布饼图、区域热力图',t:'18:00'}]}
+  ]}
+];
+
+function render() {
+  let html = '';
+  days.forEach(day => {
+    const totalH = day.data.reduce((s,r) => s + r.items.reduce((ss,i) => ss+i.h, 0), 0);
+    const fullCount = day.data.filter(r => r.items.reduce((s,i)=>s+i.h,0) >= 8).length;
+    html += `<div class="day-group"><div class="day-dot"><div class="inner"></div></div>
+      <div class="day-head">
+        <span class="day-date">${day.date}</span>
+        <span class="day-wk">${day.wk}</span>
+        ${day.tag ? `<span class="day-tag">${day.tag}</span>` : ''}
+        <div class="day-sum">
+          <span>提交 <span class="hl">${day.data.length}</span> 人</span>
+          <span>总工时 <span class="hl">${totalH}h</span></span>
+          <span>满勤 <span class="hl">${fullCount}/${day.data.length}</span></span>
+        </div>
+      </div>`;
+
+    day.data.forEach(r => {
+      const p = people[r.p];
+      const total = r.items.reduce((s,i) => s+i.h, 0);
+      const cls = total > 8 ? 'over' : total >= 8 ? 'ok' : 'warn';
+      html += `<div class="p-card"><div class="p-head">
+        <div class="avatar" style="background:${p.c}">${p.n[0]}</div>
+        <div class="p-info"><div class="p-name">${p.n}</div><div class="p-dept">${p.d}</div></div>
+        <div class="p-hours ${cls}">${total}h</div>
+      </div><div class="p-body">`;
+      r.items.forEach(it => {
+        const pj = projs[it.pi];
+        html += `<div class="prj-row">
+          <div class="prj-bar" style="background:${pj.bar}"></div>
+          <div class="prj-detail">
+            <div class="prj-top">
+              <span class="prj-name">${pj.name}</span>
+              <span class="stg-badge">${pj.stage}</span>
+              <span class="prj-h">${it.h}h</span>
+            </div>
+            <div class="prj-content">${it.c}</div>
+            <div class="prj-time">更新于 ${it.t}</div>
+          </div>
+        </div>`;
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('timeline').innerHTML = html;
+}
+
+render();
+</script>
+</body>
+</html>

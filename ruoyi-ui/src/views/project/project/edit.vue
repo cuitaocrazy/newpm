@@ -429,7 +429,7 @@
             <el-col :span="24">
               <el-form-item label="备注">
                 <el-input v-model="form.remark" type="textarea" :rows="4"
-                  placeholder="请输入备注信息" />
+                  placeholder="请您输入备注信息" />
               </el-form-item>
             </el-col>
           </el-row>

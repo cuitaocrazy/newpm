@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>工作日报动态 - 方案A: 日历格子型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f7fa; color: #303133; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; padding: 16px 20px; background: #fff; border-radius: 8px; margin-bottom: 16px; }
+  .query-bar { display: flex; gap: 12px; align-items: center; padding: 16px 20px; background: #fff; border-radius: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .query-bar label { font-size: 14px; color: #606266; }
+  .query-bar input, .query-bar select { height: 32px; padding: 0 12px; border: 1px solid #dcdfe6; border-radius: 4px; font-size: 14px; outline: none; }
+  .query-bar input:focus, .query-bar select:focus { border-color: #409eff; }
+  .query-bar input[type="date"] { width: 145px; }
+  .sep { color: #c0c4cc; }
+  .btn { height: 32px; padding: 0 16px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; }
+  .btn-primary { background: #409eff; color: #fff; }
+  .btn-default { background: #fff; border: 1px solid #dcdfe6; color: #606266; }
+
+  .calendar-wrap { background: #fff; border-radius: 8px; padding: 20px; }
+  .cal-header { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 16px; }
+  .cal-header .month { font-size: 18px; font-weight: 600; }
+  .cal-header .arrow { width: 30px; height: 30px; border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .cal-header .arrow:hover { border-color: #409eff; color: #409eff; }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #ebeef5; border: 1px solid #ebeef5; border-radius: 6px; overflow: hidden; }
+  .cal-head { background: #f5f7fa; padding: 10px; text-align: center; font-size: 13px; font-weight: 500; color: #909399; }
+  .cal-cell { background: #fff; min-height: 110px; padding: 8px; cursor: pointer; transition: background 0.15s; }
+  .cal-cell:hover { background: #fafbfc; }
+  .cal-cell.today { background: #ecf5ff; }
+  .cal-cell.weekend { background: #fafafa; }
+  .cal-cell.selected { outline: 2px solid #409eff; outline-offset: -2px; z-index: 1; }
+  .day-num { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #303133; }
+  .day-num.wk { color: #f56c6c; }
+  .day-num.other { color: #c0c4cc; }
+
+  .person-chip { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px; margin: 2px 0; border-radius: 4px; font-size: 11px; line-height: 1.5; }
+  .person-chip.ok { background: #f0f9eb; color: #67c23a; }
+  .person-chip.warn { background: #fdf6ec; color: #e6a23c; }
+  .person-chip.over { background: #ecf5ff; color: #409eff; }
+  .person-chip .nm { font-weight: 500; }
+  .more-chip { font-size: 11px; color: #909399; padding: 2px 6px; }
+  .no-report { font-size: 11px; color: #dcdfe6; text-align: center; margin-top: 16px; }
+
+  /* 抽屉 */
+  .mask { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; }
+  .mask.show { display: block; }
+  .drawer { position: fixed; top: 0; right: -540px; width: 540px; height: 100vh; background: #fff; box-shadow: -4px 0 16px rgba(0,0,0,0.1); z-index: 101; overflow-y: auto; padding: 24px; transition: right 0.3s; }
+  .drawer.show { right: 0; }
+  .drawer-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #ebeef5; margin-bottom: 16px; }
+  .drawer-title { font-size: 16px; font-weight: 600; }
+  .drawer-close { cursor: pointer; font-size: 22px; color: #909399; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+  .drawer-close:hover { background: #f5f7fa; }
+
+  .day-stats { display: flex; gap: 24px; padding: 14px 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px; }
+  .stat-item { text-align: center; }
+  .stat-num { font-size: 20px; font-weight: 700; color: #409eff; }
+  .stat-label { font-size: 12px; color: #909399; margin-top: 2px; }
+
+  .rpt-card { border: 1px solid #ebeef5; border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .rpt-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #fafafa; }
+  .rpt-person { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .rpt-name { font-size: 14px; font-weight: 600; }
+  .rpt-dept { font-size: 12px; color: #909399; }
+  .badge { padding: 3px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; }
+  .badge.ok { background: #f0f9eb; color: #67c23a; }
+  .badge.warn { background: #fdf6ec; color: #e6a23c; }
+  .badge.over { background: #ecf5ff; color: #409eff; }
+  .rpt-body { padding: 12px 16px; }
+  .prj-item { padding: 8px 0; border-bottom: 1px solid #f5f7fa; }
+  .prj-item:last-child { border-bottom: none; }
+  .prj-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .prj-tag { padding: 2px 8px; border-radius: 3px; font-size: 12px; background: #ecf5ff; color: #409eff; font-weight: 500; }
+  .stg-tag { padding: 2px 8px; border-radius: 3px; font-size: 12px; background: #f5f7fa; color: #909399; }
+  .prj-hours { margin-left: auto; font-size: 13px; font-weight: 700; color: #303133; }
+  .prj-content { font-size: 13px; color: #606266; line-height: 1.6; padding-left: 8px; border-left: 2px solid #e4e7ed; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="page-title">工作日报动态 — 方案A：日历格子型（点击日期查看详情）</div>
+  <div class="query-bar">
+    <label>项目部门：</label>
+    <select><option>全部部门</option><option>产品研发部</option><option>质量保障部</option><option>技术架构部</option></select>
+    <label style="margin-left:8px;">姓名：</label>
+    <input type="text" placeholder="模糊搜索" style="width:120px;">
+    <button class="btn btn-primary">查询</button>
+    <button class="btn btn-default">重置</button>
+  </div>
+
+  <div class="calendar-wrap">
+    <div class="cal-header">
+      <button class="arrow">&lt;</button>
+      <span class="month">2026年2月</span>
+      <button class="arrow">&gt;</button>
+    </div>
+    <div class="cal-grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="close_()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <span class="drawer-title" id="dTitle">2026-02-26 周三 日报详情</span>
+    <div class="drawer-close" onclick="close_()">&times;</div>
+  </div>
+  <div class="day-stats" id="dStats"></div>
+  <div id="dCards"></div>
+</div>
+
+<script>
+const P = [
+  {n:'张三',d:'产品研发部/开发一组',c:'#409eff'},
+  {n:'李四',d:'产品研发部/测试组',c:'#e6a23c'},
+  {n:'王五',d:'产品研发部/开发二组',c:'#67c23a'},
+  {n:'赵六',d:'技术架构部',c:'#f56c6c'},
+  {n:'孙七',d:'产品研发部/开发一组',c:'#909399'},
+  {n:'周八',d:'质量保障部',c:'#b37feb'}
+];
+
+const projects = ['智慧城市管理平台','数据中台建设项目','金融风控系统','运维监控平台升级','客户关系管理系统'];
+const stages = ['售前支持','需求及设计','开发及自测','验收测试','系统投产','免维期维护'];
+
+// 生成模拟数据：工作日每人随机日报
+const DATA = {};
+for (let d = 1; d <= 28; d++) {
+  const dt = new Date(2026, 1, d);
+  const dow = dt.getDay();
+  if (dow === 0 || dow === 6) continue;
+  const key = `2026-02-${String(d).padStart(2,'0')}`;
+  const reports = [];
+  P.forEach((p, i) => {
+    if (Math.random() < 0.15 && d > 2) return; // 15%几率缺勤
+    const numProj = 1 + Math.floor(Math.random() * 2);
+    const details = [];
+    let remain = 7 + Math.random() * 3; // 7~10h
+    const usedProj = new Set();
+    for (let j = 0; j < numProj; j++) {
+      let pi; do { pi = Math.floor(Math.random()*projects.length); } while (usedProj.has(pi));
+      usedProj.add(pi);
+      const h = j === numProj - 1 ? Math.round(remain*2)/2 : Math.round((remain/(numProj-j)*0.7 + Math.random()*2)*2)/2;
+      remain -= h;
+      if (h <= 0) continue;
+      const contents = [
+        '完成'+projects[pi]+'核心模块开发，编写单元测试',
+        '参加'+projects[pi]+'需求评审会，更新设计文档',
+        '修复'+projects[pi]+'线上Bug 3个，优化查询性能',
+        '执行'+projects[pi]+'回归测试，覆盖用例55条',
+        '编写'+projects[pi]+'技术方案，协助售前演示',
+        projects[pi]+'接口联调，对接第三方系统',
+        projects[pi]+'代码review + 部署测试环境'
+      ];
+      details.push({ proj: projects[pi], stage: stages[Math.min(pi, stages.length-1)], h, c: contents[Math.floor(Math.random()*contents.length)] });
+    }
+    const total = details.reduce((s,x) => s + x.h, 0);
+    reports.push({ person: p, details, total });
+  });
+  DATA[key] = reports;
+}
+
+// 渲染日历
+function renderCal() {
+  const g = document.getElementById('grid');
+  let html = ['日','一','二','三','四','五','六'].map(d=>`<div class="cal-head">${d}</div>`).join('');
+  // Feb 2026 starts on Sunday
+  for (let d = 1; d <= 28; d++) {
+    const key = `2026-02-${String(d).padStart(2,'0')}`;
+    const dow = new Date(2026,1,d).getDay();
+    const isWk = dow===0||dow===6;
+    const isToday = d === 26;
+    let cls = 'cal-cell'; if (isWk) cls += ' weekend'; if (isToday) cls += ' today';
+    let inner = `<div class="day-num ${isWk?'wk':''}">${d}</div>`;
+    const rpts = DATA[key];
+    if (rpts && rpts.length > 0) {
+      const show = rpts.slice(0, 4);
+      show.forEach(r => {
+        const s = r.total >= 8 ? 'ok' : 'warn';
+        inner += `<div class="person-chip ${s}"><span class="nm">${r.person.n}</span><span>${r.total}h</span></div>`;
+      });
+      if (rpts.length > 4) inner += `<div class="more-chip">+${rpts.length-4} 人</div>`;
+    } else if (!isWk) {
+      inner += `<div class="no-report">无日报</div>`;
+    }
+    html += `<div class="${cls}" onclick="open_('${key}')">${inner}</div>`;
+  }
+  g.innerHTML = html;
+}
+
+function open_(key) {
+  const rpts = DATA[key];
+  if (!rpts || rpts.length === 0) { alert(key + ' 暂无日报数据'); return; }
+  const wk = ['周日','周一','周二','周三','周四','周五','周六'][new Date(key).getDay()];
+  document.getElementById('dTitle').textContent = key + ' ' + wk + ' 日报详情';
+  const totalH = rpts.reduce((s,r)=>s+r.total,0);
+  const full = rpts.filter(r=>r.total>=8).length;
+  document.getElementById('dStats').innerHTML = `
+    <div class="stat-item"><div class="stat-num">${rpts.length}</div><div class="stat-label">已提交</div></div>
+    <div class="stat-item"><div class="stat-num">${totalH.toFixed(1)}h</div><div class="stat-label">团队总工时</div></div>
+    <div class="stat-item"><div class="stat-num">${full}/${rpts.length}</div><div class="stat-label">满勤率(≥8h)</div></div>
+  `;
+  let cards = '';
+  rpts.forEach(r => {
+    const cls = r.total >= 8 ? 'ok' : r.total > 0 ? 'warn' : 'warn';
+    cards += `<div class="rpt-card"><div class="rpt-header"><div class="rpt-person">
+      <div class="avatar" style="background:${r.person.c}">${r.person.n[0]}</div>
+      <div><div class="rpt-name">${r.person.n}</div><div class="rpt-dept">${r.person.d}</div></div>
+    </div><div class="badge ${cls}">${r.total}h</div></div><div class="rpt-body">`;
+    r.details.forEach(dd => {
+      cards += `<div class="prj-item"><div class="prj-top">
+        <span class="prj-tag">${dd.proj}</span><span class="stg-tag">${dd.stage}</span>
+        <span class="prj-hours">${dd.h}h</span></div>
+        <div class="prj-content">${dd.c}</div></div>`;
+    });
+    cards += '</div></div>';
+  });
+  document.getElementById('dCards').innerHTML = cards;
+  document.getElementById('mask').classList.add('show');
+  document.getElementById('drawer').classList.add('show');
+}
+
+function close_() {
+  document.getElementById('mask').classList.remove('show');
+  document.getElementById('drawer').classList.remove('show');
+}
+
+renderCal();
+</script>
+</body>
+</html>
