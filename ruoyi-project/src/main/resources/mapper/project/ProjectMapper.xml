@@ -1037,7 +1037,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.project_code as projectCode,
                p.project_stage as projectStage,
                p.create_time as createTime,
-               dict.dict_label as projectStageName
+               dict.dict_label as projectStageName,
+               p.estimated_workload as estimatedWorkload,
+               ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as actualWorkload
         from pm_project p
         left join sys_dict_data dict on p.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value
             and dict.dict_type = 'sys_xmjd'

@@ -38,7 +38,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="remark"            column="detail_remark"         />
             <result property="projectName"       column="detail_project_name"   />
             <result property="projectCode"       column="detail_project_code"   />
-            <result property="projectStageName"  column="detail_stage_name"     />
+            <result property="projectStageName"      column="detail_stage_name"               />
+            <result property="estimatedWorkload"     column="detail_estimated_workload"       />
+            <result property="actualWorkload"        column="detail_actual_workload"          />
         </collection>
     </resultMap>
 
@@ -77,7 +79,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dd.remark        as detail_remark,
             p.project_name   as detail_project_name,
             p.project_code   as detail_project_code,
-            dict.dict_label  as detail_stage_name
+            dict.dict_label  as detail_stage_name,
+            p.estimated_workload as detail_estimated_workload,
+            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as detail_actual_workload
         from pm_daily_report r
         left join sys_user u on r.user_id = u.user_id
         left join sys_dept d on r.dept_id = d.dept_id
@@ -189,18 +193,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where report_id = #{reportId}
     </update>
 
-    <!-- 软删除日报 -->
-    <update id="deleteDailyReportById" parameterType="Long">
-        update pm_daily_report set del_flag = '1' where report_id = #{reportId}
-    </update>
+    <!-- 硬删除日报 -->
+    <delete id="deleteDailyReportById" parameterType="Long">
+        DELETE FROM pm_daily_report WHERE report_id = #{reportId}
+    </delete>
 
-    <!-- 批量软删除日报 -->
-    <update id="deleteDailyReportByIds" parameterType="String">
-        update pm_daily_report set del_flag = '1' where report_id in
+    <!-- 批量硬删除日报 -->
+    <delete id="deleteDailyReportByIds" parameterType="String">
+        DELETE FROM pm_daily_report WHERE report_id in
         <foreach item="reportId" collection="array" open="(" separator="," close=")">
             #{reportId}
         </foreach>
-    </update>
+    </delete>
 
     <!-- 查询活动页用户列表（数据权限 + 部门过滤） -->
     <select id="selectActivityUsers" parameterType="DailyReport" resultType="java.util.Map">

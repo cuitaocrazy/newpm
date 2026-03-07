@@ -167,6 +167,10 @@
             <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
             <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
           </div>
+          <div style="font-size: 12px; color: #909399; margin-bottom: 4px;">
+            预计人天：<strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong>
+            &nbsp;&nbsp;已花人天：<strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong>
+          </div>
           <div style="font-size: 13px; color: #606266; line-height: 1.6; padding-left: 8px; border-left: 2px solid #e4e7ed;" v-html="formatWorkContent(detail.workContent)"></div>
           <div style="font-size: 11px; color: #c0c4cc; margin-top: 3px;">
             更新于 {{ formatTime(detail.updateTime) }}

@@ -34,6 +34,7 @@
                 </el-tag>
               </div>
               <el-button type="primary" @click="handleSave" :loading="saving">保存日报</el-button>
+              <el-button type="danger" plain @click="handleDelete" :disabled="!currentReportId">删除日报</el-button>
             </div>
           </template>
 
@@ -54,6 +55,10 @@
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
                 <span class="prj-name">{{ item.projectName }}</span>
                 <el-tag size="small" type="info">{{ item.projectStageName || '未设置' }}</el-tag>
+                <span class="prj-workload-info">
+                  预计人天：<strong>{{ item.estimatedWorkload != null ? item.estimatedWorkload : '-' }}</strong>
+                  &nbsp;&nbsp;已花人天：<strong>{{ item.actualWorkload != null ? Number(item.actualWorkload).toFixed(3) : '-' }}</strong>
+                </span>
               </div>
 
               <!-- 第二行：工时（slider + 输入框） -->
@@ -78,7 +83,7 @@
                 <el-input
                   v-model="item.workContent"
                   type="textarea"
-                  :rows="2"
+                  :rows="6"
                   :placeholder="'填写 ' + item.projectName + ' 的工作内容...'"
                   maxlength="2000"
                   show-word-limit
@@ -94,9 +99,9 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
-import { getMyReport, getMyProjects, saveDailyReport, listDailyReport } from '@/api/project/dailyReport'
+import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
 import useUserStore from '@/store/modules/user'
@@ -118,6 +123,7 @@ const currentYearMonth = ref((() => {
 })())
 const projects = ref([])
 const formList = ref([])
+const currentReportId = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const monthReports = ref({}) // { 'yyyy-MM-dd': totalHours }
@@ -187,6 +193,7 @@ async function loadDayReport(dateStr) {
   try {
     const res = await getMyReport(dateStr)
     const report = res.data
+    currentReportId.value = report?.reportId || null
 
     // 构建表单：所有项目列出，已有数据的填充
     formList.value = projects.value.map(p => {
@@ -197,6 +204,8 @@ async function loadDayReport(dateStr) {
         projectCode: p.projectCode,
         projectStage: p.projectStage,
         projectStageName: p.projectStageName,
+        estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
+        actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
         workHours: detail ? Number(detail.workHours) : 0,
         workContent: detail ? detail.workContent : ''
       }
@@ -272,10 +281,27 @@ async function handleSave() {
     })
     ElMessage.success('日报保存成功')
     loadMonthOverview()
+    // 重新加载当日日报以更新 currentReportId，使删除按钮可用
+    const res2 = await getMyReport(selectedDate.value)
+    currentReportId.value = res2.data?.reportId || null
   } finally {
     saving.value = false
   }
 }
+
+async function handleDelete() {
+  await ElMessageBox.confirm(`确认删除 ${formatDate(selectedDate.value)} 的日报？`, '提示', {
+    type: 'warning',
+    confirmButtonText: '确认删除',
+    confirmButtonClass: 'el-button--danger'
+  })
+  await delDailyReport(currentReportId.value)
+  ElMessage.success('日报已删除')
+  currentReportId.value = null
+  formList.value.forEach(item => { item.workHours = 0; item.workContent = '' })
+  loadMonthOverview()
+}
+
 
 onMounted(async () => {
   await loadWorkCalendar()
@@ -327,6 +353,12 @@ onMounted(async () => {
 }
 .prj-color-bar { width: 4px; height: 20px; border-radius: 2px; }
 .prj-name { font-size: 15px; font-weight: 600; }
+
+.prj-workload-info {
+  margin-left: auto;
+  font-size: 12px;
+  color: #909399;
+}
 
 .prj-hours-row {
   display: flex;

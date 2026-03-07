@@ -51,6 +51,12 @@ public class DailyReportDetail extends BaseEntity
     /** 项目阶段名称（扩展字段，用于列表展示） */
     private String projectStageName;
 
+    /** 预计人天（扩展字段，来自pm_project.estimated_workload） */
+    private BigDecimal estimatedWorkload;
+
+    /** 已花人天（扩展字段，= actual_workload/8 + adjust_workload） */
+    private BigDecimal actualWorkload;
+
     public void setDetailId(Long detailId)
     {
         this.detailId = detailId;
@@ -150,6 +156,12 @@ public class DailyReportDetail extends BaseEntity
     {
         return projectStageName;
     }
+
+    public void setEstimatedWorkload(BigDecimal estimatedWorkload) { this.estimatedWorkload = estimatedWorkload; }
+    public BigDecimal getEstimatedWorkload() { return estimatedWorkload; }
+
+    public void setActualWorkload(BigDecimal actualWorkload) { this.actualWorkload = actualWorkload; }
+    public BigDecimal getActualWorkload() { return actualWorkload; }
 
     @Override
     public String toString() {
