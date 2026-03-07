@@ -163,6 +163,7 @@
         </template>
         <div v-for="detail in person.detailList" :key="detail.detailId" class="drawer-prj">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning">{{ detail.revenueConfirmYear }}年</el-tag>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
             <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>

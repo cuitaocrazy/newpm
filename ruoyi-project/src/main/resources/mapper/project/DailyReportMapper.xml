@@ -41,6 +41,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="projectStageName"      column="detail_stage_name"               />
             <result property="estimatedWorkload"     column="detail_estimated_workload"       />
             <result property="actualWorkload"        column="detail_actual_workload"          />
+            <result property="revenueConfirmYear"    column="detail_revenue_confirm_year"     />
         </collection>
     </resultMap>
 
@@ -81,7 +82,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.project_code   as detail_project_code,
             dict.dict_label  as detail_stage_name,
             p.estimated_workload as detail_estimated_workload,
-            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as detail_actual_workload
+            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as detail_actual_workload,
+            p.revenue_confirm_year as detail_revenue_confirm_year
         from pm_daily_report r
         left join sys_user u on r.user_id = u.user_id
         left join sys_dept d on r.dept_id = d.dept_id

@@ -55,6 +55,7 @@
               <!-- 第一行：项目名 + 阶段 -->
               <div class="prj-header">
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
+                <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" style="flex-shrink:0;">{{ item.revenueConfirmYear }}年</el-tag>
                 <span class="prj-name">{{ item.projectName }}</span>
                 <el-tag size="small" type="info">{{ item.projectStageName || '未设置' }}</el-tag>
                 <span class="prj-workload-info">
@@ -208,6 +209,7 @@ async function loadDayReport(dateStr) {
         projectStageName: p.projectStageName,
         estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
         actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
+        revenueConfirmYear: p.revenueConfirmYear || null,
         workHours: detail ? Number(detail.workHours) : 0,
         workContent: detail ? detail.workContent : ''
       }

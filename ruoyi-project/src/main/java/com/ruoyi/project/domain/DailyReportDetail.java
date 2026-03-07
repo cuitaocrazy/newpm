@@ -57,6 +57,9 @@ public class DailyReportDetail extends BaseEntity
     /** 已花人天（扩展字段，= actual_workload/8 + adjust_workload） */
     private BigDecimal actualWorkload;
 
+    /** 收入确认年度（扩展字段，来自pm_project.revenue_confirm_year） */
+    private String revenueConfirmYear;
+
     public void setDetailId(Long detailId)
     {
         this.detailId = detailId;
@@ -162,6 +165,9 @@ public class DailyReportDetail extends BaseEntity
 
     public void setActualWorkload(BigDecimal actualWorkload) { this.actualWorkload = actualWorkload; }
     public BigDecimal getActualWorkload() { return actualWorkload; }
+
+    public void setRevenueConfirmYear(String revenueConfirmYear) { this.revenueConfirmYear = revenueConfirmYear; }
+    public String getRevenueConfirmYear() { return revenueConfirmYear; }
 
     @Override
     public String toString() {
