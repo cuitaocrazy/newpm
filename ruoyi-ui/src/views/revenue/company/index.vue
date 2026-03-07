@@ -10,6 +10,7 @@
               clearable
               placeholder="输入关键字搜索，或直接选择下拉数据"
               style="width: 100%"
+              @keyup.enter="handleQuery"
             />
           </el-form-item>
         </el-col>
@@ -345,7 +346,7 @@
 <script setup name="RevenueCompany">
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { listRevenue, getRevenueSummary, exportRevenue } from "@/api/revenue/company"
-import { getDeptTree, listProjectByName } from "@/api/project/project"
+import { getDeptTree, searchProjects } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 
@@ -576,12 +577,8 @@ function getParticipantsNames(participants) {
 
 /** 加载项目名称下拉选项（支持模糊查询） */
 function queryProjectNames(queryString, cb) {
-  listProjectByName({ projectName: queryString || '' }).then(response => {
-    const results = (response.data || []).map(item => ({
-      value: item.projectName,
-      projectId: item.projectId
-    }))
-    cb(results)
+  searchProjects(queryString || '').then(response => {
+    cb((response.data || []).map(p => ({ value: p.projectName })))
   }).catch(() => cb([]))
 }
 
