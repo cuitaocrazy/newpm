@@ -5,20 +5,14 @@
       <el-row :gutter="10">
         <el-col :span="6">
           <el-form-item label="项目名称" prop="projectName">
-            <el-select
+            <el-autocomplete
               v-model="queryParams.projectName"
-              filterable
-              remote
-              allow-create
+              :fetch-suggestions="remoteSearchProjects"
               clearable
-              :remote-method="remoteSearchProjects"
-              :loading="projectSearchLoading"
               placeholder="输入关键字搜索，或直接选择下拉数据"
-              @visible-change="(v) => v && remoteSearchProjects('')"
               style="width: 100%"
-            >
-              <el-option v-for="item in projectOptions" :key="item.projectId" :label="item.projectName" :value="item.projectName" />
-            </el-select>
+              @keyup.enter="handleQuery"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -560,8 +554,6 @@ const title = ref("")
 const deptTree = ref([])
 const deptFlatList = ref([])
 const confirmDeptTree = ref([])     // 确认团队树形选项（三级及以下部门）
-const projectOptions = ref([])      // 项目名称下拉选项
-const projectSearchLoading = ref(false)
 const projectManagerSelectRef = ref(null)
 const marketManagerSelectRef = ref(null)
 const allUsersSelectRef = ref(null)
@@ -739,7 +731,6 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
-  projectOptions.value = []
   handleQuery()
 }
 
@@ -751,12 +742,10 @@ function handleExport() {
 }
 
 /** 项目名称远程搜索 */
-function remoteSearchProjects(query) {
-  projectSearchLoading.value = true
-  searchProjects(query).then(response => {
-    projectOptions.value = response.data || []
-    projectSearchLoading.value = false
-  })
+function remoteSearchProjects(query, callback) {
+  searchProjects(query || '').then(response => {
+    callback((response.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => callback([]))
 }
 
 /** 加载部门树 */
