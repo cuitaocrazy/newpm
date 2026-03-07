@@ -33,8 +33,10 @@
                   总工时: {{ totalHours }}h
                 </el-tag>
               </div>
-              <el-button type="primary" @click="handleSave" :loading="saving">保存日报</el-button>
-              <el-button type="danger" plain @click="handleDelete" :disabled="!currentReportId">删除日报</el-button>
+              <div style="display: flex; gap: 8px;">
+                <el-button type="primary" @click="handleSave" :disabled="saving">保存日报</el-button>
+                <el-button type="danger" plain @click="handleDelete" :disabled="!currentReportId">删除日报</el-button>
+              </div>
             </div>
           </template>
 
@@ -83,7 +85,7 @@
                 <el-input
                   v-model="item.workContent"
                   type="textarea"
-                  :rows="6"
+                  :rows="5"
                   :placeholder="'填写 ' + item.projectName + ' 的工作内容...'"
                   maxlength="2000"
                   show-word-limit

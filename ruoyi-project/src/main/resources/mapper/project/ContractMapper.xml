@@ -92,7 +92,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code = #{contractCode}</if>
             <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null "> and c.customer_id = #{customerId}</if>
-            <if test="deptId != null "> and c.dept_id = #{deptId}</if>
+            <if test="deptId != null ">
+                and (c.dept_id = #{deptId}
+                     or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
             <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null  and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
@@ -134,7 +137,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code = #{contractCode}</if>
             <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null "> and c.customer_id = #{customerId}</if>
-            <if test="deptId != null "> and c.dept_id = #{deptId}</if>
+            <if test="deptId != null ">
+                and (c.dept_id = #{deptId}
+                     or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
             <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null  and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>

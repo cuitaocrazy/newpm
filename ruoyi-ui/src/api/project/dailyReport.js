@@ -47,7 +47,8 @@ export function saveDailyReport(data) {
   return request({
     url: '/project/dailyReport',
     method: 'post',
-    data: data
+    data: data,
+    headers: { repeatSubmit: false }
   })
 }
 
