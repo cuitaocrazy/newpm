@@ -687,17 +687,15 @@ function handleBindContract(row) {
   bindContractForm.value = { projectId: row.projectId, projectName: row.projectName, contractId: null, contractName: '' }
   selectedContract.value = null
   bindContractDialogVisible.value = true
-  // 已有关联合同则预加载
-  if (row.contractId) {
-    getContractByProjectId(row.projectId).then(res => {
-      if (res.data) {
-        const c = res.data
-        bindContractForm.value.contractId = c.contractId
-        bindContractForm.value.contractName = c.contractName
-        selectedContract.value = c
-      }
-    })
-  }
+  // 每次打开都查询一次，确保回显最新关联合同（不依赖 row.contractId 是否已更新）
+  getContractByProjectId(row.projectId).then(res => {
+    if (res.data) {
+      const c = res.data
+      bindContractForm.value.contractId = c.contractId
+      bindContractForm.value.contractName = c.contractName
+      selectedContract.value = c
+    }
+  })
 }
 
 function resetBindContractDialog() {
