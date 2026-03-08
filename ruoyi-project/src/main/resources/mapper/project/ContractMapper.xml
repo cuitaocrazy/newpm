@@ -313,14 +313,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 and (c.dept_id = #{deptId}
                      or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
             </if>
+            <if test="deptIds != null and deptIds.size() > 0"> and c.dept_id in <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
             <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
             <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
             <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
+            <if test="paymentStatuses != null and paymentStatuses.size() > 0"> and p.payment_status in <foreach collection="paymentStatuses" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="expectedQuarter != null and expectedQuarter != ''"> and p.expected_quarter = #{expectedQuarter}</if>
+            <if test="expectedQuarters != null and expectedQuarters.size() > 0"> and p.expected_quarter in <foreach collection="expectedQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
+            <if test="actualQuarters != null and actualQuarters.size() > 0"> and p.actual_quarter in <foreach collection="actualQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
@@ -345,14 +349,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 and (c.dept_id = #{deptId}
                      or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
             </if>
+            <if test="deptIds != null and deptIds.size() > 0"> and c.dept_id in <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
             <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
             <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
             <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
+            <if test="paymentStatuses != null and paymentStatuses.size() > 0"> and p.payment_status in <foreach collection="paymentStatuses" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="expectedQuarter != null and expectedQuarter != ''"> and p.expected_quarter = #{expectedQuarter}</if>
+            <if test="expectedQuarters != null and expectedQuarters.size() > 0"> and p.expected_quarter in <foreach collection="expectedQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
+            <if test="actualQuarters != null and actualQuarters.size() > 0"> and p.actual_quarter in <foreach collection="actualQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>

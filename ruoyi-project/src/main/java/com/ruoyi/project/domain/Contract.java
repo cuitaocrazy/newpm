@@ -143,6 +143,12 @@ public class Contract extends BaseEntity
     /** 行合并数量（扩展字段，用于前端合并单元格） */
     private Integer rowSpan;
 
+    /** 多选过滤字段（付款里程碑查询用，不存库） */
+    private List<Long> deptIds;
+    private List<String> paymentStatuses;
+    private List<String> expectedQuarters;
+    private List<String> actualQuarters;
+
     public void setContractId(Long contractId) 
     {
         this.contractId = contractId;
@@ -502,6 +508,18 @@ public class Contract extends BaseEntity
     {
         return rowSpan;
     }
+
+    public List<Long> getDeptIds() { return deptIds; }
+    public void setDeptIds(List<Long> deptIds) { this.deptIds = deptIds; }
+
+    public List<String> getPaymentStatuses() { return paymentStatuses; }
+    public void setPaymentStatuses(List<String> paymentStatuses) { this.paymentStatuses = paymentStatuses; }
+
+    public List<String> getExpectedQuarters() { return expectedQuarters; }
+    public void setExpectedQuarters(List<String> expectedQuarters) { this.expectedQuarters = expectedQuarters; }
+
+    public List<String> getActualQuarters() { return actualQuarters; }
+    public void setActualQuarters(List<String> actualQuarters) { this.actualQuarters = actualQuarters; }
 
     @Override
     public String toString() {

@@ -2,6 +2,7 @@ package com.ruoyi.project.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -103,6 +104,12 @@ public class Payment extends BaseEntity
 
     /** 更新人姓名（关联查询） */
     private String updateByName;
+
+    /** 多选过滤字段（不存库） */
+    private List<Long> deptIds;
+    private List<String> paymentStatuses;
+    private List<String> expectedQuarters;
+    private List<String> actualQuarters;
 
     public void setPaymentId(Long paymentId) 
     {
@@ -343,6 +350,18 @@ public class Payment extends BaseEntity
     {
         return updateByName;
     }
+
+    public List<Long> getDeptIds() { return deptIds; }
+    public void setDeptIds(List<Long> deptIds) { this.deptIds = deptIds; }
+
+    public List<String> getPaymentStatuses() { return paymentStatuses; }
+    public void setPaymentStatuses(List<String> paymentStatuses) { this.paymentStatuses = paymentStatuses; }
+
+    public List<String> getExpectedQuarters() { return expectedQuarters; }
+    public void setExpectedQuarters(List<String> expectedQuarters) { this.expectedQuarters = expectedQuarters; }
+
+    public List<String> getActualQuarters() { return actualQuarters; }
+    public void setActualQuarters(List<String> actualQuarters) { this.actualQuarters = actualQuarters; }
 
     @Override
     public String toString() {

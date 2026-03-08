@@ -11,20 +11,23 @@
           style="width: 200px"
         />
       </el-form-item>
-      <el-form-item label="合同所属团队" prop="deptId">
+      <el-form-item label="合同所属团队" prop="deptIds">
         <el-tree-select
-          v-model="queryParams.deptId"
+          v-model="queryParams.deptIds"
           :data="deptTree"
           :props="{ label: 'label', value: 'value', children: 'children' }"
           placeholder="请选择合同所属团队"
+          multiple
           check-strictly
+          collapse-tags
+          collapse-tags-tooltip
           clearable
           filterable
           style="width: 200px"
         />
       </el-form-item>
-      <el-form-item label="预计回款季度" prop="expectedQuarter">
-        <el-select v-model="queryParams.expectedQuarter" placeholder="请选择预计回款季度" clearable style="width: 200px">
+      <el-form-item label="预计回款季度" prop="expectedQuarters">
+        <el-select v-model="queryParams.expectedQuarters" placeholder="请选择预计回款季度" multiple collapse-tags collapse-tags-tooltip clearable style="width: 200px">
           <el-option
             v-for="dict in sys_jdgl"
             :key="dict.value"
@@ -63,8 +66,8 @@
           style="width: 200px"
         />
       </el-form-item>
-      <el-form-item label="付款状态" prop="paymentStatus">
-        <el-select v-model="queryParams.paymentStatus" placeholder="请选择付款状态" clearable style="width: 200px">
+      <el-form-item label="付款状态" prop="paymentStatuses">
+        <el-select v-model="queryParams.paymentStatuses" placeholder="请选择付款状态" multiple collapse-tags collapse-tags-tooltip clearable style="width: 200px">
           <el-option
             v-for="dict in sys_fkzt"
             :key="dict.value"
@@ -101,8 +104,8 @@
             <el-option label="否" value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item label="实际回款季度" prop="actualQuarter">
-          <el-select v-model="queryParams.actualQuarter" placeholder="请选择实际回款季度" clearable style="width: 200px">
+        <el-form-item label="实际回款季度" prop="actualQuarters">
+          <el-select v-model="queryParams.actualQuarters" placeholder="请选择实际回款季度" multiple collapse-tags collapse-tags-tooltip clearable style="width: 200px">
             <el-option
               v-for="dict in sys_jdgl"
               :key="dict.value"
@@ -397,11 +400,11 @@ const data = reactive({
     customerName: null,
     paymentMethodName: null,
     hasPenalty: null,
-    paymentStatus: null,
-    expectedQuarter: null,
-    actualQuarter: null,
+    paymentStatuses: [],
+    expectedQuarters: [],
+    actualQuarters: [],
     confirmYear: null,
-    deptId: null,
+    deptIds: [],
     actualPaymentDateStart: null,
     actualPaymentDateEnd: null,
   }
