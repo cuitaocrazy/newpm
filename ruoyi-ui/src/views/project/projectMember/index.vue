@@ -5,26 +5,14 @@
         <project-dept-select v-model="queryParams.deptId" placeholder="请选择部门" style="width: 220px" />
       </el-form-item>
       <el-form-item label="项目名称" prop="projectName">
-        <el-select
+        <el-autocomplete
           v-model="queryParams.projectName"
-          filterable
-          remote
-          allow-create
+          :fetch-suggestions="loadProjectOptions"
           clearable
-          :remote-method="remoteSearchProject"
-          :loading="projectSearchLoading"
           placeholder="输入关键字搜索，或直接选择下拉数据"
           style="width: 240px"
           @keyup.enter="handleQuery"
-          @visible-change="(v) => v && loadProjectOptions()"
-        >
-          <el-option
-            v-for="p in projectOptions"
-            :key="p.projectId"
-            :label="p.projectName"
-            :value="p.projectName"
-          />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -137,8 +125,6 @@ import { searchProjects } from "@/api/project/project"
 const { proxy } = getCurrentInstance()
 
 const projectList = ref([])
-const projectOptions = ref([])
-const projectSearchLoading = ref(false)
 const memberList = ref([])
 const loading = ref(true)
 const memberLoading = ref(false)
@@ -181,15 +167,10 @@ function getList() {
 }
 
 /** 加载项目列表（支持模糊搜索） */
-function loadProjectOptions(query) {
-  projectSearchLoading.value = true
+function loadProjectOptions(query, callback) {
   searchProjects(query || '').then(res => {
-    projectOptions.value = res.data || []
-  }).finally(() => { projectSearchLoading.value = false })
-}
-
-function remoteSearchProject(query) {
-  loadProjectOptions(query)
+    callback((res.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => callback([]))
 }
 
 /** 搜索按钮操作 */

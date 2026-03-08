@@ -2,31 +2,14 @@
   <div class="app-container manager-change-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
       <el-form-item label="项目名称" prop="projectId">
-        <el-select
+        <el-autocomplete
           v-model="queryParams.projectName"
-          placeholder="输入关键字搜索，或直接选择下拉数据"
-          filterable
-          remote
-          allow-create
-          reserve-keyword
+          :fetch-suggestions="loadProjectOptions"
           clearable
-          :remote-method="remoteSearchProject"
-          :loading="projectSearchLoading"
+          placeholder="输入关键字搜索，或直接选择下拉数据"
           style="width: 280px"
-          @visible-change="handleProjectSelectVisible"
-        >
-          <el-option
-            v-for="project in projectOptions"
-            :key="project.projectId"
-            :label="project.projectName"
-            :value="project.projectName"
-          >
-            <div>
-              <span>{{ project.projectName }}</span>
-              <span style="float: right; color: #8492a6; font-size: 12px;">{{ project.projectCode }}</span>
-            </div>
-          </el-option>
-        </el-select>
+          @keyup.enter="handleQuery"
+        />
       </el-form-item>
       <el-form-item label="当前经理" prop="currentManagerId">
         <el-select v-model="queryParams.currentManagerId" placeholder="请选择当前项目经理" filterable clearable style="width: 200px">
@@ -219,8 +202,6 @@ const { proxy } = getCurrentInstance()
 const projectList = ref([])
 const managerList = ref([])
 const changeHistoryList = ref([])
-const projectOptions = ref([])
-const projectSearchLoading = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
@@ -282,30 +263,14 @@ function loadManagerList() {
 }
 
 /** 加载项目列表（支持模糊搜索） */
-function loadProjectOptions(query) {
-  projectSearchLoading.value = true
+function loadProjectOptions(query, callback) {
   request({
     url: '/project/project/search',
     method: 'get',
     params: { projectName: query || '' }
   }).then(response => {
-    projectOptions.value = response.data || []
-    projectSearchLoading.value = false
-  }).catch(() => {
-    projectSearchLoading.value = false
-  })
-}
-
-/** 项目远程搜索 */
-function remoteSearchProject(query) {
-  loadProjectOptions(query)
-}
-
-/** 下拉框展开时加载全部项目 */
-function handleProjectSelectVisible(visible) {
-  if (visible) {
-    loadProjectOptions()
-  }
+    callback((response.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => callback([]))
 }
 
 /** 搜索按钮操作 */
