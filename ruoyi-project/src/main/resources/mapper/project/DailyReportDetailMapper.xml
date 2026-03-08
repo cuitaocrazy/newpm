@@ -49,6 +49,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectStage != null and projectStage != ''">project_stage,</if>
             <if test="workHours != null">work_hours,</if>
             <if test="workContent != null and workContent != ''">work_content,</if>
+            <if test="entryType != null">entry_type,</if>
+            <if test="leaveHours != null">leave_hours,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -62,6 +64,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectStage != null and projectStage != ''">#{projectStage},</if>
             <if test="workHours != null">#{workHours},</if>
             <if test="workContent != null and workContent != ''">#{workContent},</if>
+            <if test="entryType != null">#{entryType, jdbcType=VARCHAR},</if>
+            <if test="leaveHours != null">#{leaveHours, jdbcType=DECIMAL},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -96,6 +100,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_daily_report_detail
         where project_id = #{projectId}
           and entry_type = 'work'
+          and del_flag = '0'
     </select>
 
     <!-- 根据日报ID批量删除明细（物理删除） -->

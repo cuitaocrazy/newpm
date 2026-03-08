@@ -190,6 +190,8 @@ public class DailyReportDetail extends BaseEntity
             .append("projectStage", getProjectStage())
             .append("workHours", getWorkHours())
             .append("workContent", getWorkContent())
+            .append("entryType", getEntryType())
+            .append("leaveHours", getLeaveHours())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
