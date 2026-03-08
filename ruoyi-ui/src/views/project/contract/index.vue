@@ -157,6 +157,7 @@
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" />
       <el-table-column label="关联项目" align="left" prop="projectList" min-width="160" v-if="columns.projectList.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
@@ -401,6 +402,7 @@ const maxFileSize = ref(50) // MB
 const columns = ref({
   index: { label: '序号', visible: true },
   contractName: { label: '合同名称', visible: true },
+  contractCode: { label: '合同编号', visible: true },
   projectList: { label: '关联项目', visible: true },
   customerId: { label: '客户名称', visible: true },
   deptId: { label: '部门', visible: true },

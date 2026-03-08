@@ -197,6 +197,7 @@
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" />
       <el-table-column label="合同状态" align="center" prop="contractStatus" width="100" v-if="columns.contractStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummary" :options="sys_htzt" :value="scope.row.contractStatus"/>
@@ -366,6 +367,7 @@ const actualPaymentDateRange = ref([])
 const columns = ref({
   index: { label: '序号', visible: true },
   contractName: { label: '合同名称', visible: true },
+  contractCode: { label: '合同编号', visible: true },
   contractStatus: { label: '合同状态', visible: true },
   customerName: { label: '客户名称', visible: true },
   contractAmount: { label: '合同金额', visible: true },
@@ -527,8 +529,8 @@ function spanMethod({ row, column, rowIndex, columnIndex }) {
     }
   }
 
-  // 需要合并的列：合同名称、合同状态、客户名称、合同金额、合同签订日期、免维期、合同所属团队
-  const mergeColumns = ['contractName', 'contractStatus', 'customerName', 'contractAmount', 'contractSignDate', 'freeMaintenancePeriod', 'deptName']
+  // 需要合并的列：合同名称、合同编号、合同状态、客户名称、合同金额、合同签订日期、免维期、合同所属团队
+  const mergeColumns = ['contractName', 'contractCode', 'contractStatus', 'customerName', 'contractAmount', 'contractSignDate', 'freeMaintenancePeriod', 'deptName']
   const columnProperty = column.property
 
   if (mergeColumns.includes(columnProperty)) {
