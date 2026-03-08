@@ -80,7 +80,7 @@
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="合同状态" prop="contractStatus">
-                <el-select v-model="form.contractStatus" placeholder="请选择合同状态" clearable style="width: 100%">
+                <el-select v-model="form.contractStatus" placeholder="请选择合同状态" style="width: 100%">
                   <el-option v-for="dict in sys_htzt" :key="dict.value"
                     :label="dict.label" :value="dict.value" />
                 </el-select>
@@ -312,7 +312,7 @@ const data = reactive({
     customerId: '',
     deptId: '',
     contractType: '',
-    contractStatus: '',
+    contractStatus: '2',
     contractSignDate: '',
     contractPeriod: '',
     contractAmount: '',
@@ -336,6 +336,9 @@ const data = reactive({
     ],
     contractType: [
       { required: true, message: '请选择合同类型', trigger: 'change' }
+    ],
+    contractStatus: [
+      { required: true, message: '请选择合同状态', trigger: 'change' }
     ],
     contractAmount: [
       { required: true, message: '请输入合同金额', trigger: 'blur' },
@@ -361,7 +364,7 @@ function resetForm() {
     customerId: '',
     deptId: '',
     contractType: '',
-    contractStatus: '',
+    contractStatus: '2',
     contractSignDate: '',
     contractPeriod: '',
     contractAmount: '',

@@ -65,11 +65,11 @@
                   {{ getDictLabel(sys_ndgl, item.revenueConfirmYear) }}
                 </el-tag>
                 <span class="prj-name">{{ item.projectName }}</span>
-                <el-tag size="small" type="info">{{ item.projectStageName || '未设置' }}</el-tag>
                 <span class="prj-workload-info">
                   预计人天：<strong>{{ item.estimatedWorkload != null ? item.estimatedWorkload : '-' }}</strong>
                   &nbsp;&nbsp;已花人天：<strong>{{ item.actualWorkload != null ? Number(item.actualWorkload).toFixed(3) : '-' }}</strong>
                 </span>
+                <el-tag size="small" type="info" style="margin-left: auto; flex-shrink: 0;">{{ item.projectStageName || '未设置' }}</el-tag>
               </div>
 
               <!-- 第二行：工时（slider + 输入框） -->
@@ -485,9 +485,10 @@ onMounted(async () => {
 .prj-name { font-size: 15px; font-weight: 600; }
 
 .prj-workload-info {
-  margin-left: auto;
+  margin-left: 8px;
   font-size: 12px;
   color: #909399;
+  white-space: nowrap;
 }
 
 .prj-hours-row {
