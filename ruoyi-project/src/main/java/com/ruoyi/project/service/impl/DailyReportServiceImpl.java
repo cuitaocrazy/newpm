@@ -125,7 +125,7 @@ public class DailyReportServiceImpl implements IDailyReportService
         {
             for (DailyReportDetail detail : detailList)
             {
-                if (detail.getWorkHours() != null)
+                if ("work".equals(detail.getEntryType()) && detail.getWorkHours() != null)
                 {
                     totalWorkHours = totalWorkHours.add(detail.getWorkHours());
                 }
@@ -166,6 +166,18 @@ public class DailyReportServiceImpl implements IDailyReportService
             {
                 detail.setReportId(report.getReportId());
                 detail.setCreateBy(username);
+                // entryType 默认 work
+                if (detail.getEntryType() == null || detail.getEntryType().isEmpty()) {
+                    detail.setEntryType("work");
+                }
+                // 假期行 workContent 默认空字符串
+                if (!"work".equals(detail.getEntryType()) && detail.getWorkContent() == null) {
+                    detail.setWorkContent("");
+                }
+                // 假期行 workHours = leaveHours（前端传 leaveHours，统一用 workHours 存储）
+                if (!"work".equals(detail.getEntryType()) && detail.getLeaveHours() != null) {
+                    detail.setWorkHours(detail.getLeaveHours());
+                }
             }
             detailMapper.batchInsert(detailList);
         }
@@ -173,7 +185,7 @@ public class DailyReportServiceImpl implements IDailyReportService
         // 更新受影响项目的实际工作量(小时) = 该项目所有日报明细工时之和
         Set<Long> affectedProjectIds = (detailList != null ? detailList : java.util.Collections.<DailyReportDetail>emptyList())
                 .stream()
-                .filter(d -> d.getProjectId() != null)
+                .filter(d -> d.getProjectId() != null && "work".equals(d.getEntryType()))
                 .map(DailyReportDetail::getProjectId)
                 .collect(Collectors.toSet());
         for (Long projectId : affectedProjectIds)
