@@ -492,6 +492,7 @@
                 :min="0"
                 controls-position="right"
                 style="width: 100%"
+                @change="validateDetailTotal"
               />
             </template>
           </el-table-column>
@@ -917,6 +918,19 @@ function handleDeleteDetail(index) {
 /** 计算合计金额（由 computed totalAmount 自动处理，此处保留以兼容 @change） */
 function calculateTotalAmount() {}
 
+/** 校验确认明细合计不超过公司确认金额 */
+function validateDetailTotal() {
+  const total = parseFloat(totalAmount.value) || 0
+  const companyAmount = parseFloat(form.value.confirmAmount) || 0
+  if (companyAmount > 0 && total > companyAmount) {
+    proxy.$modal.msgWarning(
+      `确认明细合计（¥${totalAmount.value}）不能大于公司确认金额（¥${formatAmount(form.value.confirmAmount)}）`
+    )
+    return false
+  }
+  return true
+}
+
 /** 表单重置 */
 function reset() {
   form.value = {
@@ -949,6 +963,7 @@ function submitForm() {
         proxy.$modal.msgError("请至少添加一条确认明细")
         return
       }
+      if (!validateDetailTotal()) return
       for (let i = 0; i < form.value.detailList.length; i++) {
         const detail = form.value.detailList[i]
         if (!detail.deptId) {
