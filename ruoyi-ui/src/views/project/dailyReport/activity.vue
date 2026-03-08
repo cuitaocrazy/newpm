@@ -125,15 +125,27 @@
               <div v-if="getCellDetails(dateStr).length === 0 && isWorkday(dateStr, dayType)" class="cell-empty">
                 未填报
               </div>
+              <!-- 假期行 -->
+              <div v-for="leave in getCellLeaves(dateStr)" :key="leave.detailId || leave.entryType"
+                class="cell-leave">
+                <span class="cell-leave-dot" :style="{ background: LEAVE_TYPE_COLOR[leave.entryType] }"></span>
+                <span class="cell-leave-label" :style="{ color: LEAVE_TYPE_COLOR[leave.entryType] }">
+                  {{ LEAVE_TYPE_LABEL[leave.entryType] }}
+                </span>
+                <span class="cell-leave-h">{{ leave.leaveHours || leave.workHours }}h</span>
+              </div>
             </div>
           </div>
         </template>
       </MonthCalendar>
 
       <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:#67c23a"></span> >=8h</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#e6a23c"></span> &lt;8h</span>
-        <span class="legend-item"><span class="legend-dot" style="background:#409eff"></span> &gt;8h</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#67c23a"></span>项目满勤(≥8h)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#e6a23c"></span>项目不满(&lt;8h)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#409eff"></span>项目超时(&gt;8h)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#f56c6c"></span>请假</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#b37feb"></span>倒休</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#36cfc9"></span>年假</span>
       </div>
     </el-card>
 
@@ -161,7 +173,7 @@
             </el-tag>
           </div>
         </template>
-        <div v-for="detail in person.detailList" :key="detail.detailId" class="drawer-prj">
+        <div v-for="detail in person.detailList.filter(d => !d.entryType || d.entryType === 'work')" :key="detail.detailId" class="drawer-prj">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
             <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning">
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
@@ -178,6 +190,16 @@
           <div style="font-size: 11px; color: #c0c4cc; margin-top: 3px;">
             更新于 {{ formatTime(detail.updateTime) }}
           </div>
+        </div>
+        <!-- 假期行 -->
+        <div v-for="leave in person.detailList.filter(d => d.entryType && d.entryType !== 'work')"
+          :key="'leave-' + leave.detailId" class="drawer-leave">
+          <span class="cell-leave-dot" :style="{ background: LEAVE_TYPE_COLOR[leave.entryType] }"></span>
+          <span :style="{ color: LEAVE_TYPE_COLOR[leave.entryType], fontWeight: 600 }">
+            {{ LEAVE_TYPE_LABEL[leave.entryType] }}
+          </span>
+          <span style="margin-left: auto; font-weight: 700;">{{ leave.leaveHours || leave.workHours }}h</span>
+          <span v-if="leave.remark" style="font-size: 12px; color: #909399; margin-left: 8px;">{{ leave.remark }}</span>
         </div>
       </el-card>
     </el-drawer>
@@ -216,6 +238,8 @@ const drawerPeople = ref([])
 const drawerStats = ref({ count: 0, totalHours: 0, fullCount: 0 })
 
 const projectColors = ['#409eff', '#67c23a', '#f56c6c', '#e6a23c', '#b37feb', '#00b894', '#fdcb6e', '#909399']
+const LEAVE_TYPE_COLOR = { leave: '#f56c6c', comp: '#b37feb', annual: '#36cfc9' }
+const LEAVE_TYPE_LABEL = { leave: '请假', comp: '倒休', annual: '年假' }
 const personColorMap = {}
 let colorIndex = 0
 
@@ -408,7 +432,13 @@ function getCellPeople(dateStr) {
 function getCellDetails(dateStr) {
   const people = dataByDate.value[dateStr] || []
   const report = people.find(r => r.userId === queryParams.value.userId)
-  return report?.detailList || []
+  return (report?.detailList || []).filter(d => !d.entryType || d.entryType === 'work')
+}
+
+function getCellLeaves(dateStr) {
+  const people = dataByDate.value[dateStr] || []
+  const report = people.find(r => r.userId === queryParams.value.userId)
+  return (report?.detailList || []).filter(d => d.entryType && d.entryType !== 'work')
 }
 
 function selectPerson(userId) {
@@ -561,4 +591,27 @@ onMounted(async () => {
 /* 抽屉内项目 */
 .drawer-prj { padding: 8px 0; border-bottom: 1px solid #f5f7fa; }
 .drawer-prj:last-child { border-bottom: none; }
+.cell-leave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  font-size: 11px;
+}
+.cell-leave-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cell-leave-label { font-weight: 600; }
+.cell-leave-h { font-weight: 700; margin-left: auto; }
+.drawer-leave {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f5f7fa;
+  font-size: 13px;
+}
 </style>
