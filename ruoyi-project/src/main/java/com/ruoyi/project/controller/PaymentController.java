@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -56,8 +57,16 @@ public class PaymentController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:payment:list')")
     @GetMapping("/listWithContracts")
-    public TableDataInfo listWithContracts(Contract contract)
+    public TableDataInfo listWithContracts(Contract contract,
+            @RequestParam(required = false) String actualPaymentDateStart,
+            @RequestParam(required = false) String actualPaymentDateEnd)
     {
+        if (actualPaymentDateStart != null) {
+            contract.getParams().put("actualPaymentDateStart", actualPaymentDateStart);
+        }
+        if (actualPaymentDateEnd != null) {
+            contract.getParams().put("actualPaymentDateEnd", actualPaymentDateEnd);
+        }
         startPage();
         List<Contract> list = contractService.selectContractWithPaymentsList(contract);
         return getDataTable(list);
@@ -68,8 +77,16 @@ public class PaymentController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:payment:list')")
     @GetMapping("/sumPaymentAmount")
-    public AjaxResult sumPaymentAmount(Contract contract)
+    public AjaxResult sumPaymentAmount(Contract contract,
+            @RequestParam(required = false) String actualPaymentDateStart,
+            @RequestParam(required = false) String actualPaymentDateEnd)
     {
+        if (actualPaymentDateStart != null) {
+            contract.getParams().put("actualPaymentDateStart", actualPaymentDateStart);
+        }
+        if (actualPaymentDateEnd != null) {
+            contract.getParams().put("actualPaymentDateEnd", actualPaymentDateEnd);
+        }
         return success(contractService.sumPaymentAmount(contract));
     }
 
