@@ -188,4 +188,9 @@ public interface IProjectService
      * @return Map 包含：exists(boolean), existingProject(Map{projectCode,projectName}), suggestedCode(String)
      */
     public Map<String, Object> checkProjectCode(String projectCode, Long excludeProjectId);
+
+    /**
+     * 关联合同到项目
+     */
+    public void bindContractToProject(Long projectId, Long contractId);
 }

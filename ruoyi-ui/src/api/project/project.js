@@ -152,3 +152,12 @@ export function getContractByProjectId(projectId) {
     method: 'get'
   })
 }
+
+// 关联合同到项目
+export function bindContractToProject(projectId, contractId) {
+  return request({
+    url: `/project/project/${projectId}/bindContract`,
+    method: 'post',
+    params: { contractId }
+  })
+}

@@ -273,7 +273,7 @@
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
             <el-button v-if="scope.row.approvalStatus !== '1'" link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">编辑</el-button>
 
-            <!-- 动态合同按钮：有合同显示"查看合同"，无合同显示"添加合同" -->
+            <!-- 合同按钮：有合同显示"查看合同"，始终显示"关联合同" -->
             <el-button
               v-if="scope.row.contractId"
               v-hasPermi="['project:contract:query']"
@@ -283,13 +283,12 @@
               @click="handleViewContract(scope.row)"
             >查看合同</el-button>
             <el-button
-              v-if="!scope.row.contractId"
               v-hasPermi="['project:contract:add']"
               link
               type="primary"
-              icon="Plus"
-              @click="handleAddContract(scope.row)"
-            >添加合同</el-button>
+              icon="Link"
+              @click="handleBindContract(scope.row)"
+            >关联合同</el-button>
 
             <!-- 收入确认/查看按钮 -->
             <el-button
@@ -381,11 +380,43 @@
       </el-timeline>
       <el-empty v-else description="暂无审核记录" />
     </el-dialog>
+
+    <!-- 关联合同 dialog -->
+    <el-dialog title="关联合同" v-model="bindContractDialogVisible" width="580px" append-to-body @close="resetBindContractDialog">
+      <el-form :model="bindContractForm" label-width="90px">
+        <el-form-item label="项目名称">
+          <span>{{ bindContractForm.projectName }}</span>
+        </el-form-item>
+        <el-form-item label="选择合同" required>
+          <dept-contract-select
+            v-model="selectedContract"
+            placeholder="请先选择部门，再选择合同"
+            width="100%"
+            @change="handleContractChange"
+          />
+        </el-form-item>
+      </el-form>
+      <!-- 已选合同信息 -->
+      <el-descriptions v-if="selectedContract" :column="2" border size="small" style="margin-top: 4px;">
+        <el-descriptions-item label="合同名称" :span="2">{{ selectedContract.contractName }}</el-descriptions-item>
+        <el-descriptions-item label="合同编号">{{ selectedContract.contractCode || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="合同金额">
+          {{ selectedContract.contractAmount ? Number(selectedContract.contractAmount).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) + ' 元' : '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="合同状态">
+          <dict-tag :options="sys_htzt" :value="selectedContract.contractStatus" />
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="bindContractDialogVisible = false">取 消</el-button>
+        <el-button type="primary" :disabled="!bindContractForm.contractId" @click="submitBindContract">确 定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, bindContractToProject, getContractByProjectId } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -442,6 +473,11 @@ const approvalRules = {
 // 审核历史对话框
 const historyDialogVisible = ref(false)
 const approvalHistory = ref([])
+
+// 关联合同 dialog
+const bindContractDialogVisible = ref(false)
+const bindContractForm = ref({ projectId: null, projectName: '', contractId: null, contractName: '' })
+const selectedContract = ref(null)
 
 // 辅助数据源
 const deptTree = ref([])
@@ -646,11 +682,46 @@ function handleUpdate(row) {
   router.push(`/project/list/edit/${projectId}`)
 }
 
-/** 添加合同 */
-function handleAddContract(row) {
-  router.push({
-    path: '/htkx/contract/add',
-    query: { projectId: row.projectId }
+/** 关联合同 */
+function handleBindContract(row) {
+  bindContractForm.value = { projectId: row.projectId, projectName: row.projectName, contractId: null, contractName: '' }
+  selectedContract.value = null
+  bindContractDialogVisible.value = true
+  // 已有关联合同则预加载
+  if (row.contractId) {
+    getContractByProjectId(row.projectId).then(res => {
+      if (res.data) {
+        const c = res.data
+        bindContractForm.value.contractId = c.contractId
+        bindContractForm.value.contractName = c.contractName
+        selectedContract.value = c
+      }
+    })
+  }
+}
+
+function resetBindContractDialog() {
+  bindContractForm.value = { projectId: null, projectName: '', contractId: null, contractName: '' }
+  selectedContract.value = null
+}
+
+/** DeptContractSelect 选中合同回调 */
+function handleContractChange(item) {
+  if (item) {
+    bindContractForm.value.contractId = item.contractId
+    bindContractForm.value.contractName = item.contractName
+  } else {
+    bindContractForm.value.contractId = null
+    bindContractForm.value.contractName = ''
+  }
+}
+
+function submitBindContract() {
+  if (!bindContractForm.value.contractId) return
+  bindContractToProject(bindContractForm.value.projectId, bindContractForm.value.contractId).then(() => {
+    proxy.$modal.msgSuccess('关联合同成功')
+    bindContractDialogVisible.value = false
+    getList()
   })
 }
 

@@ -45,6 +45,10 @@ import ImagePreview from "@/components/ImagePreview/index.vue"
 import DictTag from '@/components/DictTag/index.vue'
 // 项目部门选择组件
 import ProjectDeptSelect from '@/components/ProjectDeptSelect/index.vue'
+// 部门+项目联动选择组件
+import DeptProjectSelect from '@/components/DeptProjectSelect/index.vue'
+// 部门+合同联动选择组件
+import DeptContractSelect from '@/components/DeptContractSelect/index.vue'
 // 字典选择组件
 import DictSelect from '@/components/DictSelect/index.vue'
 // 用户选择组件
@@ -78,6 +82,8 @@ app.component('ImagePreview', ImagePreview)
 app.component('RightToolbar', RightToolbar)
 app.component('Editor', Editor)
 app.component('ProjectDeptSelect', ProjectDeptSelect)
+app.component('DeptProjectSelect', DeptProjectSelect)
+app.component('DeptContractSelect', DeptContractSelect)
 app.component('DictSelect', DictSelect)
 app.component('UserSelect', UserSelect)
 app.component('SecondaryRegionSelect', SecondaryRegionSelect)

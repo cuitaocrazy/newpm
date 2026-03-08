@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -119,6 +120,17 @@ public class ContractController extends BaseController
     {
         List<Contract> list = contractService.searchContracts(keyword);
         return success(list);
+    }
+
+    /**
+     * 按部门查询合同（用于项目关联合同选择器）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:list,project:contract:add,project:project:edit')")
+    @GetMapping("/listByDept")
+    public AjaxResult listByDept(@RequestParam Long deptId,
+                                 @RequestParam(required = false) String keyword)
+    {
+        return success(contractService.listContractsByDept(deptId, keyword));
     }
 
     /**

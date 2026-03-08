@@ -75,3 +75,15 @@ export function checkContractCodeUnique(contractCode, contractId) {
     }
   })
 }
+
+// 按部门查询合同（用于关联合同选择器）
+export function listContractsByDept(deptId, keyword) {
+  return request({
+    url: '/project/contract/listByDept',
+    method: 'get',
+    params: {
+      deptId,
+      keyword
+    }
+  })
+}

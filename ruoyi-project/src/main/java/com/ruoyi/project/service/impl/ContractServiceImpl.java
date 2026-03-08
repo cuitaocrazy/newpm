@@ -281,6 +281,11 @@ public class ContractServiceImpl implements IContractService
         return contractMapper.searchContracts(keyword);
     }
 
+    @Override
+    public List<Map<String, Object>> listContractsByDept(Long deptId, String keyword)
+    {
+        return contractMapper.listContractsByDept(deptId, keyword);
+    }
     /**
      * 检查合同名称是否唯一
      *

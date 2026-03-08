@@ -20,9 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.project.mapper.ProjectMapper;
 import com.ruoyi.project.mapper.ProjectMemberMapper;
 import com.ruoyi.project.mapper.ContractMapper;
+import com.ruoyi.project.mapper.ProjectContractRelMapper;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.domain.ProjectMember;
 import com.ruoyi.project.domain.Contract;
+import com.ruoyi.project.domain.ProjectContractRel;
 import com.ruoyi.project.service.IProjectService;
 
 /**
@@ -42,6 +44,9 @@ public class ProjectServiceImpl implements IProjectService
 
     @Autowired
     private ProjectMemberMapper projectMemberMapper;
+
+    @Autowired
+    private ProjectContractRelMapper projectContractRelMapper;
 
     /**
      * 查询项目管理
@@ -554,5 +559,23 @@ public class ProjectServiceImpl implements IProjectService
 
             projectMemberMapper.batchInsert(members);
         }
+    }
+
+    @Override
+    @Transactional
+    public void bindContractToProject(Long projectId, Long contractId)
+    {
+        // 先将该项目已有的有效关联置为失效
+        projectContractRelMapper.invalidateByProjectId(projectId);
+        // 新建关联
+        ProjectContractRel rel = new ProjectContractRel();
+        rel.setProjectId(projectId.toString());
+        rel.setContractId(contractId);
+        rel.setRelStatus("有效");
+        rel.setBindDate(new Date());
+        rel.setDelFlag("0");
+        rel.setCreateBy(SecurityUtils.getUsername());
+        rel.setCreateTime(DateUtils.getNowDate());
+        projectContractRelMapper.insertProjectContractRel(rel);
     }
 }

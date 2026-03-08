@@ -27,4 +27,9 @@ public interface ProjectContractRelMapper
      * @return 结果
      */
     public int deleteProjectContractRelByContractId(Long contractId);
+
+    /**
+     * 将项目已有的有效关联置为失效（软删除）
+     */
+    public int invalidateByProjectId(Long projectId);
 }

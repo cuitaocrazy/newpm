@@ -365,4 +365,16 @@ public class ProjectController extends BaseController
     {
         return success(projectService.searchProjectsByName(projectName));
     }
+
+    /**
+     * 关联合同到项目
+     */
+    @Log(title = "项目管理", businessType = BusinessType.UPDATE)
+    @PreAuthorize("@ss.hasAnyPermi('project:project:edit,project:contract:add')")
+    @PostMapping("/{projectId}/bindContract")
+    public AjaxResult bindContract(@PathVariable Long projectId, @RequestParam Long contractId)
+    {
+        projectService.bindContractToProject(projectId, contractId);
+        return success();
+    }
 }

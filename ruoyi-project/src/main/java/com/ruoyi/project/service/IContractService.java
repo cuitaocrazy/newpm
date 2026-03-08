@@ -78,6 +78,11 @@ public interface IContractService
     public List<Contract> searchContracts(String keyword);
 
     /**
+     * 按部门查询合同（用于关联合同选择器，不影响现有查询）
+     */
+    public List<Map<String, Object>> listContractsByDept(Long deptId, String keyword);
+
+    /**
      * 检查合同名称是否唯一
      *
      * @param contractName 合同名称

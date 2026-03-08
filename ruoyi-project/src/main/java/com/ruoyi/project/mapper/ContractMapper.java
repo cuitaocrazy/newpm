@@ -80,6 +80,12 @@ public interface ContractMapper
     public List<Contract> searchContracts(String keyword);
 
     /**
+     * 按部门查询合同（轻量，用于关联合同选择器）
+     */
+    public List<Map<String, Object>> listContractsByDept(@org.apache.ibatis.annotations.Param("deptId") Long deptId,
+                                                         @org.apache.ibatis.annotations.Param("keyword") String keyword);
+
+    /**
      * 查询合同及其付款里程碑列表（用于付款里程碑查询页面）
      *
      * @param contract 查询条件
