@@ -530,7 +530,7 @@
 <script setup name="RevenueTeam">
 import { ref, reactive, toRefs, getCurrentInstance, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { listTeamRevenue, getTeamRevenueSummary, getTeamRevenue, getProjectInfo, addTeamRevenue, updateTeamRevenue, delTeamRevenue, exportTeamRevenue } from "@/api/revenue/team"
-import { getDeptTree, searchProjects , listProjectByName} from "@/api/project/project"
+import { getDeptTree, searchProjects } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 import useUserStore from '@/store/modules/user'

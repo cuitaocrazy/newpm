@@ -1,7 +1,7 @@
 <template>
   <div class="app-container manager-change-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="100px">
-      <el-form-item label="项目名称" prop="projectId">
+      <el-form-item label="项目名称" prop="projectName">
         <el-autocomplete
           v-model="queryParams.projectName"
           :fetch-suggestions="loadProjectOptions"

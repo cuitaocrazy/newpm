@@ -385,7 +385,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, listProjectByName, searchProjects } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
