@@ -209,6 +209,18 @@ public class Project extends BaseEntity
     /** 备用域5 */
     private String reservedField5;
 
+    /** 父项目ID，NULL 表示顶层主项目 */
+    private Long parentId;
+
+    /** 项目层级：0=主项目（默认），1=子项目 */
+    private Integer projectLevel;
+
+    /** 子项目编号（在父项目内的简短标识，如 01、用户系统） */
+    private String taskCode;
+
+    /** 父项目名称（展示用，非 DB 字段，由 Mapper 关联查询填充） */
+    private String parentProjectName;
+
     /** 删除标志(0正常 1删除) */
     private String delFlag;
 
@@ -868,6 +880,18 @@ public class Project extends BaseEntity
         return reservedField5;
     }
 
+    public void setParentId(Long parentId)              { this.parentId = parentId; }
+    public Long getParentId()                           { return parentId; }
+
+    public void setProjectLevel(Integer projectLevel)   { this.projectLevel = projectLevel; }
+    public Integer getProjectLevel()                    { return projectLevel; }
+
+    public void setTaskCode(String taskCode)            { this.taskCode = taskCode; }
+    public String getTaskCode()                         { return taskCode; }
+
+    public void setParentProjectName(String n)          { this.parentProjectName = n; }
+    public String getParentProjectName()                { return parentProjectName; }
+
     public void setDelFlag(String delFlag) 
     {
         this.delFlag = delFlag;
@@ -1106,6 +1130,9 @@ public class Project extends BaseEntity
             .append("reservedField4", getReservedField4())
             .append("reservedField5", getReservedField5())
             .append("delFlag", getDelFlag())
+            .append("parentId", getParentId())
+            .append("projectLevel", getProjectLevel())
+            .append("taskCode", getTaskCode())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
