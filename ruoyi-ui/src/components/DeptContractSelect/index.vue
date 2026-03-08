@@ -30,37 +30,20 @@
           size="small"
           style="margin-bottom: 8px"
           @input="onSearchInput"
-          @clear="onSearchClear"
         />
 
-        <!-- 搜索结果（有关键字时） -->
-        <template v-if="searchText">
-          <div v-if="searchLoading" class="hint-loading">搜索中...</div>
-          <div v-else-if="searchResults.length === 0" class="hint-empty">无匹配合同</div>
-          <el-scrollbar v-else max-height="320px">
-            <div
-              v-for="item in searchResults"
-              :key="item.contractId"
-              class="search-item"
-              :class="{ 'is-selected': selectedContract && selectedContract.contractId === item.contractId }"
-              @click="selectContract(item)"
-            >
-              <div class="search-item__name">{{ item.contractName }}</div>
-              <div class="search-item__meta">{{ item.contractCode || '' }}</div>
-            </div>
-          </el-scrollbar>
-        </template>
-
-        <!-- 部门树（无关键字时） -->
+        <!-- 部门+合同树（始终显示） -->
+        <div v-if="treeLoading" class="hint-loading">加载中...</div>
         <el-scrollbar v-else max-height="320px">
           <el-tree
             ref="treeRef"
+            :data="treeData"
             node-key="nodeId"
-            lazy
-            :load="loadNode"
+            :filter-node-method="filterNode"
             :props="treeProps"
             highlight-current
             :current-node-key="currentNodeKey"
+            default-expand-all
             @node-click="handleNodeClick"
           />
         </el-scrollbar>
@@ -78,7 +61,7 @@
 import { ref, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { getDeptTree } from '@/api/project/project'
-import { listContractsByDept, searchContracts } from '@/api/project/contract'
+import { listContractsByDept } from '@/api/project/contract'
 
 const props = defineProps({
   modelValue: {
@@ -109,89 +92,74 @@ const treeProps = { label: 'label', children: 'children', isLeaf: 'isLeaf' }
 
 const visible = ref(false)
 const treeRef = ref(null)
+const treeData = ref([])
+const treeLoading = ref(false)
+const searchText = ref('')
 const selectedContract = ref(props.modelValue || null)
 const currentNodeKey = ref(null)
 
-// 搜索模式
-const searchText = ref('')
-const searchResults = ref([])
-const searchLoading = ref(false)
-let searchTimer = null
-
-// 部门数据仅请求一次，缓存在此
-let allValidDepts = []
+let dataLoaded = false
 
 watch(() => props.modelValue, (val) => {
   selectedContract.value = val || null
   currentNodeKey.value = val ? `c_${val.contractId}` : null
 })
 
-// ─── 搜索相关 ────────────────────────────────────────────
+// 首次打开时加载完整树数据
+watch(visible, (val) => {
+  if (val && !dataLoaded) {
+    loadAll()
+  }
+})
 
-function onSearchInput(val) {
-  clearTimeout(searchTimer)
-  if (!val) return
-  searchLoading.value = true
-  searchTimer = setTimeout(() => {
-    searchContracts({ keyword: val }).then(res => {
-      searchResults.value = res.data || []
-    }).finally(() => {
-      searchLoading.value = false
+/** 一次性加载所有部门（三级及以下）及其合同，拼成完整树 */
+async function loadAll() {
+  treeLoading.value = true
+  try {
+    const deptRes = await getDeptTree()
+    const allDepts = deptRes.data || []
+    const validDepts = allDepts.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
+    const validIds = new Set(validDepts.map(d => d.deptId))
+
+    // 根部门（parentId 不在 validDepts 内的）
+    const roots = validDepts.filter(d => !validIds.has(d.parentId))
+
+    // 按部门并行拉取合同
+    const contractResults = await Promise.all(
+      validDepts.map(d =>
+        listContractsByDept(d.deptId, '').then(res => ({
+          deptId: d.deptId,
+          contracts: res.data || []
+        })).catch(() => ({ deptId: d.deptId, contracts: [] }))
+      )
+    )
+    // deptId → contracts 映射
+    const contractMap = {}
+    contractResults.forEach(({ deptId, contracts }) => {
+      contractMap[deptId] = contracts
     })
-  }, 300)
-}
 
-function onSearchClear() {
-  searchResults.value = []
-}
+    // 递归构建树
+    function buildTree(depts) {
+      return depts.map(d => {
+        const subDepts = validDepts.filter(sub => sub.parentId === d.deptId)
+        const contracts = (contractMap[d.deptId] || []).map(c => makeContractNode(c))
+        const children = [...buildTree(subDepts), ...contracts]
+        return {
+          nodeId: `d_${d.deptId}`,
+          label: d.deptName,
+          deptId: d.deptId,
+          isDept: true,
+          isLeaf: false,
+          children
+        }
+      })
+    }
 
-function selectContract(item) {
-  selectedContract.value = makeContractNode(item)
-  currentNodeKey.value = `c_${item.contractId}`
-  emit('update:modelValue', selectedContract.value)
-  emit('change', selectedContract.value)
-  visible.value = false
-}
-
-// ─── 部门树懒加载 ─────────────────────────────────────────
-
-function loadNode(node, resolve) {
-  if (node.level === 0) {
-    getDeptTree().then(res => {
-      const all = res.data || []
-      allValidDepts = all.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
-      const validIds = new Set(allValidDepts.map(d => d.deptId))
-      const roots = allValidDepts
-        .filter(d => !validIds.has(d.parentId))
-        .map(d => makeDeptNode(d))
-      resolve(roots)
-    }).catch(() => resolve([]))
-    return
-  }
-
-  if (node.data.isDept) {
-    const deptId = node.data.deptId
-    const subDepts = allValidDepts
-      .filter(d => d.parentId === deptId)
-      .map(d => makeDeptNode(d))
-    listContractsByDept(deptId, '').then(res => {
-      const contracts = (res.data || []).map(c => makeContractNode(c))
-      resolve([...subDepts, ...contracts])
-    }).catch(() => resolve(subDepts))
-    return
-  }
-
-  resolve([])
-}
-
-function makeDeptNode(d) {
-  return {
-    nodeId: `d_${d.deptId}`,
-    label: d.deptName,
-    deptId: d.deptId,
-    parentId: d.parentId,
-    isDept: true,
-    isLeaf: false
+    treeData.value = buildTree(roots)
+    dataLoaded = true
+  } finally {
+    treeLoading.value = false
   }
 }
 
@@ -209,6 +177,22 @@ function makeContractNode(c) {
   }
 }
 
+// ─── 搜索过滤 ────────────────────────────────────────────
+
+function filterNode(value, data) {
+  if (!value) return true
+  // 合同节点：按名称匹配
+  if (data.isContract) return data.contractName.includes(value)
+  // 部门节点：返回 false 让 el-tree 根据子节点决定是否显示
+  return false
+}
+
+function onSearchInput(val) {
+  treeRef.value?.filter(val)
+}
+
+// ─── 选中 ────────────────────────────────────────────────
+
 function handleNodeClick(data) {
   if (!data.isContract) return
   selectedContract.value = data
@@ -222,13 +206,15 @@ function clearSelection() {
   selectedContract.value = null
   currentNodeKey.value = null
   searchText.value = ''
-  searchResults.value = []
+  treeRef.value?.filter('')
   treeRef.value?.setCurrentKey(null)
   emit('update:modelValue', null)
   emit('change', null)
 }
 
 function onHide() {
+  searchText.value = ''
+  treeRef.value?.filter('')
   emit('blur')
 }
 </script>
@@ -285,39 +271,11 @@ function onHide() {
   padding: 8px;
 }
 
-.hint-loading,
-.hint-empty {
+.hint-loading {
   font-size: 13px;
   color: var(--el-text-color-placeholder);
   text-align: center;
-  padding: 16px 0;
-}
-
-.search-item {
-  padding: 7px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.search-item:hover {
-  background-color: var(--el-fill-color-light);
-}
-
-.search-item.is-selected {
-  background-color: var(--el-color-primary-light-9);
-}
-
-.search-item__name {
-  font-size: 13px;
-  color: var(--el-text-color-primary);
-  line-height: 1.4;
-}
-
-.search-item__meta {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 2px;
+  padding: 20px 0;
 }
 
 .panel-footer {
