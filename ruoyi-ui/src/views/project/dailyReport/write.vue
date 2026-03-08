@@ -96,6 +96,43 @@
                 />
               </div>
             </div>
+
+            <!-- 假期记录区块 -->
+            <div class="leave-section">
+              <div class="leave-header">
+                <span class="leave-title">假期记录</span>
+                <el-button
+                  type="primary" size="small" plain
+                  :disabled="!isEditable"
+                  @click="leaveList.push({ entryType: 'leave', leaveHours: 1, remark: '' })"
+                >+ 添加假期</el-button>
+              </div>
+              <div v-if="leaveList.length === 0" class="leave-empty">暂无假期记录</div>
+              <div v-for="(item, idx) in leaveList" :key="idx" class="leave-item">
+                <span class="leave-color-dot" :style="{ background: LEAVE_TYPE_COLOR[item.entryType] || '#ccc' }"></span>
+                <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isEditable">
+                  <el-option label="请假" value="leave" />
+                  <el-option label="倒休" value="comp" />
+                  <el-option label="年假" value="annual" />
+                </el-select>
+                <el-input-number
+                  v-model="item.leaveHours"
+                  :min="0.5" :max="24" :step="0.5" :precision="1"
+                  size="small" style="width: 120px;"
+                  :disabled="!isEditable"
+                />
+                <span style="color: #909399; font-size: 13px;">小时</span>
+                <el-input
+                  v-model="item.remark"
+                  placeholder="备注(选填)"
+                  size="small"
+                  style="flex: 1;"
+                  :disabled="!isEditable"
+                />
+                <el-button link type="danger" icon="Delete" :disabled="!isEditable"
+                  @click="leaveList.splice(idx, 1)" />
+              </div>
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -139,6 +176,13 @@ const monthReports = ref({}) // { 'yyyy-MM-dd': totalHours }
 const workCalendarMap = ref({}) // { 'yyyy-MM-dd': { dayType, dayName } }
 
 const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#b37feb', '#00b894', '#fdcb6e']
+
+// 假期类型颜色（不与现有绿/橙冲突）
+const LEAVE_TYPE_COLOR = { leave: '#f56c6c', comp: '#b37feb', annual: '#36cfc9' }
+const LEAVE_TYPE_LABEL = { leave: '请假', comp: '倒休', annual: '年假' }
+
+// 假期记录列表（当天）
+const leaveList = ref([])
 
 const totalHours = computed(() => {
   return formList.value.reduce((sum, item) => sum + (item.workHours || 0), 0)
@@ -226,7 +270,7 @@ async function loadDayReport(dateStr) {
 
     // 构建表单：所有项目列出，已有数据的填充
     formList.value = projects.value.map(p => {
-      const detail = report?.detailList?.find(d => d.projectId === p.projectId)
+      const detail = report?.detailList?.find(d => d.projectId === p.projectId && (!d.entryType || d.entryType === 'work'))
       return {
         projectId: p.projectId,
         projectName: p.projectName,
@@ -240,6 +284,15 @@ async function loadDayReport(dateStr) {
         workContent: detail ? detail.workContent : ''
       }
     })
+
+    leaveList.value = (report?.detailList || [])
+      .filter(d => d.entryType && d.entryType !== 'work')
+      .map(d => ({
+        detailId: d.detailId,
+        entryType: d.entryType,
+        leaveHours: parseFloat(d.leaveHours || d.workHours) || 0,
+        remark: d.remark || ''
+      }))
   } finally {
     loading.value = false
   }
@@ -295,11 +348,26 @@ async function handleSave() {
       projectId: f.projectId,
       projectStage: f.projectStage,
       workHours: f.workHours,
-      workContent: f.workContent
+      workContent: f.workContent,
+      entryType: 'work'
     }))
 
-  if (details.length === 0) {
-    ElMessage.warning('请至少填写一个项目的工时和工作内容')
+  // 追加假期行
+  const leaveDetails = leaveList.value
+    .filter(l => l.entryType && l.leaveHours > 0)
+    .map(l => ({
+      projectId: null,
+      workHours: l.leaveHours,
+      workContent: '',
+      entryType: l.entryType,
+      leaveHours: l.leaveHours,
+      remark: l.remark || ''
+    }))
+
+  const allDetails = [...details, ...leaveDetails]
+
+  if (allDetails.length === 0) {
+    ElMessage.warning('请至少填写一个项目的工时或假期记录')
     return
   }
 
@@ -307,7 +375,7 @@ async function handleSave() {
   try {
     await saveDailyReport({
       reportDate: selectedDate.value,
-      detailList: details
+      detailList: allDetails
     })
     ElMessage.success('日报保存成功')
     loadMonthOverview()
@@ -329,6 +397,7 @@ async function handleDelete() {
   ElMessage.success('日报已删除')
   currentReportId.value = null
   formList.value.forEach(item => { item.workHours = 0; item.workContent = '' })
+  leaveList.value = []
   loadMonthOverview()
 }
 
@@ -398,4 +467,40 @@ onMounted(async () => {
 .hours-label { font-size: 13px; color: #606266; white-space: nowrap; }
 
 .prj-content-row {}
+
+.leave-section {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.leave-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.leave-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+.leave-empty {
+  font-size: 13px;
+  color: #c0c4cc;
+  text-align: center;
+  padding: 8px 0;
+}
+.leave-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.leave-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 </style>
