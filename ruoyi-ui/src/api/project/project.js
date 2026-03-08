@@ -161,3 +161,24 @@ export function bindContractToProject(projectId, contractId) {
     params: { contractId }
   })
 }
+
+// ===== 子项目相关 API =====
+
+/** 查询子项目列表（分页） */
+export function listSubProject(query) {
+  return request({ url: '/project/project/subList', method: 'get', params: query })
+}
+
+/** 获取子项目轻量选项（下拉用） */
+export function getSubProjectOptions(parentId) {
+  return request({ url: '/project/project/subProjectOptions', method: 'get', params: { parentId } })
+}
+
+/** 批量判断哪些主项目有子项目，返回有子项目的 projectId 数组 */
+export function getProjectsHasSubProject(projectIds) {
+  return request({
+    url: '/project/project/projectsHasSubProject',
+    method: 'get',
+    params: { projectIds: projectIds.join(',') }
+  })
+}
