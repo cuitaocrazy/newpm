@@ -25,11 +25,10 @@
         <el-scrollbar max-height="360px">
           <el-tree
             ref="treeRef"
-            :data="treeData"
             node-key="nodeId"
             lazy
             :load="loadNode"
-            :props="{ label: 'label', children: 'children', isLeaf: 'isLeaf' }"
+            :props="treeProps"
             highlight-current
             :current-node-key="currentNodeKey"
             @node-click="handleNodeClick"
@@ -45,11 +44,10 @@
 </template>
 
 <script setup name="DeptContractSelect">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { getDeptTree } from '@/api/project/project'
 import { listContractsByDept } from '@/api/project/contract'
-import { handleTree } from '@/utils/ruoyi'
 
 const props = defineProps({
   modelValue: {
@@ -76,67 +74,84 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'change', 'blur'])
 
+const treeProps = { label: 'label', children: 'children', isLeaf: 'isLeaf' }
+
 const visible = ref(false)
 const treeRef = ref(null)
-const treeData = ref([])
 const selectedContract = ref(props.modelValue || null)
 const currentNodeKey = ref(null)
+
+// 部门数据仅请求一次，缓存在此
+let allValidDepts = []
 
 watch(() => props.modelValue, (val) => {
   selectedContract.value = val || null
   currentNodeKey.value = val ? `c_${val.contractId}` : null
 })
 
-/** 懒加载节点：根节点加载部门，部门节点展开时加载合同 */
+/**
+ * el-tree lazy loadNode：
+ *   level 0 → 加载三级及以下根部门（从服务端拿全量部门后过滤+缓存）
+ *   isDept  → 同时返回该部门的子部门 + 该部门下的合同
+ */
 function loadNode(node, resolve) {
   if (node.level === 0) {
-    // 根节点：加载三级及以下部门
-    getDeptTree().then(response => {
-      const allDepts = response.data || []
-      const validDepts = allDepts.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
-      const mapped = validDepts.map(d => ({
-        ...d,
-        nodeId: `d_${d.deptId}`,
-        label: d.deptName,
-        isDept: true,
-        isLeaf: false
-      }))
-      // 建树：找出没有父节点在 validDepts 中的作为根
-      const validDeptIds = new Set(validDepts.map(d => d.deptId))
-      const roots = mapped.filter(d => !validDeptIds.has(d.parentId))
-      // 在 mapped 中建立父子关系
-      const deptTree = handleTree(mapped, 'deptId', 'parentId')
-      // 找出树根（parentId 不在 validDepts 范围内的节点）
-      const rootDepts = deptTree.filter(d => !validDeptIds.has(d.parentId))
-      treeData.value = rootDepts
-      resolve(rootDepts)
+    getDeptTree().then(res => {
+      const all = res.data || []
+      // 三级及以下部门（ancestors 逗号数 >= 2，即 "0,100,101..."）
+      allValidDepts = all.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
+      const validIds = new Set(allValidDepts.map(d => d.deptId))
+      // 根节点：parentId 不在 validDepts 范围内
+      const roots = allValidDepts
+        .filter(d => !validIds.has(d.parentId))
+        .map(d => makeDeptNode(d))
+      resolve(roots)
     }).catch(() => resolve([]))
     return
   }
 
   if (node.data.isDept) {
-    // 部门节点：加载该部门下的合同
-    listContractsByDept(node.data.deptId, '').then(res => {
-      const contracts = (res.data || []).map(c => ({
-        nodeId: `c_${c.contractId}`,
-        label: c.contractName,
-        contractId: c.contractId,
-        contractCode: c.contractCode,
-        contractName: c.contractName,
-        contractAmount: c.contractAmount,
-        contractStatus: c.contractStatus,
-        isLeaf: true,
-        isContract: true
-      }))
-      resolve(contracts)
-    }).catch(() => resolve([]))
+    const deptId = node.data.deptId
+    // 直接子部门（从缓存中查，无需再请求）
+    const subDepts = allValidDepts
+      .filter(d => d.parentId === deptId)
+      .map(d => makeDeptNode(d))
+    // 该部门下的合同（异步加载）
+    listContractsByDept(deptId, '').then(res => {
+      const contracts = (res.data || []).map(c => makeContractNode(c))
+      resolve([...subDepts, ...contracts])
+    }).catch(() => resolve(subDepts))
     return
   }
 
   resolve([])
 }
 
-/** 点击节点：只响应合同叶节点 */
+function makeDeptNode(d) {
+  return {
+    nodeId: `d_${d.deptId}`,
+    label: d.deptName,
+    deptId: d.deptId,
+    parentId: d.parentId,
+    isDept: true,
+    isLeaf: false   // 保持可展开，展开时懒加载合同
+  }
+}
+
+function makeContractNode(c) {
+  return {
+    nodeId: `c_${c.contractId}`,
+    label: c.contractName,
+    contractId: c.contractId,
+    contractCode: c.contractCode,
+    contractName: c.contractName,
+    contractAmount: c.contractAmount,
+    contractStatus: c.contractStatus,
+    isLeaf: true,
+    isContract: true
+  }
+}
+
 function handleNodeClick(data) {
   if (!data.isContract) return
   selectedContract.value = data
