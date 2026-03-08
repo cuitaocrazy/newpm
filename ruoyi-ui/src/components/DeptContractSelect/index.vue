@@ -22,20 +22,13 @@
 
       <!-- 弹出内容 -->
       <div class="dept-contract-select__panel">
-        <el-input
-          v-model="filterText"
-          placeholder="搜索合同名称"
-          clearable
-          size="small"
-          style="margin-bottom: 8px"
-          @input="onFilterInput"
-        />
-        <el-scrollbar max-height="320px">
+        <el-scrollbar max-height="360px">
           <el-tree
             ref="treeRef"
             :data="treeData"
             node-key="nodeId"
-            :filter-node-method="filterNode"
+            lazy
+            :load="loadNode"
             :props="{ label: 'label', children: 'children', isLeaf: 'isLeaf' }"
             highlight-current
             :current-node-key="currentNodeKey"
@@ -55,7 +48,7 @@
 import { ref, watch, onMounted } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { getDeptTree } from '@/api/project/project'
-import { searchContracts } from '@/api/project/contract'
+import { listContractsByDept } from '@/api/project/contract'
 import { handleTree } from '@/utils/ruoyi'
 
 const props = defineProps({
@@ -84,7 +77,6 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change', 'blur'])
 
 const visible = ref(false)
-const filterText = ref('')
 const treeRef = ref(null)
 const treeData = ref([])
 const selectedContract = ref(props.modelValue || null)
@@ -95,66 +87,53 @@ watch(() => props.modelValue, (val) => {
   currentNodeKey.value = val ? `c_${val.contractId}` : null
 })
 
-function filterNode(value, data) {
-  if (!value) return true
-  // 部门节点不过滤（始终显示，让其子节点可见）
-  if (data.isDept) return true
-  return data.label.includes(value)
-}
-
-function onFilterInput() {
-  treeRef.value?.filter(filterText.value)
-}
-
-/** 加载部门树 + 合同，按 OrgUserSelect 模式拼成一棵树 */
-async function loadData() {
-  const [deptRes, contractRes] = await Promise.all([
-    getDeptTree(),
-    searchContracts({})
-  ])
-
-  const allDepts = deptRes.data || []
-  const allContracts = contractRes.data || []
-
-  // 只取三级及以下部门（与项目管理保持一致）
-  const validDepts = allDepts.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
-
-  // 先建部门树
-  const deptTree = handleTree(
-    validDepts.map(d => ({
-      ...d,
-      nodeId: `d_${d.deptId}`,
-      label: d.deptName,
-      isDept: true
-    })),
-    'deptId',
-    'parentId'
-  )
-
-  // 递归：把合同挂到对应部门节点的 children 末尾
-  function appendContracts(nodes) {
-    nodes.forEach(node => {
-      const deptContracts = allContracts
-        .filter(c => c.deptId === node.deptId)
-        .map(c => ({
-          nodeId: `c_${c.contractId}`,
-          label: c.contractName,
-          contractId: c.contractId,
-          contractCode: c.contractCode,
-          contractName: c.contractName,
-          contractAmount: c.contractAmount,
-          contractStatus: c.contractStatus,
-          isLeaf: true,
-          isContract: true
-        }))
-      const subDepts = node.children || []
-      node.children = [...subDepts, ...deptContracts]
-      if (subDepts.length > 0) appendContracts(subDepts)
-    })
+/** 懒加载节点：根节点加载部门，部门节点展开时加载合同 */
+function loadNode(node, resolve) {
+  if (node.level === 0) {
+    // 根节点：加载三级及以下部门
+    getDeptTree().then(response => {
+      const allDepts = response.data || []
+      const validDepts = allDepts.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
+      const mapped = validDepts.map(d => ({
+        ...d,
+        nodeId: `d_${d.deptId}`,
+        label: d.deptName,
+        isDept: true,
+        isLeaf: false
+      }))
+      // 建树：找出没有父节点在 validDepts 中的作为根
+      const validDeptIds = new Set(validDepts.map(d => d.deptId))
+      const roots = mapped.filter(d => !validDeptIds.has(d.parentId))
+      // 在 mapped 中建立父子关系
+      const deptTree = handleTree(mapped, 'deptId', 'parentId')
+      // 找出树根（parentId 不在 validDepts 范围内的节点）
+      const rootDepts = deptTree.filter(d => !validDeptIds.has(d.parentId))
+      treeData.value = rootDepts
+      resolve(rootDepts)
+    }).catch(() => resolve([]))
+    return
   }
 
-  appendContracts(deptTree)
-  treeData.value = deptTree
+  if (node.data.isDept) {
+    // 部门节点：加载该部门下的合同
+    listContractsByDept(node.data.deptId, '').then(res => {
+      const contracts = (res.data || []).map(c => ({
+        nodeId: `c_${c.contractId}`,
+        label: c.contractName,
+        contractId: c.contractId,
+        contractCode: c.contractCode,
+        contractName: c.contractName,
+        contractAmount: c.contractAmount,
+        contractStatus: c.contractStatus,
+        isLeaf: true,
+        isContract: true
+      }))
+      resolve(contracts)
+    }).catch(() => resolve([]))
+    return
+  }
+
+  resolve([])
 }
 
 /** 点击节点：只响应合同叶节点 */
@@ -178,8 +157,6 @@ function clearSelection() {
 function onHide() {
   emit('blur')
 }
-
-onMounted(loadData)
 </script>
 
 <style scoped>
