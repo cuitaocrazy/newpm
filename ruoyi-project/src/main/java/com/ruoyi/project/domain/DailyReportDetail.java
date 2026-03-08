@@ -37,6 +37,12 @@ public class DailyReportDetail extends BaseEntity
     @Excel(name = "工作内容")
     private String workContent;
 
+    /** 条目类型: work=项目工时 / leave=请假 / comp=倒休 / annual=年假 */
+    private String entryType;
+
+    /** 假期时长(小时)，entryType非work时使用 */
+    private BigDecimal leaveHours;
+
     /** 删除标志(0正常 1删除) */
     private String delFlag;
 
@@ -168,6 +174,12 @@ public class DailyReportDetail extends BaseEntity
 
     public void setRevenueConfirmYear(String revenueConfirmYear) { this.revenueConfirmYear = revenueConfirmYear; }
     public String getRevenueConfirmYear() { return revenueConfirmYear; }
+
+    public void setEntryType(String entryType) { this.entryType = entryType; }
+    public String getEntryType() { return entryType; }
+
+    public void setLeaveHours(BigDecimal leaveHours) { this.leaveHours = leaveHours; }
+    public BigDecimal getLeaveHours() { return leaveHours; }
 
     @Override
     public String toString() {
