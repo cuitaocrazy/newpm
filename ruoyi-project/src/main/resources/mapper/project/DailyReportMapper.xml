@@ -19,6 +19,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"          column="remark"           />
         <result property="nickName"        column="nick_name"        />
         <result property="deptName"        column="dept_name"        />
+        <result property="leaveSummary"    column="leave_summary"    />
     </resultMap>
 
     <!-- 带明细的结果映射（详情/月报查询用） -->
@@ -42,6 +43,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="estimatedWorkload"     column="detail_estimated_workload"       />
             <result property="actualWorkload"        column="detail_actual_workload"          />
             <result property="revenueConfirmYear"    column="detail_revenue_confirm_year"     />
+            <result property="entryType"  column="detail_entry_type"  />
+            <result property="leaveHours" column="detail_leave_hours"  />
         </collection>
     </resultMap>
 
@@ -50,6 +53,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select
             r.report_id, r.report_date, r.user_id, r.dept_id,
             r.total_work_hours, r.del_flag,
+            (SELECT GROUP_CONCAT(CONCAT(dd_l.entry_type, ':', dd_l.leave_hours) SEPARATOR ',')
+             FROM pm_daily_report_detail dd_l
+             WHERE dd_l.report_id = r.report_id
+               AND dd_l.entry_type != 'work') AS leave_summary,
             r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
             u.nick_name,
             d.dept_name
@@ -83,7 +90,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dict.dict_label  as detail_stage_name,
             p.estimated_workload as detail_estimated_workload,
             ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as detail_actual_workload,
-            p.revenue_confirm_year as detail_revenue_confirm_year
+            p.revenue_confirm_year as detail_revenue_confirm_year,
+            dd.entry_type    as detail_entry_type,
+            dd.leave_hours   as detail_leave_hours
         from pm_daily_report r
         left join sys_user u on r.user_id = u.user_id
         left join sys_dept d on r.dept_id = d.dept_id

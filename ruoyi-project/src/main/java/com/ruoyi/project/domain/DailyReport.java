@@ -68,6 +68,12 @@ public class DailyReport extends BaseEntity
     /** 查询条件：项目名称（模糊） */
     private String projectName;
 
+    /** 假期摘要（月览接口用）格式: "leave:2.00,comp:1.00" */
+    private String leaveSummary;
+
+    public void setLeaveSummary(String leaveSummary) { this.leaveSummary = leaveSummary; }
+    public String getLeaveSummary() { return leaveSummary; }
+
     public void setReportId(Long reportId)
     {
         this.reportId = reportId;
