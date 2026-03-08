@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import com.ruoyi.common.annotation.DataScope;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -117,6 +118,10 @@ public class ProjectServiceImpl implements IProjectService
     {
         project.setCreateTime(DateUtils.getNowDate());
         project.setUpdateTime(DateUtils.getNowDate());
+        // 子项目不走审批流，直接设为"审核通过"
+        if (project.getProjectLevel() != null && project.getProjectLevel() == 1) {
+            project.setApprovalStatus("1");
+        }
         int rows = projectMapper.insertProject(project);
         syncProjectMembers(project);
         return rows;
@@ -159,6 +164,11 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public int deleteProjectByProjectId(Long projectId)
     {
+        // 检查是否有子项目，有则禁止删除
+        int subCount = projectMapper.countSubProjects(projectId);
+        if (subCount > 0) {
+            throw new ServiceException("该项目存在 " + subCount + " 个子项目，请先删除子项目再操作");
+        }
         return projectMapper.deleteProjectByProjectId(projectId);
     }
 

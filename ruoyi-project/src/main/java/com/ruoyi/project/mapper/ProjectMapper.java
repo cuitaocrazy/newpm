@@ -84,6 +84,9 @@ public interface ProjectMapper
      */
     public int deleteProjectByProjectIds(Long[] projectIds);
 
+    /** 统计子项目数量 */
+    int countSubProjects(@Param("parentId") Long parentId);
+
     /**
      * 批量查询团队确认明细（用于列表分行展示）
      *
