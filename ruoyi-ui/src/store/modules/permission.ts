@@ -137,6 +137,12 @@ function setActiveMenu(route: any) {
            path.includes('list/attachment')) {
     route.meta.activeMenu = '/project/list'
   }
+  // 子项目相关页面
+  else if (path.includes('subproject/add') ||
+           path.includes('subproject/edit') ||
+           path.includes('subproject/detail')) {
+    route.meta.activeMenu = '/project/subproject'
+  }
   // 公司收入确认详情页
   else if (path.includes('company/detail')) {
     route.meta.activeMenu = '/revenue/company'

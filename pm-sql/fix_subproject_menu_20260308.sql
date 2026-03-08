@@ -1,28 +1,33 @@
 -- 子项目功能：菜单及隐藏路由 SQL (使用 menu_id 2255~2263)
+-- 注意：parent_id 通过子查询动态获取「项目管理」一级菜单 ID，兼容本地和生产环境
 
 -- ① 列表菜单（可见）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
-VALUES (2255, '项目分解任务', 2059, 10, 'subproject', 'project/subproject/index',
-  1, 0, 'C', '0', '0', 'project:subproject:list', 'list', 'admin', NOW(), '子项目管理');
+SELECT 2255, '项目分解任务', menu_id, 10, 'subproject', 'project/subproject/index',
+  1, 0, 'C', '0', '0', 'project:subproject:list', 'list', 'admin', NOW(), '子项目管理'
+FROM sys_menu WHERE menu_name = '项目管理' AND parent_id = 0 LIMIT 1;
 
--- ② 新增页（隐藏路由）
+-- ② 新增页（隐藏路由，parent 挂 Layout 层，与列表页同级）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES (2256, '子项目新增页', 2255, 1, 'subproject/add', 'project/subproject/add',
-  1, 0, 'C', '1', '0', 'project:subproject:add', '#', 'admin', NOW());
+SELECT 2256, '子项目新增页', menu_id, 1, 'subproject/add', 'project/subproject/add',
+  1, 0, 'C', '1', '0', 'project:subproject:add', '#', 'admin', NOW()
+FROM sys_menu WHERE menu_name = '项目管理' AND parent_id = 0 LIMIT 1;
 
 -- ③ 编辑页（隐藏路由）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES (2257, '子项目编辑页', 2255, 2, 'subproject/edit/:projectId', 'project/subproject/edit',
-  1, 0, 'C', '1', '0', 'project:subproject:edit', '#', 'admin', NOW());
+SELECT 2257, '子项目编辑页', menu_id, 2, 'subproject/edit/:projectId', 'project/subproject/edit',
+  1, 0, 'C', '1', '0', 'project:subproject:edit', '#', 'admin', NOW()
+FROM sys_menu WHERE menu_name = '项目管理' AND parent_id = 0 LIMIT 1;
 
 -- ④ 详情页（隐藏路由）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES (2258, '子项目详情页', 2255, 3, 'subproject/detail/:projectId', 'project/subproject/detail',
-  1, 0, 'C', '1', '0', 'project:subproject:query', '#', 'admin', NOW());
+SELECT 2258, '子项目详情页', menu_id, 3, 'subproject/detail/:projectId', 'project/subproject/detail',
+  1, 0, 'C', '1', '0', 'project:subproject:query', '#', 'admin', NOW()
+FROM sys_menu WHERE menu_name = '项目管理' AND parent_id = 0 LIMIT 1;
 
 -- ⑤ 按钮权限
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
