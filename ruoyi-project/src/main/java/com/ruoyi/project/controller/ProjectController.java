@@ -68,6 +68,35 @@ public class ProjectController extends BaseController
     }
 
     /**
+     * 查询子项目列表（分页，带数据权限）
+     */
+    @PreAuthorize("@ss.hasPermi('project:subproject:list')")
+    @GetMapping("/subList")
+    public TableDataInfo subList(Project project)
+    {
+        startPage();
+        return getDataTable(projectService.selectSubProjectList(project));
+    }
+
+    /**
+     * 获取子项目轻量选项（无需权限，日报/下拉场景使用）
+     */
+    @GetMapping("/subProjectOptions")
+    public AjaxResult subProjectOptions(@RequestParam Long parentId)
+    {
+        return success(projectService.selectSubProjectOptions(parentId));
+    }
+
+    /**
+     * 批量判断哪些项目有子项目（无需权限，日报场景使用）
+     */
+    @GetMapping("/projectsHasSubProject")
+    public AjaxResult projectsHasSubProject(@RequestParam List<Long> projectIds)
+    {
+        return success(projectService.selectProjectsHasSubProject(projectIds));
+    }
+
+    /**
      * 导出项目管理列表
      */
     @PreAuthorize("@ss.hasPermi('project:project:export')")
