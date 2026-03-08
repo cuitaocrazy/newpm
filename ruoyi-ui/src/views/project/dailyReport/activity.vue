@@ -100,7 +100,7 @@
             <div v-if="!queryParams.userId" class="cell-people">
               <div v-for="person in getCellPeople(dateStr).slice(0, 4)" :key="person.userId"
                 class="person-chip" :class="getChipClass(person.totalWorkHours)"
-                @click.stop="getCellPeople(dateStr).length === 1 ? openDrawer(dateStr) : selectPerson(person.userId)">
+                @click.stop="openDrawer(dateStr)">
                 <span class="chip-name">{{ person.nickName }}</span>
                 <span class="chip-hours">{{ person.totalWorkHours }}h</span>
               </div>
@@ -465,7 +465,22 @@ function openDrawer(dateStr) {
 function handleCellClick(dateStr) {
   if (!queryParams.value.userId) {
     openDrawer(dateStr)
+  } else {
+    openPersonDrawer(dateStr)
   }
+}
+
+function openPersonDrawer(dateStr) {
+  const people = dataByDate.value[dateStr] || []
+  const person = people.find(r => r.userId === queryParams.value.userId)
+  if (!person) return
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const d = new Date(dateStr)
+  drawerTitle.value = `${selectedUserName.value} · ${dateStr} ${weekdays[d.getDay()]} 日报详情`
+  drawerPeople.value = [person]
+  const h = Number(person.totalWorkHours)
+  drawerStats.value = { count: 1, totalHours: h.toFixed(1), fullCount: h >= 8 ? 1 : 0 }
+  drawerVisible.value = true
 }
 
 async function loadData() {
