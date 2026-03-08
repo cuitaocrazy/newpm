@@ -13,8 +13,13 @@
             <template #default="{ day, dateStr, isToday, dayType }">
               <div class="cal-cell">
                 <span class="mc-day-num" :class="getDayBadgeClass(dateStr, dayType, isToday)">{{ day }}</span>
-                <span v-if="getDateHours(dateStr)" class="cal-hours" :class="getHoursClass(dateStr)">
-                  {{ getDateHours(dateStr) }}h
+                <span v-if="getDateWorkHours(dateStr)" class="cal-hours" :class="getHoursClass(dateStr)">
+                  {{ getDateWorkHours(dateStr) }}h
+                </span>
+                <span v-for="le in getDateLeaveEntries(dateStr)" :key="le.type"
+                  class="cal-leave-badge"
+                  :style="{ color: LEAVE_TYPE_COLOR[le.type] }">
+                  {{ LEAVE_TYPE_LABEL[le.type] }}{{ le.hours }}h
                 </span>
               </div>
             </template>
@@ -218,11 +223,29 @@ function getDictLabel(dictList, value) {
   return dictList?.find(d => d.value == value)?.label || value
 }
 
+// 兼容旧格式（纯数字）和新格式（对象）获取工时
+function getDateWorkHours(dateStr) {
+  const data = monthReports.value[dateStr]
+  if (!data) return 0
+  return typeof data === 'object' ? (data.workHours || 0) : (Number(data) || 0)
+}
+
+// 解析 leaveSummary 为数组：[{type:'leave', hours:2}, ...]
+function getDateLeaveEntries(dateStr) {
+  const data = monthReports.value[dateStr]
+  const summary = typeof data === 'object' ? data.leaveSummary : ''
+  if (!summary) return []
+  return summary.split(',').map(seg => {
+    const [type, hours] = seg.split(':')
+    return { type, hours: parseFloat(hours) || 0 }
+  }).filter(e => e.type && e.hours > 0)
+}
+
 // 日期徽章 class（结合工作日历 + 日报数据）
 function getDayBadgeClass(dateStr, dayType, isToday) {
   if (isToday) return 'mc-day-today'
 
-  const hours = monthReports.value[dateStr]
+  const hours = getDateWorkHours(dateStr)
   const wc = workCalendarMap.value[dateStr]
 
   if (wc?.dayType === 'holiday') {
@@ -242,12 +265,8 @@ function getDayBadgeClass(dateStr, dayType, isToday) {
   return 'badge-warn'
 }
 
-function getDateHours(dateStr) {
-  return monthReports.value[dateStr]
-}
-
 function getHoursClass(dateStr) {
-  const hours = monthReports.value[dateStr]
+  const hours = getDateWorkHours(dateStr)
   if (!hours) return ''
   if (hours > 8) return 'hours-over'
   if (hours >= 8) return 'hours-ok'
@@ -305,7 +324,10 @@ async function loadMonthOverview() {
   if (res.rows) {
     res.rows.forEach(r => {
       const day = r.reportDate?.substring(0, 10)
-      if (day) map[day] = Number(r.totalWorkHours)
+      if (day) map[day] = {
+        workHours: Number(r.totalWorkHours),
+        leaveSummary: r.leaveSummary || ''
+      }
     })
   }
   monthReports.value = map
@@ -432,6 +454,15 @@ onMounted(async () => {
 .cal-hours.hours-ok { color: #00b42a; }
 .cal-hours.hours-warn { color: #ff7d00; }
 .cal-hours.hours-over { color: #409eff; }
+
+/* 假期类型角标 */
+.cal-leave-badge {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 1px;
+  line-height: 1.2;
+  display: block;
+}
 
 /* 项目列表 */
 .project-list { display: flex; flex-direction: column; gap: 16px; }
