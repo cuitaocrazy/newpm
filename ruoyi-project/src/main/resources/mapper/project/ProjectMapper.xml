@@ -443,6 +443,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">reserved_field4,</if>
             <if test="reservedField5 != null">reserved_field5,</if>
             <if test="delFlag != null">del_flag,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="projectLevel != null">project_level,</if>
+            <if test="taskCode != null">task_code,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -507,6 +510,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">#{reservedField4},</if>
             <if test="reservedField5 != null">#{reservedField5},</if>
             <if test="delFlag != null">#{delFlag},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="projectLevel != null">#{projectLevel},</if>
+            <if test="taskCode != null">#{taskCode},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -575,6 +581,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">reserved_field4 = #{reservedField4},</if>
             <if test="reservedField5 != null">reserved_field5 = #{reservedField5},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="taskCode != null">task_code = #{taskCode},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
