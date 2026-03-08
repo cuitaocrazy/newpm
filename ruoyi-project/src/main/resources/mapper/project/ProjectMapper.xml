@@ -370,7 +370,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                    MAX(c.contract_status) AS contract_status,
                    GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name
             FROM pm_project_contract_rel pcr
-            JOIN pm_contract c ON pcr.contract_id = c.contract_id
+            JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
             GROUP BY pcr.project_id
         ) ca ON p.project_id = ca.project_id
@@ -945,13 +945,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
               AND p.project_id NOT IN (
                   SELECT DISTINCT rel.project_id
                   FROM pm_project_contract_rel rel
-                  WHERE rel.contract_id != #{excludeContractId}
+                  WHERE rel.del_flag = '0' AND rel.rel_status = '有效'
+                    AND rel.contract_id != #{excludeContractId}
               )
           </if>
           <if test="excludeContractId == null">
               AND p.project_id NOT IN (
                   SELECT DISTINCT rel.project_id
                   FROM pm_project_contract_rel rel
+                  WHERE rel.del_flag = '0' AND rel.rel_status = '有效'
               )
           </if>
         ORDER BY p.create_time DESC
