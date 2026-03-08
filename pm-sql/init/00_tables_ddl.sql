@@ -1048,6 +1048,8 @@ CREATE TABLE `pm_daily_report_detail` (
   `leave_hours` decimal(5,2) DEFAULT NULL COMMENT '假期时长(小时)，entry_type非work时使用',
   `work_hours` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT '工时(小时)',
   `work_content` text DEFAULT NULL COMMENT '工作内容，假期行可为空',
+  `sub_project_id` bigint DEFAULT NULL COMMENT '子项目ID（project_level=1）',
+  `work_category` varchar(50) DEFAULT NULL COMMENT '工作任务类别 sys_gzlb',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志(0正常 1删除)',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

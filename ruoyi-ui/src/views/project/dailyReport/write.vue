@@ -89,7 +89,39 @@
                 <span style="margin-left: 4px; color: #909399;">h</span>
               </div>
 
-              <!-- 第三行：工作内容 -->
+              <!-- 第三行：子项目 + 工作类别（仅有子项目的主项目显示） -->
+              <div v-if="item.hasSubProject" class="prj-sub-row">
+                <span class="sub-label">子项目:</span>
+                <el-select
+                  v-model="item.subProjectId"
+                  placeholder="请选择子项目（可选）"
+                  clearable
+                  size="small"
+                  style="flex: 1; min-width: 0;"
+                  :disabled="!isEditable"
+                  @focus="loadSubProjectOptions(item)"
+                >
+                  <el-option
+                    v-for="sp in (item.subProjectOptions || [])"
+                    :key="sp.projectId"
+                    :label="sp.taskCode ? `[${sp.taskCode}] ${sp.projectName}` : sp.projectName"
+                    :value="sp.projectId"
+                  />
+                </el-select>
+                <span class="sub-label" style="margin-left: 12px;">工作类别:</span>
+                <el-select
+                  v-model="item.workCategory"
+                  placeholder="请选择"
+                  clearable
+                  size="small"
+                  style="width: 140px;"
+                  :disabled="!isEditable"
+                >
+                  <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
+                </el-select>
+              </div>
+
+              <!-- 第四行：工作内容 -->
               <div class="prj-content-row">
                 <el-input
                   v-model="item.workContent"
@@ -155,7 +187,7 @@ import MonthCalendar from '@/components/MonthCalendar/index.vue'
 import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
-const { sys_ndgl } = proxy.useDict('sys_ndgl')
+const { sys_ndgl, sys_gzlb } = proxy.useDict('sys_ndgl', 'sys_gzlb')
 
 const userStore = useUserStore()
 
@@ -279,6 +311,13 @@ async function loadProjects() {
   projects.value = res.data || []
 }
 
+// 按需加载子项目选项（首次展开下拉时）
+async function loadSubProjectOptions(item) {
+  if (item.subProjectOptions) return
+  const res = await import('@/api/project/project').then(m => m.getSubProjectOptions(item.projectId))
+  item.subProjectOptions = res.data || []
+}
+
 // 加载某日的日报数据
 async function loadDayReport(dateStr) {
   loading.value = true
@@ -299,8 +338,12 @@ async function loadDayReport(dateStr) {
         estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
         actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
         revenueConfirmYear: p.revenueConfirmYear || null,
+        hasSubProject: !!p.hasSubProject,
+        subProjectOptions: null,
         workHours: detail ? Number(detail.workHours) : 0,
-        workContent: detail ? detail.workContent : ''
+        workContent: detail ? detail.workContent : '',
+        subProjectId: detail ? (detail.subProjectId || null) : null,
+        workCategory: detail ? (detail.workCategory || null) : null
       }
     })
 
@@ -371,7 +414,9 @@ async function handleSave() {
       projectStage: f.projectStage,
       workHours: f.workHours,
       workContent: f.workContent,
-      entryType: 'work'
+      entryType: 'work',
+      subProjectId: f.subProjectId || null,
+      workCategory: f.workCategory || null
     }))
 
   // 追加假期行
@@ -497,6 +542,12 @@ onMounted(async () => {
   margin-bottom: 10px;
 }
 .hours-label { font-size: 13px; color: #606266; white-space: nowrap; }
+
+.prj-sub-row {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 8px; background: #f9fafb; border-radius: 4px; margin-bottom: 6px;
+}
+.sub-label { font-size: 13px; color: #606266; white-space: nowrap; flex-shrink: 0; }
 
 .prj-content-row {}
 

@@ -180,6 +180,8 @@
             </el-tag>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
+            <el-tag v-if="detail.subProjectName" size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
             <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
           </div>
           <div style="font-size: 12px; color: #909399; margin-bottom: 4px;">
@@ -215,7 +217,7 @@ import request from '@/utils/request'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
 
 const { proxy } = getCurrentInstance()
-const { sys_ndgl } = proxy.useDict('sys_ndgl')
+const { sys_ndgl, sys_gzlb } = proxy.useDict('sys_ndgl', 'sys_gzlb')
 
 const todayStr = (() => {
   const d = new Date()

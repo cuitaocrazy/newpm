@@ -66,6 +66,24 @@ public class DailyReportDetail extends BaseEntity
     /** 收入确认年度（扩展字段，来自pm_project.revenue_confirm_year） */
     private String revenueConfirmYear;
 
+    /** 子项目ID */
+    private Long subProjectId;
+
+    /** 工作任务类别（字典 sys_gzlb） */
+    private String workCategory;
+
+    /** 子项目名称（扩展字段，来自pm_project.project_name） */
+    private String subProjectName;
+
+    public void setSubProjectId(Long subProjectId) { this.subProjectId = subProjectId; }
+    public Long getSubProjectId() { return subProjectId; }
+
+    public void setWorkCategory(String workCategory) { this.workCategory = workCategory; }
+    public String getWorkCategory() { return workCategory; }
+
+    public void setSubProjectName(String subProjectName) { this.subProjectName = subProjectName; }
+    public String getSubProjectName() { return subProjectName; }
+
     public void setDetailId(Long detailId)
     {
         this.detailId = detailId;

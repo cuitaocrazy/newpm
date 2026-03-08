@@ -22,6 +22,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="projectName"       column="project_name"   />
         <result property="projectCode"       column="project_code"   />
         <result property="projectStageName"  column="stage_name"     />
+        <result property="subProjectId"      column="sub_project_id" />
+        <result property="workCategory"      column="work_category"  />
+        <result property="subProjectName"    column="sub_project_name"/>
     </resultMap>
 
     <!-- 根据日报ID查询明细列表（关联项目名称、编号、阶段名称） -->
@@ -30,11 +33,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dd.detail_id, dd.report_id, dd.project_id, dd.project_stage,
             dd.entry_type, dd.leave_hours, dd.work_hours, dd.work_content, dd.del_flag,
             dd.create_by, dd.create_time, dd.update_by, dd.update_time, dd.remark,
+            dd.sub_project_id, dd.work_category,
             p.project_name,
             p.project_code,
+            sp.project_name as sub_project_name,
             dict.dict_label as stage_name
         from pm_daily_report_detail dd
         left join pm_project p on dd.project_id = p.project_id
+        left join pm_project sp on dd.sub_project_id = sp.project_id and sp.del_flag = '0'
         left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
         where dd.report_id = #{reportId}
         order by dd.detail_id
@@ -51,6 +57,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="workContent != null and workContent != ''">work_content,</if>
             <if test="entryType != null">entry_type,</if>
             <if test="leaveHours != null">leave_hours,</if>
+            <if test="subProjectId != null">sub_project_id,</if>
+            <if test="workCategory != null">work_category,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -66,6 +74,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="workContent != null and workContent != ''">#{workContent},</if>
             <if test="entryType != null">#{entryType, jdbcType=VARCHAR},</if>
             <if test="leaveHours != null">#{leaveHours, jdbcType=DECIMAL},</if>
+            <if test="subProjectId != null">#{subProjectId},</if>
+            <if test="workCategory != null">#{workCategory},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -77,7 +87,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 批量新增明细 -->
     <insert id="batchInsert" parameterType="java.util.List">
-        insert into pm_daily_report_detail (report_id, project_id, project_stage, entry_type, leave_hours, work_hours, work_content, del_flag, create_by, create_time)
+        insert into pm_daily_report_detail (report_id, project_id, project_stage, entry_type, leave_hours, work_hours, work_content, sub_project_id, work_category, del_flag, create_by, create_time)
         values
         <foreach item="item" index="index" collection="list" separator=",">
             (#{item.reportId}, #{item.projectId}, #{item.projectStage},
@@ -85,6 +95,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
              #{item.leaveHours, jdbcType=DECIMAL},
              #{item.workHours},
              #{item.workContent, jdbcType=VARCHAR},
+             #{item.subProjectId, jdbcType=BIGINT},
+             #{item.workCategory, jdbcType=VARCHAR},
              '0', #{item.createBy}, #{item.createTime})
         </foreach>
     </insert>

@@ -97,7 +97,16 @@ public class DailyReportServiceImpl implements IDailyReportService
     public List<Map<String, Object>> selectMyProjects()
     {
         Long userId = SecurityUtils.getUserId();
-        return projectMapper.selectProjectsByUserId(userId);
+        List<Map<String, Object>> list = projectMapper.selectProjectsByUserId(userId);
+        if (!list.isEmpty()) {
+            List<Long> ids = list.stream()
+                .map(p -> Long.parseLong(p.get("projectId").toString()))
+                .collect(java.util.stream.Collectors.toList());
+            List<Long> hasSubIds = projectMapper.selectProjectsHasSubProject(ids);
+            java.util.Set<Long> hasSubSet = new java.util.HashSet<>(hasSubIds);
+            list.forEach(p -> p.put("hasSubProject", hasSubSet.contains(Long.parseLong(p.get("projectId").toString()))));
+        }
+        return list;
     }
 
     /**
