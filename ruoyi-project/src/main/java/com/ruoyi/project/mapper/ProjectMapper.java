@@ -87,6 +87,15 @@ public interface ProjectMapper
     /** 统计子项目数量 */
     int countSubProjects(@Param("parentId") Long parentId);
 
+    /** 查询子项目列表（分页，带数据权限） */
+    List<Project> selectSubProjectList(Project project);
+
+    /** 获取子项目轻量选项（下拉用，仅返回 id/name/taskCode） */
+    List<Map<String, Object>> selectSubProjectOptions(@Param("parentId") Long parentId);
+
+    /** 批量判断哪些主项目有子项目，返回有子项目的 parentId 集合 */
+    List<Long> selectProjectsHasSubProject(@Param("projectIds") List<Long> projectIds);
+
     /**
      * 批量查询团队确认明细（用于列表分行展示）
      *

@@ -86,6 +86,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createByName"    column="create_by_name"    />
         <result property="teamConfirmDepts" column="team_confirm_depts" />
         <result property="teamConfirmAmount" column="team_confirm_amount" />
+        <result property="parentId"           column="parent_id" />
+        <result property="projectLevel"       column="project_level" />
+        <result property="taskCode"           column="task_code" />
+        <result property="parentProjectName"  column="parent_project_name" />
     </resultMap>
 
     <sql id="selectProjectVo">
@@ -122,8 +126,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                u_upd.nick_name AS update_by_name,
                u1.nick_name AS project_manager_name,
                tc.team_confirm_depts,
-               tc.team_confirm_amount
+               tc.team_confirm_amount,
+               p.parent_id, p.project_level, p.task_code,
+               pp.project_name as parent_project_name
         FROM pm_project p
+        LEFT JOIN pm_project pp ON p.parent_id = pp.project_id
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
             SELECT pcr.project_id,
@@ -150,6 +157,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
+            and p.project_level = 0
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
             <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
@@ -355,8 +363,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                cc.contact_phone AS customer_contact_phone,
                ca.contract_amount AS contract_amount,
                ca.contract_status AS contract_status,
-               ca.contract_name AS contract_name
+               ca.contract_name AS contract_name,
+               p.parent_id, p.project_level, p.task_code,
+               pp2.project_name as parent_project_name
         FROM pm_project p
+        LEFT JOIN pm_project pp2 ON p.parent_id = pp2.project_id
         LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
@@ -592,6 +603,69 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="countSubProjects" resultType="int">
         SELECT COUNT(1) FROM pm_project
         WHERE parent_id = #{parentId} AND del_flag = '0' AND project_level = 1
+    </select>
+
+    <select id="selectSubProjectList" parameterType="Project" resultMap="ProjectResult">
+        SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
+               p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
+               p.estimated_workload, ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload,
+               p.adjust_workload, p.project_address, p.project_plan, p.project_description,
+               p.project_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
+               p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
+               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
+               p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason,
+               p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
+               p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
+               p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
+               p.parent_id, p.project_level, p.task_code,
+               pp.project_name as parent_project_name,
+               u1.nick_name AS project_manager_name,
+               d.dept_name AS dept_name,
+               u_upd.nick_name AS update_by_name
+        FROM pm_project p
+        LEFT JOIN pm_project pp ON p.parent_id = pp.project_id
+        LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
+        WHERE p.del_flag = '0'
+          and p.parent_id = #{parentId}
+        <if test="projectName != null and projectName != ''">
+            and p.project_name like concat('%', #{projectName}, '%')
+        </if>
+        <if test="projectStage != null and projectStage != ''">
+            and p.project_stage = #{projectStage}
+        </if>
+        <if test="projectStatus != null and projectStatus != ''">
+            and p.project_status = #{projectStatus}
+        </if>
+        <if test="projectManagerId != null">
+            and p.project_manager_id = #{projectManagerId}
+        </if>
+        ${params.dataScope}
+        order by p.task_code asc, p.create_time desc
+    </select>
+
+    <select id="selectSubProjectOptions" resultType="map">
+        select project_id   as "projectId",
+               project_name as "projectName",
+               task_code    as "taskCode"
+        from pm_project
+        where del_flag = '0'
+          and parent_id = #{parentId}
+          and project_level = 1
+        order by task_code, create_time
+    </select>
+
+    <select id="selectProjectsHasSubProject" resultType="long">
+        select distinct parent_id
+        from pm_project
+        where del_flag = '0'
+          and project_level = 1
+          and parent_id in
+        <foreach collection="projectIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
     <!-- 批量查询团队确认明细（用于列表分行展示） -->

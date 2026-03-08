@@ -184,6 +184,23 @@ public class ProjectServiceImpl implements IProjectService
         return projectMapper.selectUsersByPost(postCode);
     }
 
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
+    public List<Project> selectSubProjectList(Project project) {
+        return projectMapper.selectSubProjectList(project);
+    }
+
+    @Override
+    public List<Map<String, Object>> selectSubProjectOptions(Long parentId) {
+        return projectMapper.selectSubProjectOptions(parentId);
+    }
+
+    @Override
+    public List<Long> selectProjectsHasSubProject(List<Long> projectIds) {
+        if (projectIds == null || projectIds.isEmpty()) return Collections.emptyList();
+        return projectMapper.selectProjectsHasSubProject(projectIds);
+    }
+
     /**
      * 获取二级区域列表（根据一级区域）
      *
