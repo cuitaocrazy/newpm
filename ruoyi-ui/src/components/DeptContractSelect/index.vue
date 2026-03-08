@@ -22,7 +22,37 @@
 
       <!-- 弹出内容 -->
       <div class="dept-contract-select__panel">
-        <el-scrollbar max-height="360px">
+        <!-- 搜索框 -->
+        <el-input
+          v-model="searchText"
+          placeholder="搜索合同名称"
+          clearable
+          size="small"
+          style="margin-bottom: 8px"
+          @input="onSearchInput"
+          @clear="onSearchClear"
+        />
+
+        <!-- 搜索结果（有关键字时） -->
+        <template v-if="searchText">
+          <div v-if="searchLoading" class="hint-loading">搜索中...</div>
+          <div v-else-if="searchResults.length === 0" class="hint-empty">无匹配合同</div>
+          <el-scrollbar v-else max-height="320px">
+            <div
+              v-for="item in searchResults"
+              :key="item.contractId"
+              class="search-item"
+              :class="{ 'is-selected': selectedContract && selectedContract.contractId === item.contractId }"
+              @click="selectContract(item)"
+            >
+              <div class="search-item__name">{{ item.contractName }}</div>
+              <div class="search-item__meta">{{ item.contractCode || '' }}</div>
+            </div>
+          </el-scrollbar>
+        </template>
+
+        <!-- 部门树（无关键字时） -->
+        <el-scrollbar v-else max-height="320px">
           <el-tree
             ref="treeRef"
             node-key="nodeId"
@@ -34,6 +64,7 @@
             @node-click="handleNodeClick"
           />
         </el-scrollbar>
+
         <div class="panel-footer">
           <el-button link size="small" @click="clearSelection">清空</el-button>
           <span class="hint-text">{{ selectedContract ? selectedContract.contractName : '未选择' }}</span>
@@ -47,7 +78,7 @@
 import { ref, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { getDeptTree } from '@/api/project/project'
-import { listContractsByDept } from '@/api/project/contract'
+import { listContractsByDept, searchContracts } from '@/api/project/contract'
 
 const props = defineProps({
   modelValue: {
@@ -81,6 +112,12 @@ const treeRef = ref(null)
 const selectedContract = ref(props.modelValue || null)
 const currentNodeKey = ref(null)
 
+// 搜索模式
+const searchText = ref('')
+const searchResults = ref([])
+const searchLoading = ref(false)
+let searchTimer = null
+
 // 部门数据仅请求一次，缓存在此
 let allValidDepts = []
 
@@ -89,19 +126,41 @@ watch(() => props.modelValue, (val) => {
   currentNodeKey.value = val ? `c_${val.contractId}` : null
 })
 
-/**
- * el-tree lazy loadNode：
- *   level 0 → 加载三级及以下根部门（从服务端拿全量部门后过滤+缓存）
- *   isDept  → 同时返回该部门的子部门 + 该部门下的合同
- */
+// ─── 搜索相关 ────────────────────────────────────────────
+
+function onSearchInput(val) {
+  clearTimeout(searchTimer)
+  if (!val) return
+  searchLoading.value = true
+  searchTimer = setTimeout(() => {
+    searchContracts({ keyword: val }).then(res => {
+      searchResults.value = res.data || []
+    }).finally(() => {
+      searchLoading.value = false
+    })
+  }, 300)
+}
+
+function onSearchClear() {
+  searchResults.value = []
+}
+
+function selectContract(item) {
+  selectedContract.value = makeContractNode(item)
+  currentNodeKey.value = `c_${item.contractId}`
+  emit('update:modelValue', selectedContract.value)
+  emit('change', selectedContract.value)
+  visible.value = false
+}
+
+// ─── 部门树懒加载 ─────────────────────────────────────────
+
 function loadNode(node, resolve) {
   if (node.level === 0) {
     getDeptTree().then(res => {
       const all = res.data || []
-      // 三级及以下部门（ancestors 逗号数 >= 2，即 "0,100,101..."）
       allValidDepts = all.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
       const validIds = new Set(allValidDepts.map(d => d.deptId))
-      // 根节点：parentId 不在 validDepts 范围内
       const roots = allValidDepts
         .filter(d => !validIds.has(d.parentId))
         .map(d => makeDeptNode(d))
@@ -112,11 +171,9 @@ function loadNode(node, resolve) {
 
   if (node.data.isDept) {
     const deptId = node.data.deptId
-    // 直接子部门（从缓存中查，无需再请求）
     const subDepts = allValidDepts
       .filter(d => d.parentId === deptId)
       .map(d => makeDeptNode(d))
-    // 该部门下的合同（异步加载）
     listContractsByDept(deptId, '').then(res => {
       const contracts = (res.data || []).map(c => makeContractNode(c))
       resolve([...subDepts, ...contracts])
@@ -134,7 +191,7 @@ function makeDeptNode(d) {
     deptId: d.deptId,
     parentId: d.parentId,
     isDept: true,
-    isLeaf: false   // 保持可展开，展开时懒加载合同
+    isLeaf: false
   }
 }
 
@@ -164,6 +221,8 @@ function handleNodeClick(data) {
 function clearSelection() {
   selectedContract.value = null
   currentNodeKey.value = null
+  searchText.value = ''
+  searchResults.value = []
   treeRef.value?.setCurrentKey(null)
   emit('update:modelValue', null)
   emit('change', null)
@@ -224,6 +283,41 @@ function onHide() {
 
 .dept-contract-select__panel {
   padding: 8px;
+}
+
+.hint-loading,
+.hint-empty {
+  font-size: 13px;
+  color: var(--el-text-color-placeholder);
+  text-align: center;
+  padding: 16px 0;
+}
+
+.search-item {
+  padding: 7px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.search-item:hover {
+  background-color: var(--el-fill-color-light);
+}
+
+.search-item.is-selected {
+  background-color: var(--el-color-primary-light-9);
+}
+
+.search-item__name {
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+  line-height: 1.4;
+}
+
+.search-item__meta {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 2px;
 }
 
 .panel-footer {
