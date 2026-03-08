@@ -1691,3 +1691,10 @@ insert into sys_dict_data values(377,2,'无法验收','2','sys_yszt','','danger'
 -- contact_tag: 补充科技部-经办级、科技部-主管级
 insert into sys_dict_data values(378,4,'科技部-经办级','kjbjb','contact_tag',NULL,'primary','N','0','admin',sysdate(),'',NULL,NULL);
 insert into sys_dict_data values(379,5,'科技部-主管级','kjzg','contact_tag',NULL,'primary','N','0','admin',sysdate(),'',NULL,NULL);
+
+-- sys_rbtype: 日报条目类型
+insert into sys_dict_type values(120,'日报条目类型','sys_rbtype','0','admin',sysdate(),'',NULL,'日报明细行的类型');
+insert into sys_dict_data values(380,1,'项目工时','work','sys_rbtype','','primary','N','0','admin',sysdate(),'',NULL,NULL);
+insert into sys_dict_data values(381,2,'请假','leave','sys_rbtype','','danger','N','0','admin',sysdate(),'',NULL,NULL);
+insert into sys_dict_data values(382,3,'倒休','comp','sys_rbtype','','warning','N','0','admin',sysdate(),'',NULL,NULL);
+insert into sys_dict_data values(383,4,'年假','annual','sys_rbtype','','success','N','0','admin',sysdate(),'',NULL,NULL);
