@@ -76,6 +76,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="expectedQuarter != null and expectedQuarter != ''"> and p.expected_quarter = #{expectedQuarter}</if>
             <if test="actualQuarter != null and actualQuarter != ''"> and p.actual_quarter = #{actualQuarter}</if>
             <if test="confirmYear != null and confirmYear != ''"> and p.confirm_year = #{confirmYear}</if>
+            <if test="deptId != null"> and c.dept_id = #{deptId}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''">
                 and date_format(p.actual_payment_date,'%Y-%m-%d') &gt;= date_format(#{params.actualPaymentDateStart},'%Y-%m-%d')
             </if>

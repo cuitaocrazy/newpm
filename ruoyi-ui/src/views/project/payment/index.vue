@@ -76,8 +76,8 @@
 
       <!-- 折叠的查询条件（在按钮上方） -->
       <template v-if="showMoreSearch">
-        <el-form-item label="款项确认年份" prop="paymentConfirmYear">
-          <el-select v-model="queryParams.paymentConfirmYear" placeholder="请选择款项确认年份" clearable style="width: 200px">
+        <el-form-item label="里程碑确认年份" prop="confirmYear">
+          <el-select v-model="queryParams.confirmYear" placeholder="请选择里程碑确认年份" clearable style="width: 200px">
             <el-option
               v-for="dict in sys_ndgl"
               :key="dict.value"
@@ -400,7 +400,7 @@ const data = reactive({
     paymentStatus: null,
     expectedQuarter: null,
     actualQuarter: null,
-    paymentConfirmYear: null,
+    confirmYear: null,
     deptId: null,
     actualPaymentDateStart: null,
     actualPaymentDateEnd: null,
