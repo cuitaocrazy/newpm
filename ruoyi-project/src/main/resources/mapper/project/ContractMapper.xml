@@ -252,7 +252,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <select id="searchContracts" parameterType="String" resultMap="ContractResult">
-        select contract_id, contract_code, contract_name, contract_status, contract_amount
+        select contract_id, contract_code, contract_name, contract_status, contract_amount, dept_id
         from pm_contract
         where del_flag = '0'
         <if test="keyword != null and keyword != ''">
