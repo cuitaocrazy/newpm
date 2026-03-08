@@ -56,7 +56,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             (SELECT GROUP_CONCAT(CONCAT(dd_l.entry_type, ':', dd_l.leave_hours) SEPARATOR ',')
              FROM pm_daily_report_detail dd_l
              WHERE dd_l.report_id = r.report_id
-               AND dd_l.entry_type != 'work') AS leave_summary,
+               AND dd_l.entry_type != 'work'
+               AND dd_l.del_flag = '0') AS leave_summary,
             r.create_by, r.create_time, r.update_by, r.update_time, r.remark,
             u.nick_name,
             d.dept_name
