@@ -177,7 +177,7 @@ const formList = ref([])
 const currentReportId = ref(null)
 const loading = ref(false)
 const saving = ref(false)
-const monthReports = ref({}) // { 'yyyy-MM-dd': totalHours }
+const monthReports = ref({}) // { 'yyyy-MM-dd': { workHours, leaveSummary } }
 const workCalendarMap = ref({}) // { 'yyyy-MM-dd': { dayType, dayName } }
 
 const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#b37feb', '#00b894', '#fdcb6e']
