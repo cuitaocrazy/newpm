@@ -45,5 +45,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
+            crictl pull docker.io/cuitaocrazy/newpm:latest
             kubectl rollout restart deployment/ruoyi-app -n newpm
             kubectl rollout status deployment/ruoyi-app -n newpm --timeout=360s
