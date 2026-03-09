@@ -218,6 +218,17 @@ public class Project extends BaseEntity
     /** 子项目编号（在父项目内的简短标识，如 01、用户系统） */
     private String taskCode;
 
+    /** 投产批次(字典:sys_tcpc) */
+    private String productionBatch;
+
+    /** 提供内部闭包日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.util.Date internalClosureDate;
+
+    /** 提供功能测试版本日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.util.Date functionalTestDate;
+
     /** 父项目名称（展示用，非 DB 字段，由 Mapper 关联查询填充） */
     private String parentProjectName;
 
@@ -893,6 +904,15 @@ public class Project extends BaseEntity
     public void setTaskCode(String taskCode)            { this.taskCode = taskCode; }
     public String getTaskCode()                         { return taskCode; }
 
+    public String getProductionBatch() { return productionBatch; }
+    public void setProductionBatch(String productionBatch) { this.productionBatch = productionBatch; }
+
+    public java.util.Date getInternalClosureDate() { return internalClosureDate; }
+    public void setInternalClosureDate(java.util.Date internalClosureDate) { this.internalClosureDate = internalClosureDate; }
+
+    public java.util.Date getFunctionalTestDate() { return functionalTestDate; }
+    public void setFunctionalTestDate(java.util.Date functionalTestDate) { this.functionalTestDate = functionalTestDate; }
+
     public void setParentProjectName(String n)          { this.parentProjectName = n; }
     public String getParentProjectName()                { return parentProjectName; }
 
@@ -1147,6 +1167,9 @@ public class Project extends BaseEntity
             .append("parentId", getParentId())
             .append("projectLevel", getProjectLevel())
             .append("taskCode", getTaskCode())
+            .append("productionBatch", getProductionBatch())
+            .append("internalClosureDate", getInternalClosureDate())
+            .append("functionalTestDate", getFunctionalTestDate())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
