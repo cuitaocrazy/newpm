@@ -101,7 +101,7 @@
 <script setup name="SubprojectIndex">
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { listSubProject, delProject } from '@/api/project/project'
+import { listSubProject, delProject, getProject } from '@/api/project/project'
 import { checkPermi } from '@/utils/permission'
 import request from '@/utils/request'
 
@@ -133,7 +133,7 @@ async function handleDeptChange(deptId) {
   const res = await request({
     url: '/project/project/list',
     method: 'get',
-    params: { projectDept: deptId, pageNum: 1, pageSize: 200 }
+    params: { projectDept: deptId, projectLevel: 0, pageNum: 1, pageSize: 200 }
   })
   parentProjectOptions.value = res.rows || []
 }
@@ -173,10 +173,22 @@ function handleDelete(row) {
   }).catch(() => {})
 }
 
-onMounted(() => {
-  // 若从主项目列表跳转过来，直接带入 parentId
+onMounted(async () => {
   if (route.query.parentId) {
-    queryParams.parentId = Number(route.query.parentId)
+    const parentId = Number(route.query.parentId)
+    queryParams.parentId = parentId
+    // 获取父项目信息，用于填充部门和下拉
+    try {
+      const res = await getProject(parentId)
+      if (res.data) {
+        queryParams.projectDept = res.data.projectDept || null
+        parentProjectOptions.value = [res.data]
+      }
+    } catch (e) {
+      console.error('加载父项目信息失败', e)
+    }
+    getList()
+  } else {
     getList()
   }
 })

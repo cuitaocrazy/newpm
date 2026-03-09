@@ -75,50 +75,6 @@
         </el-descriptions>
       </el-card>
 
-      <!-- 人员配置 -->
-      <el-card shadow="never" class="detail-card">
-        <template #header><span class="card-title">人员配置</span></template>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="项目经理">
-            {{ form.projectManagerName || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="市场经理">
-            {{ form.marketManagerName || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="销售负责人">
-            {{ form.salesManagerName || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="销售联系方式" :span="3">
-            {{ form.salesContact || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="参与人员" :span="3">
-            <div v-if="participantNames.length > 0">
-              <el-tag v-for="name in participantNames" :key="name" type="info" style="margin: 2px 4px 2px 0;">{{ name }}</el-tag>
-            </div>
-            <span v-else style="color: #909399;">暂无参与人员</span>
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-card>
-
-      <!-- 客户信息 -->
-      <el-card shadow="never" class="detail-card">
-        <template #header><span class="card-title">客户信息</span></template>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="客户名称">
-            {{ form.customerName || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="客户联系人">
-            {{ form.customerContactName || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="商户联系人">
-            {{ form.merchantContact || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="商户联系方式" :span="3">
-            {{ form.merchantPhone || '-' }}
-          </el-descriptions-item>
-        </el-descriptions>
-      </el-card>
-
       <!-- 时间规划 -->
       <el-card shadow="never" class="detail-card">
         <template #header><span class="card-title">时间规划</span></template>
@@ -129,28 +85,6 @@
           <el-descriptions-item label="内部闭包日期">{{ form.internalClosureDate || '-' }}</el-descriptions-item>
           <el-descriptions-item label="功能测试版本日期">{{ form.functionalTestDate || '-' }}</el-descriptions-item>
           <el-descriptions-item label="验收日期">{{ form.acceptanceDate || '-' }}</el-descriptions-item>
-        </el-descriptions>
-      </el-card>
-
-      <!-- 成本预算 -->
-      <el-card shadow="never" class="detail-card">
-        <template #header><span class="card-title">成本预算</span></template>
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="项目费用">
-            {{ form.projectCost != null ? formatAmount(form.projectCost) + ' 元' : '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="费用预算">
-            {{ form.expenseBudget != null ? formatAmount(form.expenseBudget) + ' 元' : '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="成本预算">
-            {{ form.costBudget != null ? formatAmount(form.costBudget) + ' 元' : '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="人力费用">
-            {{ form.laborCost != null ? formatAmount(form.laborCost) + ' 元' : '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="采购成本">
-            {{ form.purchaseCost != null ? formatAmount(form.purchaseCost) + ' 元' : '-' }}
-          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
