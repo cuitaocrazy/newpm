@@ -75,6 +75,18 @@ public class DailyReportDetail extends BaseEntity
     /** 子项目名称（扩展字段，来自pm_project.project_name） */
     private String subProjectName;
 
+    /** 子任务阶段（扩展字段，非DB列） */
+    private String subProjectStage;
+
+    /** 子任务负责人ID（扩展字段，非DB列） */
+    private Long subProjectManagerId;
+
+    /** 子任务负责人姓名（扩展字段，非DB列） */
+    private String subProjectManagerName;
+
+    /** 项目经理姓名（扩展字段，非DB列） */
+    private String projectManagerName;
+
     public void setSubProjectId(Long subProjectId) { this.subProjectId = subProjectId; }
     public Long getSubProjectId() { return subProjectId; }
 
@@ -83,6 +95,18 @@ public class DailyReportDetail extends BaseEntity
 
     public void setSubProjectName(String subProjectName) { this.subProjectName = subProjectName; }
     public String getSubProjectName() { return subProjectName; }
+
+    public void setSubProjectStage(String subProjectStage) { this.subProjectStage = subProjectStage; }
+    public String getSubProjectStage() { return subProjectStage; }
+
+    public void setSubProjectManagerId(Long subProjectManagerId) { this.subProjectManagerId = subProjectManagerId; }
+    public Long getSubProjectManagerId() { return subProjectManagerId; }
+
+    public void setSubProjectManagerName(String subProjectManagerName) { this.subProjectManagerName = subProjectManagerName; }
+    public String getSubProjectManagerName() { return subProjectManagerName; }
+
+    public void setProjectManagerName(String projectManagerName) { this.projectManagerName = projectManagerName; }
+    public String getProjectManagerName() { return projectManagerName; }
 
     public void setDetailId(Long detailId)
     {

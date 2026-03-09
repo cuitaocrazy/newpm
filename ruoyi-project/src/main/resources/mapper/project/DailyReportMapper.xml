@@ -48,6 +48,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="subProjectId"   column="detail_sub_project_id"   />
             <result property="workCategory"   column="detail_work_category"    />
             <result property="subProjectName" column="detail_sub_project_name" />
+            <result property="subProjectStage"       column="detail_sub_project_stage"        />
+            <result property="subProjectManagerId"   column="detail_sub_project_manager_id"   />
+            <result property="subProjectManagerName" column="detail_sub_project_manager_name" />
+            <result property="projectManagerName"    column="detail_project_manager_name"     />
         </collection>
     </resultMap>
 
@@ -99,13 +103,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dd.leave_hours   as detail_leave_hours,
             dd.sub_project_id as detail_sub_project_id,
             dd.work_category  as detail_work_category,
-            sp.project_name   as detail_sub_project_name
+            sp.project_name   as detail_sub_project_name,
+            sp.project_stage      as detail_sub_project_stage,
+            sp.project_manager_id as detail_sub_project_manager_id,
+            su.nick_name          as detail_sub_project_manager_name,
+            pu.nick_name          as detail_project_manager_name
         from pm_daily_report r
         left join sys_user u on r.user_id = u.user_id
         left join sys_dept d on r.dept_id = d.dept_id
         left join pm_daily_report_detail dd on r.report_id = dd.report_id
         left join pm_project p on dd.project_id = p.project_id
         left join pm_project sp on dd.sub_project_id = sp.project_id and sp.del_flag = '0'
+        left join sys_user su on sp.project_manager_id = su.user_id
+           and su.del_flag = '0'
+        left join sys_user pu on p.project_manager_id = pu.user_id
+           and pu.del_flag = '0'
         left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
     </sql>
 

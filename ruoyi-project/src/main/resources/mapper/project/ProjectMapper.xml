@@ -631,6 +631,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
                p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time,
                p.parent_id, p.project_level, p.task_code,
+               p.production_batch, p.internal_closure_date, p.functional_test_date,
                pp.project_name as parent_project_name,
                u1.nick_name AS project_manager_name,
                d.dept_name AS dept_name,
@@ -660,14 +661,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectSubProjectOptions" resultType="map">
-        select project_id   as "projectId",
-               project_name as "projectName",
-               task_code    as "taskCode"
-        from pm_project
-        where del_flag = '0'
-          and parent_id = #{parentId}
-          and project_level = 1
-        order by task_code, create_time
+        select p.project_id          as "projectId",
+               p.project_name        as "projectName",
+               p.task_code           as "taskCode",
+               p.project_stage       as "projectStage",
+               p.project_manager_id  as "projectManagerId",
+               u.nick_name           as "projectManagerName"
+        from pm_project p
+        left join sys_user u on p.project_manager_id = u.user_id
+        where p.del_flag = '0'
+          and p.parent_id = #{parentId}
+          and p.project_level = 1
+        order by p.task_code, p.create_time
     </select>
 
     <select id="selectProjectsHasSubProject" resultType="long">
