@@ -68,6 +68,9 @@
             <el-descriptions-item label="合同名称" :span="2">
               {{ form.contractName || '-' }}
             </el-descriptions-item>
+            <el-descriptions-item label="合同编号">
+              {{ form.contractCode || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="合同金额">
               {{ form.contractAmount != null ? formatAmount(form.contractAmount) + ' 元' : '-' }}
             </el-descriptions-item>
@@ -99,7 +102,7 @@
         </el-card>
       </el-col>
 
-      <!-- 右侧：人员配置 + 客户信息 + 时间规划 + 成本预算 -->
+      <!-- 右侧：人员配置 + 客户信息 + 时间规划 -->
       <el-col :span="9">
         <!-- 人员配置 -->
         <el-card shadow="never" class="detail-card">
@@ -175,32 +178,32 @@
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
-
-        <!-- 成本预算 -->
-        <el-card shadow="never" class="detail-card">
-          <template #header>
-            <span class="card-title">成本预算</span>
-          </template>
-          <el-descriptions :column="2" border>
-            <el-descriptions-item label="项目预算">
-              {{ formatAmount(form.projectBudget) }} 元
-            </el-descriptions-item>
-            <el-descriptions-item label="费用预算">
-              {{ formatAmount(form.costBudget) }} 元
-            </el-descriptions-item>
-            <el-descriptions-item label="成本预算">
-              {{ formatAmount(form.budgetCost) }} 元
-            </el-descriptions-item>
-            <el-descriptions-item label="人力费用">
-              {{ formatAmount(form.laborCost) }} 元
-            </el-descriptions-item>
-            <el-descriptions-item label="采购成本" :span="2">
-              {{ formatAmount(form.purchaseCost) }} 元
-            </el-descriptions-item>
-          </el-descriptions>
-        </el-card>
       </el-col>
     </el-row>
+
+    <!-- 成本预算 -->
+    <el-card shadow="never" class="detail-card">
+      <template #header>
+        <span class="card-title">成本预算</span>
+      </template>
+      <el-descriptions :column="5" border>
+        <el-descriptions-item label="项目预算">
+          {{ formatAmount(form.projectBudget) }} 元
+        </el-descriptions-item>
+        <el-descriptions-item label="费用预算">
+          {{ formatAmount(form.costBudget) }} 元
+        </el-descriptions-item>
+        <el-descriptions-item label="成本预算">
+          {{ formatAmount(form.budgetCost) }} 元
+        </el-descriptions-item>
+        <el-descriptions-item label="人力费用">
+          {{ formatAmount(form.laborCost) }} 元
+        </el-descriptions-item>
+        <el-descriptions-item label="采购成本">
+          {{ formatAmount(form.purchaseCost) }} 元
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-card>
 
     <!-- 合同信息 -->
     <el-card shadow="never" class="detail-card">
