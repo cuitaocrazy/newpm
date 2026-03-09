@@ -109,29 +109,12 @@
                 <el-tag size="small" type="info" style="margin-left: auto; flex-shrink: 0;">{{ item.projectStageName || '未设置' }}</el-tag>
               </div>
 
-              <!-- 第二行：工时（slider + 输入框） -->
-              <div class="prj-hours-row">
-                <span class="hours-label">工时:</span>
-                <el-slider
-                  v-model="item.workHours"
-                  :min="0" :max="24" :step="1"
-                  :marks="{ 0: '0', 8: '8h', 16: '16h', 24: '24h' }"
-                  style="flex: 1; margin: 0 16px;"
-                />
-                <el-input-number
-                  v-model="item.workHours"
-                  :min="0" :max="24" :step="1" :precision="0"
-                  size="small" style="width: 100px;"
-                />
-                <span style="margin-left: 4px; color: #909399;">h</span>
-              </div>
-
-              <!-- 第三行：子项目 + 工作类别（仅有子项目的主项目显示） -->
+              <!-- 第二行：任务 + 工作任务类别（仅有子项目的主项目显示） -->
               <div v-if="item.hasSubProject" class="prj-sub-row">
-                <span class="sub-label">子项目:</span>
+                <span class="sub-label">任务:</span>
                 <el-select
                   v-model="item.subProjectId"
-                  placeholder="请选择子项目（可选）"
+                  placeholder="请选择任务（可选）"
                   clearable
                   size="small"
                   style="flex: 1; min-width: 0;"
@@ -156,6 +139,23 @@
                 >
                   <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
                 </el-select>
+              </div>
+
+              <!-- 第三行：工时（slider + 输入框） -->
+              <div class="prj-hours-row">
+                <span class="hours-label">工时:</span>
+                <el-slider
+                  v-model="item.workHours"
+                  :min="0" :max="24" :step="1"
+                  :marks="{ 0: '0', 8: '8h', 16: '16h', 24: '24h' }"
+                  style="flex: 1; margin: 0 16px;"
+                />
+                <el-input-number
+                  v-model="item.workHours"
+                  :min="0" :max="24" :step="1" :precision="0"
+                  size="small" style="width: 100px;"
+                />
+                <span style="margin-left: 4px; color: #909399;">h</span>
               </div>
 
               <!-- 第四行：工作内容 -->
