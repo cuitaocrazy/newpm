@@ -1196,6 +1196,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             update_time = now()
         where project_id = #{projectId}
     </update>
+
+    <!-- 汇总主项目下所有子任务的 actual_workload(小时) -->
+    <select id="sumSubTasksWorkload" resultType="java.math.BigDecimal">
+        select coalesce(sum(actual_workload), 0)
+        from pm_project
+        where parent_id = #{parentId}
+          and project_level = 1
+          and del_flag = '0'
+    </select>
+
     <!-- 按项目编号前缀查询（精确匹配 或 带"-xx"后缀），用于编号冲突检测 -->
     <select id="selectProjectsByCodePrefix" resultType="map">
         SELECT project_id AS projectId,

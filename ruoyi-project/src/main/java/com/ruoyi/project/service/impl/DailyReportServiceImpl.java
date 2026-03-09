@@ -2,6 +2,7 @@ package com.ruoyi.project.service.impl;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -148,6 +149,10 @@ public class DailyReportServiceImpl implements IDailyReportService
         // 检查是否已存在该日期的日报（使用简单查询，避免复杂JOIN导致的结果映射问题）
         Long existingReportId = dailyReportMapper.selectReportIdByUserAndDate(userId, dateStr);
 
+        // 用于记录旧明细中涉及的子任务ID和项目ID，确保删除行也参与工时重算
+        Set<Long> oldSubProjectIds = new HashSet<>();
+        Set<Long> oldProjectIds = new HashSet<>();
+
         int rows;
         if (existingReportId != null)
         {
@@ -156,6 +161,17 @@ public class DailyReportServiceImpl implements IDailyReportService
             report.setUpdateBy(username);
             report.setUpdateTime(DateUtils.getNowDate());
             rows = dailyReportMapper.updateDailyReport(report);
+
+            // 在删除前先记录旧明细的子任务ID和项目ID，用于后续工时重算
+            List<DailyReportDetail> oldDetails = detailMapper.selectByReportId(existingReportId);
+            oldDetails.stream()
+                    .filter(d -> d.getSubProjectId() != null)
+                    .map(DailyReportDetail::getSubProjectId)
+                    .forEach(oldSubProjectIds::add);
+            oldDetails.stream()
+                    .filter(d -> d.getProjectId() != null)
+                    .map(DailyReportDetail::getProjectId)
+                    .forEach(oldProjectIds::add);
 
             // 删除旧明细，插入新明细
             detailMapper.deleteByReportId(existingReportId);
@@ -191,16 +207,37 @@ public class DailyReportServiceImpl implements IDailyReportService
             detailMapper.batchInsert(detailList);
         }
 
-        // 更新受影响项目的实际工作量(小时) = 该项目所有日报明细工时之和
-        Set<Long> affectedProjectIds = (detailList != null ? detailList : java.util.Collections.<DailyReportDetail>emptyList())
+        // 更新受影响项目的实际工作量（两级滚动：先子任务，再主项目）
+        List<DailyReportDetail> workDetails = (detailList != null ? detailList : java.util.Collections.<DailyReportDetail>emptyList())
                 .stream()
                 .filter(d -> d.getProjectId() != null && "work".equals(d.getEntryType()))
+                .collect(Collectors.toList());
+
+        // Step 1：更新受影响子任务工时（含旧明细中被删除的子任务行）
+        Set<Long> affectedSubProjectIds = workDetails.stream()
+                .filter(d -> d.getSubProjectId() != null)
+                .map(DailyReportDetail::getSubProjectId)
+                .collect(Collectors.toSet());
+        affectedSubProjectIds.addAll(oldSubProjectIds);
+        for (Long subProjectId : affectedSubProjectIds) {
+            BigDecimal subHours = detailMapper.sumWorkHoursBySubProjectId(subProjectId);
+            projectMapper.updateActualWorkload(subProjectId, subHours);
+        }
+
+        // Step 2：更新主项目工时（含旧明细中被删除行对应的项目）
+        Set<Long> affectedProjectIds = workDetails.stream()
                 .map(DailyReportDetail::getProjectId)
                 .collect(Collectors.toSet());
-        for (Long projectId : affectedProjectIds)
-        {
-            BigDecimal totalHours = detailMapper.sumWorkHoursByProjectId(projectId);
-            projectMapper.updateActualWorkload(projectId, totalHours);
+        affectedProjectIds.addAll(oldProjectIds);
+        for (Long projectId : affectedProjectIds) {
+            List<Long> hasSubList = projectMapper.selectProjectsHasSubProject(java.util.Collections.singletonList(projectId));
+            if (!hasSubList.isEmpty()) {
+                BigDecimal totalHours = projectMapper.sumSubTasksWorkload(projectId);
+                projectMapper.updateActualWorkload(projectId, totalHours);
+            } else {
+                BigDecimal totalHours = detailMapper.sumWorkHoursByProjectId(projectId);
+                projectMapper.updateActualWorkload(projectId, totalHours);
+            }
         }
 
         return rows;

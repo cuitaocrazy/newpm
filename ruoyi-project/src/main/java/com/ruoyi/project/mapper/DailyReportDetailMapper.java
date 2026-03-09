@@ -2,6 +2,7 @@ package com.ruoyi.project.mapper;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.DailyReportDetail;
 
 /**
@@ -43,6 +44,9 @@ public interface DailyReportDetailMapper
      * @return 总工时
      */
     public BigDecimal sumWorkHoursByProjectId(Long projectId);
+
+    /** 统计指定子任务在所有日报中的总工时(小时) */
+    BigDecimal sumWorkHoursBySubProjectId(@Param("subProjectId") Long subProjectId);
 
     /**
      * 根据日报ID删除明细（物理删除）

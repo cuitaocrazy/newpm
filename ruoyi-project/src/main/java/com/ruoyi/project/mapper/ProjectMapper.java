@@ -96,6 +96,9 @@ public interface ProjectMapper
     /** 批量判断哪些主项目有子项目，返回有子项目的 parentId 集合 */
     List<Long> selectProjectsHasSubProject(@Param("projectIds") List<Long> projectIds);
 
+    /** 汇总主项目下所有子任务的 actual_workload(小时) */
+    BigDecimal sumSubTasksWorkload(@Param("parentId") Long parentId);
+
     /**
      * 批量查询团队确认明细（用于列表分行展示）
      *

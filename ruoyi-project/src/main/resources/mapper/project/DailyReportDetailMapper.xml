@@ -115,6 +115,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and del_flag = '0'
     </select>
 
+    <!-- 统计指定子任务在所有日报中的总工时(小时) -->
+    <select id="sumWorkHoursBySubProjectId" parameterType="Long" resultType="java.math.BigDecimal">
+        select coalesce(sum(work_hours), 0)
+        from pm_daily_report_detail
+        where sub_project_id = #{subProjectId}
+          and entry_type = 'work'
+          and del_flag = '0'
+    </select>
+
     <!-- 根据日报ID批量删除明细（物理删除） -->
     <delete id="deleteByReportIds" parameterType="String">
         delete from pm_daily_report_detail where report_id in
