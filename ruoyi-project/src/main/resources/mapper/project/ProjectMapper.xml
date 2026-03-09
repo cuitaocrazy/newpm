@@ -76,6 +76,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="contractAmount"    column="contract_amount"    />
         <result property="contractStatus"    column="contract_status"    />
         <result property="contractName"      column="contract_name"      />
+        <result property="contractCode"      column="contract_code"      />
         <result property="deptName"    column="dept_name"    />
         <result property="projectManagerName"    column="project_manager_name"    />
         <result property="marketManagerName"    column="market_manager_name"    />
@@ -123,7 +124,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.revenue_confirm_year, p.revenue_confirm_date, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                sr.region_name,
-               ca.contract_amount, ca.contract_status, ca.contract_name,
+               ca.contract_amount, ca.contract_status, ca.contract_name, ca.contract_code,
                u_upd.nick_name AS update_by_name,
                u1.nick_name AS project_manager_name,
                tc.team_confirm_depts,
@@ -137,7 +138,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             SELECT pcr.project_id,
                    SUM(c.contract_amount) AS contract_amount,
                    MAX(c.contract_status) AS contract_status,
-                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name
+                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
@@ -158,7 +160,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
-            and p.project_level = 0
+            AND (p.project_level IS NULL OR p.project_level = 0)
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
             <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
@@ -243,7 +245,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             SELECT pcr.project_id,
                    SUM(c.contract_amount) AS contract_amount,
                    MAX(c.contract_status) AS contract_status,
-                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name
+                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
@@ -367,6 +370,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                ca.contract_amount AS contract_amount,
                ca.contract_status AS contract_status,
                ca.contract_name AS contract_name,
+               ca.contract_code AS contract_code,
                p.parent_id, p.project_level, p.task_code,
                pp2.project_name as parent_project_name
         FROM pm_project p
@@ -382,7 +386,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             SELECT pcr.project_id,
                    SUM(c.contract_amount) AS contract_amount,
                    MAX(c.contract_status) AS contract_status,
-                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name
+                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
@@ -672,6 +677,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where p.del_flag = '0'
           and p.parent_id = #{parentId}
           and p.project_level = 1
+          and (p.project_stage is null or p.project_stage != '11')
+          and p.project_status = '0'
         order by p.task_code, p.create_time
     </select>
 
@@ -751,6 +758,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.estimated_workload AS estimatedWorkload,
             ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actualWorkload,
             ca.contract_name     AS contractName,
+            ca.contract_code     AS contractCode,
             ca.contract_amount   AS contractAmount,
             ca.contract_status   AS contractStatus,
             p.revenue_confirm_year   AS revenueConfirmYear,
@@ -773,6 +781,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN (
             SELECT pcr.project_id,
                    GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code,
                    SUM(c.contract_amount)  AS contract_amount,
                    MAX(c.contract_status)  AS contract_status
             FROM pm_project_contract_rel pcr
