@@ -522,6 +522,11 @@ public class ProjectServiceImpl implements IProjectService
      */
     private void syncProjectMembers(Project project)
     {
+        // project_level NOT NULL DEFAULT 0，子任务（level=1）成员继承父项目，不独立维护 pm_project_member
+        if (Integer.valueOf(1).equals(project.getProjectLevel())) {
+            return;
+        }
+
         Long projectId = project.getProjectId();
         if (projectId == null)
         {
