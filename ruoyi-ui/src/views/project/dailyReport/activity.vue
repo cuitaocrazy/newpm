@@ -262,8 +262,7 @@ const drawerStats = ref({ count: 0, totalHours: 0, fullCount: 0 })
 const projectColors = ['#409eff', '#67c23a', '#f56c6c', '#e6a23c', '#b37feb', '#00b894', '#fdcb6e', '#909399']
 const currentYear = new Date().getFullYear().toString()
 function yearTagStyle(year) {
-  const label = getDictLabel(sys_ndgl.value, year)
-  return label && !label.includes(currentYear)
+  return parseInt(year) < parseInt(currentYear)
     ? { backgroundColor: '#f5222d', borderColor: '#f5222d', color: '#fff' }
     : {}
 }

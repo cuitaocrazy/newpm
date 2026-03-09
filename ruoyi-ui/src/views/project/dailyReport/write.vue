@@ -238,8 +238,7 @@ const workCalendarMap = ref({}) // { 'yyyy-MM-dd': { dayType, dayName } }
 const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#b37feb', '#00b894', '#fdcb6e']
 const currentYear = new Date().getFullYear().toString()
 function yearTagStyle(year) {
-  const label = getDictLabel(sys_ndgl.value, year)
-  return label && !label.includes(currentYear)
+  return parseInt(year) < parseInt(currentYear)
     ? { backgroundColor: '#f5222d', borderColor: '#f5222d', color: '#fff' }
     : {}
 }
