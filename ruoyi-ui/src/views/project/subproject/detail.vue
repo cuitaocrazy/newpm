@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <h2 style="margin: 0 0 6px 0; font-weight: bold;">子项目详情</h2>
+    <h2 style="margin: 0 0 6px 0; font-weight: bold;">任务详情</h2>
 
     <el-alert v-if="form.parentProjectName" type="info" :closable="false" style="margin-bottom: 16px">
       <template #title>
@@ -9,14 +9,13 @@
     </el-alert>
 
     <div v-loading="loading">
-      <!-- 项目基本信息 -->
       <el-card shadow="never" class="detail-card">
-        <template #header><span class="card-title">项目基本信息</span></template>
+        <template #header><span class="card-title">基本信息</span></template>
         <el-descriptions :column="3" border>
-          <el-descriptions-item label="子项目编号">
+          <el-descriptions-item label="任务编号">
             {{ form.taskCode || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="子项目名称" :span="2">
+          <el-descriptions-item label="任务名称" :span="2">
             {{ form.projectName || '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="项目编号" :span="3">
@@ -46,7 +45,7 @@
           <el-descriptions-item label="项目状态">
             <dict-tag :options="sys_xmzt" :value="form.projectStatus" />
           </el-descriptions-item>
-          <el-descriptions-item label="项目阶段">
+          <el-descriptions-item label="任务阶段">
             <dict-tag :options="sys_xmjd" :value="form.projectStage" />
           </el-descriptions-item>
           <el-descriptions-item label="验收状态">
@@ -58,16 +57,19 @@
           <el-descriptions-item label="实际人天">
             {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) + ' 人天' : '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="项目预算">
+          <el-descriptions-item label="任务预算">
             {{ form.projectBudget != null ? formatAmount(form.projectBudget) + ' 元' : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="投产批次">
+            <dict-tag :options="sys_tcpc" :value="form.productionBatch" />
           </el-descriptions-item>
           <el-descriptions-item label="项目地址" :span="3">
             {{ form.projectAddress || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="项目计划" :span="3">
+          <el-descriptions-item label="任务计划" :span="3">
             <div class="text-content">{{ form.projectPlan || '-' }}</div>
           </el-descriptions-item>
-          <el-descriptions-item label="项目描述" :span="3">
+          <el-descriptions-item label="任务描述" :span="3">
             <div class="text-content">{{ form.projectDescription || '-' }}</div>
           </el-descriptions-item>
         </el-descriptions>
@@ -124,7 +126,9 @@
           <el-descriptions-item label="启动日期">{{ form.startDate || '-' }}</el-descriptions-item>
           <el-descriptions-item label="结束日期">{{ form.endDate || '-' }}</el-descriptions-item>
           <el-descriptions-item label="投产日期">{{ form.productionDate || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="验收日期" :span="3">{{ form.acceptanceDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="内部闭包日期">{{ form.internalClosureDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="功能测试版本日期">{{ form.functionalTestDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="验收日期">{{ form.acceptanceDate || '-' }}</el-descriptions-item>
         </el-descriptions>
       </el-card>
 
@@ -181,7 +185,7 @@ import request from '@/utils/request'
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const route = useRoute()
-const { industry, sys_xmfl, sys_ndgl, sys_yjqy, sys_xmjd, sys_yszt, sys_xmzt } = proxy.useDict('industry', 'sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_xmjd', 'sys_yszt', 'sys_xmzt')
+const { industry, sys_xmfl, sys_ndgl, sys_yjqy, sys_xmjd, sys_yszt, sys_xmzt, sys_tcpc } = proxy.useDict('industry', 'sys_xmfl', 'sys_ndgl', 'sys_yjqy', 'sys_xmjd', 'sys_yszt', 'sys_xmzt', 'sys_tcpc')
 
 const loading = ref(false)
 const form = ref({})
