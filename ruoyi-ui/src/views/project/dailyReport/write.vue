@@ -113,66 +113,85 @@
                 <el-tag size="small" type="info" style="margin-left: auto; flex-shrink: 0;">{{ item.projectStageName || '未设置' }}</el-tag>
               </div>
 
-              <!-- 第二行：任务 + 工作任务类别（仅有子项目的主项目显示） -->
-              <div v-if="item.hasSubProject" class="prj-sub-row">
-                <span class="sub-label">任务:</span>
-                <el-select
-                  v-model="item.subProjectId"
-                  placeholder="请选择任务（可选）"
-                  clearable
-                  size="small"
-                  style="flex: 1; min-width: 0;"
-                  :disabled="!isEditable"
-                  @focus="loadSubProjectOptions(item)"
-                >
-                  <el-option
-                    v-for="sp in (item.subProjectOptions || [])"
-                    :key="sp.projectId"
-                    :label="sp.taskCode ? `[${sp.taskCode}] ${sp.projectName}` : sp.projectName"
-                    :value="sp.projectId"
+              <!-- 无子任务：原有单行逻辑 -->
+              <template v-if="!item.hasSubProject">
+                <!-- 工作任务类别行 -->
+                <div class="prj-sub-row">
+                  <span class="sub-label">工作任务类别:</span>
+                  <el-select
+                    v-model="item.workCategory"
+                    placeholder="请选择"
+                    clearable
+                    size="small"
+                    style="width: 140px;"
+                    :disabled="!isEditable"
+                  >
+                    <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
+                  </el-select>
+                </div>
+
+                <!-- 工时（slider + 输入框） -->
+                <div class="prj-hours-row">
+                  <span class="hours-label">工时:</span>
+                  <el-slider
+                    v-model="item.workHours"
+                    :min="0" :max="24" :step="1"
+                    :marks="{ 0: '0', 8: '8h', 16: '16h', 24: '24h' }"
+                    style="flex: 1; margin: 0 16px;"
                   />
-                </el-select>
-                <span class="sub-label" style="margin-left: 12px;">工作任务类别:</span>
-                <el-select
-                  v-model="item.workCategory"
-                  placeholder="请选择"
-                  clearable
-                  size="small"
-                  style="width: 140px;"
-                  :disabled="!isEditable"
-                >
-                  <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
-                </el-select>
-              </div>
+                  <el-input-number
+                    v-model="item.workHours"
+                    :min="0" :max="24" :step="1" :precision="0"
+                    size="small" style="width: 100px;"
+                  />
+                  <span style="margin-left: 4px; color: #909399;">h</span>
+                </div>
 
-              <!-- 第三行：工时（slider + 输入框） -->
-              <div class="prj-hours-row">
-                <span class="hours-label">工时:</span>
-                <el-slider
-                  v-model="item.workHours"
-                  :min="0" :max="24" :step="1"
-                  :marks="{ 0: '0', 8: '8h', 16: '16h', 24: '24h' }"
-                  style="flex: 1; margin: 0 16px;"
-                />
-                <el-input-number
-                  v-model="item.workHours"
-                  :min="0" :max="24" :step="1" :precision="0"
-                  size="small" style="width: 100px;"
-                />
-                <span style="margin-left: 4px; color: #909399;">h</span>
-              </div>
+                <!-- 工作内容 -->
+                <div class="prj-content-row">
+                  <el-input
+                    v-model="item.workContent"
+                    type="textarea"
+                    :rows="5"
+                    :placeholder="'填写 ' + item.projectName + ' 的工作内容...'"
+                    maxlength="2000"
+                    show-word-limit
+                  />
+                </div>
+              </template>
 
-              <!-- 第四行：工作内容 -->
-              <div class="prj-content-row">
-                <el-input
-                  v-model="item.workContent"
-                  type="textarea"
-                  :rows="5"
-                  :placeholder="'填写 ' + item.projectName + ' 的工作内容...'"
-                  maxlength="2000"
-                  show-word-limit
-                />
-              </div>
+              <!-- 有子任务：多任务行 -->
+              <template v-else>
+                <div v-if="!item.taskRows" class="task-loading" @click="loadTaskRows(item)">
+                  <el-button size="small" type="primary" plain>加载任务列表</el-button>
+                </div>
+                <div v-else class="task-rows-container">
+                  <div v-if="item.taskRows.length === 0" style="font-size:13px;color:#c0c4cc;padding:8px 0;">暂无任务</div>
+                  <div v-for="task in item.taskRows" :key="task.subProjectId" class="task-row">
+                    <!-- 任务头（只读信息） -->
+                    <div class="task-row-header">
+                      <span class="task-name">{{ task.taskName }}</span>
+                      <el-tag v-if="task.projectStage" size="small" type="info">{{ getStageName(task.projectStage) }}</el-tag>
+                      <span class="task-manager">负责人：{{ task.projectManagerName }}</span>
+                    </div>
+                    <!-- 工作任务类别 + 工时 -->
+                    <div class="task-row-inputs">
+                      <el-select v-model="task.workCategory" placeholder="工作任务类别" clearable
+                        size="small" style="width: 150px;" :disabled="!isEditable">
+                        <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
+                      </el-select>
+                      <el-input-number v-model="task.workHours" :min="0" :max="24" :step="0.5"
+                        size="small" style="width: 110px;" :disabled="!isEditable" />
+                      <span style="font-size:12px;color:#909399;">小时</span>
+                    </div>
+                    <!-- 工作内容 -->
+                    <el-input v-model="task.workContent" type="textarea" :rows="2"
+                      :placeholder="'填写 ' + task.taskName + ' 的工作内容...'"
+                      :disabled="!isEditable"
+                      style="margin-top:4px;" />
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </el-card>
@@ -191,7 +210,7 @@ import MonthCalendar from '@/components/MonthCalendar/index.vue'
 import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
-const { sys_ndgl, sys_gzlb } = proxy.useDict('sys_ndgl', 'sys_gzlb')
+const { sys_ndgl, sys_gzlb, sys_xmjd } = proxy.useDict('sys_ndgl', 'sys_gzlb', 'sys_xmjd')
 
 const userStore = useUserStore()
 
@@ -233,7 +252,12 @@ const LEAVE_TYPE_LABEL = { leave: '请假', comp: '倒休', annual: '年假' }
 const leaveList = ref([])
 
 const totalHours = computed(() => {
-  return formList.value.reduce((sum, item) => sum + (item.workHours || 0), 0)
+  return formList.value.reduce((sum, item) => {
+    if (item.hasSubProject && item.taskRows) {
+      return sum + item.taskRows.reduce((s, t) => s + (t.workHours || 0), 0)
+    }
+    return sum + (item.workHours || 0)
+  }, 0)
 })
 
 // 本周范围（周一至周日），仅本周日期可保存
@@ -264,6 +288,13 @@ function getColor(index) {
 
 function getDictLabel(dictList, value) {
   return dictList?.find(d => d.value == value)?.label || value
+}
+
+// 阶段 dict lookup（替代 Vue 2 filter）
+function getStageName(val) {
+  if (!val) return ''
+  const found = (sys_xmjd.value || []).find(d => d.value === val)
+  return found ? found.label : val
 }
 
 // 兼容旧格式（纯数字）和新格式（对象）获取工时
@@ -322,11 +353,23 @@ async function loadProjects() {
   projects.value = res.data || []
 }
 
-// 按需加载子项目选项（首次展开下拉时，预置的单条记录视为未完整加载）
-async function loadSubProjectOptions(item) {
-  if (item.subProjectOptions && item.subProjectOptions.length > 1) return
+// 加载子任务行（有子任务的项目使用）
+async function loadTaskRows(item) {
+  if (item.taskRows !== null && item.taskRows !== undefined) return
   const res = await import('@/api/project/project').then(m => m.getSubProjectOptions(item.projectId))
-  item.subProjectOptions = res.data || []
+  const tasks = res.data || []
+  item.taskRows = tasks.map(t => {
+    const existingDetail = (item._existingDetails || []).find(d => d.subProjectId === t.projectId)
+    return {
+      subProjectId: t.projectId,
+      taskName: t.taskCode ? `[${t.taskCode}] ${t.projectName}` : t.projectName,
+      projectStage: t.projectStage,
+      projectManagerName: t.projectManagerName || '-',
+      workCategory: existingDetail?.workCategory || null,
+      workHours: existingDetail ? Number(existingDetail.workHours) : 0,
+      workContent: existingDetail?.workContent || ''
+    }
+  })
 }
 
 // 加载某日的日报数据
@@ -339,26 +382,47 @@ async function loadDayReport(dateStr) {
 
     // 构建表单：所有项目列出，已有数据的填充
     formList.value = projects.value.map(p => {
-      const detail = report?.detailList?.find(d => d.projectId === p.projectId && (!d.entryType || d.entryType === 'work'))
-      return {
-        projectId: p.projectId,
-        projectName: p.projectName,
-        projectCode: p.projectCode,
-        projectStage: detail?.projectStage || p.projectStage,
-        projectStageName: detail?.projectStageName || p.projectStageName,
-        estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
-        actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
-        revenueConfirmYear: p.revenueConfirmYear || null,
-        hasSubProject: !!p.hasSubProject,
-        subProjectOptions: (detail?.subProjectId && detail?.subProjectName)
-          ? [{ projectId: detail.subProjectId, projectName: detail.subProjectName, taskCode: null }]
-          : null,
-        workHours: detail ? Number(detail.workHours) : 0,
-        workContent: detail ? detail.workContent : '',
-        subProjectId: detail ? (detail.subProjectId || null) : null,
-        workCategory: detail ? (detail.workCategory || null) : null
+      if (p.hasSubProject) {
+        // 有子任务的项目：收集该项目的所有 work 条目，存入 _existingDetails，延迟加载 taskRows
+        const existingDetails = (report?.detailList || []).filter(
+          d => d.projectId === p.projectId && (!d.entryType || d.entryType === 'work') && d.subProjectId != null
+        )
+        const item = {
+          projectId: p.projectId,
+          projectName: p.projectName,
+          projectCode: p.projectCode,
+          projectStage: p.projectStage,
+          projectStageName: p.projectStageName,
+          estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
+          actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
+          revenueConfirmYear: p.revenueConfirmYear || null,
+          hasSubProject: true,
+          _existingDetails: existingDetails,
+          taskRows: null  // null 表示未加载，会触发"加载任务列表"按钮
+        }
+        return item
+      } else {
+        const detail = report?.detailList?.find(d => d.projectId === p.projectId && (!d.entryType || d.entryType === 'work'))
+        return {
+          projectId: p.projectId,
+          projectName: p.projectName,
+          projectCode: p.projectCode,
+          projectStage: detail?.projectStage || p.projectStage,
+          projectStageName: detail?.projectStageName || p.projectStageName,
+          estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
+          actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
+          revenueConfirmYear: p.revenueConfirmYear || null,
+          hasSubProject: false,
+          workHours: detail ? Number(detail.workHours) : 0,
+          workContent: detail ? detail.workContent : '',
+          workCategory: detail ? (detail.workCategory || null) : null
+        }
       }
     })
+
+    // 对所有有子任务的项目，自动加载 taskRows（guard 已保证不重复加载）
+    const subProjectItems = formList.value.filter(item => item.hasSubProject)
+    await Promise.all(subProjectItems.map(item => loadTaskRows(item)))
 
     leaveList.value = (report?.detailList || [])
       .filter(d => d.entryType && d.entryType !== 'work')
@@ -419,18 +483,43 @@ watch(selectedDate, (newVal) => {
 })
 
 async function handleSave() {
-  // 过滤有效条目（工时>0 且内容非空）
-  const details = formList.value
-    .filter(f => f.workHours > 0 && f.workContent && f.workContent.trim())
-    .map(f => ({
-      projectId: f.projectId,
-      projectStage: f.projectStage,
-      workHours: f.workHours,
-      workContent: f.workContent,
-      entryType: 'work',
-      subProjectId: f.subProjectId || null,
-      workCategory: f.workCategory || null
-    }))
+  const details = []
+
+  for (const item of formList.value) {
+    if (item.hasSubProject && item.taskRows === null) {
+      proxy.$modal.msgWarning(`项目"${item.projectName}"的任务列表尚未加载，请稍后再试`)
+      return  // 阻止整个保存操作
+    }
+    if (item.hasSubProject && item.taskRows) {
+      // 有子任务的项目：遍历 taskRows，工时>0 的生成 detail
+      item.taskRows
+        .filter(t => t.workHours > 0)
+        .forEach(t => {
+          details.push({
+            projectId: item.projectId,
+            projectStage: item.projectStage,
+            workHours: t.workHours,
+            workContent: t.workContent,
+            entryType: 'work',
+            subProjectId: t.subProjectId,
+            workCategory: t.workCategory || null
+          })
+        })
+    } else if (!item.hasSubProject) {
+      // 无子任务的项目：原有逻辑（工时>0 且内容非空）
+      if (item.workHours > 0 && item.workContent && item.workContent.trim()) {
+        details.push({
+          projectId: item.projectId,
+          projectStage: item.projectStage,
+          workHours: item.workHours,
+          workContent: item.workContent,
+          entryType: 'work',
+          subProjectId: null,
+          workCategory: item.workCategory || null
+        })
+      }
+    }
+  }
 
   // 追加假期行
   const leaveDetails = leaveList.value
@@ -476,7 +565,14 @@ async function handleDelete() {
   await delDailyReport(currentReportId.value)
   ElMessage.success('日报已删除')
   currentReportId.value = null
-  formList.value.forEach(item => { item.workHours = 0; item.workContent = '' })
+  formList.value.forEach(item => {
+    if (item.hasSubProject && item.taskRows) {
+      item.taskRows.forEach(t => { t.workHours = 0; t.workContent = '' })
+    } else {
+      item.workHours = 0
+      item.workContent = ''
+    }
+  })
   leaveList.value = []
   loadMonthOverview()
 }
@@ -563,6 +659,51 @@ onMounted(async () => {
 .sub-label { font-size: 13px; color: #606266; white-space: nowrap; flex-shrink: 0; }
 
 .prj-content-row {}
+
+/* 多任务行样式 */
+.task-rows-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-row {
+  background: #f9fafb;
+  border: 1px solid #e8eaed;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.task-row-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.task-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.task-manager {
+  font-size: 12px;
+  color: #909399;
+  margin-left: auto;
+}
+
+.task-row-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.task-loading {
+  text-align: center;
+  padding: 12px 0;
+}
 
 .leave-section {
   border: 1px solid #ebeef5;
