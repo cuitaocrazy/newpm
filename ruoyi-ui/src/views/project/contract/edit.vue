@@ -111,6 +111,7 @@
                 <el-table :data="selectedProjects" border style="width: 100%">
                   <el-table-column type="index" label="序号" width="60" />
                   <el-table-column prop="projectName" label="项目名称" />
+                  <el-table-column prop="deptName" label="项目所属部门" />
                   <el-table-column prop="projectBudget" label="预算金额（元）" width="150">
                     <template #default="scope">
                       {{ scope.row.projectBudget || '-' }}

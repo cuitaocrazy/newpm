@@ -1015,8 +1015,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.project_name,
             p.project_code,
             p.project_budget,
-            p.estimated_workload
+            p.estimated_workload,
+            d.dept_name AS dept_name
         FROM pm_project p
+        LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
         WHERE p.del_flag = '0'
           AND (
               p.project_dept = #{deptId}
@@ -1094,8 +1096,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.create_time,
             p.update_by,
             p.update_time,
-            p.remark
+            p.remark,
+            d.dept_name AS dept_name
         FROM pm_project p
+        LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
         INNER JOIN pm_project_contract_rel rel ON p.project_id = rel.project_id
         WHERE rel.contract_id = #{contractId}
           AND p.del_flag = '0'
@@ -1133,6 +1137,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_dict_data dict on p.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value
             and dict.dict_type = 'sys_xmjd'
         where p.del_flag = '0'
+          and (p.project_level is null or p.project_level = 0)
           and p.approval_status = '1'
           and p.project_status = '0'
           and (p.project_stage is null or p.project_stage != '7')
