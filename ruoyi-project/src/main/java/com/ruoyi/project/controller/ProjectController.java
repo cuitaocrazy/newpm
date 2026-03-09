@@ -26,6 +26,7 @@ import com.ruoyi.project.domain.ProjectApproval;
 import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.project.service.IProjectApprovalService;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -328,6 +329,10 @@ public class ProjectController extends BaseController
             RoundingMode.HALF_UP
         );
         project.setAfterTaxAmount(afterTaxAmount);
+
+        // 记录确认操作人和操作时间
+        project.setCompanyRevenueConfirmedBy(SecurityUtils.getUsername());
+        project.setCompanyRevenueConfirmedTime(new Date());
 
         return toAjax(projectService.updateProject(project));
     }

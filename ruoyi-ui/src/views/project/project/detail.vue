@@ -8,191 +8,199 @@
       </div>
     </el-card>
 
-    <!-- 项目基本信息 -->
-    <el-card shadow="never" class="detail-card">
-      <template #header>
-        <span class="card-title">项目基本信息</span>
-      </template>
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="行业">
-          <dict-tag :options="industry" :value="form.industry" />
-        </el-descriptions-item>
-        <el-descriptions-item label="一级区域">
-          <dict-tag :options="sys_yjqy" :value="form.region" />
-        </el-descriptions-item>
-        <el-descriptions-item label="二级区域">
-          {{ form.regionName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="简称">
-          {{ form.shortName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="立项年份">
-          <dict-tag :options="sys_ndgl" :value="form.establishedYear" />
-        </el-descriptions-item>
-        <el-descriptions-item label="项目ID">
-          {{ form.projectCode || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="项目名称" :span="3">
-          {{ form.projectName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="项目分类">
-          <dict-tag :options="sys_xmfl" :value="form.projectCategory" />
-        </el-descriptions-item>
-        <el-descriptions-item label="项目部门">
-          {{ getDeptName(form.projectDept) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="预估工作量">
-          {{ form.estimatedWorkload || 0 }} 人天
-        </el-descriptions-item>
-        <el-descriptions-item label="项目状态">
-          <dict-tag :options="sys_xmzt" :value="form.projectStatus" />
-        </el-descriptions-item>
-        <el-descriptions-item label="验收状态">
-          <dict-tag :options="sys_yszt" :value="form.acceptanceStatus" />
-        </el-descriptions-item>
-        <el-descriptions-item label="实际人天">
-          {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000' }} 人天
-        </el-descriptions-item>
-        <el-descriptions-item label="审核状态">
-          <dict-tag :options="sys_spzt" :value="form.approvalStatus" />
-        </el-descriptions-item>
-        <el-descriptions-item label="项目预算">
-          {{ formatAmount(form.projectBudget) }} 元
-        </el-descriptions-item>
-        <el-descriptions-item label="合同状态">
-          <dict-tag :options="sys_htzt" :value="form.contractStatus" />
-        </el-descriptions-item>
-        <el-descriptions-item label="合同名称" :span="2">
-          {{ form.contractName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="合同金额">
-          {{ form.contractAmount != null ? formatAmount(form.contractAmount) + ' 元' : '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="收入确认年度">
-          <dict-tag :options="sys_ndgl" :value="form.revenueConfirmYear" />
-        </el-descriptions-item>
-        <el-descriptions-item label="收入确认状态">
-          <dict-tag :options="sys_qrzt" :value="form.revenueConfirmStatus" />
-        </el-descriptions-item>
-        <el-descriptions-item label="收入确认金额">
-          {{ form.confirmAmount != null ? formatAmount(form.confirmAmount) + ' 元' : '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="项目阶段" :span="2">
-          <dict-tag :options="sys_xmjd" :value="form.projectStage" />
-        </el-descriptions-item>
-        <el-descriptions-item label="项目地址" :span="3">
-          {{ form.projectAddress || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="项目计划" :span="3">
-          <div class="text-content">{{ form.projectPlan || '-' }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="项目描述" :span="3">
-          <div class="text-content">{{ form.projectDescription || '-' }}</div>
-        </el-descriptions-item>
-        <el-descriptions-item label="审核意见" :span="3">
-          {{ form.approvalReason || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+    <!-- 左右布局：项目基本信息 + 右侧辅助信息 -->
+    <el-row :gutter="16" style="margin-bottom: 0;">
+      <!-- 左侧：项目基本信息 -->
+      <el-col :span="15">
+        <el-card shadow="never" class="detail-card">
+          <template #header>
+            <span class="card-title">项目基本信息</span>
+          </template>
+          <el-descriptions :column="3" border>
+            <el-descriptions-item label="行业">
+              <dict-tag :options="industry" :value="form.industry" />
+            </el-descriptions-item>
+            <el-descriptions-item label="一级区域">
+              <dict-tag :options="sys_yjqy" :value="form.region" />
+            </el-descriptions-item>
+            <el-descriptions-item label="二级区域">
+              {{ form.regionName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="简称">
+              {{ form.shortName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="立项年份">
+              <dict-tag :options="sys_ndgl" :value="form.establishedYear" />
+            </el-descriptions-item>
+            <el-descriptions-item label="项目ID">
+              {{ form.projectCode || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="项目名称" :span="3">
+              {{ form.projectName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="项目分类">
+              <dict-tag :options="sys_xmfl" :value="form.projectCategory" />
+            </el-descriptions-item>
+            <el-descriptions-item label="项目部门">
+              {{ getDeptName(form.projectDept) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="预估工作量">
+              {{ form.estimatedWorkload || 0 }} 人天
+            </el-descriptions-item>
+            <el-descriptions-item label="项目状态">
+              <dict-tag :options="sys_xmzt" :value="form.projectStatus" />
+            </el-descriptions-item>
+            <el-descriptions-item label="验收状态">
+              <dict-tag :options="sys_yszt" :value="form.acceptanceStatus" />
+            </el-descriptions-item>
+            <el-descriptions-item label="实际人天">
+              {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000' }} 人天
+            </el-descriptions-item>
+            <el-descriptions-item label="审核状态">
+              <dict-tag :options="sys_spzt" :value="form.approvalStatus" />
+            </el-descriptions-item>
+            <el-descriptions-item label="项目预算">
+              {{ formatAmount(form.projectBudget) }} 元
+            </el-descriptions-item>
+            <el-descriptions-item label="合同状态">
+              <dict-tag :options="sys_htzt" :value="form.contractStatus" />
+            </el-descriptions-item>
+            <el-descriptions-item label="合同名称" :span="2">
+              {{ form.contractName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="合同金额">
+              {{ form.contractAmount != null ? formatAmount(form.contractAmount) + ' 元' : '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="收入确认年度">
+              <dict-tag :options="sys_ndgl" :value="form.revenueConfirmYear" />
+            </el-descriptions-item>
+            <el-descriptions-item label="收入确认状态">
+              <dict-tag :options="sys_qrzt" :value="form.revenueConfirmStatus" />
+            </el-descriptions-item>
+            <el-descriptions-item label="收入确认金额">
+              {{ form.confirmAmount != null ? formatAmount(form.confirmAmount) + ' 元' : '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="项目阶段" :span="2">
+              <dict-tag :options="sys_xmjd" :value="form.projectStage" />
+            </el-descriptions-item>
+            <el-descriptions-item label="项目地址" :span="3">
+              {{ form.projectAddress || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="项目计划" :span="3">
+              <div class="text-content">{{ form.projectPlan || '-' }}</div>
+            </el-descriptions-item>
+            <el-descriptions-item label="项目描述" :span="3">
+              <div class="text-content">{{ form.projectDescription || '-' }}</div>
+            </el-descriptions-item>
+            <el-descriptions-item label="审核意见" :span="3">
+              {{ form.approvalReason || '-' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+      </el-col>
 
-    <!-- 人员配置 -->
-    <el-card shadow="never" class="detail-card">
-      <template #header>
-        <span class="card-title">人员配置</span>
-      </template>
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="项目经理">
-          {{ form.projectManagerName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="市场经理">
-          {{ form.marketManagerName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="销售负责人">
-          {{ form.salesManagerName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="销售联系方式" :span="3">
-          {{ form.salesContact || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="参与人员" :span="3">
-          <div v-if="selectedParticipants.length > 0" class="selected-participants">
-            <el-tag v-for="user in selectedParticipants" :key="user.userId"
-              type="info" class="participant-tag">
-              {{ user.nickName }}
-            </el-tag>
-          </div>
-          <span v-else style="color: #909399;">暂无参与人员</span>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+      <!-- 右侧：人员配置 + 客户信息 + 时间规划 + 成本预算 -->
+      <el-col :span="9">
+        <!-- 人员配置 -->
+        <el-card shadow="never" class="detail-card">
+          <template #header>
+            <span class="card-title">人员配置</span>
+          </template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="项目经理">
+              {{ form.projectManagerName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="市场经理">
+              {{ form.marketManagerName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="销售负责人">
+              {{ form.salesManagerName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="销售联系方式">
+              {{ form.salesContact || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="参与人员" :span="2">
+              <div v-if="selectedParticipants.length > 0" class="selected-participants">
+                <el-tag v-for="user in selectedParticipants" :key="user.userId"
+                  type="info" class="participant-tag">
+                  {{ user.nickName }}
+                </el-tag>
+              </div>
+              <span v-else style="color: #909399;">暂无参与人员</span>
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
 
-    <!-- 客户信息 -->
-    <el-card shadow="never" class="detail-card">
-      <template #header>
-        <span class="card-title">客户信息</span>
-      </template>
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="客户名称">
-          {{ form.customerName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="客户联系人">
-          {{ form.customerContactName || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="客户联系方式">
-          {{ customerContactPhone || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="商户联系人">
-          {{ form.merchantContact || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="商户联系方式" :span="2">
-          {{ form.merchantPhone || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+        <!-- 客户信息 -->
+        <el-card shadow="never" class="detail-card">
+          <template #header>
+            <span class="card-title">客户信息</span>
+          </template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="客户名称" :span="2">
+              {{ form.customerName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="客户联系人">
+              {{ form.customerContactName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="客户联系方式">
+              {{ customerContactPhone || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="商户联系人">
+              {{ form.merchantContact || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="商户联系方式">
+              {{ form.merchantPhone || '-' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
 
-    <!-- 时间规划 -->
-    <el-card shadow="never" class="detail-card">
-      <template #header>
-        <span class="card-title">时间规划</span>
-      </template>
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="启动日期">
-          {{ form.startDate || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="结束日期">
-          {{ form.endDate || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="投产日期">
-          {{ form.productionDate || '-' }}
-        </el-descriptions-item>
-        <el-descriptions-item label="验收日期" :span="3">
-          {{ form.acceptanceDate || '-' }}
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+        <!-- 时间规划 -->
+        <el-card shadow="never" class="detail-card">
+          <template #header>
+            <span class="card-title">时间规划</span>
+          </template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="启动日期">
+              {{ form.startDate || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="结束日期">
+              {{ form.endDate || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="投产日期">
+              {{ form.productionDate || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="验收日期">
+              {{ form.acceptanceDate || '-' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
 
-    <!-- 成本预算 -->
-    <el-card shadow="never" class="detail-card">
-      <template #header>
-        <span class="card-title">成本预算</span>
-      </template>
-      <el-descriptions :column="3" border>
-        <el-descriptions-item label="项目预算">
-          {{ formatAmount(form.projectBudget) }} 元
-        </el-descriptions-item>
-        <el-descriptions-item label="费用预算">
-          {{ formatAmount(form.costBudget) }} 元
-        </el-descriptions-item>
-        <el-descriptions-item label="成本预算">
-          {{ formatAmount(form.budgetCost) }} 元
-        </el-descriptions-item>
-        <el-descriptions-item label="人力费用">
-          {{ formatAmount(form.laborCost) }} 元
-        </el-descriptions-item>
-        <el-descriptions-item label="采购成本">
-          {{ formatAmount(form.purchaseCost) }} 元
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+        <!-- 成本预算 -->
+        <el-card shadow="never" class="detail-card">
+          <template #header>
+            <span class="card-title">成本预算</span>
+          </template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="项目预算">
+              {{ formatAmount(form.projectBudget) }} 元
+            </el-descriptions-item>
+            <el-descriptions-item label="费用预算">
+              {{ formatAmount(form.costBudget) }} 元
+            </el-descriptions-item>
+            <el-descriptions-item label="成本预算">
+              {{ formatAmount(form.budgetCost) }} 元
+            </el-descriptions-item>
+            <el-descriptions-item label="人力费用">
+              {{ formatAmount(form.laborCost) }} 元
+            </el-descriptions-item>
+            <el-descriptions-item label="采购成本" :span="2">
+              {{ formatAmount(form.purchaseCost) }} 元
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+      </el-col>
+    </el-row>
 
     <!-- 合同信息 -->
     <el-card shadow="never" class="detail-card">

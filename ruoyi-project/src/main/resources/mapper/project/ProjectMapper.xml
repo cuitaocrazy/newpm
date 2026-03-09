@@ -67,6 +67,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"    column="update_time"    />
         <result property="revenueConfirmStatus"    column="revenue_confirm_status"    />
         <result property="revenueConfirmYear"    column="revenue_confirm_year"    />
+        <result property="revenueConfirmDate"    column="revenue_confirm_date"    />
         <result property="confirmAmount"    column="confirm_amount"    />
         <result property="afterTaxAmount"    column="after_tax_amount"    />
         <result property="companyRevenueConfirmedBy"    column="company_revenue_confirmed_by"    />
@@ -103,7 +104,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                approval_time, approver_id, industry_code, region_code, remark, tax_rate, confirm_user_id, confirm_time,
                reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5,
                del_flag, create_by, create_time, update_by, update_time, revenue_confirm_status,
-               revenue_confirm_year, confirm_amount, after_tax_amount, company_revenue_confirmed_by,
+               revenue_confirm_year, revenue_confirm_date, confirm_amount, after_tax_amount, company_revenue_confirmed_by,
                company_revenue_confirmed_time
         from pm_project
     </sql>
@@ -119,7 +120,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
                p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.revenue_confirm_status,
-               p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
+               p.revenue_confirm_year, p.revenue_confirm_date, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                sr.region_name,
                ca.contract_amount, ca.contract_status, ca.contract_name,
@@ -351,7 +352,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.approval_time, p.approver_id, p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
                p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.revenue_confirm_status,
-               p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
+               p.revenue_confirm_year, p.revenue_confirm_date, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                d.dept_name AS dept_name,
                sr.region_name AS region_name,
@@ -452,6 +453,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time,</if>
             <if test="revenueConfirmStatus != null">revenue_confirm_status,</if>
             <if test="revenueConfirmYear != null">revenue_confirm_year,</if>
+            <if test="revenueConfirmDate != null">revenue_confirm_date,</if>
             <if test="confirmAmount != null">confirm_amount,</if>
             <if test="afterTaxAmount != null">after_tax_amount,</if>
             <if test="companyRevenueConfirmedBy != null">company_revenue_confirmed_by,</if>
@@ -519,6 +521,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">#{updateTime},</if>
             <if test="revenueConfirmStatus != null">#{revenueConfirmStatus},</if>
             <if test="revenueConfirmYear != null">#{revenueConfirmYear},</if>
+            <if test="revenueConfirmDate != null">#{revenueConfirmDate},</if>
             <if test="confirmAmount != null">#{confirmAmount},</if>
             <if test="afterTaxAmount != null">#{afterTaxAmount},</if>
             <if test="companyRevenueConfirmedBy != null">#{companyRevenueConfirmedBy},</if>
@@ -588,6 +591,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="revenueConfirmStatus != null">revenue_confirm_status = #{revenueConfirmStatus},</if>
             <if test="revenueConfirmYear != null">revenue_confirm_year = #{revenueConfirmYear},</if>
+            <if test="revenueConfirmDate != null">revenue_confirm_date = #{revenueConfirmDate},</if>
             <if test="confirmAmount != null">confirm_amount = #{confirmAmount},</if>
             <if test="afterTaxAmount != null">after_tax_amount = #{afterTaxAmount},</if>
             <if test="companyRevenueConfirmedBy != null">company_revenue_confirmed_by = #{companyRevenueConfirmedBy},</if>
@@ -742,6 +746,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ca.contract_amount   AS contractAmount,
             ca.contract_status   AS contractStatus,
             p.revenue_confirm_year   AS revenueConfirmYear,
+            p.revenue_confirm_date   AS revenueConfirmDate,
             p.revenue_confirm_status AS revenueConfirmStatus,
             p.confirm_amount     AS confirmAmount,
             p.participants       AS participants,
@@ -913,7 +918,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
                p.del_flag, p.create_by, p.create_time, p.update_by, p.update_time, p.revenue_confirm_status,
-               p.revenue_confirm_year, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
+               p.revenue_confirm_year, p.revenue_confirm_date, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                d.dept_name AS dept_name,
                sr.region_name AS region_name,

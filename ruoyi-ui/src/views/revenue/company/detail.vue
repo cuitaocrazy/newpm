@@ -119,6 +119,12 @@
               <div class="info-value">{{ form.revenueConfirmYear || '-' }}</div>
             </div>
 
+            <!-- 确认日期 -->
+            <div class="info-row">
+              <div class="info-label"><el-icon><Calendar /></el-icon> 确认日期</div>
+              <div class="info-value">{{ parseTime(form.revenueConfirmDate, '{y}-{m}-{d}') || '-' }}</div>
+            </div>
+
             <!-- 确认金额 -->
             <div class="amount-box">
               <div class="amount-box-label"><el-icon><Tickets /></el-icon> 确认金额(含税)</div>
@@ -145,9 +151,9 @@
               <div class="info-value">{{ form.companyRevenueConfirmedBy || '-' }}</div>
             </div>
 
-            <!-- 确认时间 -->
+            <!-- 确认操作时间 -->
             <div class="info-row">
-              <div class="info-label"><el-icon><Clock /></el-icon> 确认时间</div>
+              <div class="info-label"><el-icon><Clock /></el-icon> 确认操作时间</div>
               <div class="info-value">{{ parseTime(form.companyRevenueConfirmedTime, '{y}-{m}-{d}') || '-' }}</div>
             </div>
 
@@ -197,6 +203,17 @@
                     :value="dict.value"
                   />
                 </el-select>
+              </el-form-item>
+
+              <!-- 确认日期（非必填） -->
+              <el-form-item label="确认日期">
+                <el-date-picker
+                  v-model="form.revenueConfirmDate"
+                  type="date"
+                  placeholder="请选择确认日期"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%;"
+                />
               </el-form-item>
 
               <!-- 确认金额（非必填） -->

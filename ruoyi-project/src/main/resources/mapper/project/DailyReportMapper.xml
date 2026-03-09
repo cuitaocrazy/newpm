@@ -6,7 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 基础结果映射（列表查询用，不含明细） -->
     <resultMap type="DailyReport" id="DailyReportResult">
-        <result property="reportId"        column="report_id"        />
+        <id     property="reportId"       column="report_id"        />
         <result property="reportDate"      column="report_date"      />
         <result property="userId"          column="user_id"          />
         <result property="deptId"          column="dept_id"          />
@@ -25,7 +25,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 带明细的结果映射（详情/月报查询用） -->
     <resultMap type="DailyReport" id="DailyReportWithDetailResult" extends="DailyReportResult">
         <collection property="detailList" ofType="DailyReportDetail">
-            <result property="detailId"          column="detail_detail_id"      />
+            <id     property="detailId"          column="detail_detail_id"      />
             <result property="reportId"          column="detail_report_id"      />
             <result property="projectId"         column="detail_project_id"     />
             <result property="projectStage"      column="detail_project_stage"  />
@@ -45,6 +45,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="revenueConfirmYear"    column="detail_revenue_confirm_year"     />
             <result property="entryType"  column="detail_entry_type"  />
             <result property="leaveHours" column="detail_leave_hours"  />
+            <result property="subProjectId"   column="detail_sub_project_id"   />
+            <result property="workCategory"   column="detail_work_category"    />
+            <result property="subProjectName" column="detail_sub_project_name" />
         </collection>
     </resultMap>
 
@@ -93,12 +96,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as detail_actual_workload,
             p.revenue_confirm_year as detail_revenue_confirm_year,
             dd.entry_type    as detail_entry_type,
-            dd.leave_hours   as detail_leave_hours
+            dd.leave_hours   as detail_leave_hours,
+            dd.sub_project_id as detail_sub_project_id,
+            dd.work_category  as detail_work_category,
+            sp.project_name   as detail_sub_project_name
         from pm_daily_report r
         left join sys_user u on r.user_id = u.user_id
         left join sys_dept d on r.dept_id = d.dept_id
         left join pm_daily_report_detail dd on r.report_id = dd.report_id
         left join pm_project p on dd.project_id = p.project_id
+        left join pm_project sp on dd.sub_project_id = sp.project_id and sp.del_flag = '0'
         left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
     </sql>
 

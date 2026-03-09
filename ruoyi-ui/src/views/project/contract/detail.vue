@@ -1,58 +1,66 @@
 <template>
   <div class="app-container">
-    <!-- 第一部分：合同基本信息 -->
-    <el-card class="box-card">
-      <template #header>
-        <div class="card-header">
-          <span style="font-size: 16px; font-weight: bold;">合同基本信息</span>
-          <el-button style="float: right; padding: 3px 0" link type="primary" icon="Back" @click="handleBack">返回</el-button>
-        </div>
-      </template>
 
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="合同名称" :span="2" label-class-name="label-bold">
-          {{ detailData.contractName }}
-        </el-descriptions-item>
-        <el-descriptions-item label="合同编号" label-class-name="label-bold">
-          {{ detailData.contractCode }}
-        </el-descriptions-item>
-        <el-descriptions-item label="部门" label-class-name="label-bold">
-          {{ getDeptName(detailData.deptId) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="关联客户" label-class-name="label-bold">
-          {{ getCustomerName(detailData.customerId) }}
-        </el-descriptions-item>
-        <el-descriptions-item label="合同类型" label-class-name="label-bold">
-          <dict-tag :options="sys_htlx" :value="detailData.contractType"/>
-        </el-descriptions-item>
-        <el-descriptions-item label="合同状态" :span="2" label-class-name="label-bold">
-          <dict-tag :options="sys_htzt" :value="detailData.contractStatus"/>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+    <!-- 顶部：左右布局 -->
+    <el-row :gutter="16">
+      <!-- 左侧：合同基本信息 -->
+      <el-col :span="14">
+        <el-card class="box-card">
+          <template #header>
+            <div class="card-header">
+              <span style="font-size: 16px; font-weight: bold;">合同基本信息</span>
+              <el-button style="float: right; padding: 3px 0" link type="primary" icon="Back" @click="handleBack">返回</el-button>
+            </div>
+          </template>
 
-    <!-- 第二部分：合同时间与周期 -->
-    <el-card class="box-card" style="margin-top: 20px;">
-      <template #header>
-        <span style="font-size: 16px; font-weight: bold;">合同时间与周期</span>
-      </template>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="合同名称" :span="2" label-class-name="label-bold">
+              {{ detailData.contractName }}
+            </el-descriptions-item>
+            <el-descriptions-item label="合同编号" label-class-name="label-bold">
+              {{ detailData.contractCode }}
+            </el-descriptions-item>
+            <el-descriptions-item label="部门" label-class-name="label-bold">
+              {{ getDeptName(detailData.deptId) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="关联客户" label-class-name="label-bold">
+              {{ getCustomerName(detailData.customerId) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="合同类型" label-class-name="label-bold">
+              <dict-tag :options="sys_htlx" :value="detailData.contractType"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="合同状态" :span="2" label-class-name="label-bold">
+              <dict-tag :options="sys_htzt" :value="detailData.contractStatus"/>
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+      </el-col>
 
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="合同签订日期" label-class-name="label-bold">
-          {{ parseTime(detailData.contractSignDate, '{y}-{m}-{d}') }}
-        </el-descriptions-item>
-        <el-descriptions-item label="合同周期" label-class-name="label-bold">
-          {{ detailData.contractPeriod }} 月
-        </el-descriptions-item>
-        <el-descriptions-item label="免维期" label-class-name="label-bold">
-          {{ detailData.freeMaintenancePeriod }} 月
-        </el-descriptions-item>
-        <el-descriptions-item></el-descriptions-item>
-      </el-descriptions>
-    </el-card>
+      <!-- 右侧：合同时间与周期 -->
+      <el-col :span="10">
+        <!-- 合同时间与周期 -->
+        <el-card class="box-card">
+          <template #header>
+            <span style="font-size: 16px; font-weight: bold;">合同时间与周期</span>
+          </template>
+
+          <el-descriptions :column="1" border>
+            <el-descriptions-item label="合同签订日期" label-class-name="label-bold">
+              {{ parseTime(detailData.contractSignDate, '{y}-{m}-{d}') }}
+            </el-descriptions-item>
+            <el-descriptions-item label="合同周期" label-class-name="label-bold">
+              {{ detailData.contractPeriod }} 月
+            </el-descriptions-item>
+            <el-descriptions-item label="免维期" label-class-name="label-bold">
+              {{ detailData.freeMaintenancePeriod }} 月
+            </el-descriptions-item>
+          </el-descriptions>
+        </el-card>
+      </el-col>
+    </el-row>
 
     <!-- 第三部分：合同金额 -->
-    <el-card class="box-card" style="margin-top: 20px;">
+    <el-card class="box-card" style="margin-top: 16px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">合同金额</span>
       </template>
@@ -74,7 +82,7 @@
     </el-card>
 
     <!-- 第四部分：付款里程碑信息 -->
-    <el-card class="box-card" style="margin-top: 20px;">
+    <el-card class="box-card" style="margin-top: 16px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">付款里程碑信息</span>
       </template>
@@ -144,7 +152,7 @@
     </el-card>
 
     <!-- 第五部分：合同附件列表 -->
-    <el-card class="box-card" style="margin-top: 20px;">
+    <el-card class="box-card" style="margin-top: 16px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">合同附件列表</span>
       </template>
@@ -182,7 +190,7 @@
     </el-card>
 
     <!-- 第六部分：关联项目列表 -->
-    <el-card class="box-card" style="margin-top: 20px;">
+    <el-card class="box-card" style="margin-top: 16px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
       </template>
@@ -215,7 +223,7 @@
     </el-card>
 
     <!-- 第七部分：备注与审计信息 -->
-    <el-card class="box-card" style="margin-top: 20px;">
+    <el-card class="box-card" style="margin-top: 16px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">备注与审计信息</span>
       </template>

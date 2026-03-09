@@ -232,6 +232,10 @@ public class Project extends BaseEntity
     @Excel(name = "收入确认年度", sort = 110)
     private String revenueConfirmYear;
 
+    /** 收入确认日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date revenueConfirmDate;
+
     /** 确认金额（含税） */
     @Excel(name = "确认金额(元)", sort = 130, handler = AmountFormatHandler.class)
     private BigDecimal confirmAmount;
@@ -912,17 +916,27 @@ public class Project extends BaseEntity
         return revenueConfirmStatus;
     }
 
-    public void setRevenueConfirmYear(String revenueConfirmYear) 
+    public void setRevenueConfirmYear(String revenueConfirmYear)
     {
         this.revenueConfirmYear = revenueConfirmYear;
     }
 
-    public String getRevenueConfirmYear() 
+    public String getRevenueConfirmYear()
     {
         return revenueConfirmYear;
     }
 
-    public void setConfirmAmount(BigDecimal confirmAmount) 
+    public void setRevenueConfirmDate(Date revenueConfirmDate)
+    {
+        this.revenueConfirmDate = revenueConfirmDate;
+    }
+
+    public Date getRevenueConfirmDate()
+    {
+        return revenueConfirmDate;
+    }
+
+    public void setConfirmAmount(BigDecimal confirmAmount)
     {
         this.confirmAmount = confirmAmount;
     }

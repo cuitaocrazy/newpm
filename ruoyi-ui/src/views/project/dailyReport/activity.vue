@@ -174,15 +174,17 @@
           </div>
         </template>
         <div v-for="detail in person.detailList.filter(d => !d.entryType || d.entryType === 'work')" :key="detail.detailId" class="drawer-prj">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
             <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning">
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
+            <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
+          </div>
+          <div v-if="detail.subProjectName || detail.workCategory" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 2px;">
             <el-tag v-if="detail.subProjectName" size="small" type="success">{{ detail.subProjectName }}</el-tag>
             <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
-            <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
           </div>
           <div style="font-size: 12px; color: #909399; margin-bottom: 4px;">
             预计人天：<strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong>
