@@ -1698,3 +1698,7 @@ insert into sys_dict_data values(380,1,'项目工时','work','sys_rbtype','','pr
 insert into sys_dict_data values(381,2,'请假','leave','sys_rbtype','','danger','N','0','admin',sysdate(),'',NULL,NULL);
 insert into sys_dict_data values(382,3,'倒休','comp','sys_rbtype','','warning','N','0','admin',sysdate(),'',NULL,NULL);
 insert into sys_dict_data values(383,4,'年假','annual','sys_rbtype','','success','N','0','admin',sysdate(),'',NULL,NULL);
+
+-- 投产批次字典类型
+INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
+VALUES ('投产批次', 'sys_tcpc', '0', 'admin', NOW(), '任务投产批次');
