@@ -13,7 +13,7 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="项目部门" prop="deptId">
+      <el-form-item label="合同所属部门" prop="deptId">
         <el-tree-select
           v-model="queryParams.deptId"
           :data="deptOptions"
@@ -175,7 +175,7 @@
           <span v-if="!scope.row.isSummary">{{ scope.row.customerName || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip v-if="columns.deptId.visible">
+      <el-table-column label="合同所属部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip v-if="columns.deptId.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getDeptName(scope.row.deptId) }}</span>
         </template>
