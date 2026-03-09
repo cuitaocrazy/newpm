@@ -174,24 +174,42 @@
           </div>
         </template>
         <div v-for="detail in person.detailList.filter(d => !d.entryType || d.entryType === 'work')" :key="detail.detailId" class="drawer-prj">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+          <!-- 项目行：项目经理 | 项目名称 | 项目阶段 | 工时 -->
+          <div class="detail-project-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;">
             <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(detail.revenueConfirmYear)">
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
+            <span v-if="detail.projectManagerName" style="font-size:12px;color:#909399;">
+              {{ detail.projectManagerName }}
+            </span>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
-            <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
+            <span style="margin-left:auto;font-weight:700;">{{ detail.workHours }}h</span>
           </div>
-          <div v-if="detail.subProjectName || detail.workCategory" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 2px;">
-            <el-tag v-if="detail.subProjectName" size="small" type="success">{{ detail.subProjectName }}</el-tag>
-            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
-          </div>
-          <div style="font-size: 12px; color: #909399; margin-bottom: 4px;">
+          <!-- 人天行 -->
+          <div style="font-size:12px;color:#909399;margin-bottom:4px;">
             预计人天：<strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong>
             &nbsp;&nbsp;已花人天：<strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong>
           </div>
-          <div style="font-size: 13px; color: #606266; line-height: 1.6; padding-left: 8px; border-left: 2px solid #e4e7ed;" v-html="formatWorkContent(detail.workContent)"></div>
-          <div style="font-size: 11px; color: #c0c4cc; margin-top: 3px;">
+          <!-- 任务行：仅有 subProjectId 时显示 -->
+          <div v-if="detail.subProjectId" class="detail-task-row"
+            style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+            <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <el-tag v-if="detail.subProjectStage" size="small" type="warning">
+              {{ getStageName(detail.subProjectStage) }}
+            </el-tag>
+            <span v-if="detail.subProjectManagerName" style="font-size:12px;color:#606266;">
+              负责人：{{ detail.subProjectManagerName }}
+            </span>
+            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
+          </div>
+          <!-- 无任务行时仍显示工作类别 -->
+          <div v-else-if="detail.workCategory" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <dict-tag :options="sys_gzlb" :value="detail.workCategory" />
+          </div>
+          <!-- 工作内容 -->
+          <div style="font-size:13px;color:#606266;line-height:1.6;padding-left:8px;border-left:2px solid #e4e7ed;" v-html="formatWorkContent(detail.workContent)"></div>
+          <div style="font-size:11px;color:#c0c4cc;margin-top:3px;">
             更新于 {{ formatTime(detail.updateTime) }}
           </div>
         </div>
@@ -219,7 +237,7 @@ import request from '@/utils/request'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
 
 const { proxy } = getCurrentInstance()
-const { sys_ndgl, sys_gzlb } = proxy.useDict('sys_ndgl', 'sys_gzlb')
+const { sys_ndgl, sys_gzlb, sys_xmjd } = proxy.useDict('sys_ndgl', 'sys_gzlb', 'sys_xmjd')
 
 const todayStr = (() => {
   const d = new Date()
@@ -256,6 +274,10 @@ let colorIndex = 0
 
 function getDictLabel(dictList, value) {
   return dictList?.find(d => d.value == value)?.label || value
+}
+
+function getStageName(val) {
+  return getDictLabel(sys_xmjd.value, val)
 }
 
 function getPersonColor(userId) {
