@@ -57,6 +57,43 @@
           </div>
 
           <div v-else class="project-list">
+            <!-- 假期记录区块 -->
+            <div class="leave-section">
+              <div class="leave-header">
+                <span class="leave-title">假期记录</span>
+                <el-button
+                  type="primary" size="small" plain
+                  :disabled="!isEditable"
+                  @click="leaveList.push({ entryType: 'leave', leaveHours: 1, remark: '' })"
+                >+ 添加假期</el-button>
+              </div>
+              <div v-if="leaveList.length === 0" class="leave-empty">暂无假期记录</div>
+              <div v-for="(item, idx) in leaveList" :key="idx" class="leave-item">
+                <span class="leave-color-dot" :style="{ background: LEAVE_TYPE_COLOR[item.entryType] || '#ccc' }"></span>
+                <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isEditable">
+                  <el-option label="请假" value="leave" />
+                  <el-option label="倒休" value="comp" />
+                  <el-option label="年假" value="annual" />
+                </el-select>
+                <el-input-number
+                  v-model="item.leaveHours"
+                  :min="0.5" :max="24" :step="0.5" :precision="1"
+                  size="small" style="width: 120px;"
+                  :disabled="!isEditable"
+                />
+                <span style="color: #909399; font-size: 13px;">小时</span>
+                <el-input
+                  v-model="item.remark"
+                  placeholder="备注(选填)"
+                  size="small"
+                  style="flex: 1;"
+                  :disabled="!isEditable"
+                />
+                <el-button link type="danger" icon="Delete" :disabled="!isEditable"
+                  @click="leaveList.splice(idx, 1)" />
+              </div>
+            </div>
+
             <div v-for="(item, index) in formList" :key="item.projectId" class="project-item">
               <!-- 第一行：项目名 + 阶段 -->
               <div class="prj-header">
@@ -108,7 +145,7 @@
                     :value="sp.projectId"
                   />
                 </el-select>
-                <span class="sub-label" style="margin-left: 12px;">工作类别:</span>
+                <span class="sub-label" style="margin-left: 12px;">工作任务类别:</span>
                 <el-select
                   v-model="item.workCategory"
                   placeholder="请选择"
@@ -131,43 +168,6 @@
                   maxlength="2000"
                   show-word-limit
                 />
-              </div>
-            </div>
-
-            <!-- 假期记录区块 -->
-            <div class="leave-section">
-              <div class="leave-header">
-                <span class="leave-title">假期记录</span>
-                <el-button
-                  type="primary" size="small" plain
-                  :disabled="!isEditable"
-                  @click="leaveList.push({ entryType: 'leave', leaveHours: 1, remark: '' })"
-                >+ 添加假期</el-button>
-              </div>
-              <div v-if="leaveList.length === 0" class="leave-empty">暂无假期记录</div>
-              <div v-for="(item, idx) in leaveList" :key="idx" class="leave-item">
-                <span class="leave-color-dot" :style="{ background: LEAVE_TYPE_COLOR[item.entryType] || '#ccc' }"></span>
-                <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isEditable">
-                  <el-option label="请假" value="leave" />
-                  <el-option label="倒休" value="comp" />
-                  <el-option label="年假" value="annual" />
-                </el-select>
-                <el-input-number
-                  v-model="item.leaveHours"
-                  :min="0.5" :max="24" :step="0.5" :precision="1"
-                  size="small" style="width: 120px;"
-                  :disabled="!isEditable"
-                />
-                <span style="color: #909399; font-size: 13px;">小时</span>
-                <el-input
-                  v-model="item.remark"
-                  placeholder="备注(选填)"
-                  size="small"
-                  style="flex: 1;"
-                  :disabled="!isEditable"
-                />
-                <el-button link type="danger" icon="Delete" :disabled="!isEditable"
-                  @click="leaveList.splice(idx, 1)" />
               </div>
             </div>
           </div>
@@ -311,9 +311,9 @@ async function loadProjects() {
   projects.value = res.data || []
 }
 
-// 按需加载子项目选项（首次展开下拉时）
+// 按需加载子项目选项（首次展开下拉时，预置的单条记录视为未完整加载）
 async function loadSubProjectOptions(item) {
-  if (item.subProjectOptions) return
+  if (item.subProjectOptions && item.subProjectOptions.length > 1) return
   const res = await import('@/api/project/project').then(m => m.getSubProjectOptions(item.projectId))
   item.subProjectOptions = res.data || []
 }
@@ -339,7 +339,9 @@ async function loadDayReport(dateStr) {
         actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
         revenueConfirmYear: p.revenueConfirmYear || null,
         hasSubProject: !!p.hasSubProject,
-        subProjectOptions: null,
+        subProjectOptions: (detail?.subProjectId && detail?.subProjectName)
+          ? [{ projectId: detail.subProjectId, projectName: detail.subProjectName, taskCode: null }]
+          : null,
         workHours: detail ? Number(detail.workHours) : 0,
         workContent: detail ? detail.workContent : '',
         subProjectId: detail ? (detail.subProjectId || null) : null,
