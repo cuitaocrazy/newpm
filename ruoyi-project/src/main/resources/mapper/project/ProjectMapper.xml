@@ -1157,7 +1157,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and (p.project_level is null or p.project_level = 0)
           and p.approval_status = '1'
           and p.project_status = '0'
-          and (p.project_stage is null or p.project_stage != '7')
+          and (p.project_stage is null or p.project_stage != '11')
           and (
               p.project_manager_id = #{userId}
               or p.market_manager_id = #{userId}
