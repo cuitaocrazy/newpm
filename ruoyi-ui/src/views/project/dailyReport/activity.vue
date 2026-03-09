@@ -5,7 +5,7 @@
       <el-form-item label="姓名">
         <el-select v-model="queryParams.userId" filterable clearable
           placeholder="全部人员" style="width: 180px;" @change="handleQuery">
-          <el-option label="全部人员（团队概览）" :value="null" />
+          <el-option label="全部人员（团队概览）" value="" />
           <el-option v-for="u in userList" :key="u.userId"
             :label="u.nickName" :value="u.userId">
             <span>{{ u.nickName }}</span>
@@ -175,7 +175,7 @@
         </template>
         <div v-for="detail in person.detailList.filter(d => !d.entryType || d.entryType === 'work')" :key="detail.detailId" class="drawer-prj">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning">
+            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(detail.revenueConfirmYear)">
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
@@ -231,7 +231,7 @@ const currentYearMonth = ref((() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 })())
-const queryParams = ref({ userId: null, deptId: null, projectName: null })
+const queryParams = ref({ userId: '', deptId: null, projectName: null })
 const reportData = ref([]) // 月度完整数据
 const userList = ref([])
 const projectDeptSelectRef = ref(null)
@@ -242,6 +242,13 @@ const drawerPeople = ref([])
 const drawerStats = ref({ count: 0, totalHours: 0, fullCount: 0 })
 
 const projectColors = ['#409eff', '#67c23a', '#f56c6c', '#e6a23c', '#b37feb', '#00b894', '#fdcb6e', '#909399']
+const currentYear = new Date().getFullYear().toString()
+function yearTagStyle(year) {
+  const label = getDictLabel(sys_ndgl.value, year)
+  return label && !label.includes(currentYear)
+    ? { backgroundColor: '#f5222d', borderColor: '#f5222d', color: '#fff' }
+    : {}
+}
 const LEAVE_TYPE_COLOR = { leave: '#f56c6c', comp: '#b37feb', annual: '#36cfc9' }
 const LEAVE_TYPE_LABEL = { leave: '请假', comp: '倒休', annual: '年假' }
 const personColorMap = {}
@@ -450,7 +457,7 @@ function selectPerson(userId) {
 }
 
 function clearPerson() {
-  queryParams.value.userId = null
+  queryParams.value.userId = ''
 }
 
 function openDrawer(dateStr) {
@@ -513,7 +520,7 @@ async function handleQuery() {
 }
 
 async function handleReset() {
-  queryParams.value = { userId: null, deptId: null, projectName: null }
+  queryParams.value = { userId: '', deptId: null, projectName: null }
   await loadUsers()
   loadData()
 }

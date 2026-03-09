@@ -25,6 +25,10 @@
             </template>
           </MonthCalendar>
         </el-card>
+        <div class="calendar-tip">
+          <el-icon><InfoFilled /></el-icon>
+          <span>仅显示状态为<b>「开启」</b>且阶段未到<b>「项目结项」</b>的项目，已结束项目不支持填写日报</span>
+        </div>
       </el-col>
 
       <!-- 右侧编辑区 -->
@@ -98,7 +102,7 @@
               <!-- 第一行：项目名 + 阶段 -->
               <div class="prj-header">
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
-                <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" style="flex-shrink:0;">
+                <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(item.revenueConfirmYear)" style="flex-shrink:0;">
                   {{ getDictLabel(sys_ndgl, item.revenueConfirmYear) }}
                 </el-tag>
                 <span class="prj-name">{{ item.projectName }}</span>
@@ -180,7 +184,7 @@
 <script setup>
 import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Loading } from '@element-plus/icons-vue'
+import { Loading, InfoFilled } from '@element-plus/icons-vue'
 import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
@@ -213,6 +217,13 @@ const monthReports = ref({}) // { 'yyyy-MM-dd': { workHours, leaveSummary } }
 const workCalendarMap = ref({}) // { 'yyyy-MM-dd': { dayType, dayName } }
 
 const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#b37feb', '#00b894', '#fdcb6e']
+const currentYear = new Date().getFullYear().toString()
+function yearTagStyle(year) {
+  const label = getDictLabel(sys_ndgl.value, year)
+  return label && !label.includes(currentYear)
+    ? { backgroundColor: '#f5222d', borderColor: '#f5222d', color: '#fff' }
+    : {}
+}
 
 // 假期类型颜色（不与现有绿/橙冲突）
 const LEAVE_TYPE_COLOR = { leave: '#f56c6c', comp: '#b37feb', annual: '#36cfc9' }
@@ -587,5 +598,28 @@ onMounted(async () => {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+.calendar-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #f0f7ff;
+  border: 1px solid #d0e8ff;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #4a90d9;
+  line-height: 1.6;
+}
+.calendar-tip b {
+  color: #1677ff;
+  font-weight: 600;
+}
+.calendar-tip .el-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  font-size: 13px;
 }
 </style>
