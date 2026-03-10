@@ -50,7 +50,11 @@
           <div class="project-name-cell">{{ scope.row.projectName }}</div>
         </template>
       </el-table-column>
-      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120" />
+      <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
+        <template #default="scope">
+          <dict-tag :options="sys_ndgl" :value="scope.row.revenueConfirmYear" />
+        </template>
+      </el-table-column>
       <el-table-column label="确认金额(元)" align="center" prop="confirmAmount" width="150">
         <template #default="scope">
           <span>{{ formatAmountYuan(scope.row.confirmAmount) }}</span>
@@ -178,7 +182,7 @@ import { searchProjects } from "@/api/project/project"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmjd, sys_htzt, sys_qrzt } = proxy.useDict('sys_xmjd', 'sys_htzt', 'sys_qrzt')
+const { sys_xmjd, sys_htzt, sys_qrzt, sys_ndgl } = proxy.useDict('sys_xmjd', 'sys_htzt', 'sys_qrzt', 'sys_ndgl')
 
 const projectStageChangeList = ref([])
 const loading = ref(true)
