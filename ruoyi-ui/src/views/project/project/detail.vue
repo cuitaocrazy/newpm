@@ -86,6 +86,9 @@
             <el-descriptions-item label="项目阶段" :span="2">
               <dict-tag :options="sys_xmjd" :value="form.projectStage" />
             </el-descriptions-item>
+            <el-descriptions-item label="确认日期">
+              {{ form.revenueConfirmDate || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="项目地址" :span="3">
               {{ form.projectAddress || '-' }}
             </el-descriptions-item>

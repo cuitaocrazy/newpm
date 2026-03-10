@@ -285,7 +285,7 @@
       </el-table-column>
       <el-table-column v-if="columns[12].visible" label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120">
         <template #default="scope">
-          <span v-if="isDataRow(scope.row)">{{ scope.row.revenueConfirmYear }}</span>
+          <dict-tag v-if="isDataRow(scope.row)" :options="sys_ndgl" :value="scope.row.revenueConfirmYear" />
         </template>
       </el-table-column>
       <el-table-column v-if="columns[13].visible" label="确认日期" align="center" prop="revenueConfirmDate" width="110">

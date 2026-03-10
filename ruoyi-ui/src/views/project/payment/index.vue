@@ -285,6 +285,11 @@
           </span>
         </template>
       </el-table-column>
+      <el-table-column label="备注" align="left" prop="remark" min-width="160" show-overflow-tooltip v-if="columns.remark.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ scope.row.remark || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="更新人" align="center" prop="updateByName" width="100" v-if="columns.updateByName.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getDisplayUpdateBy(scope.row) }}</span>
@@ -385,6 +390,7 @@ const columns = ref({
   actualPaymentDate: { label: '实际回款日期', visible: true },
   confirmYear: { label: '里程碑确认年份', visible: true },
   paymentAmount: { label: '付款金额', visible: true },
+  remark: { label: '备注', visible: true },
   updateByName: { label: '更新人', visible: true },
   updateTime: { label: '更新时间', visible: true },
   actions: { label: '操作', visible: true }
