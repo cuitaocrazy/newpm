@@ -28,7 +28,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="任务编号" prop="taskCode">
-              <el-input v-model="form.taskCode" placeholder="如：01、用户系统（同一主项目下需唯一）" />
+              <el-input v-model="form.taskCode" placeholder="如：01、用户系统（同一主项目下需唯一）" maxlength="20" show-word-limit />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -174,7 +174,10 @@ const form = ref({
 })
 
 const rules = ref({
-  taskCode:          [{ required: true, message: '任务编号不能为空（同一主项目下需唯一，用于生成项目编号）', trigger: 'blur' }],
+  taskCode:          [
+    { required: true, message: '任务编号不能为空（同一主项目下需唯一，用于生成项目编号）', trigger: 'blur' },
+    { min: 16, max: 20, message: '任务编号长度为 16~20 位', trigger: 'blur' }
+  ],
   projectManagerId:  [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
   projectName:       [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
   projectStage:      [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
