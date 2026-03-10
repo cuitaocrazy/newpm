@@ -1,4 +1,5 @@
 package com.ruoyi.project.domain;
+// trigger rebuild
 
 import java.math.BigDecimal;
 import java.util.Date;
