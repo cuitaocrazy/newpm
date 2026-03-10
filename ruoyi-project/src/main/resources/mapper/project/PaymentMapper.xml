@@ -160,10 +160,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="hasPenalty != null">has_penalty = #{hasPenalty},</if>
             <if test="penaltyAmount != null">penalty_amount = #{penaltyAmount},</if>
             <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
-            <if test="expectedQuarter != null">expected_quarter = #{expectedQuarter},</if>
+            expected_quarter = #{expectedQuarter},
             <if test="actualQuarter != null">actual_quarter = #{actualQuarter},</if>
             <if test="submitAcceptanceDate != null">submit_acceptance_date = #{submitAcceptanceDate},</if>
-            <if test="actualPaymentDate != null">actual_payment_date = #{actualPaymentDate},</if>
+            actual_payment_date = #{actualPaymentDate},
             <if test="confirmYear != null">confirm_year = #{confirmYear},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
