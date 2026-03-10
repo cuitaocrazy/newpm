@@ -593,18 +593,12 @@ function resetQuery() {
   handleQuery()
 }
 
-/** 加载部门树（只显示三级及以下） */
+/** 加载部门树（只显示三级及以下，三级为根节点，四级为子节点，全部可选） */
 function loadDeptTree() {
   getDeptTree().then(response => {
-    const level3Depts = response.data.filter(dept => {
-      if (!dept.ancestors) return false
-      return dept.ancestors.split(',').length >= 3
-    })
-    const deptData = level3Depts.map(dept => ({
-      ...dept,
-      value: dept.deptId,
-      label: dept.deptName
-    }))
+    const deptData = response.data
+      .filter(dept => dept.ancestors && dept.ancestors.split(',').length >= 3)
+      .map(dept => ({ ...dept, value: dept.deptId, label: dept.deptName }))
     deptTree.value = handleTree(deptData, 'deptId', 'parentId', 'children')
   })
 }
