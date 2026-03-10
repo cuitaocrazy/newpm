@@ -66,6 +66,12 @@
           <el-descriptions-item label="项目地址" :span="3">
             {{ form.projectAddress || '-' }}
           </el-descriptions-item>
+          <el-descriptions-item label="参与人员" :span="3">
+            <template v-if="participantNames.length > 0">
+              <el-tag v-for="name in participantNames" :key="name" type="info" style="margin: 0 4px 4px 0">{{ name }}</el-tag>
+            </template>
+            <span v-else style="color:#909399;">-</span>
+          </el-descriptions-item>
           <el-descriptions-item label="任务计划" :span="3">
             <div class="text-content">{{ form.projectPlan || '-' }}</div>
           </el-descriptions-item>
@@ -137,14 +143,14 @@ async function loadSubproject(projectId) {
   try {
     const res = await getProject(projectId)
     form.value = res.data || {}
-    // Load participant names
-    if (form.value.participants) {
-      const ids = form.value.participants.split(',').filter(Boolean)
+    // 参与人员继承自父项目
+    if (form.value.parentId) {
+      const parentRes = await getProject(form.value.parentId)
+      const ids = (parentRes.data?.participants || '').split(',').filter(Boolean)
       if (ids.length > 0) {
         request({ url: '/project/project/users', method: 'get' }).then(r => {
-          const allUsers = r.data || []
           const idSet = new Set(ids.map(Number))
-          participantNames.value = allUsers
+          participantNames.value = (r.data || [])
             .filter(u => idSet.has(u.userId))
             .map(u => u.nickName || u.userName)
         })

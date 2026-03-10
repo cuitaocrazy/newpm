@@ -53,6 +53,10 @@ spring:
     basename: i18n/messages
   profiles:
     active: druid
+  # 时区配置（北京时间）
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
   # 文件上传
   servlet:
     multipart:

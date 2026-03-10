@@ -187,7 +187,7 @@ async function loadParentProject(parentId) {
   try {
     const [projectRes, usersRes] = await Promise.all([
       getProject(parentId),
-      getUsersByPost('pm')
+      getUsersByPost()
     ])
     parentProject.value = projectRes.data
     const ids = (projectRes.data.participants || '').split(',').map(Number).filter(Boolean)

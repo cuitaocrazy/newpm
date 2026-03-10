@@ -99,9 +99,10 @@
             </div>
 
             <div v-for="(item, index) in formList" :key="item.projectId" class="project-item">
-              <!-- 第一行：项目名 + 阶段 -->
+              <!-- 第一行：项目经理 + 年度 + 项目名 + 阶段 -->
               <div class="prj-header">
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
+                <span class="prj-manager-label">项目：<b>{{ item.projectManagerName || '-' }}</b></span>
                 <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(item.revenueConfirmYear)" style="flex-shrink:0;">
                   {{ getDictLabel(sys_ndgl, item.revenueConfirmYear) }}
                 </el-tag>
@@ -115,21 +116,6 @@
 
               <!-- 无子任务：原有单行逻辑 -->
               <template v-if="!item.hasSubProject">
-                <!-- 工作任务类别行 -->
-                <div class="prj-sub-row">
-                  <span class="sub-label">工作任务类别:</span>
-                  <el-select
-                    v-model="item.workCategory"
-                    placeholder="请选择"
-                    clearable
-                    size="small"
-                    style="width: 140px;"
-                    :disabled="!isEditable"
-                  >
-                    <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
-                  </el-select>
-                </div>
-
                 <!-- 工时（slider + 输入框） -->
                 <div class="prj-hours-row">
                   <span class="hours-label">工时:</span>
@@ -162,6 +148,25 @@
 
               <!-- 有子任务：多任务行 -->
               <template v-else>
+                <!-- 合计工时（只读 slider，由各任务工时汇总，紧跟项目信息下方） -->
+                <div class="prj-hours-row">
+                  <span class="hours-label">合计工时：</span>
+                  <el-slider
+                    :model-value="item.taskRows ? item.taskRows.reduce((s, t) => s + (t.workHours || 0), 0) : 0"
+                    :min="0" :max="24" :step="1"
+                    :marks="{ 0: '0', 8: '8h', 16: '16h', 24: '24h' }"
+                    style="flex: 1; margin: 0 16px;"
+                    disabled
+                  />
+                  <el-input-number
+                    :model-value="item.taskRows ? item.taskRows.reduce((s, t) => s + (t.workHours || 0), 0) : 0"
+                    :min="0" :max="24" :step="1" :precision="0"
+                    size="small" style="width: 100px;"
+                    disabled
+                  />
+                  <span style="margin-left: 4px; color: #909399;">h</span>
+                </div>
+
                 <div v-if="!item.taskRows" class="task-loading" @click="loadTaskRows(item)">
                   <el-button size="small" type="primary" plain>加载任务列表</el-button>
                 </div>
@@ -170,16 +175,18 @@
                   <div v-for="task in item.taskRows" :key="task.subProjectId" class="task-row">
                     <!-- 任务头（只读信息） -->
                     <div class="task-row-header">
+                      <span class="task-label">任务：</span>
                       <span class="task-name">{{ task.taskName }}</span>
                       <el-tag v-if="task.projectStage" size="small" type="info">{{ getStageName(task.projectStage) }}</el-tag>
                       <span class="task-manager">负责人：{{ task.projectManagerName }}</span>
-                    </div>
-                    <!-- 工作任务类别 + 工时 -->
-                    <div class="task-row-inputs">
                       <el-select v-model="task.workCategory" placeholder="工作任务类别" clearable
-                        size="small" style="width: 150px;" :disabled="!isEditable">
+                        size="small" style="width: 150px; margin-left: 8px;" :disabled="!isEditable">
                         <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
                       </el-select>
+                    </div>
+                    <!-- 工时 -->
+                    <div class="task-row-inputs">
+                      <span class="hours-label">工时：</span>
                       <el-input-number v-model="task.workHours" :min="0" :max="24" :step="0.5"
                         size="small" style="width: 110px;" :disabled="!isEditable" />
                       <span style="font-size:12px;color:#909399;">小时</span>
@@ -392,6 +399,7 @@ async function loadDayReport(dateStr) {
           projectCode: p.projectCode,
           projectStage: p.projectStage,
           projectStageName: p.projectStageName,
+          projectManagerName: p.projectManagerName || '',
           estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
           actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
           revenueConfirmYear: p.revenueConfirmYear || null,
@@ -408,6 +416,7 @@ async function loadDayReport(dateStr) {
           projectCode: p.projectCode,
           projectStage: detail?.projectStage || p.projectStage,
           projectStageName: detail?.projectStageName || p.projectStageName,
+          projectManagerName: p.projectManagerName || '',
           estimatedWorkload: p.estimatedWorkload != null ? p.estimatedWorkload : null,
           actualWorkload: p.actualWorkload != null ? p.actualWorkload : null,
           revenueConfirmYear: p.revenueConfirmYear || null,
@@ -697,6 +706,21 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   margin: 4px 0;
+}
+
+.prj-manager-label {
+  font-size: 12px;
+  color: #606266;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.prj-manager-label b { color: #303133; }
+
+.task-label {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .task-loading {

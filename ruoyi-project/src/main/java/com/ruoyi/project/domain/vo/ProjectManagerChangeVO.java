@@ -47,7 +47,7 @@ public class ProjectManagerChangeVO extends BaseEntity
     private String changeByName;
 
     /** 变更时间（最新变更记录） */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date changeTime;
 
     public Long getProjectId() {

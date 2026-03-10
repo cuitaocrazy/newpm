@@ -172,7 +172,7 @@ public class Project extends BaseEntity
     private String approvalReason;
 
     /** 审核时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date approvalTime;
 
     /** 审核人ID */
@@ -267,6 +267,9 @@ public class Project extends BaseEntity
 
     /** 合同名称（关联字段，非数据库字段） */
     private String contractName;
+
+    /** 合同编号（关联字段，非数据库字段） */
+    private String contractCode;
 
     /** 合同状态（关联字段，非数据库字段） */
     @Excel(name = "合同状态", dictType = "sys_htzt", sort = 100)
@@ -1014,6 +1017,16 @@ public class Project extends BaseEntity
     public String getContractName()
     {
         return contractName;
+    }
+
+    public void setContractCode(String contractCode)
+    {
+        this.contractCode = contractCode;
+    }
+
+    public String getContractCode()
+    {
+        return contractCode;
     }
 
     public void setContractStatus(String contractStatus)
