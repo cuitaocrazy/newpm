@@ -313,7 +313,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 and (c.dept_id = #{deptId}
                      or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
             </if>
-            <if test="deptIds != null and deptIds.size() > 0"> and c.dept_id in <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+            <if test="deptIds != null and deptIds.size() > 0">
+                and (c.dept_id in <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                    or c.dept_id in (select dept_id from sys_dept where <foreach collection="deptIds" item="id" open="(" separator=" or " close=")">find_in_set(#{id}, ancestors) &gt; 0</foreach>))
+            </if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
@@ -349,7 +352,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 and (c.dept_id = #{deptId}
                      or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
             </if>
-            <if test="deptIds != null and deptIds.size() > 0"> and c.dept_id in <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach></if>
+            <if test="deptIds != null and deptIds.size() > 0">
+                and (c.dept_id in <foreach collection="deptIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+                    or c.dept_id in (select dept_id from sys_dept where <foreach collection="deptIds" item="id" open="(" separator=" or " close=")">find_in_set(#{id}, ancestors) &gt; 0</foreach>))
+            </if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>

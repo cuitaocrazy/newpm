@@ -183,13 +183,11 @@
           </div>
         </template>
         <div v-for="detail in person.detailList.filter(d => !d.entryType || d.entryType === 'work')" :key="detail.detailId" class="drawer-prj">
-          <!-- 项目行：项目经理 | 年度 | 项目名 | 预计人天 | 已花人天 | 项目阶段 | 工时 -->
           <div class="detail-project-row">
-            <span class="detail-row-prefix">项目：</span>
-            <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
             <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(detail.revenueConfirmYear)">
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
+            <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <span class="detail-workload">预计 <strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong> 天</span>
             <span class="detail-workload">已花 <strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong> 天</span>
@@ -198,7 +196,6 @@
           </div>
           <!-- 任务行：仅有 subProjectId 时显示 -->
           <div v-if="detail.subProjectId" class="detail-task-row">
-            <span class="detail-row-prefix">任务：</span>
             <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
             <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
             <span v-if="detail.subProjectManagerName" class="detail-manager">负责人：{{ detail.subProjectManagerName }}</span>
@@ -251,11 +248,10 @@
         <div v-for="detail in report.detailList.filter(d => !d.entryType || d.entryType === 'work')"
           :key="detail.detailId" class="drawer-prj">
           <div class="detail-project-row">
-            <span class="detail-row-prefix">项目：</span>
-            <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
             <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(detail.revenueConfirmYear)">
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
+            <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
             <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
             <span class="detail-workload">预计 <strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong> 天</span>
             <span class="detail-workload">已花 <strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong> 天</span>
@@ -263,7 +259,6 @@
             <span class="detail-hours">{{ detail.workHours }}h</span>
           </div>
           <div v-if="detail.subProjectId" class="detail-task-row">
-            <span class="detail-row-prefix">任务：</span>
             <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
             <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
             <span v-if="detail.subProjectManagerName" class="detail-manager">负责人：{{ detail.subProjectManagerName }}</span>
