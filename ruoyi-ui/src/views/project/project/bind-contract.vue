@@ -59,6 +59,9 @@
         <el-descriptions-item label="合同状态">
           <dict-tag :options="sys_htzt" :value="projectInfo?.contractStatus" />
         </el-descriptions-item>
+        <el-descriptions-item label="收入确认年度">
+          <dict-tag :options="sys_ndgl" :value="projectInfo?.revenueConfirmYear" />
+        </el-descriptions-item>
         <el-descriptions-item label="收入确认状态">
           <dict-tag :options="sys_qrzt" :value="projectInfo?.revenueConfirmStatus" />
         </el-descriptions-item>
@@ -340,7 +343,7 @@ function goBack() {
   router.push('/project/list')
 }
 
-/** 初始化：加载项目名称 + 部门树 + 回显已有关联合同 */
+/** 初始化：加载项目信息 + 部门树 + 回显已有关联合同 */
 async function init() {
   // 项目信息
   getProject(projectId.value).then(res => {
@@ -353,14 +356,12 @@ async function init() {
   getContractByProjectId(projectId.value).then(res => {
     if (!res.data) return
     const c = res.data
-    // 找到合同对应的部门，选中部门后加载合同列表
     if (c.deptId) {
       selectedDeptId.value = c.deptId
       contractLoading.value = true
       listContractsByDept(c.deptId, '').then(listRes => {
         contractOptions.value = listRes.data || []
         selectedContractId.value = c.contractId
-        // 加载合同详情
         getContract(c.contractId).then(detailRes => {
           contractDetail.value = detailRes.data
         })
