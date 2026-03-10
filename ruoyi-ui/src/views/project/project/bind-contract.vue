@@ -8,11 +8,79 @@
         </div>
       </template>
 
-      <!-- 项目名称 -->
-      <div class="project-name-bar">
-        <span class="label">项目：</span>
-        <span class="value">{{ projectName || '-' }}</span>
-      </div>
+      <!-- 项目基本信息 -->
+      <div class="section-title" style="margin-bottom: 10px;">项目基本信息</div>
+      <el-descriptions :column="3" border size="small">
+        <el-descriptions-item label="行业">
+          <dict-tag :options="industry" :value="projectInfo?.industry" />
+        </el-descriptions-item>
+        <el-descriptions-item label="一级区域">
+          <dict-tag :options="sys_yjqy" :value="projectInfo?.region" />
+        </el-descriptions-item>
+        <el-descriptions-item label="二级区域">
+          {{ projectInfo?.regionName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="简称">
+          {{ projectInfo?.shortName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="立项年份">
+          <dict-tag :options="sys_ndgl" :value="projectInfo?.establishedYear" />
+        </el-descriptions-item>
+        <el-descriptions-item label="项目ID">
+          {{ projectInfo?.projectCode || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="项目名称" :span="3">
+          {{ projectInfo?.projectName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="项目分类">
+          <dict-tag :options="sys_xmfl" :value="projectInfo?.projectCategory" />
+        </el-descriptions-item>
+        <el-descriptions-item label="项目部门">
+          {{ getDeptName(projectInfo?.projectDept) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="预估工作量">
+          {{ projectInfo?.estimatedWorkload || 0 }} 人天
+        </el-descriptions-item>
+        <el-descriptions-item label="项目状态">
+          <dict-tag :options="sys_xmzt" :value="projectInfo?.projectStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="验收状态">
+          <dict-tag :options="sys_yszt" :value="projectInfo?.acceptanceStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="实际人天">
+          {{ projectInfo?.actualWorkload != null ? parseFloat(projectInfo.actualWorkload).toFixed(3) : '0.000' }} 人天
+        </el-descriptions-item>
+        <el-descriptions-item label="审核状态">
+          <dict-tag :options="sys_spzt" :value="projectInfo?.approvalStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="项目预算">
+          {{ formatAmount(projectInfo?.projectBudget) }} 元
+        </el-descriptions-item>
+        <el-descriptions-item label="合同状态">
+          <dict-tag :options="sys_htzt" :value="projectInfo?.contractStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="收入确认状态">
+          <dict-tag :options="sys_qrzt" :value="projectInfo?.revenueConfirmStatus" />
+        </el-descriptions-item>
+        <el-descriptions-item label="收入确认金额">
+          {{ projectInfo?.confirmAmount != null ? formatAmount(projectInfo.confirmAmount) + ' 元' : '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="项目阶段" :span="2">
+          <dict-tag :options="sys_xmjd" :value="projectInfo?.projectStage" />
+        </el-descriptions-item>
+        <el-descriptions-item label="项目地址" :span="3">
+          {{ projectInfo?.projectAddress || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="项目计划" :span="3">
+          <div class="text-content">{{ projectInfo?.projectPlan || '-' }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="项目描述" :span="3">
+          <div class="text-content">{{ projectInfo?.projectDescription || '-' }}</div>
+        </el-descriptions-item>
+        <el-descriptions-item label="审核意见" :span="3">
+          {{ projectInfo?.approvalReason || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
 
       <!-- 部门 + 合同 联动选择 -->
       <el-row :gutter="16" style="margin-top: 16px;">
@@ -179,11 +247,15 @@ import { handleTree } from '@/utils/ruoyi'
 const { proxy } = getCurrentInstance()
 const route = useRoute()
 const router = useRouter()
-const { sys_htlx, sys_htzt, sys_fkzt, sys_jdgl } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_jdgl')
+const { sys_htlx, sys_htzt, sys_fkzt, sys_jdgl, industry, sys_yjqy, sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, sys_ndgl, sys_qrzt } = proxy.useDict(
+  'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_jdgl',
+  'industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_ndgl', 'sys_qrzt'
+)
 
 const projectId = computed(() => Number(route.params.projectId))
-const projectName = ref('')
+const projectInfo = ref(null)
 
+const deptFlatList = ref([])
 const deptTreeData = ref([])
 const selectedDeptId = ref(null)
 const contractOptions = ref([])
@@ -213,9 +285,18 @@ function formatAmount(amount) {
 async function loadDeptTree() {
   const res = await getDeptTree()
   const allDepts = res.data || []
+  deptFlatList.value = allDepts
   const validDepts = allDepts.filter(d => d.ancestors && d.ancestors.split(',').length >= 3)
   const nodes = validDepts.map(d => ({ deptId: d.deptId, label: d.deptName, parentId: d.parentId }))
   deptTreeData.value = handleTree(nodes, 'deptId')
+}
+
+/** 根据部门ID获取部门名称 */
+function getDeptName(deptId) {
+  if (!deptId) return '-'
+  const numId = typeof deptId === 'string' ? parseInt(deptId) : deptId
+  const dept = deptFlatList.value.find(d => d.deptId === numId)
+  return dept ? dept.deptName : '-'
 }
 
 /** 切换部门 */
@@ -261,9 +342,9 @@ function goBack() {
 
 /** 初始化：加载项目名称 + 部门树 + 回显已有关联合同 */
 async function init() {
-  // 项目名称
+  // 项目信息
   getProject(projectId.value).then(res => {
-    projectName.value = res.data?.projectName || ''
+    projectInfo.value = res.data || null
   })
 
   await loadDeptTree()
@@ -297,22 +378,6 @@ init()
 </script>
 
 <style scoped>
-.project-name-bar {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-  padding: 8px 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
-}
-.project-name-bar .label {
-  color: #606266;
-  flex-shrink: 0;
-}
-.project-name-bar .value {
-  color: #303133;
-  font-weight: 500;
-}
 .selector-label {
   font-size: 13px;
   color: #606266;
@@ -339,5 +404,9 @@ init()
 :deep(.desc-label) {
   font-weight: 600;
   background: #f5f7fa;
+}
+.text-content {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

@@ -271,7 +271,7 @@ function handleDownload(row) {
 
 /** 返回 */
 function handleBack() {
-  router.push({ path: '/htkx/payment', query: { t: Date.now() } })
+  router.back()
 }
 
 // 初始化

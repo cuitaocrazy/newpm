@@ -365,12 +365,7 @@ function formatAmount(amount) {
 
 /** 返回按钮 */
 function handleBack() {
-  // 如果是从付款里程碑页面跳转过来的，返回到付款里程碑页面
-  if (route.query.from === 'payment') {
-    router.push({ path: '/htkx/payment', query: { t: Date.now() } })
-  } else {
-    router.back()
-  }
+  router.back()
 }
 
 /** 查看项目详情 */

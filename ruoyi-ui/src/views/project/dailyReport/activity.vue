@@ -33,6 +33,14 @@
           @clear="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="开始日期">
+        <el-date-picker v-model="queryParams.reportDateStart" type="date"
+          placeholder="开始日期" value-format="YYYY-MM-DD" style="width: 140px;" clearable />
+      </el-form-item>
+      <el-form-item label="结束日期">
+        <el-date-picker v-model="queryParams.reportDateEnd" type="date"
+          placeholder="结束日期" value-format="YYYY-MM-DD" style="width: 140px;" clearable />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleQuery">查询</el-button>
         <el-button @click="handleReset">重置</el-button>
@@ -73,12 +81,13 @@
           <div class="stat-box"><div class="stat-num">{{ personStats.avgHours }}h</div><div class="stat-label">日均工时</div></div>
           <div class="stat-box"><div class="stat-num">{{ personStats.fullDays }}/{{ personStats.days }}</div><div class="stat-label">满勤(>=8h)</div></div>
         </div>
+        <el-button text type="primary" @click="personDrawerVisible = true">查看全部日报</el-button>
         <el-button text type="primary" @click="clearPerson">返回团队概览</el-button>
       </div>
     </el-card>
 
     <!-- 日历 -->
-    <el-card v-if="!listMode" shadow="hover">
+    <el-card shadow="hover">
       <MonthCalendar
         v-model="selectedDate"
         :work-calendar-map="workCalendarMap"
@@ -149,60 +158,6 @@
       </div>
     </el-card>
 
-    <!-- 列表模式：选了人 + 日期范围时显示 -->
-    <template v-if="listMode">
-      <div v-if="sortedReportList.length === 0" style="text-align:center;color:#909399;padding:40px 0;">
-        该时间段内无日报记录
-      </div>
-      <el-card v-for="report in sortedReportList" :key="report.reportId"
-        shadow="hover" style="margin-bottom: 12px;">
-        <template #header>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-weight: 700; font-size: 15px;">{{ report.reportDate }}</span>
-            <span style="color: #909399; font-size: 13px;">{{ weekdayLabel(report.reportDate) }}</span>
-            <el-tag :type="report.totalWorkHours >= 8 ? 'success' : 'warning'" size="small" round>
-              {{ report.totalWorkHours }}h
-            </el-tag>
-            <span style="margin-left: auto; font-size: 12px; color: #c0c4cc;">
-              更新 {{ formatTime(report.updateTime) }}
-            </span>
-          </div>
-        </template>
-        <div v-for="detail in report.detailList.filter(d => !d.entryType || d.entryType === 'work')"
-          :key="detail.detailId" class="drawer-prj">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
-            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(detail.revenueConfirmYear)">
-              {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
-            </el-tag>
-            <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
-            <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
-            <span style="margin-left: auto; font-weight: 700;">{{ detail.workHours }}h</span>
-          </div>
-          <div v-if="detail.subProjectName || detail.workCategory" style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; padding-left: 2px;">
-            <el-tag v-if="detail.subProjectName" size="small" type="success">{{ detail.subProjectName }}</el-tag>
-            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
-          </div>
-          <div style="font-size: 12px; color: #909399; margin-bottom: 4px;">
-            预计人天：<strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong>
-            &nbsp;&nbsp;已花人天：<strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong>
-          </div>
-          <div style="font-size: 13px; color: #606266; line-height: 1.6; padding-left: 8px; border-left: 2px solid #e4e7ed;" v-html="formatWorkContent(detail.workContent)"></div>
-          <div style="font-size: 11px; color: #c0c4cc; margin-top: 3px;">
-            更新于 {{ formatTime(detail.updateTime) }}
-          </div>
-        </div>
-        <div v-for="leave in report.detailList.filter(d => d.entryType && d.entryType !== 'work')"
-          :key="'leave-' + leave.detailId" class="drawer-leave">
-          <span class="cell-leave-dot" :style="{ background: LEAVE_TYPE_COLOR[leave.entryType] }"></span>
-          <span :style="{ color: LEAVE_TYPE_COLOR[leave.entryType], fontWeight: 600 }">
-            {{ LEAVE_TYPE_LABEL[leave.entryType] }}
-          </span>
-          <span style="margin-left: auto; font-weight: 700;">{{ leave.leaveHours || leave.workHours }}h</span>
-          <span v-if="leave.remark" style="font-size: 12px; color: #909399; margin-left: 8px;">{{ leave.remark }}</span>
-        </div>
-      </el-card>
-    </template>
-
     <!-- 抽屉（团队模式查看某天详情） -->
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="780px">
       <div style="display: flex; gap: 24px; padding: 14px 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px;">
@@ -267,11 +222,74 @@
         </div>
       </el-card>
     </el-drawer>
+
+    <!-- 个人日报抽屉（选人后打开） -->
+    <el-drawer v-model="personDrawerVisible" :title="personDrawerTitle" size="780px">
+      <div style="display: flex; gap: 24px; padding: 14px 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px;">
+        <div class="stat-box"><div class="stat-num">{{ personStats.days }}</div><div class="stat-label">已填报天</div></div>
+        <div class="stat-box"><div class="stat-num">{{ personStats.totalHours }}h</div><div class="stat-label">累计工时</div></div>
+        <div class="stat-box"><div class="stat-num">{{ personStats.avgHours }}h</div><div class="stat-label">日均工时</div></div>
+        <div class="stat-box"><div class="stat-num">{{ personStats.fullDays }}/{{ personStats.days }}</div><div class="stat-label">满勤(>=8h)</div></div>
+      </div>
+      <div v-if="sortedReportList.length === 0" style="text-align:center;color:#909399;padding:40px 0;">
+        暂无日报记录
+      </div>
+      <el-card v-for="report in sortedReportList" :key="report.reportId"
+        shadow="hover" style="margin-bottom: 12px;">
+        <template #header>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-weight: 700; font-size: 15px;">{{ report.reportDate }}</span>
+            <span style="color: #909399; font-size: 13px;">{{ weekdayLabel(report.reportDate) }}</span>
+            <el-tag :type="report.totalWorkHours >= 8 ? 'success' : 'warning'" size="small" round>
+              {{ report.totalWorkHours }}h
+            </el-tag>
+            <span style="margin-left: auto; font-size: 12px; color: #c0c4cc;">
+              更新 {{ formatTime(report.updateTime) }}
+            </span>
+          </div>
+        </template>
+        <div v-for="detail in report.detailList.filter(d => !d.entryType || d.entryType === 'work')"
+          :key="detail.detailId" class="drawer-prj">
+          <div class="detail-project-row">
+            <span class="detail-row-prefix">项目：</span>
+            <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
+            <el-tag v-if="detail.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(detail.revenueConfirmYear)">
+              {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
+            </el-tag>
+            <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
+            <span class="detail-workload">预计 <strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong> 天</span>
+            <span class="detail-workload">已花 <strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong> 天</span>
+            <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
+            <span class="detail-hours">{{ detail.workHours }}h</span>
+          </div>
+          <div v-if="detail.subProjectId" class="detail-task-row">
+            <span class="detail-row-prefix">任务：</span>
+            <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
+            <span v-if="detail.subProjectManagerName" class="detail-manager">负责人：{{ detail.subProjectManagerName }}</span>
+            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
+          </div>
+          <div class="detail-content" v-html="formatWorkContent(detail.workContent)"></div>
+          <div style="font-size: 11px; color: #c0c4cc; margin-top: 3px;">
+            更新于 {{ formatTime(detail.updateTime) }}
+          </div>
+        </div>
+        <div v-for="leave in report.detailList.filter(d => d.entryType && d.entryType !== 'work')"
+          :key="'leave-' + leave.detailId" class="drawer-leave">
+          <span class="cell-leave-dot" :style="{ background: LEAVE_TYPE_COLOR[leave.entryType] }"></span>
+          <span :style="{ color: LEAVE_TYPE_COLOR[leave.entryType], fontWeight: 600 }">
+            {{ LEAVE_TYPE_LABEL[leave.entryType] }}
+          </span>
+          <span style="margin-left: auto; font-weight: 700;">{{ leave.leaveHours || leave.workHours }}h</span>
+          <span v-if="leave.remark" style="font-size: 12px; color: #909399; margin-left: 8px;">{{ leave.remark }}</span>
+        </div>
+      </el-card>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, getCurrentInstance } from 'vue'
+import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
 import { User } from '@element-plus/icons-vue'
 import { getMonthlyReports, getProjectNameSuggestions } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
@@ -291,7 +309,7 @@ const currentYearMonth = ref((() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 })())
-const queryParams = ref({ userId: '', deptId: null, projectName: null })
+const queryParams = ref({ userId: '', deptId: null, projectName: null, reportDateStart: null, reportDateEnd: null })
 const reportData = ref([]) // 月度完整数据
 const userList = ref([])
 const projectDeptSelectRef = ref(null)
@@ -300,6 +318,8 @@ const drawerVisible = ref(false)
 const drawerTitle = ref('')
 const drawerPeople = ref([])
 const drawerStats = ref({ count: 0, totalHours: 0, fullCount: 0 })
+const personDrawerVisible = ref(false)
+const personDrawerTitle = computed(() => selectedUserName.value ? `${selectedUserName.value} 的全部日报` : '')
 
 const projectColors = ['#409eff', '#67c23a', '#f56c6c', '#e6a23c', '#b37feb', '#00b894', '#fdcb6e', '#909399']
 const currentYear = new Date().getFullYear().toString()
@@ -584,7 +604,10 @@ async function loadData() {
   if (queryParams.value.deptId) params.deptId = queryParams.value.deptId
   if (queryParams.value.projectName) params.projectName = queryParams.value.projectName
 
-  if (!listMode.value) {
+  if (listMode.value) {
+    if (queryParams.value.reportDateStart) params.reportDateStart = queryParams.value.reportDateStart
+    if (queryParams.value.reportDateEnd) params.reportDateEnd = queryParams.value.reportDateEnd
+  } else {
     params.yearMonth = currentYearMonth.value
   }
 
@@ -609,7 +632,7 @@ async function handleQuery() {
 }
 
 async function handleReset() {
-  queryParams.value = { userId: '', deptId: null, projectName: null }
+  queryParams.value = { userId: '', deptId: null, projectName: null, reportDateStart: null, reportDateEnd: null }
   await loadUsers()
   loadData()
 }
@@ -635,6 +658,7 @@ function handleMonthChange({ yearMonth }) {
 function handleYearChange(year) {
   loadWorkCalendar(year)
 }
+
 
 onMounted(async () => {
   loadWorkCalendar()

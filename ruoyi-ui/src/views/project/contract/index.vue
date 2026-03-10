@@ -774,11 +774,6 @@ watch(() => route.query.t, (newVal) => {
   }
 })
 
-// 页面激活时刷新数据（从其他页面返回时）
-onActivated(() => {
-  getList()
-})
-
 getDeptTree()
 getCustomerList()
 getProjectList()

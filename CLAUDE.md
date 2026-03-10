@@ -116,9 +116,11 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 
    **`write.vue` layout:**
    - Left (7/24): `MonthCalendar` — day badges from `total_work_hours` (green=≥8h, orange=<8h, grey=none). API: `GET /project/dailyReport/list?yearMonth=`
-   - Right (17/24): project list from `pm_project_member`. API: `GET /project/dailyReport/myProjects`. Hour slider (max=24h, step=1h) + work content textarea per project.
+   - Right (17/24): project list from `pm_project_member`. API: `GET /project/dailyReport/myProjects` — returns `hasSubProject` flag per project. For projects with sub-tasks (`hasSubProject=true`), expand multi-task rows (one per sub-project); each row: hour slider + content textarea + `workCategory` (dict `sys_gzlb`). Plain projects get a single row (no `workCategory`).
    - Click date → load detail via `GET /project/dailyReport/my/{reportDate}`. Save → `POST /project/dailyReport`.
    - **Week constraint**: only current calendar week (Mon–Sun) is editable. Past/future weeks are read-only.
+   - **`pm_daily_report_detail`** extra fields: `sub_project_id` (FK to sub-project, NULL for plain projects), `work_category` (dict `sys_gzlb`, NULL for plain projects).
+   - **Workload rollup**: saving recalculates sub-project `actual_workload`, then rolls up to parent project `actual_workload`.
 
 5. **Revenue Recognition:** Multi-dimensional filtering. Confirmation status: 未确认/待确认/已确认/无法确认. Batch operations supported. Revenue fields on `Project`: `confirmAmount`, `taxRate`, `afterTaxAmount` (= confirmAmount / (1 + taxRate/100)), `revenueConfirmStatus`, `revenueConfirmYear`.
 
@@ -130,9 +132,14 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 
 9. **Add Contract from Project:** List row shows "添加合同" / "查看合同" based on whether contract exists. Navigates to contract creation with pre-populated projectId, dept, customer.
 
+10. **Sub-project / Task Decomposition:** `pm_project` is self-referencing via `parent_id` / `project_level` (0=main project, 1=sub-project) / `task_code`. All main-project queries filter with `AND (project_level IS NULL OR project_level = 0)`. Sub-projects do **not** get their own `pm_project_member` rows — they inherit the parent's members. Extra endpoints:
+    - `GET /project/project/subList` — paginated sub-project list (requires `parentId` param)
+    - `GET /project/project/subProjectOptions?parentId=xxx` — lightweight options for daily report dropdowns (returns id, name, stage, task leader)
+    Frontend: `ruoyi-ui/src/views/project/subproject/` (index / add / edit / detail). Route is hidden level-2 under 项目管理 (`/project/subproject`).
+
 ### Dictionary Dependencies
 
-`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-7), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`)
+`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-12，11=项目结项，12=技术投产), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`), `sys_gzlb` 工作任务类别(for `work_category` in `pm_daily_report_detail`)
 
 ### API URL Convention
 
@@ -355,9 +362,19 @@ Two tables use hard delete (not soft `del_flag = '1'`):
 
 All other PM tables use soft delete. Do not add unique constraint workarounds for daily reports.
 
+### Sub-projects Must Not Appear in Main-project Queries
+
+All `selectProjectList` / revenue / approval mapper queries guard against sub-project pollution:
+
+```xml
+AND (p.project_level IS NULL OR p.project_level = 0)
+```
+
+Any new mapper query on `pm_project` that should return only top-level projects **must** include this filter. Sub-project queries explicitly use `and p.project_level = 1`.
+
 ### Market Manager is NOT a Project Member
 
-`marketManagerId` on `pm_project` must **not** be inserted into `pm_project_member`. Members: project manager, team leader, participants only.
+`marketManagerId` on `pm_project` must **not** be inserted into `pm_project_member`. Members: project manager, team leader, participants only. Sub-project members are also **not** inserted — they inherit the parent project's member list.
 
 ### Cross-module Permission
 
