@@ -27,7 +27,7 @@
         </el-card>
         <div class="calendar-tip">
           <el-icon><InfoFilled /></el-icon>
-          <span>仅显示状态为<b>「开启」</b>且阶段未到<b>「项目结项」</b>的项目，已结束项目不支持填写日报</span>
+          <span>项目状态<b>非开启</b>或项目阶段属于<b>「已结项」</b>，整个项目不可写日报；若仅某个任务的状态属于<b>「已结项」</b>，则该任务不显示。</span>
         </div>
       </el-col>
 
