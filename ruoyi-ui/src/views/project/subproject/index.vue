@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch">
       <el-form-item label="项目部门" prop="projectDept">
-        <project-dept-select v-model="queryParams.projectDept" @change="handleDeptChange" clearable style="width: 200px" />
+        <project-dept-select v-model="queryParams.projectDept" @change="handleDeptChange" clearable style="width: 300px" />
       </el-form-item>
       <el-form-item label="所属主项目" prop="parentId">
         <el-select

@@ -46,6 +46,15 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="实际工作量">
+              <el-input :value="'0.000'" disabled>
+                <template #append>人天</template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="任务预算">
               <el-input v-model="form.projectBudget" placeholder="请输入金额">
                 <template #append>元</template>
@@ -184,7 +193,7 @@ async function loadParentProject(parentId) {
   try {
     const [projectRes, usersRes] = await Promise.all([
       getProject(parentId),
-      getUsersByPost('pm')
+      getUsersByPost()
     ])
     parentProject.value = projectRes.data
     const ids = (projectRes.data.participants || '').split(',').map(Number).filter(Boolean)
@@ -204,6 +213,7 @@ function submitForm() {
     const submitData = {
       ...form.value,
       parentId,
+      projectStatus: '0',
       projectLevel: 1,
       projectCode,
       projectDept: p.projectDept || null,

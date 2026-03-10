@@ -678,7 +678,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and p.parent_id = #{parentId}
           and p.project_level = 1
           and (p.project_stage is null or p.project_stage != '11')
-          and p.project_status = '0'
+          and (p.project_status is null or p.project_status = '0')
         order by p.task_code, p.create_time
     </select>
 
