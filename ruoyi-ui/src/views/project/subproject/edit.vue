@@ -283,6 +283,7 @@ const projectCustomerName = ref('')
 const deptFlatList = ref([])
 const batchOptions = ref([])
 const planProductionDateDisplay = ref('')
+const isInitializing = ref(true)
 
 const form = ref({
   projectId: null, parentId: null,
@@ -368,7 +369,7 @@ function onProjectClear() {
 }
 
 watch(() => form.value.productionYear, async (year, oldYear) => {
-  if (oldYear !== undefined) {
+  if (!isInitializing.value) {
     form.value.batchId = null
     planProductionDateDisplay.value = ''
   }
@@ -465,6 +466,7 @@ onMounted(async () => {
     }
   } finally {
     loading.value = false
+    isInitializing.value = false
   }
 })
 </script>

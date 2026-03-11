@@ -87,42 +87,42 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns" />
     </el-row>
 
     <el-table v-loading="loading" :data="subprojectList" border :row-style="{ height: 'auto' }" :cell-style="{ verticalAlign: 'middle' }">
       <el-table-column type="index" label="序号" width="55" align="center" />
-      <el-table-column label="任务编号" prop="taskCode" width="130" />
-      <el-table-column label="任务名称" prop="projectName" width="220">
+      <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible" />
+      <el-table-column label="任务名称" prop="projectName" width="220" v-if="columns.projectName.visible">
         <template #default="scope">
           <el-link type="primary" @click="handleDetail(scope.row)" style="white-space: normal; word-break: break-all; line-height: 1.4;"
             v-if="checkPermi(['project:subproject:query'])">{{ scope.row.projectName }}</el-link>
           <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.projectName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="所属主项目" prop="parentProjectName" min-width="160" show-overflow-tooltip />
-      <el-table-column label="当前阶段" prop="projectStage" width="130">
+      <el-table-column label="所属主项目" prop="parentProjectName" min-width="160" show-overflow-tooltip v-if="columns.parentProjectName.visible" />
+      <el-table-column label="当前阶段" prop="projectStage" width="130" v-if="columns.projectStage.visible">
         <template #default="scope">
           <dict-tag :options="sys_xmjd" :value="scope.row.projectStage" />
         </template>
       </el-table-column>
-      <el-table-column label="项目状态" prop="projectStatus" width="100" align="center">
+      <el-table-column label="项目状态" prop="projectStatus" width="100" align="center" v-if="columns.projectStatus.visible">
         <template #default="scope">
           <dict-tag :options="sys_xmzt" :value="scope.row.projectStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" />
-      <el-table-column label="预计人天" prop="estimatedWorkload" width="100" align="right" />
-      <el-table-column label="实际人天" prop="actualWorkload" width="100" align="right">
+      <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" v-if="columns.projectManagerName.visible" />
+      <el-table-column label="预计人天" prop="estimatedWorkload" width="100" align="right" v-if="columns.estimatedWorkload.visible" />
+      <el-table-column label="实际人天" prop="actualWorkload" width="100" align="right" v-if="columns.actualWorkload.visible">
         <template #default="scope">
           {{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(3) : '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="投产年份" prop="productionYear" width="100" align="center" />
-      <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
-      <el-table-column label="启动日期" prop="startDate" width="120" align="center" />
-      <el-table-column label="结束日期" prop="endDate" width="120" align="center" />
-      <el-table-column label="操作" width="150" align="center" fixed="right">
+      <el-table-column label="投产年份" prop="productionYear" width="100" align="center" v-if="columns.productionYear.visible" />
+      <el-table-column label="投产批次" prop="batchNo" width="120" align="center" v-if="columns.batchNo.visible" />
+      <el-table-column label="启动日期" prop="startDate" width="120" align="center" v-if="columns.startDate.visible" />
+      <el-table-column label="结束日期" prop="endDate" width="120" align="center" v-if="columns.endDate.visible" />
+      <el-table-column label="操作" width="150" align="center" fixed="right" v-if="columns.actions.visible">
         <template #default="scope">
           <el-button link type="primary" icon="View" v-hasPermi="['project:subproject:query']"
             @click="handleDetail(scope.row)">详情</el-button>
@@ -158,6 +158,22 @@ const subprojectList = ref([])
 const queryBatchOptions = ref([])
 const managerOptions = ref([])
 const parentProjectKeyword = ref('')
+
+const columns = ref({
+  taskCode:          { label: '任务编号',   visible: true },
+  projectName:       { label: '任务名称',   visible: true },
+  parentProjectName: { label: '所属主项目', visible: true },
+  projectStage:      { label: '当前阶段',   visible: true },
+  projectStatus:     { label: '项目状态',   visible: true },
+  projectManagerName:{ label: '任务负责人', visible: true },
+  estimatedWorkload: { label: '预计人天',   visible: true },
+  actualWorkload:    { label: '实际人天',   visible: true },
+  productionYear:    { label: '投产年份',   visible: true },
+  batchNo:           { label: '投产批次',   visible: true },
+  startDate:         { label: '启动日期',   visible: true },
+  endDate:           { label: '结束日期',   visible: true },
+  actions:           { label: '操作',       visible: true }
+})
 
 const queryParams = reactive({
   pageNum: 1,
