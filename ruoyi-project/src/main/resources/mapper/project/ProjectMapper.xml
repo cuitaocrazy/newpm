@@ -752,6 +752,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <if test="bankDemandNo != null and bankDemandNo != ''">and p.bank_demand_no like concat('%', #{bankDemandNo}, '%')</if>
         <if test="softwareDemandNo != null and softwareDemandNo != ''">and p.software_demand_no like concat('%', #{softwareDemandNo}, '%')</if>
         <if test="product != null and product != ''">and p.product = #{product}</if>
+        <if test="scheduleStatus != null and scheduleStatus != ''">and p.schedule_status = #{scheduleStatus}</if>
         <if test="parentRevenueConfirmYear != null and parentRevenueConfirmYear != ''">
             and exists (select 1 from pm_project pp2 where pp2.project_id = p.parent_id and pp2.revenue_confirm_year = #{parentRevenueConfirmYear})
         </if>

@@ -80,6 +80,11 @@
         <el-input v-model="queryParams.softwareDemandNo" placeholder="请输入"
           clearable style="width: 180px" @keyup.enter="handleQuery" />
       </el-form-item>
+      <el-form-item label="排期状态" prop="scheduleStatus">
+        <el-select v-model="queryParams.scheduleStatus" placeholder="请选择" clearable style="width: 180px">
+          <el-option v-for="d in sys_pqzt" :key="d.value" :label="d.label" :value="d.value" />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -149,7 +154,7 @@ import request from '@/utils/request'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
-const { sys_xmjd, sys_xmzt, sys_ndgl, sys_product } = proxy.useDict('sys_xmjd', 'sys_xmzt', 'sys_ndgl', 'sys_product')
+const { sys_xmjd, sys_xmzt, sys_ndgl, sys_product, sys_pqzt } = proxy.useDict('sys_xmjd', 'sys_xmzt', 'sys_ndgl', 'sys_product', 'sys_pqzt')
 
 const loading = ref(false)
 const showSearch = ref(true)
@@ -188,7 +193,8 @@ const queryParams = reactive({
   parentRevenueConfirmYear: null,
   product: null,
   projectManagerId: null,
-  softwareDemandNo: ''
+  softwareDemandNo: '',
+  scheduleStatus: null
 })
 
 function onDeptChange() {
