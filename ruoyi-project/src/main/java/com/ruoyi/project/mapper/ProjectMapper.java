@@ -191,7 +191,7 @@ public interface ProjectMapper
      * @param projectName 项目名称（模糊搜索）
      * @return 精简字段列表：projectId, projectName, projectCode
      */
-    public List<Map<String, Object>> searchProjectsByName(@Param("projectName") String projectName);
+    public List<Map<String, Object>> searchProjectsByName(@Param("projectName") String projectName, @Param("projectDept") String projectDept);
 
     /**
      * 根据用户ID查询关联的项目列表（用于工作日报）
@@ -243,4 +243,8 @@ public interface ProjectMapper
      */
     public List<Map<String, Object>> selectProjectsByCodePrefix(@Param("codePrefix") String codePrefix,
                                                                 @Param("excludeProjectId") Long excludeProjectId);
+
+    public List<String> searchTaskCode(@Param("taskCode") String taskCode);
+
+    public List<String> searchTaskName(@Param("projectName") String projectName);
 }

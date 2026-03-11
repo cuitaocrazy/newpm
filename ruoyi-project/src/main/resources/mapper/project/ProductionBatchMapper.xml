@@ -91,4 +91,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectBatchNoOptions" resultType="String">
         select distinct batch_no from pm_production_batch order by batch_no
     </select>
+
+    <select id="selectByYear" parameterType="String" resultMap="ProductionBatchResult">
+        select batch_id, batch_no, plan_production_date
+        from pm_production_batch
+        where production_year = #{year}
+        order by sort_order, batch_no
+    </select>
 </mapper>

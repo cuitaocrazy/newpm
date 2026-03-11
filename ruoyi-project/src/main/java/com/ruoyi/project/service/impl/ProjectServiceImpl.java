@@ -118,8 +118,14 @@ public class ProjectServiceImpl implements IProjectService
     {
         project.setCreateTime(DateUtils.getNowDate());
         project.setUpdateTime(DateUtils.getNowDate());
-        // 子项目不走审批流，直接设为"审核通过"；并自动生成 project_code
+        // 子项目：设置任务专属审计字段
         if (project.getProjectLevel() != null && project.getProjectLevel() == 1) {
+            String currentUser = SecurityUtils.getUsername();
+            java.util.Date now = DateUtils.getNowDate();
+            project.setTaskCreateBy(currentUser);
+            project.setTaskCreateTime(now);
+            project.setTaskUpdateBy(currentUser);
+            project.setTaskUpdateTime(now);
             project.setApprovalStatus("1");
             // 生成 project_code：父项目编号 + 7位递增序号（如 IT-HB-XX-2025-0000001）
             if (project.getParentId() != null) {
@@ -147,6 +153,18 @@ public class ProjectServiceImpl implements IProjectService
     public int updateProject(Project project)
     {
         project.setUpdateTime(DateUtils.getNowDate());
+        // 子项目：更新任务更新人/时间
+        if (project.getProjectLevel() != null && project.getProjectLevel() == 1) {
+            project.setTaskUpdateBy(SecurityUtils.getUsername());
+            project.setTaskUpdateTime(DateUtils.getNowDate());
+        } else if (project.getProjectId() != null) {
+            // 通过 projectId 判断是否为子任务（projectLevel 可能前端未传）
+            Project existing = projectMapper.selectProjectByProjectId(project.getProjectId());
+            if (existing != null && existing.getProjectLevel() != null && existing.getProjectLevel() == 1) {
+                project.setTaskUpdateBy(SecurityUtils.getUsername());
+                project.setTaskUpdateTime(DateUtils.getNowDate());
+            }
+        }
         int rows = projectMapper.updateProject(project);
         syncProjectMembers(project);
         return rows;
@@ -390,9 +408,9 @@ public class ProjectServiceImpl implements IProjectService
      * @return 精简字段列表：projectId, projectName, projectCode
      */
     @Override
-    public List<Map<String, Object>> searchProjectsByName(String projectName)
+    public List<Map<String, Object>> searchProjectsByName(String projectName, String projectDept)
     {
-        return projectMapper.searchProjectsByName(projectName);
+        return projectMapper.searchProjectsByName(projectName, projectDept);
     }
 
     /**
@@ -625,5 +643,17 @@ public class ProjectServiceImpl implements IProjectService
         rel.setCreateBy(SecurityUtils.getUsername());
         rel.setCreateTime(DateUtils.getNowDate());
         projectContractRelMapper.insertProjectContractRel(rel);
+    }
+
+    @Override
+    public List<String> searchTaskCode(String taskCode)
+    {
+        return projectMapper.searchTaskCode(taskCode);
+    }
+
+    @Override
+    public List<String> searchTaskName(String projectName)
+    {
+        return projectMapper.searchTaskName(projectName);
     }
 }

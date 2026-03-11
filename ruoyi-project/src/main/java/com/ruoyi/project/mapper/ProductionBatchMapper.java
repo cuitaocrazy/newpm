@@ -1,6 +1,7 @@
 package com.ruoyi.project.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.ProductionBatch;
 
 /**
@@ -63,4 +64,6 @@ public interface ProductionBatchMapper
      * 查询所有批次号（去重，用于下拉选）
      */
     public List<String> selectBatchNoOptions();
+
+    public List<ProductionBatch> selectByYear(@Param("year") String year);
 }

@@ -63,9 +63,42 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
+            <el-form-item label="投产年度">
+              <dict-select v-model="form.productionYear" dict-type="sys_ndgl" placeholder="请选择投产年度"
+                clearable @change="onProductionYearChange" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
             <el-form-item label="投产批次">
-              <dict-select v-model="form.productionBatch" dict-type="sys_tcpc" placeholder="请选择投产批次" clearable />
+              <el-select v-model="form.batchId" placeholder="请先选择投产年度" :disabled="!form.productionYear"
+                clearable style="width: 100%" @change="onBatchChange">
+                <el-option v-for="b in batchOptions" :key="b.batchId" :label="b.batchNo" :value="b.batchId" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="计划投产日期">
+              <span style="line-height: 32px; color: #606266;">{{ planProductionDateDisplay || '-' }}</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="总行需求号">
+              <el-input v-model="form.bankDemandNo" placeholder="请输入总行需求号（选填）" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="软件中心需求编号">
+              <el-input v-model="form.softwareDemandNo" placeholder="请输入软件中心需求编号（选填）" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="二级产品">
+              <dict-select v-model="form.product" dict-type="sys_product" placeholder="请选择二级产品" clearable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -162,6 +195,7 @@
 import { ref, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { addProject, getProject, getUsersByPost } from '@/api/project/project'
+import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -170,10 +204,14 @@ const route = useRoute()
 const formRef = ref()
 const parentProject = ref(null)
 const parentParticipants = ref([])
+const batchOptions = ref([])
+const planProductionDateDisplay = ref('')
 
 const form = ref({
   taskCode: null, projectName: null, projectManagerId: null, projectStage: null,
-  estimatedWorkload: null, projectBudget: null, productionBatch: null,
+  estimatedWorkload: null, projectBudget: null,
+  productionYear: null, batchId: null,
+  bankDemandNo: null, softwareDemandNo: null, product: null,
   projectPlan: null, projectDescription: null,
   startDate: null, endDate: null, productionDate: null,
   internalClosureDate: null, functionalTestDate: null, remark: null
@@ -190,6 +228,22 @@ const rules = ref({
   startDate:         [{ required: true, message: '启动日期不能为空',   trigger: 'change' }],
   endDate:           [{ required: true, message: '结束日期不能为空',   trigger: 'change' }]
 })
+
+async function onProductionYearChange(year) {
+  form.value.batchId = null
+  planProductionDateDisplay.value = ''
+  batchOptions.value = []
+  if (!year) return
+  try {
+    const res = await request({ url: '/project/productionBatch/byYear', method: 'get', params: { productionYear: year } })
+    batchOptions.value = res.data || []
+  } catch (e) { console.error('加载批次失败', e) }
+}
+
+function onBatchChange(batchId) {
+  const found = batchOptions.value.find(b => b.batchId === batchId)
+  planProductionDateDisplay.value = found ? (found.planProductionDate ? found.planProductionDate.substring(0, 10) : '') : ''
+}
 
 async function loadParentProject(parentId) {
   try {
@@ -215,6 +269,8 @@ function submitForm() {
       parentId,
       projectStatus: '0',
       projectLevel: 1,
+      batchId: form.value.batchId || null,
+      productionYear: form.value.productionYear || null,
       projectDept: p.projectDept || null,
       industry: p.industry || null,
       region: p.region || null,
@@ -228,14 +284,14 @@ function submitForm() {
     }
     addProject(submitData).then(() => {
       proxy.$modal.msgSuccess('新增成功')
-      router.push({ path: '/project/subproject', query: { parentId } })
+      router.push({ path: '/task/subproject', query: { parentId } })
     })
   })
 }
 
 function cancel() {
   const parentId = route.query.parentId ? Number(route.query.parentId) : null
-  router.push({ path: '/project/subproject', query: { parentId } })
+  router.push({ path: '/task/subproject', query: { parentId } })
 }
 
 onMounted(() => {

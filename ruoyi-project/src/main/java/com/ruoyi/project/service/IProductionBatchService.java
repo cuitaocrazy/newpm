@@ -63,4 +63,7 @@ public interface IProductionBatchService
      * 查询所有批次号（去重，用于下拉选）
      */
     public List<String> selectBatchNoOptions();
+
+    /** 按投产年份查询批次列表（用于联动下拉） */
+    public List<ProductionBatch> selectByYear(String year);
 }

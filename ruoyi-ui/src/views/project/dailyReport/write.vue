@@ -116,6 +116,15 @@
 
               <!-- 无子任务：原有单行逻辑 -->
               <template v-if="!item.hasSubProject">
+                <!-- 工作任务类型 -->
+                <div class="prj-category-row">
+                  <span class="hours-label">工作任务类型:</span>
+                  <el-select v-model="item.workCategory" placeholder="请选择工作任务类型" clearable
+                    size="small" style="width: 180px;" :disabled="!isEditable">
+                    <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
+                  </el-select>
+                </div>
+
                 <!-- 工时（slider + 输入框） -->
                 <div class="prj-hours-row">
                   <span class="hours-label">工时:</span>
@@ -178,6 +187,10 @@
                       <span class="task-name">{{ task.taskName }}</span>
                       <el-tag v-if="task.projectStage" size="small" type="info">{{ getStageName(task.projectStage) }}</el-tag>
                       <span class="task-manager">负责人：{{ task.projectManagerName }}</span>
+                      <span class="task-workload-info" style="margin-left: auto;">
+                        预计：<strong>{{ task.estimatedWorkload != null ? task.estimatedWorkload : '-' }}</strong>天
+                        &nbsp;实际：<strong>{{ task.actualWorkload != null ? Number(task.actualWorkload).toFixed(3) : '-' }}</strong>天
+                      </span>
                       <el-select v-model="task.workCategory" placeholder="工作任务类别" clearable
                         size="small" style="width: 150px; margin-left: 8px;" :disabled="!isEditable">
                         <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
@@ -370,6 +383,8 @@ async function loadTaskRows(item) {
       taskName: t.taskCode ? `[${t.taskCode}] ${t.projectName}` : t.projectName,
       projectStage: t.projectStage,
       projectManagerName: t.projectManagerName || '-',
+      estimatedWorkload: t.estimatedWorkload != null ? t.estimatedWorkload : null,
+      actualWorkload: t.actualWorkload != null ? t.actualWorkload : null,
       workCategory: existingDetail?.workCategory || null,
       workHours: existingDetail ? Number(existingDetail.workHours) : 0,
       workContent: existingDetail?.workContent || ''
@@ -654,6 +669,13 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+.prj-category-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .prj-hours-row {
   display: flex;
   align-items: center;
@@ -699,7 +721,12 @@ onMounted(async () => {
 .task-manager {
   font-size: 12px;
   color: #909399;
-  margin-left: auto;
+}
+
+.task-workload-info {
+  font-size: 12px;
+  color: #909399;
+  white-space: nowrap;
 }
 
 .task-row-inputs {

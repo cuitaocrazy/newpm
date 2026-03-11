@@ -99,4 +99,10 @@ public class ProductionBatchServiceImpl implements IProductionBatchService
     {
         return productionBatchMapper.selectBatchNoOptions();
     }
+
+    @Override
+    public List<ProductionBatch> selectByYear(String year)
+    {
+        return productionBatchMapper.selectByYear(year);
+    }
 }

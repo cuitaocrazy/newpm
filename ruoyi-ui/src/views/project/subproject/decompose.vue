@@ -1,8 +1,8 @@
 <template>
   <div class="app-container">
-    <h2 style="margin: 0 0 16px 0; font-weight: bold;">编辑任务</h2>
+    <h2 style="margin: 0 0 16px 0; font-weight: bold;">项目分解任务</h2>
 
-    <!-- 一、选择所属项目 -->
+    <!-- 第一步：选择项目 -->
     <el-card shadow="hover" style="margin-bottom: 15px;">
       <template #header><span style="font-size: 16px; font-weight: bold;">一、选择所属项目</span></template>
       <el-row :gutter="20">
@@ -33,7 +33,7 @@
         </el-col>
       </el-row>
 
-      <!-- 父项目基本信息只读展示 -->
+      <!-- 项目基本信息只读展示 -->
       <div v-if="selectedProject" style="margin-top: 12px;">
         <el-descriptions :column="3" border size="small">
           <el-descriptions-item label="行业">
@@ -88,11 +88,12 @@
       </div>
     </el-card>
 
-    <!-- 二、任务信息 -->
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="130px" v-loading="loading">
-      <el-card shadow="hover" style="margin-bottom: 15px;">
-        <template #header><span style="font-size: 16px; font-weight: bold;">二、任务信息</span></template>
+    <!-- 第二步：填写任务信息 -->
+    <el-card v-if="selectedProject" shadow="hover" style="margin-bottom: 15px;">
+      <template #header><span style="font-size: 16px; font-weight: bold;">二、任务信息</span></template>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="130px">
 
+        <!-- 基本信息 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="任务名称" prop="projectName">
@@ -117,6 +118,8 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 需求/产品 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="总行需求号">
@@ -136,6 +139,8 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 工作量与预算 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="预估工作量" prop="estimatedWorkload">
@@ -146,7 +151,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="实际工作量">
-              <el-input :model-value="form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000'" disabled>
+              <el-input model-value="0.000" disabled>
                 <template #append>人天</template>
               </el-input>
             </el-form-item>
@@ -159,6 +164,8 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 投产批次联动 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="投产年度">
@@ -179,6 +186,8 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 时间规划 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="启动日期" prop="startDate">
@@ -215,6 +224,8 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <!-- 备注 -->
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="备注">
@@ -222,60 +233,30 @@
             </el-form-item>
           </el-col>
         </el-row>
-      </el-card>
 
-      <!-- 系统信息 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
-        <template #header><span style="font-size: 16px; font-weight: bold;">系统信息</span></template>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="创建人">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskCreateByName || form.taskCreateBy || '-' }}</span>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="创建时间">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskCreateTime || '-' }}</span>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="更新人">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskUpdateByName || form.taskUpdateBy || '-' }}</span>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="更新时间">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskUpdateTime || '-' }}</span>
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-card>
-    </el-form>
+      </el-form>
+    </el-card>
 
-    <div class="form-footer">
+    <div v-if="selectedProject" class="form-footer">
       <el-button type="primary" size="large" @click="submitForm">保存</el-button>
       <el-button size="large" @click="cancel">取消</el-button>
     </div>
   </div>
 </template>
 
-<script setup name="TaskEdit">
+<script setup name="TaskDecompose">
 import { ref, watch, onMounted, getCurrentInstance } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { getProject, updateProject } from '@/api/project/project'
+import { useRouter } from 'vue-router'
+import { addProject, getProject } from '@/api/project/project'
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
-const route = useRoute()
 
 const { industry, sys_yjqy, sys_xmfl, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_ndgl, sys_qrzt } =
   proxy.useDict('industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_ndgl', 'sys_qrzt')
 
 const formRef = ref()
-const loading = ref(false)
 const searchDept = ref(null)
 const projectKeyword = ref('')
 const selectedProject = ref(null)
@@ -285,15 +266,13 @@ const batchOptions = ref([])
 const planProductionDateDisplay = ref('')
 
 const form = ref({
-  projectId: null, parentId: null,
-  taskCode: null, projectName: null, projectManagerId: null, projectStage: null,
-  estimatedWorkload: null, actualWorkload: null, projectBudget: null,
+  projectName: null, projectManagerId: null, taskCode: null, projectStage: null,
   productionYear: null, batchId: null,
   bankDemandNo: null, softwareDemandNo: null, product: null,
+  estimatedWorkload: null, projectBudget: null,
   startDate: null, endDate: null,
   internalClosureDate: null, functionalTestDate: null, productionVersionDate: null,
-  remark: null,
-  taskCreateBy: null, taskCreateTime: null, taskUpdateBy: null, taskUpdateTime: null
+  remark: null
 })
 
 const rules = ref({
@@ -334,6 +313,7 @@ function onDeptChange() {
   projectKeyword.value = ''
   selectedProject.value = null
   projectCustomerName.value = ''
+  resetBatch()
 }
 
 function fetchProjectSuggestions(keyword, cb) {
@@ -348,9 +328,9 @@ async function onProjectSelect(item) {
   try {
     const res = await getProject(item.projectId)
     selectedProject.value = res.data
-    form.value.parentId = item.projectId
     projectKeyword.value = item.projectName
     projectCustomerName.value = ''
+    // 加载客户名称
     if (res.data.customerId) {
       request({ url: `/project/customer/${res.data.customerId}`, method: 'get' })
         .then(r => { projectCustomerName.value = r.data.customerSimpleName || r.data.customerFullName || '' })
@@ -364,14 +344,13 @@ async function onProjectSelect(item) {
 function onProjectClear() {
   selectedProject.value = null
   projectCustomerName.value = ''
-  form.value.parentId = null
+  resetBatch()
 }
 
-watch(() => form.value.productionYear, async (year, oldYear) => {
-  if (oldYear !== undefined) {
-    form.value.batchId = null
-    planProductionDateDisplay.value = ''
-  }
+// watch 监听投产年度变化，自动加载批次列表
+watch(() => form.value.productionYear, async (year) => {
+  form.value.batchId = null
+  planProductionDateDisplay.value = ''
   batchOptions.value = []
   if (!year) return
   try {
@@ -380,92 +359,55 @@ watch(() => form.value.productionYear, async (year, oldYear) => {
   } catch (e) { console.error('加载批次失败', e) }
 })
 
+
 function onBatchChange(batchId) {
   const found = batchOptions.value.find(b => b.batchId === batchId)
   planProductionDateDisplay.value = found ? (found.planProductionDate ? found.planProductionDate.substring(0, 10) : '') : ''
 }
 
+function resetBatch() {
+  form.value.productionYear = null
+  form.value.batchId = null
+  planProductionDateDisplay.value = ''
+  batchOptions.value = []
+}
+
 function submitForm() {
   formRef.value.validate(valid => {
     if (!valid) return
+    const p = selectedProject.value
     const submitData = {
       ...form.value,
+      parentId: p.projectId,
+      projectStatus: '0',
+      projectLevel: 1,
+      projectDept: p.projectDept || null,
+      industry: p.industry || null,
+      region: p.region || null,
+      regionId: p.regionId || null,
+      regionCode: p.regionCode || null,
+      shortName: p.shortName || null,
+      establishedYear: p.establishedYear || null,
+      projectCategory: p.projectCategory || null,
       projectBudget: form.value.projectBudget ? parseFloat(String(form.value.projectBudget).replace(/,/g, '')) : null,
       estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null
     }
-    updateProject(submitData).then(() => {
-      proxy.$modal.msgSuccess('保存成功')
-      router.push({ path: '/task/subproject', query: { parentId: form.value.parentId } })
+    addProject(submitData).then(() => {
+      proxy.$modal.msgSuccess('新增成功')
+      router.push('/task/subproject')
     })
   })
 }
 
 function cancel() {
-  router.push({ path: '/task/subproject', query: { parentId: form.value.parentId } })
+  router.push('/task/subproject')
 }
 
-onMounted(async () => {
-  // 加载部门平铺列表
+onMounted(() => {
+  // 加载部门平铺列表，用于显示部门名称
   request({ url: '/project/project/deptTreeAll', method: 'get' })
     .then(res => { deptFlatList.value = res.data || [] })
     .catch(() => {})
-
-  const taskId = route.params.projectId || route.params.id || route.query.taskId
-  if (!taskId) return
-  loading.value = true
-  try {
-    const res = await getProject(Number(taskId))
-    const data = res.data
-    Object.assign(form.value, {
-      projectId: data.projectId,
-      parentId: data.parentId,
-      projectName: data.projectName,
-      projectManagerId: data.projectManagerId,
-      taskCode: data.taskCode,
-      projectStage: data.projectStage,
-      estimatedWorkload: data.estimatedWorkload,
-      actualWorkload: data.actualWorkload,
-      projectBudget: data.projectBudget,
-      productionYear: data.productionYear,
-      batchId: data.batchId,
-      bankDemandNo: data.bankDemandNo,
-      softwareDemandNo: data.softwareDemandNo,
-      product: data.product,
-      startDate: data.startDate,
-      endDate: data.endDate,
-      internalClosureDate: data.internalClosureDate,
-      functionalTestDate: data.functionalTestDate,
-      productionVersionDate: data.productionVersionDate,
-      remark: data.remark,
-      taskCreateBy: data.taskCreateBy,
-      taskCreateTime: data.taskCreateTime,
-      taskUpdateBy: data.taskUpdateBy,
-      taskUpdateTime: data.taskUpdateTime
-    })
-    // 加载投产批次
-    if (data.productionYear) {
-      const batchRes = await request({ url: '/project/productionBatch/byYear', method: 'get', params: { productionYear: data.productionYear } })
-      batchOptions.value = batchRes.data || []
-      if (data.batchId) {
-        const found = batchOptions.value.find(b => b.batchId === data.batchId)
-        planProductionDateDisplay.value = found ? (found.planProductionDate ? found.planProductionDate.substring(0, 10) : '') : ''
-      }
-    }
-    // 加载父项目信息
-    if (data.parentId) {
-      const parentRes = await getProject(data.parentId)
-      selectedProject.value = parentRes.data
-      projectKeyword.value = parentRes.data.projectName || ''
-      searchDept.value = parentRes.data.projectDept ? Number(parentRes.data.projectDept) : null
-      if (parentRes.data.customerId) {
-        request({ url: `/project/customer/${parentRes.data.customerId}`, method: 'get' })
-          .then(r => { projectCustomerName.value = r.data.customerSimpleName || r.data.customerFullName || '' })
-          .catch(() => {})
-      }
-    }
-  } finally {
-    loading.value = false
-  }
 })
 </script>
 

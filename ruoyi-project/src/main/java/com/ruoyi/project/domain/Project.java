@@ -219,8 +219,11 @@ public class Project extends BaseEntity
     /** 子项目编号（在父项目内的简短标识，如 01、用户系统） */
     private String taskCode;
 
-    /** 投产批次(字典:sys_tcpc) */
-    private String productionBatch;
+    /** 投产批次ID */
+    private Long batchId;
+
+    /** 投产年份 */
+    private String productionYear;
 
     /** 提供内部闭包日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -230,8 +233,51 @@ public class Project extends BaseEntity
     @JsonFormat(pattern = "yyyy-MM-dd")
     private java.util.Date functionalTestDate;
 
+    /** 生产版本日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.util.Date productionVersionDate;
+
+    /** 总行需求号 */
+    private String bankDemandNo;
+
+    /** 软件中心需求编号 */
+    private String softwareDemandNo;
+
+    /** 二级产品 */
+    private String product;
+
+    /** 批次号（关联字段，非数据库字段）*/
+    private String batchNo;
+
+    /** 计划投产日期（关联字段，非数据库字段）*/
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.util.Date planProductionDate;
+
     /** 父项目名称（展示用，非 DB 字段，由 Mapper 关联查询填充） */
     private String parentProjectName;
+
+    /** 父项目收入确认年度（查询条件用，非 DB 字段） */
+    private String parentRevenueConfirmYear;
+
+    /** 任务创建人 */
+    private String taskCreateBy;
+
+    /** 任务创建时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.util.Date taskCreateTime;
+
+    /** 任务更新人 */
+    private String taskUpdateBy;
+
+    /** 任务更新时间 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private java.util.Date taskUpdateTime;
+
+    /** 任务创建人昵称（关联 sys_user，非 DB 字段） */
+    private String taskCreateByName;
+
+    /** 任务更新人昵称（关联 sys_user，非 DB 字段） */
+    private String taskUpdateByName;
 
     /** 删除标志(0正常 1删除) */
     private String delFlag;
@@ -908,8 +954,20 @@ public class Project extends BaseEntity
     public void setTaskCode(String taskCode)            { this.taskCode = taskCode; }
     public String getTaskCode()                         { return taskCode; }
 
-    public String getProductionBatch() { return productionBatch; }
-    public void setProductionBatch(String productionBatch) { this.productionBatch = productionBatch; }
+    public Long getBatchId()                            { return batchId; }
+    public void setBatchId(Long batchId)                { this.batchId = batchId; }
+    public String getProductionYear()                   { return productionYear; }
+    public void setProductionYear(String productionYear){ this.productionYear = productionYear; }
+    public String getBankDemandNo()                     { return bankDemandNo; }
+    public void setBankDemandNo(String bankDemandNo)    { this.bankDemandNo = bankDemandNo; }
+    public String getSoftwareDemandNo()                 { return softwareDemandNo; }
+    public void setSoftwareDemandNo(String v)           { this.softwareDemandNo = v; }
+    public String getProduct()                          { return product; }
+    public void setProduct(String product)              { this.product = product; }
+    public String getBatchNo()                          { return batchNo; }
+    public void setBatchNo(String batchNo)              { this.batchNo = batchNo; }
+    public java.util.Date getPlanProductionDate()       { return planProductionDate; }
+    public void setPlanProductionDate(java.util.Date d) { this.planProductionDate = d; }
 
     public java.util.Date getInternalClosureDate() { return internalClosureDate; }
     public void setInternalClosureDate(java.util.Date internalClosureDate) { this.internalClosureDate = internalClosureDate; }
@@ -917,8 +975,27 @@ public class Project extends BaseEntity
     public java.util.Date getFunctionalTestDate() { return functionalTestDate; }
     public void setFunctionalTestDate(java.util.Date functionalTestDate) { this.functionalTestDate = functionalTestDate; }
 
+    public java.util.Date getProductionVersionDate() { return productionVersionDate; }
+    public void setProductionVersionDate(java.util.Date productionVersionDate) { this.productionVersionDate = productionVersionDate; }
+
     public void setParentProjectName(String n)          { this.parentProjectName = n; }
     public String getParentProjectName()                { return parentProjectName; }
+
+    public String getParentRevenueConfirmYear()         { return parentRevenueConfirmYear; }
+    public void setParentRevenueConfirmYear(String y)   { this.parentRevenueConfirmYear = y; }
+
+    public String getTaskCreateBy()                     { return taskCreateBy; }
+    public void setTaskCreateBy(String taskCreateBy)    { this.taskCreateBy = taskCreateBy; }
+    public java.util.Date getTaskCreateTime()           { return taskCreateTime; }
+    public void setTaskCreateTime(java.util.Date t)     { this.taskCreateTime = t; }
+    public String getTaskUpdateBy()                     { return taskUpdateBy; }
+    public void setTaskUpdateBy(String taskUpdateBy)    { this.taskUpdateBy = taskUpdateBy; }
+    public java.util.Date getTaskUpdateTime()           { return taskUpdateTime; }
+    public void setTaskUpdateTime(java.util.Date t)     { this.taskUpdateTime = t; }
+    public String getTaskCreateByName()                 { return taskCreateByName; }
+    public void setTaskCreateByName(String n)           { this.taskCreateByName = n; }
+    public String getTaskUpdateByName()                 { return taskUpdateByName; }
+    public void setTaskUpdateByName(String n)           { this.taskUpdateByName = n; }
 
     public void setDelFlag(String delFlag) 
     {
@@ -1181,9 +1258,13 @@ public class Project extends BaseEntity
             .append("parentId", getParentId())
             .append("projectLevel", getProjectLevel())
             .append("taskCode", getTaskCode())
-            .append("productionBatch", getProductionBatch())
+            .append("batchId", getBatchId())
+            .append("productionYear", getProductionYear())
             .append("internalClosureDate", getInternalClosureDate())
             .append("functionalTestDate", getFunctionalTestDate())
+            .append("bankDemandNo", getBankDemandNo())
+            .append("softwareDemandNo", getSoftwareDemandNo())
+            .append("product", getProduct())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

@@ -164,7 +164,7 @@ public interface IProjectService
      * @param projectName 项目名称（模糊搜索）
      * @return 精简字段列表：projectId, projectName, projectCode
      */
-    public List<Map<String, Object>> searchProjectsByName(String projectName);
+    public List<Map<String, Object>> searchProjectsByName(String projectName, String projectDept);
 
     /**
      * 为导出填充附加字段：部门路径、参与人员名称、更新时间显示
@@ -202,4 +202,8 @@ public interface IProjectService
      * 关联合同到项目
      */
     public void bindContractToProject(Long projectId, Long contractId);
+
+    public List<String> searchTaskCode(String taskCode);
+
+    public List<String> searchTaskName(String projectName);
 }
