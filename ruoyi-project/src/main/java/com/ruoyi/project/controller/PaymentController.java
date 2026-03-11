@@ -95,7 +95,7 @@ public class PaymentController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:payment:export')")
     @Log(title = "款项管理", businessType = BusinessType.EXPORT)
-    @GetMapping("/export")
+    @PostMapping("/export")
     public void export(HttpServletResponse response, Payment payment)
     {
         startPage();

@@ -64,27 +64,33 @@ RUN sed -i 's|profile: D:/ruoyi/uploadPath|profile: /app/uploadPath|' \
     ruoyi-admin/src/main/resources/application.yml
 
 # 4. Create SpaController for Vue Router history mode fallback
+#    使用 ErrorController 实现：Spring MVC 先正常匹配所有 @RequestMapping，
+#    找不到 handler 才触发 404 error，由此控制器 fallback 到 index.html，
+#    不会与任何 API 路径（@GetMapping/@PostMapping 等）产生冲突。
 RUN cat > ruoyi-admin/src/main/java/com/ruoyi/web/controller/common/SpaController.java << 'JAVAEOF'
 package com.ruoyi.web.controller.common;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
- * SPA前端路由回退控制器
- * 将前端路由路径转发到index.html，支持Vue Router history模式
+ * SPA前端路由回退控制器（ErrorController 实现）
+ * Spring MVC 先正常路由，404 时才 fallback 到 index.html，
+ * 不干扰任何 API 路径的 GET/POST/PUT/DELETE。
  */
 @Controller
-public class SpaController
+public class SpaController implements ErrorController
 {
-    @GetMapping(value = {
-        "/{path:[^\\.]*}",
-        "/{path:[^\\.]*}/{subpath:[^\\.]*}",
-        "/{path:[^\\.]*}/{subpath:[^\\.]*}/{subsubpath:[^\\.]*}",
-        "/{path:[^\\.]*}/{subpath:[^\\.]*}/{subsubpath:[^\\.]*}/{id:[^\\.]*}"
-    })
-    public String forward()
+    @RequestMapping("/error")
+    public String handleError(HttpServletRequest request)
     {
+        Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+        if (status != null && Integer.parseInt(status.toString()) == 404) {
+            return "forward:/index.html";
+        }
         return "forward:/index.html";
     }
 }

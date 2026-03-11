@@ -60,7 +60,7 @@ public class ContractController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:contract:export')")
     @Log(title = "合同管理", businessType = BusinessType.EXPORT)
-    @GetMapping("/export")
+    @PostMapping("/export")
     public void export(HttpServletResponse response, Contract contract)
     {
         List<Contract> list = contractService.selectContractList(contract);

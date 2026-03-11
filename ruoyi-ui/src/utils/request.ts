@@ -126,8 +126,9 @@ service.interceptors.response.use((res: any) => {
 // 通用下载方法
 export function download(url: string, params: any, filename: string, config?: any) {
   downloadLoadingInstance = ElLoading.service({ text: "正在下载数据，请稍候", background: "rgba(0, 0, 0, 0.7)", })
-  return service.get(url, {
-    params,
+  return service.post(url, params, {
+    transformRequest: [(params: any) => { return tansParams(params) }],
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     responseType: 'blob',
     ...config
   }).then(async (data: any) => {
