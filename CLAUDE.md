@@ -372,9 +372,9 @@ AND (p.project_level IS NULL OR p.project_level = 0)
 
 Any new mapper query on `pm_project` that should return only top-level projects **must** include this filter. Sub-project queries explicitly use `and p.project_level = 1`.
 
-### Market Manager is NOT a Project Member
+### Project Members Include All Managers
 
-`marketManagerId` on `pm_project` must **not** be inserted into `pm_project_member`. Members: project manager, team leader, participants only. Sub-project members are also **not** inserted — they inherit the parent project's member list.
+`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list.
 
 ### Cross-module Permission
 

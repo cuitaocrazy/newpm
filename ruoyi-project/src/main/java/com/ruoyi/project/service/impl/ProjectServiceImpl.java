@@ -546,12 +546,19 @@ public class ProjectServiceImpl implements IProjectService
         projectMemberMapper.deleteByProjectId(projectId);
 
         // 2. 收集所有关联的用户ID（使用LinkedHashSet去重并保持顺序）
-        // 注意：市场经理不计入项目成员
         Set<Long> userIds = new LinkedHashSet<>();
 
         if (project.getProjectManagerId() != null)
         {
             userIds.add(project.getProjectManagerId());
+        }
+        if (project.getMarketManagerId() != null)
+        {
+            userIds.add(project.getMarketManagerId());
+        }
+        if (project.getSalesManagerId() != null)
+        {
+            userIds.add(project.getSalesManagerId());
         }
         if (project.getTeamLeaderId() != null)
         {
