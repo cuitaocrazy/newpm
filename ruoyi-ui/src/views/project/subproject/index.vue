@@ -92,6 +92,7 @@
 
     <el-table v-loading="loading" :data="subprojectList" border :row-style="{ height: 'auto' }" :cell-style="{ verticalAlign: 'middle' }">
       <el-table-column type="index" label="序号" width="55" align="center" />
+      <el-table-column label="所属主项目" prop="parentProjectName" min-width="160" show-overflow-tooltip v-if="columns.parentProjectName.visible" />
       <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible" />
       <el-table-column label="任务名称" prop="projectName" width="220" v-if="columns.projectName.visible">
         <template #default="scope">
@@ -100,7 +101,6 @@
           <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.projectName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="所属主项目" prop="parentProjectName" min-width="160" show-overflow-tooltip v-if="columns.parentProjectName.visible" />
       <el-table-column label="当前阶段" prop="projectStage" width="130" v-if="columns.projectStage.visible">
         <template #default="scope">
           <dict-tag :options="sys_xmjd" :value="scope.row.projectStage" />
