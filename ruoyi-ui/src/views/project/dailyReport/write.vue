@@ -499,19 +499,21 @@ async function handleSave() {
     }
     if (item.hasSubProject && item.taskRows) {
       // 有子任务的项目：遍历 taskRows，工时>0 的生成 detail
-      item.taskRows
-        .filter(t => t.workHours > 0)
-        .forEach(t => {
-          details.push({
-            projectId: item.projectId,
-            projectStage: item.projectStage,
-            workHours: t.workHours,
-            workContent: t.workContent,
-            entryType: 'work',
-            subProjectId: t.subProjectId,
-            workCategory: t.workCategory || null
-          })
+      for (const t of item.taskRows.filter(t => t.workHours > 0)) {
+        if (!t.workCategory) {
+          proxy.$modal.msgWarning(`项目"${item.projectName}"的任务"${t.taskName}"工时已填写，请选择工作任务类别`)
+          return
+        }
+        details.push({
+          projectId: item.projectId,
+          projectStage: item.projectStage,
+          workHours: t.workHours,
+          workContent: t.workContent,
+          entryType: 'work',
+          subProjectId: t.subProjectId,
+          workCategory: t.workCategory || null
         })
+      }
     } else if (!item.hasSubProject) {
       // 无子任务的项目：原有逻辑（工时>0 且内容非空）
       if (item.workHours > 0 && item.workContent && item.workContent.trim()) {
