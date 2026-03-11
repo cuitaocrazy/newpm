@@ -211,14 +211,12 @@ function submitForm() {
     if (!valid) return
     const parentId = route.query.parentId ? Number(route.query.parentId) : null
     const p = parentProject.value || {}
-    const taskCode = form.value.taskCode
-    const projectCode = p.projectCode ? `${p.projectCode}-${taskCode}` : null
     const submitData = {
       ...form.value,
       parentId,
       projectStatus: '0',
       projectLevel: 1,
-      projectCode,
+      projectCode: form.value.taskCode,
       projectDept: p.projectDept || null,
       industry: p.industry || null,
       region: p.region || null,
