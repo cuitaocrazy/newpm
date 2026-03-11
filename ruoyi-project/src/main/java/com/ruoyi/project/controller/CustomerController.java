@@ -51,7 +51,7 @@ public class CustomerController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:customer:export')")
     @Log(title = "客户管理", businessType = BusinessType.EXPORT)
-    @PostMapping("/export")
+    @GetMapping("/export")
     public void export(HttpServletResponse response, Customer customer)
     {
         List<Customer> list = customerService.selectCustomerList(customer);

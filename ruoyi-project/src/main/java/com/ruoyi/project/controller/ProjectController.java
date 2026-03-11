@@ -102,7 +102,7 @@ public class ProjectController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('project:project:export')")
     @Log(title = "项目管理", businessType = BusinessType.EXPORT)
-    @PostMapping("/export")
+    @GetMapping("/export")
     public void export(HttpServletResponse response, Project project)
     {
         List<Project> list = projectService.selectProjectList(project);
@@ -342,7 +342,7 @@ public class ProjectController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('revenue:company:export')")
     @Log(title = "收入确认", businessType = BusinessType.EXPORT)
-    @PostMapping("/revenue/export")
+    @GetMapping("/revenue/export")
     public void exportRevenue(HttpServletResponse response, Project project)
     {
         List<Project> list = projectService.selectProjectList(project);

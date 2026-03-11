@@ -124,19 +124,6 @@ export const constantRoutes = [
       }
     ]
   },
-  {
-    path: '/project/list/bind-contract',
-    component: Layout,
-    hidden: true,
-    children: [
-      {
-        path: ':projectId(\\d+)',
-        component: () => import('@/views/project/project/bind-contract.vue'),
-        name: 'BindContract',
-        meta: { title: '关联合同', activeMenu: '/project/list' }
-      }
-    ]
-  },
   // 合同：新增 / 编辑 / 详情 / 附件（父路径 /htkx/contract）
   {
     path: '/htkx/contract/add',

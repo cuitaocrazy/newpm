@@ -134,7 +134,8 @@ function setActiveMenu(route: any) {
   else if (path.includes('list/edit') ||
            path.includes('list/detail') ||
            path.includes('list/apply') ||
-           path.includes('list/attachment')) {
+           path.includes('list/attachment') ||
+           path.includes('list/bind-contract')) {
     route.meta.activeMenu = '/project/list'
   }
   // 子项目相关页面
