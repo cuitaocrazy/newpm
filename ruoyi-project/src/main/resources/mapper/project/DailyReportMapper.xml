@@ -51,6 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="subProjectStage"       column="detail_sub_project_stage"        />
             <result property="subProjectManagerId"   column="detail_sub_project_manager_id"   />
             <result property="subProjectManagerName" column="detail_sub_project_manager_name" />
+            <result property="subProjectTaskCode"    column="detail_sub_project_task_code"    />
             <result property="projectManagerName"    column="detail_project_manager_name"     />
         </collection>
     </resultMap>
@@ -104,6 +105,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dd.sub_project_id as detail_sub_project_id,
             dd.work_category  as detail_work_category,
             sp.project_name   as detail_sub_project_name,
+            sp.task_code          as detail_sub_project_task_code,
             sp.project_stage      as detail_sub_project_stage,
             sp.project_manager_id as detail_sub_project_manager_id,
             su.nick_name          as detail_sub_project_manager_name,

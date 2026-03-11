@@ -84,6 +84,9 @@ public class DailyReportDetail extends BaseEntity
     /** 子任务负责人姓名（扩展字段，非DB列） */
     private String subProjectManagerName;
 
+    /** 子任务编号（扩展字段，非DB列） */
+    private String subProjectTaskCode;
+
     /** 项目经理姓名（扩展字段，非DB列） */
     private String projectManagerName;
 
@@ -104,6 +107,9 @@ public class DailyReportDetail extends BaseEntity
 
     public void setSubProjectManagerName(String subProjectManagerName) { this.subProjectManagerName = subProjectManagerName; }
     public String getSubProjectManagerName() { return subProjectManagerName; }
+
+    public void setSubProjectTaskCode(String subProjectTaskCode) { this.subProjectTaskCode = subProjectTaskCode; }
+    public String getSubProjectTaskCode() { return subProjectTaskCode; }
 
     public void setProjectManagerName(String projectManagerName) { this.projectManagerName = projectManagerName; }
     public String getProjectManagerName() { return projectManagerName; }

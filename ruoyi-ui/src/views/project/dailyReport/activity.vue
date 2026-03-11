@@ -197,7 +197,7 @@
           <!-- 任务行：仅有 subProjectId 时显示 -->
           <div v-if="detail.subProjectId" class="detail-task-row">
             <span v-if="detail.subProjectManagerName" class="detail-manager">负责人：{{ detail.subProjectManagerName }}</span>
-            <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <el-tag size="small" type="success">{{ detail.subProjectTaskCode ? `[${detail.subProjectTaskCode}] ` : '' }}{{ detail.subProjectName }}</el-tag>
             <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
             <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
           </div>
@@ -259,7 +259,7 @@
             <span class="detail-hours">{{ detail.workHours }}h</span>
           </div>
           <div v-if="detail.subProjectId" class="detail-task-row">
-            <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <el-tag size="small" type="success">{{ detail.subProjectTaskCode ? `[${detail.subProjectTaskCode}] ` : '' }}{{ detail.subProjectName }}</el-tag>
             <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
             <span v-if="detail.subProjectManagerName" class="detail-manager">负责人：{{ detail.subProjectManagerName }}</span>
             <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
