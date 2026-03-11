@@ -682,6 +682,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by p.task_code, p.create_time
     </select>
 
+    <select id="selectSubProjectMaxSeq" resultType="int">
+        SELECT COALESCE(MAX(
+            CAST(SUBSTRING_INDEX(project_code, '-', -1) AS UNSIGNED)
+        ), 0)
+        FROM pm_project
+        WHERE parent_id = #{parentId}
+          AND project_level = 1
+          AND del_flag = '0'
+          AND project_code REGEXP '-[0-9]{7}$'
+    </select>
+
     <select id="selectProjectsHasSubProject" resultType="long">
         select distinct parent_id
         from pm_project

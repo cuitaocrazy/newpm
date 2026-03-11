@@ -215,7 +215,6 @@ function submitForm() {
       parentId,
       projectStatus: '0',
       projectLevel: 1,
-      projectCode: form.value.taskCode,
       projectDept: p.projectDept || null,
       industry: p.industry || null,
       region: p.region || null,

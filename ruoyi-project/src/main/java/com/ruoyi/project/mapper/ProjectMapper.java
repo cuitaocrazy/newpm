@@ -93,6 +93,9 @@ public interface ProjectMapper
     /** 获取子项目轻量选项（下拉用，仅返回 id/name/taskCode） */
     List<Map<String, Object>> selectSubProjectOptions(@Param("parentId") Long parentId);
 
+    /** 查询该父项目下子任务已用序号最大值（用于生成 project_code） */
+    int selectSubProjectMaxSeq(@Param("parentId") Long parentId);
+
     /** 批量判断哪些主项目有子项目，返回有子项目的 parentId 集合 */
     List<Long> selectProjectsHasSubProject(@Param("projectIds") List<Long> projectIds);
 

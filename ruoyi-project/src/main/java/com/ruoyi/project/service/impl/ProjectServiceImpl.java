@@ -118,9 +118,18 @@ public class ProjectServiceImpl implements IProjectService
     {
         project.setCreateTime(DateUtils.getNowDate());
         project.setUpdateTime(DateUtils.getNowDate());
-        // 子项目不走审批流，直接设为"审核通过"
+        // 子项目不走审批流，直接设为"审核通过"；并自动生成 project_code
         if (project.getProjectLevel() != null && project.getProjectLevel() == 1) {
             project.setApprovalStatus("1");
+            // 生成 project_code：父项目编号 + 7位递增序号（如 IT-HB-XX-2025-0000001）
+            if (project.getParentId() != null) {
+                Project parent = projectMapper.selectProjectByProjectId(project.getParentId());
+                if (parent != null && parent.getProjectCode() != null) {
+                    int maxSeq = projectMapper.selectSubProjectMaxSeq(project.getParentId());
+                    String code = String.format("%s-%07d", parent.getProjectCode(), maxSeq + 1);
+                    project.setProjectCode(code);
+                }
+            }
         }
         int rows = projectMapper.insertProject(project);
         syncProjectMembers(project);
