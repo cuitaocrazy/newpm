@@ -182,7 +182,7 @@ const form = ref({
 const rules = ref({
   taskCode:          [
     { required: true, message: '任务编号不能为空（同一主项目下需唯一，用于生成项目编号）', trigger: 'blur' },
-    { min: 16, max: 20, message: '任务编号长度为 16~20 位', trigger: 'blur' }
+    { max: 20, message: '任务编号最多 20 位', trigger: 'blur' }
   ],
   projectManagerId:  [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
   projectName:       [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],

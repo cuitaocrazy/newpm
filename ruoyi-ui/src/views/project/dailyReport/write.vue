@@ -102,10 +102,10 @@
               <!-- 第一行：项目经理 + 年度 + 项目名 + 阶段 -->
               <div class="prj-header">
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
-                <span class="prj-manager-label">项目：<b>{{ item.projectManagerName || '-' }}</b></span>
                 <el-tag v-if="item.revenueConfirmYear" size="small" type="warning" :style="yearTagStyle(item.revenueConfirmYear)" style="flex-shrink:0;">
                   {{ getDictLabel(sys_ndgl, item.revenueConfirmYear) }}
                 </el-tag>
+                <span class="prj-manager-label"><b>{{ item.projectManagerName || '-' }}</b></span>
                 <span class="prj-name">{{ item.projectName }}</span>
                 <span class="prj-workload-info">
                   预计人天：<strong>{{ item.estimatedWorkload != null ? item.estimatedWorkload : '-' }}</strong>
@@ -175,7 +175,6 @@
                   <div v-for="task in item.taskRows" :key="task.subProjectId" class="task-row">
                     <!-- 任务头（只读信息） -->
                     <div class="task-row-header">
-                      <span class="task-label">任务：</span>
                       <span class="task-name">{{ task.taskName }}</span>
                       <el-tag v-if="task.projectStage" size="small" type="info">{{ getStageName(task.projectStage) }}</el-tag>
                       <span class="task-manager">负责人：{{ task.projectManagerName }}</span>
