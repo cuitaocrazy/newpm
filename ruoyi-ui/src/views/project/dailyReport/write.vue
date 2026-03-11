@@ -118,9 +118,10 @@
               <template v-if="!item.hasSubProject">
                 <!-- 工作任务类型 -->
                 <div class="prj-category-row">
-                  <span class="hours-label">工作任务类型:</span>
-                  <el-select v-model="item.workCategory" placeholder="请选择工作任务类型" clearable
-                    size="small" style="width: 180px;" :disabled="!isEditable">
+                  <span class="hours-label">工作任务类型: <span style="color:#f56c6c;">*</span></span>
+                  <el-select v-model="item.workCategory" placeholder="请选择工作任务类型（必填）" clearable
+                    size="small" style="width: 180px;" :disabled="!isEditable"
+                    :class="{ 'is-required-error': item.workHours > 0 && !item.workCategory }">
                     <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
                   </el-select>
                 </div>
@@ -191,8 +192,9 @@
                         预计：<strong>{{ task.estimatedWorkload != null ? task.estimatedWorkload : '-' }}</strong>天
                         &nbsp;实际：<strong>{{ task.actualWorkload != null ? Number(task.actualWorkload).toFixed(3) : '-' }}</strong>天
                       </span>
-                      <el-select v-model="task.workCategory" placeholder="工作任务类别" clearable
-                        size="small" style="width: 150px; margin-left: 8px;" :disabled="!isEditable">
+                      <el-select v-model="task.workCategory" placeholder="工作任务类别（必填）" clearable
+                        size="small" style="width: 150px; margin-left: 8px;" :disabled="!isEditable"
+                        :class="{ 'is-required-error': task.workHours > 0 && !task.workCategory }">
                         <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
                       </el-select>
                     </div>
@@ -530,17 +532,23 @@ async function handleSave() {
         })
       }
     } else if (!item.hasSubProject) {
-      // 无子任务的项目：原有逻辑（工时>0 且内容非空）
-      if (item.workHours > 0 && item.workContent && item.workContent.trim()) {
-        details.push({
-          projectId: item.projectId,
-          projectStage: item.projectStage,
-          workHours: item.workHours,
-          workContent: item.workContent,
-          entryType: 'work',
-          subProjectId: null,
-          workCategory: item.workCategory || null
-        })
+      // 无子任务的项目：工时>0 时 workCategory 必须选择
+      if (item.workHours > 0) {
+        if (!item.workCategory) {
+          proxy.$modal.msgWarning(`项目"${item.projectName}"工时已填写，请选择工作任务类型`)
+          return
+        }
+        if (item.workContent && item.workContent.trim()) {
+          details.push({
+            projectId: item.projectId,
+            projectStage: item.projectStage,
+            workHours: item.workHours,
+            workContent: item.workContent,
+            entryType: 'work',
+            subProjectId: null,
+            workCategory: item.workCategory || null
+          })
+        }
       }
     }
   }
@@ -754,6 +762,11 @@ onMounted(async () => {
 .task-loading {
   text-align: center;
   padding: 12px 0;
+}
+
+/* 必填校验红框 */
+.is-required-error :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #f56c6c inset;
 }
 
 .leave-section {
