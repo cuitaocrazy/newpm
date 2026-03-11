@@ -30,7 +30,7 @@
           style="width: 200px;"
           value-key="projectName"
           @select="handleProjectSelect"
-          @clear="handleQuery"
+          @clear="() => { queryParams.projectId = null; handleQuery() }"
         />
       </el-form-item>
       <el-form-item label="开始日期">
@@ -304,7 +304,7 @@ const currentYearMonth = ref((() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 })())
-const queryParams = ref({ userId: '', deptId: null, projectName: null, reportDateStart: null, reportDateEnd: null })
+const queryParams = ref({ userId: '', deptId: null, projectName: null, projectId: null, reportDateStart: null, reportDateEnd: null })
 const reportData = ref([]) // 月度完整数据
 const userList = ref([])
 const projectDeptSelectRef = ref(null)
@@ -597,7 +597,11 @@ async function loadData() {
   const params = {}
   if (queryParams.value.userId) params.userId = queryParams.value.userId
   if (queryParams.value.deptId) params.deptId = queryParams.value.deptId
-  if (queryParams.value.projectName) params.projectName = queryParams.value.projectName
+  if (queryParams.value.projectId) {
+    params.projectId = queryParams.value.projectId
+  } else if (queryParams.value.projectName) {
+    params.projectName = queryParams.value.projectName
+  }
 
   if (listMode.value) {
     if (queryParams.value.reportDateStart) params.reportDateStart = queryParams.value.reportDateStart
@@ -612,7 +616,11 @@ async function loadData() {
 
 async function loadUsers() {
   const params = {}
-  if (queryParams.value.deptId) params.deptId = queryParams.value.deptId
+  if (queryParams.value.projectId) {
+    params.projectId = queryParams.value.projectId
+  } else {
+    if (queryParams.value.deptId) params.deptId = queryParams.value.deptId
+  }
   const res = await request({ url: '/project/dailyReport/activityUsers', method: 'get', params })
   userList.value = (res.data || []).map(u => ({
     userId: u.userId,
@@ -627,7 +635,7 @@ async function handleQuery() {
 }
 
 async function handleReset() {
-  queryParams.value = { userId: '', deptId: null, projectName: null, reportDateStart: null, reportDateEnd: null }
+  queryParams.value = { userId: '', deptId: null, projectName: null, projectId: null, reportDateStart: null, reportDateEnd: null }
   await loadUsers()
   loadData()
 }
@@ -641,6 +649,7 @@ async function fetchProjectSuggestions(keyword, callback) {
 
 function handleProjectSelect(item) {
   queryParams.value.projectName = item.projectName
+  queryParams.value.projectId = item.projectId || null
   handleQuery()
 }
 

@@ -68,6 +68,12 @@ public class DailyReport extends BaseEntity
     /** 查询条件：项目名称（模糊） */
     private String projectName;
 
+    /** 查询条件：项目ID（精确，按项目成员查人） */
+    private Long projectId;
+
+    public Long getProjectId() { return projectId; }
+    public void setProjectId(Long projectId) { this.projectId = projectId; }
+
     /** 假期摘要（月览接口用）格式: "leave:2.00,comp:1.00" */
     private String leaveSummary;
 

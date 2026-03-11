@@ -142,7 +142,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                   and p_filter.project_name like concat('%', #{projectName}, '%')
             )
         </if>
-        ${params.dataScope}
+        <if test="projectId != null">
+            and exists (
+                select 1 from pm_daily_report_detail dd_pid
+                where dd_pid.report_id = r.report_id
+                  and dd_pid.del_flag = '0'
+                  and (dd_pid.project_id = #{projectId}
+                       or dd_pid.project_id in (select project_id from pm_project where parent_id = #{projectId} and del_flag = '0'))
+            )
+        </if>
+        <if test="projectId == null">${params.dataScope}</if>
     </sql>
 
     <!-- 查询日报列表（不含明细） -->
@@ -249,11 +258,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_dept d on u.dept_id = d.dept_id
         <where>
             u.del_flag = '0' and u.status = '0'
-            <if test="deptId != null">
-                and (u.dept_id = #{deptId}
-                     or u.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            <if test="projectId != null">
+                and (
+                    u.user_id in (
+                        select project_manager_id from pm_project where project_id = #{projectId} and del_flag = '0'
+                        union
+                        select team_leader_id from pm_project where project_id = #{projectId} and del_flag = '0' and team_leader_id is not null
+                        union
+                        select user_id from pm_project_member where project_id = #{projectId} and is_active = '1' and del_flag = '0'
+                    )
+                )
             </if>
-            ${params.dataScope}
+            <if test="projectId == null">
+                <if test="deptId != null">
+                    and (u.dept_id = #{deptId}
+                         or u.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+                </if>
+                ${params.dataScope}
+            </if>
         </where>
         order by d.dept_name, u.nick_name
     </select>
