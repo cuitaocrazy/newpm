@@ -88,12 +88,35 @@
       </div>
     </el-card>
 
+    <!-- 本项目已分解的任务 -->
+    <el-card v-if="selectedProject" shadow="hover" style="margin-bottom: 15px;">
+      <template #header><span style="font-size: 16px; font-weight: bold;">本项目已分解的任务</span></template>
+      <el-table :data="siblingTasks" border size="small" style="width: 100%">
+        <el-table-column type="index" label="序号" width="55" align="center" />
+        <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
+        <el-table-column label="任务编号" prop="taskCode" width="130" />
+        <el-table-column label="产品" prop="product" width="120">
+          <template #default="scope">
+            <dict-tag :options="sys_product" :value="scope.row.product" />
+          </template>
+        </el-table-column>
+        <el-table-column label="任务名称" prop="projectName" min-width="160" show-overflow-tooltip />
+        <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
+        <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
+          <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
+        </el-table-column>
+        <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
+          <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
+        </el-table-column>
+        <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" />
+      </el-table>
+    </el-card>
+
     <!-- 第二步：填写任务信息 -->
     <el-card v-if="selectedProject" shadow="hover" style="margin-bottom: 15px;">
       <template #header><span style="font-size: 16px; font-weight: bold;">二、任务信息</span></template>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="130px">
 
-        <!-- 基本信息 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="任务名称" prop="projectName">
@@ -118,8 +141,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-
-        <!-- 需求/产品 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="总行需求号">
@@ -135,12 +156,15 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="产品">
-              <dict-select v-model="form.product" dict-type="sys_product" placeholder="请选择二级产品" clearable />
+              <dict-select v-model="form.product" dict-type="sys_product" placeholder="请选择产品" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排期状态">
+              <dict-select v-model="form.scheduleStatus" dict-type="sys_pqzt" placeholder="请选择排期状态" clearable />
             </el-form-item>
           </el-col>
         </el-row>
-
-        <!-- 工作量与预算 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="预估工作量" prop="estimatedWorkload">
@@ -164,8 +188,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-
-        <!-- 投产批次联动 -->
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="投产年度">
@@ -186,8 +208,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-
-        <!-- 时间规划 -->
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="启动日期" prop="startDate">
@@ -223,9 +243,27 @@
                 value-format="YYYY-MM-DD" style="width: 100%" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="实际投产日期">
+              <el-date-picker v-model="form.actualProductionDate" type="date" placeholder="选填"
+                value-format="YYYY-MM-DD" style="width: 100%" />
+            </el-form-item>
+          </el-col>
         </el-row>
-
-        <!-- 备注 -->
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="功能点说明">
+              <el-input v-model="form.functionDescription" type="textarea" :rows="3" placeholder="请输入功能点说明（选填）" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="实施计划">
+              <el-input v-model="form.implementationPlan" type="textarea" :rows="3" placeholder="请输入实施计划（选填）" />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="备注">
@@ -253,8 +291,8 @@ import request from '@/utils/request'
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 
-const { industry, sys_yjqy, sys_xmfl, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_ndgl, sys_qrzt } =
-  proxy.useDict('industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_ndgl', 'sys_qrzt')
+const { industry, sys_yjqy, sys_xmfl, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_ndgl, sys_qrzt, sys_product } =
+  proxy.useDict('industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_ndgl', 'sys_qrzt', 'sys_product')
 
 const formRef = ref()
 const searchDept = ref(null)
@@ -264,14 +302,17 @@ const projectCustomerName = ref('')
 const deptFlatList = ref([])
 const batchOptions = ref([])
 const planProductionDateDisplay = ref('')
+const siblingTasks = ref([])
 
 const form = ref({
   projectName: null, projectManagerId: null, taskCode: null, projectStage: null,
   productionYear: null, batchId: null,
   bankDemandNo: null, softwareDemandNo: null, product: null,
+  scheduleStatus: null, functionDescription: null, implementationPlan: null,
   estimatedWorkload: null, projectBudget: null,
   startDate: null, endDate: null,
   internalClosureDate: null, functionalTestDate: null, productionVersionDate: null,
+  actualProductionDate: null,
   remark: null
 })
 
@@ -309,10 +350,16 @@ function formatAmount(amount) {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatDate(val) {
+  if (!val) return '-'
+  return String(val).substring(0, 10)
+}
+
 function onDeptChange() {
   projectKeyword.value = ''
   selectedProject.value = null
   projectCustomerName.value = ''
+  siblingTasks.value = []
   resetBatch()
 }
 
@@ -330,7 +377,7 @@ async function onProjectSelect(item) {
     selectedProject.value = res.data
     projectKeyword.value = item.projectName
     projectCustomerName.value = ''
-    // 加载客户名称
+    loadSiblingTasks(item.projectId)
     if (res.data.customerId) {
       request({ url: `/project/customer/${res.data.customerId}`, method: 'get' })
         .then(r => { projectCustomerName.value = r.data.customerSimpleName || r.data.customerFullName || '' })
@@ -344,10 +391,17 @@ async function onProjectSelect(item) {
 function onProjectClear() {
   selectedProject.value = null
   projectCustomerName.value = ''
+  siblingTasks.value = []
   resetBatch()
 }
 
-// watch 监听投产年度变化，自动加载批次列表
+async function loadSiblingTasks(parentId) {
+  try {
+    const res = await request({ url: '/project/project/siblingTasks', method: 'get', params: { parentId } })
+    siblingTasks.value = res.data || []
+  } catch (e) { console.error('加载兄弟任务失败', e) }
+}
+
 watch(() => form.value.productionYear, async (year) => {
   form.value.batchId = null
   planProductionDateDisplay.value = ''
@@ -358,7 +412,6 @@ watch(() => form.value.productionYear, async (year) => {
     batchOptions.value = res.data || []
   } catch (e) { console.error('加载批次失败', e) }
 })
-
 
 function onBatchChange(batchId) {
   const found = batchOptions.value.find(b => b.batchId === batchId)
@@ -404,7 +457,6 @@ function cancel() {
 }
 
 onMounted(() => {
-  // 加载部门平铺列表，用于显示部门名称
   request({ url: '/project/project/deptTreeAll', method: 'get' })
     .then(res => { deptFlatList.value = res.data || [] })
     .catch(() => {})

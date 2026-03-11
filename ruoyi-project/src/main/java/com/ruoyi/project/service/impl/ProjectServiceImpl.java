@@ -223,6 +223,11 @@ public class ProjectServiceImpl implements IProjectService
     }
 
     @Override
+    public List<Map<String, Object>> selectSiblingTasks(Long parentId) {
+        return projectMapper.selectSiblingTasks(parentId);
+    }
+
+    @Override
     public List<Long> selectProjectsHasSubProject(List<Long> projectIds) {
         if (projectIds == null || projectIds.isEmpty()) return Collections.emptyList();
         return projectMapper.selectProjectsHasSubProject(projectIds);

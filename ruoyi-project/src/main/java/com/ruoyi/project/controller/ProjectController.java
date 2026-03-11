@@ -89,6 +89,15 @@ public class ProjectController extends BaseController
     }
 
     /**
+     * 获取同父项目下所有兄弟任务（分解/编辑/详情页展示）
+     */
+    @GetMapping("/siblingTasks")
+    public AjaxResult siblingTasks(@RequestParam Long parentId)
+    {
+        return success(projectService.selectSiblingTasks(parentId));
+    }
+
+    /**
      * 批量判断哪些项目有子项目（无需权限，日报场景使用）
      */
     @GetMapping("/projectsHasSubProject")

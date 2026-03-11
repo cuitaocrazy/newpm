@@ -73,6 +73,30 @@
         </div>
       </el-card>
 
+      <!-- 本项目已分解的任务 -->
+      <el-card v-if="selectedProject" shadow="hover" style="margin-bottom: 15px;">
+        <template #header><span style="font-size: 16px; font-weight: bold;">本项目已分解的任务</span></template>
+        <el-table :data="siblingTasks" border size="small" style="width: 100%">
+          <el-table-column type="index" label="序号" width="55" align="center" />
+          <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
+          <el-table-column label="任务编号" prop="taskCode" width="130" />
+          <el-table-column label="产品" prop="product" width="120">
+            <template #default="scope">
+              <dict-tag :options="sys_product" :value="scope.row.product" />
+            </template>
+          </el-table-column>
+          <el-table-column label="任务名称" prop="projectName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
+          <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
+            <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
+          </el-table-column>
+          <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
+            <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
+          </el-table-column>
+          <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" />
+        </el-table>
+      </el-card>
+
       <!-- 二、任务信息 -->
       <el-card shadow="hover" style="margin-bottom: 15px;">
         <template #header><span style="font-size: 16px; font-weight: bold;">二、任务信息</span></template>
@@ -85,8 +109,11 @@
           </el-descriptions-item>
           <el-descriptions-item label="总行需求号">{{ form.bankDemandNo || '-' }}</el-descriptions-item>
           <el-descriptions-item label="软件中心需求编号">{{ form.softwareDemandNo || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="产品" :span="2">
+          <el-descriptions-item label="产品">
             <dict-tag :options="sys_product" :value="form.product" />
+          </el-descriptions-item>
+          <el-descriptions-item label="排期状态">
+            <dict-tag :options="sys_pqzt" :value="form.scheduleStatus" />
           </el-descriptions-item>
           <el-descriptions-item label="预估工作量">
             {{ form.estimatedWorkload != null ? form.estimatedWorkload + ' 人天' : '-' }}
@@ -106,9 +133,16 @@
           </el-descriptions-item>
           <el-descriptions-item label="启动日期">{{ form.startDate || '-' }}</el-descriptions-item>
           <el-descriptions-item label="结束日期">{{ form.endDate || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="内部B包日期">{{ form.internalClosureDate || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="功能测试版本日期">{{ form.functionalTestDate || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="生产版本日期">{{ form.productionVersionDate || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="内部B包日期">{{ formatDate(form.internalClosureDate) }}</el-descriptions-item>
+          <el-descriptions-item label="功能测试版本日期">{{ formatDate(form.functionalTestDate) }}</el-descriptions-item>
+          <el-descriptions-item label="生产版本日期">{{ formatDate(form.productionVersionDate) }}</el-descriptions-item>
+          <el-descriptions-item label="实际投产日期">{{ formatDate(form.actualProductionDate) }}</el-descriptions-item>
+          <el-descriptions-item label="功能点说明" :span="2">
+            <div class="text-content">{{ form.functionDescription || '-' }}</div>
+          </el-descriptions-item>
+          <el-descriptions-item label="实施计划" :span="2">
+            <div class="text-content">{{ form.implementationPlan || '-' }}</div>
+          </el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">
             <div class="text-content">{{ form.remark || '-' }}</div>
           </el-descriptions-item>
@@ -143,8 +177,8 @@ const { proxy } = getCurrentInstance()
 const router = useRouter()
 const route = useRoute()
 
-const { industry, sys_yjqy, sys_xmfl, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_ndgl, sys_qrzt, sys_xmjd, sys_product } =
-  proxy.useDict('industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_ndgl', 'sys_qrzt', 'sys_xmjd', 'sys_product')
+const { industry, sys_yjqy, sys_xmfl, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_ndgl, sys_qrzt, sys_xmjd, sys_product, sys_pqzt } =
+  proxy.useDict('industry', 'sys_yjqy', 'sys_xmfl', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_ndgl', 'sys_qrzt', 'sys_xmjd', 'sys_product', 'sys_pqzt')
 
 const loading = ref(false)
 const form = ref({})
@@ -152,6 +186,7 @@ const selectedProject = ref(null)
 const projectCustomerName = ref('')
 const parentProjectDept = ref(null)
 const deptFlatList = ref([])
+const siblingTasks = ref([])
 
 function getDeptName(deptId) {
   if (!deptId) return '-'
@@ -177,6 +212,11 @@ function formatAmount(value) {
   return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function formatDate(val) {
+  if (!val) return '-'
+  return String(val).substring(0, 10)
+}
+
 function goBack() {
   router.push({ path: '/task/subproject', query: { parentId: form.value.parentId } })
 }
@@ -196,6 +236,9 @@ onMounted(async () => {
       const parentRes = await getProject(form.value.parentId)
       selectedProject.value = parentRes.data
       parentProjectDept.value = parentRes.data.projectDept ? Number(parentRes.data.projectDept) : null
+      request({ url: '/project/project/siblingTasks', method: 'get', params: { parentId: form.value.parentId } })
+        .then(r => { siblingTasks.value = r.data || [] })
+        .catch(() => {})
       if (parentRes.data.customerId) {
         request({ url: `/project/customer/${parentRes.data.customerId}`, method: 'get' })
           .then(r => { projectCustomerName.value = r.data.customerSimpleName || r.data.customerFullName || '' })

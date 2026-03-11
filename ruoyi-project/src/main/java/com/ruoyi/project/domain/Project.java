@@ -237,6 +237,19 @@ public class Project extends BaseEntity
     @JsonFormat(pattern = "yyyy-MM-dd")
     private java.util.Date productionVersionDate;
 
+    /** 排期状态（字典 sys_pqzt） */
+    private String scheduleStatus;
+
+    /** 功能点说明 */
+    private String functionDescription;
+
+    /** 实施计划 */
+    private String implementationPlan;
+
+    /** 实际投产日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private java.util.Date actualProductionDate;
+
     /** 总行需求号 */
     private String bankDemandNo;
 
@@ -977,6 +990,18 @@ public class Project extends BaseEntity
 
     public java.util.Date getProductionVersionDate() { return productionVersionDate; }
     public void setProductionVersionDate(java.util.Date productionVersionDate) { this.productionVersionDate = productionVersionDate; }
+
+    public String getScheduleStatus() { return scheduleStatus; }
+    public void setScheduleStatus(String scheduleStatus) { this.scheduleStatus = scheduleStatus; }
+
+    public String getFunctionDescription() { return functionDescription; }
+    public void setFunctionDescription(String functionDescription) { this.functionDescription = functionDescription; }
+
+    public String getImplementationPlan() { return implementationPlan; }
+    public void setImplementationPlan(String implementationPlan) { this.implementationPlan = implementationPlan; }
+
+    public java.util.Date getActualProductionDate() { return actualProductionDate; }
+    public void setActualProductionDate(java.util.Date actualProductionDate) { this.actualProductionDate = actualProductionDate; }
 
     public void setParentProjectName(String n)          { this.parentProjectName = n; }
     public String getParentProjectName()                { return parentProjectName; }

@@ -99,6 +99,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="internalClosureDate"   column="internal_closure_date" />
         <result property="functionalTestDate"    column="functional_test_date" />
         <result property="productionVersionDate" column="production_version_date" />
+        <result property="scheduleStatus"        column="schedule_status" />
+        <result property="functionDescription"   column="function_description" />
+        <result property="implementationPlan"    column="implementation_plan" />
+        <result property="actualProductionDate"  column="actual_production_date" />
         <result property="taskCreateBy"       column="task_create_by" />
         <result property="taskCreateTime"     column="task_create_time" />
         <result property="taskUpdateBy"       column="task_update_by" />
@@ -391,6 +395,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.batch_id, p.production_year,
                p.bank_demand_no, p.software_demand_no, p.product,
                p.internal_closure_date, p.functional_test_date, p.production_version_date,
+               p.schedule_status, p.function_description, p.implementation_plan, p.actual_production_date,
                p.task_create_by, p.task_create_time, p.task_update_by, p.task_update_time,
                u_tc.nick_name AS task_create_by_name,
                u_tu.nick_name AS task_update_by_name,
@@ -486,6 +491,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="softwareDemandNo != null">software_demand_no,</if>
             <if test="product != null">product,</if>
             <if test="productionVersionDate != null">production_version_date,</if>
+            <if test="scheduleStatus != null">schedule_status,</if>
+            <if test="functionDescription != null">function_description,</if>
+            <if test="implementationPlan != null">implementation_plan,</if>
+            <if test="actualProductionDate != null">actual_production_date,</if>
             <if test="taskCreateBy != null">task_create_by,</if>
             <if test="taskCreateTime != null">task_create_time,</if>
             <if test="taskUpdateBy != null">task_update_by,</if>
@@ -564,6 +573,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="softwareDemandNo != null">#{softwareDemandNo},</if>
             <if test="product != null">#{product},</if>
             <if test="productionVersionDate != null">#{productionVersionDate},</if>
+            <if test="scheduleStatus != null">#{scheduleStatus},</if>
+            <if test="functionDescription != null">#{functionDescription},</if>
+            <if test="implementationPlan != null">#{implementationPlan},</if>
+            <if test="actualProductionDate != null">#{actualProductionDate},</if>
             <if test="taskCreateBy != null">#{taskCreateBy},</if>
             <if test="taskCreateTime != null">#{taskCreateTime},</if>
             <if test="taskUpdateBy != null">#{taskUpdateBy},</if>
@@ -645,6 +658,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="internalClosureDate != null">internal_closure_date = #{internalClosureDate},</if>
             <if test="functionalTestDate != null">functional_test_date = #{functionalTestDate},</if>
             <if test="productionVersionDate != null">production_version_date = #{productionVersionDate},</if>
+            <if test="scheduleStatus != null">schedule_status = #{scheduleStatus},</if>
+            <if test="functionDescription != null">function_description = #{functionDescription},</if>
+            <if test="implementationPlan != null">implementation_plan = #{implementationPlan},</if>
+            <if test="actualProductionDate != null">actual_production_date = #{actualProductionDate},</if>
             <if test="taskCreateBy != null">task_create_by = #{taskCreateBy},</if>
             <if test="taskCreateTime != null">task_create_time = #{taskCreateTime},</if>
             <if test="taskUpdateBy != null">task_update_by = #{taskUpdateBy},</if>
@@ -758,6 +775,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           and p.project_level = 1
           and (p.project_stage is null or p.project_stage != '11')
           and (p.project_status is null or p.project_status = '0')
+        order by p.task_code, p.create_time
+    </select>
+
+    <select id="selectSiblingTasks" resultType="map">
+        select p.project_id          as "projectId",
+               p.task_code           as "taskCode",
+               p.project_name        as "projectName",
+               p.product             as "product",
+               p.estimated_workload  as "estimatedWorkload",
+               p.functional_test_date as "functionalTestDate",
+               p.batch_id            as "batchId",
+               pb.batch_no           as "batchNo",
+               pb.plan_production_date as "planProductionDate",
+               u.nick_name           as "projectManagerName"
+        from pm_project p
+        left join sys_user u on p.project_manager_id = u.user_id
+        left join pm_production_batch pb on p.batch_id = pb.batch_id
+        where p.del_flag = '0'
+          and p.parent_id = #{parentId}
+          and p.project_level = 1
         order by p.task_code, p.create_time
     </select>
 
