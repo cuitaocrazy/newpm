@@ -60,15 +60,23 @@ public class GlobalExceptionHandler
     }
 
     /**
-     * 请求方式不支持
+     * 请求方式不支持。
+     * GET 请求通常是浏览器刷新 SPA 路由（如 /login 页面），转发到 index.html；
+     * 其他方法的错误调用返回 405 JSON。
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public AjaxResult handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException e,
-            HttpServletRequest request)
+    public void handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException e,
+            HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         String requestURI = request.getRequestURI();
         log.error("请求地址'{}',不支持'{}'请求", requestURI, e.getMethod());
-        return AjaxResult.error(e.getMessage());
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            request.getRequestDispatcher("/index.html").forward(request, response);
+        } else {
+            response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":405,\"msg\":\"" + e.getMessage() + "\"}");
+        }
     }
 
     /**
