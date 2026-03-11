@@ -159,7 +159,7 @@
     </el-card>
 
     <!-- 抽屉（团队模式查看某天详情） -->
-    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="780px">
+    <el-drawer v-model="drawerVisible" :title="drawerTitle" size="1000px">
       <div style="display: flex; gap: 24px; padding: 14px 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px;">
         <div class="stat-box"><div class="stat-num">{{ drawerStats.count }}</div><div class="stat-label">已提交</div></div>
         <div class="stat-box"><div class="stat-num">{{ drawerStats.totalHours }}h</div><div class="stat-label">总工时</div></div>
@@ -221,7 +221,7 @@
     </el-drawer>
 
     <!-- 个人日报抽屉（选人后打开） -->
-    <el-drawer v-model="personDrawerVisible" :title="personDrawerTitle" size="780px">
+    <el-drawer v-model="personDrawerVisible" :title="personDrawerTitle" size="1000px">
       <div style="display: flex; gap: 24px; padding: 14px 16px; background: #f5f7fa; border-radius: 8px; margin-bottom: 16px;">
         <div class="stat-box"><div class="stat-num">{{ personStats.days }}</div><div class="stat-label">已填报天</div></div>
         <div class="stat-box"><div class="stat-num">{{ personStats.totalHours }}h</div><div class="stat-label">累计工时</div></div>
@@ -739,9 +739,10 @@ onMounted(async () => {
 .detail-task-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   margin-bottom: 4px;
+  overflow: hidden;
 }
 .detail-row-prefix {
   font-size: 12px;
@@ -765,6 +766,14 @@ onMounted(async () => {
   font-weight: 700;
   font-size: 14px;
   white-space: nowrap;
+}
+/* 项目名 tag 可收缩截断，避免撑破行 */
+.detail-project-row .el-tag:nth-child(2),
+.detail-task-row .el-tag:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+  flex-shrink: 1;
 }
 .detail-content {
   font-size: 13px;
