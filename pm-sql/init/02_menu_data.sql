@@ -378,3 +378,26 @@ VALUES
 -- ⑥ admin 角色授权
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
   (1, 2263), (1, 2264), (1, 2265), (1, 2266), (1, 2267), (1, 2268), (1, 2269), (1, 2270);
+
+-- ----------------------------
+-- 投产批次管理菜单
+-- ----------------------------
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('投产批次管理', '1', '1', 'productionBatch', 'project/productionBatch/index', 1, 0, 'C', '0', '0', 'project:productionBatch:list', '#', 'admin', sysdate(), '', null, '投产批次管理菜单');
+
+SELECT @productionBatchMenuId := LAST_INSERT_ID();
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('投产批次管理查询', @productionBatchMenuId, '1', '#', '', 1, 0, 'F', '0', '0', 'project:productionBatch:query', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('投产批次管理新增', @productionBatchMenuId, '2', '#', '', 1, 0, 'F', '0', '0', 'project:productionBatch:add', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('投产批次管理修改', @productionBatchMenuId, '3', '#', '', 1, 0, 'F', '0', '0', 'project:productionBatch:edit', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('投产批次管理删除', @productionBatchMenuId, '4', '#', '', 1, 0, 'F', '0', '0', 'project:productionBatch:remove', '#', 'admin', sysdate(), '', null, '');
+
+insert into sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+values('投产批次管理导出', @productionBatchMenuId, '5', '#', '', 1, 0, 'F', '0', '0', 'project:productionBatch:export', '#', 'admin', sysdate(), '', null, '');

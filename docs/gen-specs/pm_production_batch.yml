@@ -1,0 +1,116 @@
+basicInfo:
+  tableName: pm_production_batch
+  tableComment: 投产批次管理
+  className: ProductionBatch
+  functionAuthor: ruoyi
+  remark: ""
+
+columns:
+  batch_id:
+    columnComment: 批次ID
+    columnType: bigint
+    javaType: Long
+    javaField: batchId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  batch_no:
+    columnComment: 批次号
+    columnType: varchar(50)
+    javaType: String
+    javaField: batchNo
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+
+  sort_order:
+    columnComment: 排序
+    columnType: int
+    javaType: Integer
+    javaField: sortOrder
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  production_year:
+    columnComment: 投产年份
+    columnType: varchar(10)
+    javaType: String
+    javaField: productionYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: sys_ndgl
+
+  plan_production_date:
+    columnComment: 计划投产日期
+    columnType: date
+    javaType: Date
+    javaField: planProductionDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: BETWEEN
+    isRequired: true
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: productionBatch
+  functionName: 投产批次管理
+  parentMenuId: 1
+
+customizations:
+  batch_no_select:
+    intent: "查询条件的批次号改为下拉选，数据从本表 batch_no 列获取"
+    component:
+      type: el-select
+      props:
+        clearable: true
+        placeholder: "请选择批次号"
+    bindTo: batch_no
+    service:
+      endpoint: "GET /project/productionBatch/batchNoOptions"
+      source: "new"
+      returns: "[{ batchNo }]"
+      newApi: true
+    notes: "仅用于查询条件，新增/编辑中 batch_no 保持 input 输入"

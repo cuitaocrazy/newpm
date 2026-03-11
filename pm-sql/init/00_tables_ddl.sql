@@ -1126,5 +1126,20 @@ CREATE TABLE IF NOT EXISTS `pm_workload_correct_log` (
   KEY `idx_project_id` (`project_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工作量补正日志';
 
-
+-- ----------------------------
+-- 投产批次管理
+-- ----------------------------
+CREATE TABLE `pm_production_batch` (
+  `batch_id`             bigint       NOT NULL AUTO_INCREMENT                   COMMENT '批次ID',
+  `batch_no`             varchar(50)  NOT NULL                                  COMMENT '批次号',
+  `sort_order`           int          NOT NULL DEFAULT 0                        COMMENT '排序',
+  `production_year`      varchar(10)  NOT NULL                                  COMMENT '投产年份(字典:sys_ndgl)',
+  `plan_production_date` date         NOT NULL                                  COMMENT '计划投产日期',
+  `remark`               varchar(500) DEFAULT NULL                              COMMENT '备注',
+  `create_by`            varchar(64)  DEFAULT ''                                COMMENT '创建者',
+  `create_time`          datetime     DEFAULT NULL                              COMMENT '创建时间',
+  `update_by`            varchar(64)  DEFAULT ''                                COMMENT '更新者',
+  `update_time`          datetime     DEFAULT NULL                              COMMENT '更新时间',
+  PRIMARY KEY (`batch_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='投产批次管理';
 

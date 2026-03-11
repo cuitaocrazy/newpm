@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.ProductionBatchMapper">
+    
+    <resultMap type="ProductionBatch" id="ProductionBatchResult">
+        <result property="batchId"    column="batch_id"    />
+        <result property="batchNo"    column="batch_no"    />
+        <result property="sortOrder"    column="sort_order"    />
+        <result property="productionYear"    column="production_year"    />
+        <result property="planProductionDate"    column="plan_production_date"    />
+        <result property="remark"    column="remark"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectProductionBatchVo">
+        select batch_id, batch_no, sort_order, production_year, plan_production_date, remark, create_by, create_time, update_by, update_time from pm_production_batch
+    </sql>
+
+    <select id="selectProductionBatchList" parameterType="ProductionBatch" resultMap="ProductionBatchResult">
+        <include refid="selectProductionBatchVo"/>
+        <where>  
+            <if test="batchNo != null  and batchNo != ''"> and batch_no = #{batchNo}</if>
+            <if test="productionYear != null  and productionYear != ''"> and production_year = #{productionYear}</if>
+            <if test="params.beginPlanProductionDate != null and params.beginPlanProductionDate != '' and params.endPlanProductionDate != null and params.endPlanProductionDate != ''"> and plan_production_date between #{params.beginPlanProductionDate} and #{params.endPlanProductionDate}</if>
+        </where>
+    </select>
+    
+    <select id="selectProductionBatchByBatchId" parameterType="Long" resultMap="ProductionBatchResult">
+        <include refid="selectProductionBatchVo"/>
+        where batch_id = #{batchId}
+    </select>
+
+    <insert id="insertProductionBatch" parameterType="ProductionBatch" useGeneratedKeys="true" keyProperty="batchId">
+        insert into pm_production_batch
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="batchNo != null and batchNo != ''">batch_no,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="productionYear != null and productionYear != ''">production_year,</if>
+            <if test="planProductionDate != null">plan_production_date,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="batchNo != null and batchNo != ''">#{batchNo},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="productionYear != null and productionYear != ''">#{productionYear},</if>
+            <if test="planProductionDate != null">#{planProductionDate},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProductionBatch" parameterType="ProductionBatch">
+        update pm_production_batch
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="batchNo != null and batchNo != ''">batch_no = #{batchNo},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="productionYear != null and productionYear != ''">production_year = #{productionYear},</if>
+            <if test="planProductionDate != null">plan_production_date = #{planProductionDate},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where batch_id = #{batchId}
+    </update>
+
+    <delete id="deleteProductionBatchByBatchId" parameterType="Long">
+        delete from pm_production_batch where batch_id = #{batchId}
+    </delete>
+
+    <delete id="deleteProductionBatchByBatchIds" parameterType="String">
+        delete from pm_production_batch where batch_id in
+        <foreach item="batchId" collection="array" open="(" separator="," close=")">
+            #{batchId}
+        </foreach>
+    </delete>
+
+    <select id="selectBatchNoOptions" resultType="String">
+        select distinct batch_no from pm_production_batch order by batch_no
+    </select>
+</mapper>
