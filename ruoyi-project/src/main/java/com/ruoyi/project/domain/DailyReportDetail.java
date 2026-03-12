@@ -87,8 +87,14 @@ public class DailyReportDetail extends BaseEntity
     /** 子任务编号（扩展字段，非DB列） */
     private String subProjectTaskCode;
 
+    /** 子任务批次号（扩展字段，非DB列） */
+    private String subProjectBatchNo;
+
     /** 项目经理姓名（扩展字段，非DB列） */
     private String projectManagerName;
+
+    public void setSubProjectBatchNo(String subProjectBatchNo) { this.subProjectBatchNo = subProjectBatchNo; }
+    public String getSubProjectBatchNo() { return subProjectBatchNo; }
 
     public void setSubProjectId(Long subProjectId) { this.subProjectId = subProjectId; }
     public Long getSubProjectId() { return subProjectId; }
