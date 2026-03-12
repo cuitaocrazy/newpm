@@ -207,7 +207,8 @@
             v-if="!scope.row.isSummaryRow"
             type="primary"
             class="project-name-cell"
-            @click="handleRevenueView(scope.row)"
+            :href="`/revenue/company/detail/${scope.row.projectId}?mode=view`"
+            @click.prevent="handleRevenueView(scope.row)"
           >{{ scope.row.projectName }}</el-link>
         </template>
       </el-table-column>

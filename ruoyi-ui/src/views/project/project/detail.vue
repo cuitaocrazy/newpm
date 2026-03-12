@@ -129,7 +129,7 @@
               <div v-if="selectedParticipants.length > 0" class="selected-participants">
                 <el-tag v-for="user in selectedParticipants" :key="user.userId"
                   type="info" class="participant-tag">
-                  {{ user.nickName }}
+                  {{ user.nickName }}<span v-if="user.actualWorkload > 0" style="margin-left:4px;color:#409eff;">{{ user.actualWorkload }}人天</span>
                 </el-tag>
               </div>
               <span v-else style="color: #909399;">暂无参与人员</span>
@@ -206,6 +206,59 @@
           {{ formatAmount(form.purchaseCost) }} 元
         </el-descriptions-item>
       </el-descriptions>
+    </el-card>
+
+    <!-- 项目关联任务列表 -->
+    <el-card shadow="never" class="detail-card">
+      <template #header>
+        <span class="card-title">项目关联任务列表</span>
+      </template>
+      <el-table :data="projectTaskList" border size="small" style="width: 100%">
+        <el-table-column type="index" label="序号" width="55" align="center" />
+        <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
+        <el-table-column label="任务编号" prop="taskCode" width="130" />
+        <el-table-column label="产品" prop="product" width="120">
+          <template #default="scope">
+            <dict-tag :options="sys_product" :value="scope.row.product" v-if="scope.row.product" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip>
+          <template #default="scope">
+            <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`"
+              @click.prevent="$router.push(`/task/subproject/detail/${scope.row.taskId}`)"
+              v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
+            <span v-else>{{ scope.row.taskName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="排期状态" prop="scheduleStatus" width="110" align="center">
+          <template #default="scope">
+            <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" v-if="scope.row.scheduleStatus" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right">
+          <template #default="scope">
+            {{ scope.row.estimatedWorkload != null ? scope.row.estimatedWorkload : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="实际工作量" prop="actualWorkload" width="100" align="right">
+          <template #default="scope">
+            {{ scope.row.actualWorkload != null ? parseFloat((scope.row.actualWorkload / 8).toFixed(3)) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="150" align="center">
+          <template #default="scope">
+            {{ scope.row.functionalTestDate ? scope.row.functionalTestDate.substring(0, 10) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="计划投产日期" prop="productionDate" width="120" align="center">
+          <template #default="scope">
+            {{ scope.row.productionDate ? scope.row.productionDate.substring(0, 10) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
+      </el-table>
     </el-card>
 
     <!-- 合同信息 -->
@@ -400,7 +453,7 @@
 <script setup name="ProjectDetail">
 import { ref, reactive, toRefs, computed, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, getContractByProjectId, getDeptTree, getUsersByPost } from '@/api/project/project'
+import { getProject, getContractByProjectId, getDeptTree, getUsersByPost, getParticipantsWorkload } from '@/api/project/project'
 import { listPayment } from '@/api/project/payment'
 import { listAttachment, downloadAttachment } from '@/api/project/attachment'
 import { saveAs } from 'file-saver'
@@ -411,10 +464,12 @@ const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const { proxy } = getCurrentInstance()
-const { sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl, sys_qrzt } =
-  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl', 'sys_qrzt')
+const { sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, industry, sys_yjqy, sys_htlx, sys_htzt, sys_fkzt, sys_ndgl, sys_wdlx, sys_jdgl, sys_qrzt, sys_product, sys_pqzt } =
+  proxy.useDict('sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'industry', 'sys_yjqy', 'sys_htlx', 'sys_htzt', 'sys_fkzt', 'sys_ndgl', 'sys_wdlx', 'sys_jdgl', 'sys_qrzt', 'sys_product', 'sys_pqzt')
 
 // 表单数据
+const projectTaskList = ref([])
+
 const data = reactive({
   form: {
     industry: '',
@@ -466,7 +521,7 @@ const { form } = toRefs(data)
 
 // 其他数据
 const allUsers = ref([])
-const selectedParticipants = ref([])
+const selectedParticipants = ref([])  // [{userId, nickName, actualWorkload}]
 const customerContactPhone = ref('')
 const contractInfo = ref(null)
 const paymentList = ref([])
@@ -503,6 +558,13 @@ const paymentListWithSummary = computed(() => {
 function loadAllUsers() {
   getUsersByPost().then(response => {
     allUsers.value = response.data || []
+  })
+}
+
+// 加载参与人员及其日报实际人天
+function loadParticipantsWorkload(projectId) {
+  getParticipantsWorkload(projectId).then(response => {
+    selectedParticipants.value = response.data || []
   })
 }
 
@@ -562,14 +624,11 @@ function loadProjectData() {
     // 加载项目附件列表
     loadAttachmentList(projectId)
 
-    // 等待所有用户加载完成后，同步参与人员显示
-    setTimeout(() => {
-      if (form.value.participants && form.value.participants.length > 0) {
-        selectedParticipants.value = allUsers.value.filter(user =>
-          form.value.participants.includes(user.userId)
-        )
-      }
-    }, 500)
+    // 加载参与人员及其实际人天
+    loadParticipantsWorkload(projectId)
+
+    // 加载项目关联任务列表
+    loadProjectTasks(projectId)
   }).catch(() => {
     proxy.$modal.msgError('加载项目数据失败')
     router.push('/project/list')
@@ -626,8 +685,13 @@ function loadCustomerContactPhone(customerId, contactId) {
 }
 
 // 加载合同信息
-function loadContractInfo(projectId) {
-  getContractByProjectId(projectId).then(response => {
+function loadProjectTasks(projectId) {
+  request({ url: '/project/task/list', method: 'get', params: { projectId } })
+    .then(res => { projectTaskList.value = res.rows || [] })
+    .catch(() => {})
+}
+
+function loadContractInfo(projectId) {  getContractByProjectId(projectId).then(response => {
     contractInfo.value = response.data
     // 如果有合同信息，加载付款里程碑
     if (contractInfo.value && contractInfo.value.contractId) {

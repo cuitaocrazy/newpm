@@ -25,4 +25,6 @@ public interface ITaskService {
     List<String> searchTaskCode(String taskCode);
 
     List<String> searchTaskName(String taskName);
+
+    List<String> searchSoftwareDemandNo(String softwareDemandNo);
 }

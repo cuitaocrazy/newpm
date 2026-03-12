@@ -109,4 +109,10 @@ public class TaskController extends BaseController {
     public AjaxResult searchTaskName(@RequestParam(required = false) String taskName) {
         return success(taskService.searchTaskName(taskName));
     }
+
+    @PreAuthorize("@ss.hasPermi('project:task:list')")
+    @GetMapping("/searchSoftwareDemandNo")
+    public AjaxResult searchSoftwareDemandNo(@RequestParam(required = false) String softwareDemandNo) {
+        return success(taskService.searchSoftwareDemandNo(softwareDemandNo));
+    }
 }

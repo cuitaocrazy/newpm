@@ -32,6 +32,12 @@ public class TaskServiceImpl implements ITaskService {
     public int insertTask(Task task) {
         task.setCreateBy(SecurityUtils.getUsername());
         task.setCreateTime(DateUtils.getNowDate());
+        if (task.getUpdateBy() == null || task.getUpdateBy().isEmpty()) {
+            task.setUpdateBy(task.getCreateBy());
+        }
+        if (task.getUpdateTime() == null) {
+            task.setUpdateTime(task.getCreateTime());
+        }
         return taskMapper.insertTask(task);
     }
 
@@ -75,5 +81,11 @@ public class TaskServiceImpl implements ITaskService {
     public List<String> searchTaskName(String taskName)
     {
         return taskMapper.searchTaskName(taskName);
+    }
+
+    @Override
+    public List<String> searchSoftwareDemandNo(String softwareDemandNo)
+    {
+        return taskMapper.searchSoftwareDemandNo(softwareDemandNo);
     }
 }

@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="90px" v-show="showSearch">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" label-width="130px" v-show="showSearch">
       <el-form-item label="项目部门" prop="projectDept">
         <project-dept-select v-model="queryParams.projectDept" @change="onDeptChange" clearable style="width: 180px" />
       </el-form-item>
@@ -15,6 +15,7 @@
           clearable
           @select="onParentProjectSelect"
           @clear="onParentProjectClear"
+          @input="onParentProjectInput"
         >
           <template #default="{ item }">
             <span>{{ item.projectName }}</span>
@@ -44,11 +45,6 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="当前阶段" prop="taskStage">
-        <el-select v-model="queryParams.taskStage" placeholder="请选择" clearable style="width: 180px">
-          <el-option v-for="d in sys_xmjd" :key="d.value" :label="d.label" :value="d.value" />
-        </el-select>
-      </el-form-item>
       <el-form-item label="投产年份" prop="productionYear">
         <el-select v-model="queryParams.productionYear" placeholder="请选择" clearable style="width: 180px"
           @change="onQueryYearChange">
@@ -76,13 +72,25 @@
           <el-option v-for="u in managerOptions" :key="u.userId" :label="u.nickName" :value="u.userId" />
         </el-select>
       </el-form-item>
-      <el-form-item label="软件中心需求编号" prop="softwareDemandNo" label-width="120px">
-        <el-input v-model="queryParams.softwareDemandNo" placeholder="请输入"
-          clearable style="width: 180px" @keyup.enter="handleQuery" />
+      <el-form-item label="软件中心需求编号" prop="softwareDemandNo">
+        <el-autocomplete
+          v-model="queryParams.softwareDemandNo"
+          :fetch-suggestions="fetchSoftwareDemandNoSuggestions"
+          placeholder="请输入"
+          style="width: 180px"
+          :debounce="300"
+          clearable
+          @keyup.enter="handleQuery"
+        />
       </el-form-item>
       <el-form-item label="排期状态" prop="scheduleStatus">
         <el-select v-model="queryParams.scheduleStatus" placeholder="请选择" clearable style="width: 180px">
           <el-option v-for="d in sys_pqzt" :key="d.value" :label="d.label" :value="d.value" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="任务当前阶段" prop="taskStage">
+        <el-select v-model="queryParams.taskStage" placeholder="请选择" clearable style="width: 180px">
+          <el-option v-for="d in sys_xmjd" :key="d.value" :label="d.label" :value="d.value" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -95,47 +103,125 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns" />
     </el-row>
 
-    <el-table v-loading="loading" :data="subprojectList" border :row-style="{ height: 'auto' }" :cell-style="{ verticalAlign: 'middle' }">
-      <el-table-column type="index" label="序号" width="55" align="center" />
-      <el-table-column label="所属主项目" prop="parentProjectName" min-width="160" show-overflow-tooltip v-if="columns.parentProjectName.visible" />
-      <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible" />
-      <el-table-column label="任务名称" prop="taskName" width="220" v-if="columns.taskName.visible">
-        <template #default="scope">
-          <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`" @click.prevent="handleDetail(scope.row)" style="white-space: normal; word-break: break-all; line-height: 1.4;"
-            v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
-          <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.taskName }}</span>
-        </template>
+    <el-table v-loading="loading" :data="displayList" border :row-style="{ height: 'auto' }"
+      :cell-style="{ verticalAlign: 'middle' }" :span-method="spanMethod" style="width: 100%">
+      <el-table-column label="序号" width="60" align="center" fixed="left" v-if="columns.index.visible">
+        <template #default="scope">{{ scope.$index + 1 }}</template>
       </el-table-column>
-      <el-table-column label="当前阶段" prop="taskStage" width="130" v-if="columns.taskStage.visible">
-        <template #default="scope">
-          <dict-tag :options="sys_xmjd" :value="scope.row.taskStage" />
-        </template>
+
+      <!-- 项目信息组 -->
+      <el-table-column label="项目信息" align="center" class-name="project-col-group" label-class-name="project-group-header">
+        <el-table-column label="收入确认年度" prop="parentRevenueConfirmYear" width="120" align="center"
+          fixed="left" v-if="columns.parentRevenueConfirmYear.visible">
+          <template #default="scope">
+            <dict-tag :options="sys_ndgl" :value="scope.row.parentRevenueConfirmYear" v-if="scope.row.parentRevenueConfirmYear" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="项目名称" prop="parentProjectName" min-width="180" fixed="left"
+          v-if="columns.parentProjectName.visible">
+          <template #default="scope">
+            <el-link v-if="scope.row.projectId" type="primary"
+              :href="`/project/list/detail/${scope.row.projectId}`"
+              @click.prevent="$router.push(`/project/list/detail/${scope.row.projectId}`)"
+              style="white-space: normal; word-break: break-all; line-height: 1.4;">
+              {{ scope.row.parentProjectName }}
+            </el-link>
+            <span v-else>{{ scope.row.parentProjectName || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="项目所属部门" prop="projectDeptName" min-width="150" align="center"
+          show-overflow-tooltip v-if="columns.projectDeptName.visible">
+          <template #default="scope">{{ getDeptPath(scope.row.projectDept) }}</template>
+        </el-table-column>
+        <el-table-column label="项目经理" prop="projectManagerName" width="100" align="center"
+          v-if="columns.projectManagerName.visible" />
+        <el-table-column label="项目预算(元)" prop="parentProjectBudget" width="130" align="right"
+          v-if="columns.parentProjectBudget.visible">
+          <template #default="scope">
+            {{ scope.row.parentProjectBudget != null ? Number(scope.row.parentProjectBudget).toLocaleString() : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="项目预估人天" prop="parentEstimatedWorkload" width="110" align="right"
+          v-if="columns.parentEstimatedWorkload.visible">
+          <template #default="scope">
+            {{ scope.row.parentEstimatedWorkload != null ? scope.row.parentEstimatedWorkload : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="项目实际人天" prop="parentActualWorkload" width="110" align="right"
+          v-if="columns.parentActualWorkload.visible">
+          <template #default="scope">
+            {{ scope.row.parentActualWorkload != null ? parseFloat((scope.row.parentActualWorkload / 8).toFixed(3)) : '-' }}
+          </template>
+        </el-table-column>
       </el-table-column>
-      <el-table-column label="项目状态" prop="projectStatus" width="100" align="center" v-if="columns.projectStatus.visible">
-        <template #default="scope">
-          <dict-tag :options="sys_xmzt" :value="scope.row.projectStatus" />
-        </template>
-      </el-table-column>
-      <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" v-if="columns.taskManagerName.visible" />
-      <el-table-column label="预计人天" prop="estimatedWorkload" width="100" align="right" v-if="columns.estimatedWorkload.visible" />
-      <el-table-column label="实际人天" prop="actualWorkload" width="100" align="right" v-if="columns.actualWorkload.visible">
-        <template #default="scope">
-          {{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(3) : '-' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="投产年份" prop="productionYear" width="100" align="center" v-if="columns.productionYear.visible" />
-      <el-table-column label="投产批次" prop="batchNo" width="120" align="center" v-if="columns.batchNo.visible" />
-      <el-table-column label="启动日期" prop="startDate" width="120" align="center" v-if="columns.startDate.visible" />
-      <el-table-column label="结束日期" prop="endDate" width="120" align="center" v-if="columns.endDate.visible" />
-      <el-table-column label="操作" width="150" align="center" fixed="right" v-if="columns.actions.visible">
-        <template #default="scope">
-          <el-button link type="primary" icon="View" v-hasPermi="['project:task:query']"
-            @click="handleDetail(scope.row)">详情</el-button>
-          <el-button link type="primary" icon="Edit" v-hasPermi="['project:task:edit']"
-            @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button link type="danger" icon="Delete" v-hasPermi="['project:task:remove']"
-            @click="handleDelete(scope.row)">删除</el-button>
-        </template>
+
+      <!-- 任务信息组 -->
+      <el-table-column label="任务信息" align="center" label-class-name="task-group-header">
+        <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible" />
+        <el-table-column label="任务名称" prop="taskName" min-width="200" v-if="columns.taskName.visible">
+          <template #default="scope">
+            <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`"
+              @click.prevent="handleDetail(scope.row)"
+              style="white-space: normal; word-break: break-all; line-height: 1.4;"
+              v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
+            <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.taskName }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="投产批次" prop="batchNo" width="120" align="center" v-if="columns.batchNo.visible" />
+        <el-table-column label="产品" prop="product" width="100" align="center" v-if="columns.product.visible">
+          <template #default="scope">
+            <dict-tag :options="sys_product" :value="scope.row.product" v-if="scope.row.product" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="提交功能测试版本日期" prop="functionalTestDate" width="170" align="center"
+          v-if="columns.functionalTestDate.visible">
+          <template #default="scope">
+            {{ scope.row.functionalTestDate ? parseTime(scope.row.functionalTestDate, '{y}-{m}-{d}') : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="投产版本日期" prop="productionVersionDate" width="120" align="center"
+          v-if="columns.productionVersionDate.visible">
+          <template #default="scope">
+            {{ scope.row.productionVersionDate ? parseTime(scope.row.productionVersionDate, '{y}-{m}-{d}') : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="计划投产日期" prop="productionDate" width="120" align="center"
+          v-if="columns.productionDate.visible">
+          <template #default="scope">
+            {{ scope.row.productionDate ? parseTime(scope.row.productionDate, '{y}-{m}-{d}') : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="排期状态" prop="scheduleStatus" width="100" align="center"
+          v-if="columns.scheduleStatus.visible">
+          <template #default="scope">
+            <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" v-if="scope.row.scheduleStatus" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="任务预估人天" prop="estimatedWorkload" width="115" align="right"
+          v-if="columns.estimatedWorkload.visible">
+          <template #default="scope">
+            {{ scope.row.estimatedWorkload != null ? scope.row.estimatedWorkload : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="任务实际人天" prop="actualWorkload" width="115" align="right"
+          v-if="columns.actualWorkload.visible">
+          <template #default="scope">
+            {{ scope.row.actualWorkload != null ? parseFloat((scope.row.actualWorkload / 8).toFixed(3)) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="150" align="center" fixed="right" v-if="columns.actions.visible">
+          <template #default="scope">
+            <el-button link type="primary" icon="View" v-hasPermi="['project:task:query']"
+              @click="handleDetail(scope.row)">详情</el-button>
+            <el-button link type="primary" icon="Edit" v-hasPermi="['project:task:edit']"
+              @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button link type="danger" icon="Delete" v-hasPermi="['project:task:remove']"
+              @click="handleDelete(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
       </el-table-column>
     </el-table>
 
@@ -151,34 +237,58 @@ import { useRouter } from 'vue-router'
 import { listTask, delTask } from '@/api/project/task'
 import { getUsersByPost } from '@/api/project/project'
 import { checkPermi } from '@/utils/permission'
+import { parseTime } from '@/utils/ruoyi'
 import request from '@/utils/request'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
-const { sys_xmjd, sys_xmzt, sys_ndgl, sys_product, sys_pqzt } = proxy.useDict('sys_xmjd', 'sys_xmzt', 'sys_ndgl', 'sys_product', 'sys_pqzt')
+const { sys_xmjd, sys_ndgl, sys_product, sys_pqzt } = proxy.useDict('sys_xmjd', 'sys_ndgl', 'sys_product', 'sys_pqzt')
 
 const loading = ref(false)
 const showSearch = ref(true)
 const total = ref(0)
-const subprojectList = ref([])
+const displayList = ref([])
 const queryBatchOptions = ref([])
 const managerOptions = ref([])
 const parentProjectKeyword = ref('')
+const deptFlatList = ref([])
+
+function getDeptPath(deptId) {
+  if (!deptId) return '-'
+  const numId = typeof deptId === 'string' ? parseInt(deptId) : deptId
+  const dept = deptFlatList.value.find(d => d.deptId === numId)
+  if (!dept) return '-'
+  // ancestors 形如 "0,100,101,102"，过滤掉 0，从第3个节点（index=2）开始
+  const ancestorIds = dept.ancestors ? dept.ancestors.split(',').filter(id => id && id !== '0') : []
+  const pathDepts = []
+  for (let i = 2; i < ancestorIds.length; i++) {
+    const ancestor = deptFlatList.value.find(d => d.deptId === parseInt(ancestorIds[i]))
+    if (ancestor) pathDepts.push(ancestor.deptName)
+  }
+  pathDepts.push(dept.deptName)
+  return pathDepts.join('-')
+}
 
 const columns = ref({
-  taskCode:          { label: '任务编号',   visible: true },
-  taskName:          { label: '任务名称',   visible: true },
-  parentProjectName: { label: '所属主项目', visible: true },
-  taskStage:         { label: '当前阶段',   visible: true },
-  projectStatus:     { label: '项目状态',   visible: true },
-  taskManagerName:   { label: '任务负责人', visible: true },
-  estimatedWorkload: { label: '预计人天',   visible: true },
-  actualWorkload:    { label: '实际人天',   visible: true },
-  productionYear:    { label: '投产年份',   visible: true },
-  batchNo:           { label: '投产批次',   visible: true },
-  startDate:         { label: '启动日期',   visible: true },
-  endDate:           { label: '结束日期',   visible: true },
-  actions:           { label: '操作',       visible: true }
+  index:                    { label: '序号',           visible: true },
+  parentRevenueConfirmYear: { label: '收入确认年度',   visible: true },
+  parentProjectName:        { label: '项目名称',       visible: true },
+  projectDeptName:          { label: '项目所属部门',   visible: true },
+  projectManagerName:       { label: '项目经理',       visible: true },
+  parentProjectBudget:      { label: '项目预算(元)',   visible: true },
+  parentEstimatedWorkload:  { label: '项目预估人天',   visible: true },
+  parentActualWorkload:     { label: '项目实际人天',   visible: true },
+  taskCode:                 { label: '任务编号',       visible: true },
+  taskName:                 { label: '任务名称',       visible: true },
+  batchNo:                  { label: '投产批次',       visible: true },
+  product:                  { label: '产品',           visible: true },
+  functionalTestDate:       { label: '功能测试版本日期', visible: true },
+  productionVersionDate:    { label: '投产版本日期',   visible: true },
+  productionDate:           { label: '计划投产日期',   visible: true },
+  scheduleStatus:           { label: '排期状态',       visible: true },
+  estimatedWorkload:        { label: '任务预估人天',   visible: true },
+  actualWorkload:           { label: '任务实际人天',   visible: true },
+  actions:                  { label: '操作',           visible: true }
 })
 
 const queryParams = reactive({
@@ -186,6 +296,7 @@ const queryParams = reactive({
   pageSize: 10,
   projectDept: null,
   parentId: null,
+  parentProjectName: '',
   taskName: '',
   taskCode: '',
   taskStage: '',
@@ -197,6 +308,76 @@ const queryParams = reactive({
   softwareDemandNo: '',
   scheduleStatus: null
 })
+
+// 需要合并的项目列
+const mergeColumns = [
+  'parentRevenueConfirmYear', 'parentProjectName', 'projectDeptName',
+  'projectManagerName', 'parentProjectBudget', 'parentEstimatedWorkload', 'parentActualWorkload'
+]
+
+function processDisplayList(rows) {
+  const list = []
+  const grouped = new Map()
+  const order = []
+
+  for (const task of rows) {
+    const pid = task.projectId
+    if (!grouped.has(pid)) {
+      grouped.set(pid, [])
+      order.push(pid)
+    }
+    grouped.get(pid).push(task)
+  }
+
+  for (const pid of order) {
+    const tasks = grouped.get(pid)
+    const first = tasks[0]
+    tasks.forEach((task, index) => {
+      list.push({
+        // 项目字段（合并行用）
+        projectId: first.projectId,
+        parentProjectName: first.parentProjectName,
+        parentRevenueConfirmYear: first.parentRevenueConfirmYear,
+        projectDeptName: first.projectDeptName,
+        projectDept: first.projectDept,
+        projectManagerName: first.projectManagerName,
+        parentProjectBudget: first.parentProjectBudget,
+        parentEstimatedWorkload: first.parentEstimatedWorkload,
+        parentActualWorkload: first.parentActualWorkload,
+        projectStatus: first.projectStatus,
+        // 任务字段
+        taskId: task.taskId,
+        taskCode: task.taskCode,
+        taskName: task.taskName,
+        taskStage: task.taskStage,
+        product: task.product,
+        functionalTestDate: task.functionalTestDate,
+        productionVersionDate: task.productionVersionDate,
+        productionDate: task.productionDate,
+        scheduleStatus: task.scheduleStatus,
+        estimatedWorkload: task.estimatedWorkload,
+        actualWorkload: task.actualWorkload,
+        batchNo: task.batchNo,
+        taskManagerName: task.taskManagerName,
+        // 合并标记
+        isFirstRow: index === 0,
+        rowSpan: index === 0 ? tasks.length : 0
+      })
+    })
+  }
+
+  displayList.value = list
+}
+
+function spanMethod({ row, column }) {
+  if (mergeColumns.includes(column.property)) {
+    if (row.isFirstRow) {
+      return { rowspan: row.rowSpan, colspan: 1 }
+    } else {
+      return { rowspan: 0, colspan: 0 }
+    }
+  }
+}
 
 function onDeptChange() {
   parentProjectKeyword.value = ''
@@ -213,12 +394,19 @@ function fetchParentProjectSuggestions(keyword, cb) {
 
 function onParentProjectSelect(item) {
   queryParams.parentId = item.projectId
+  queryParams.parentProjectName = ''
   parentProjectKeyword.value = item.projectName
   handleQuery()
 }
 
 function onParentProjectClear() {
   queryParams.parentId = null
+  queryParams.parentProjectName = ''
+}
+
+function onParentProjectInput(val) {
+  queryParams.parentId = null
+  queryParams.parentProjectName = val || ''
 }
 
 function fetchTaskCodeSuggestions(keyword, cb) {
@@ -236,6 +424,16 @@ function fetchTaskNameSuggestions(keyword, cb) {
     url: '/project/task/searchTaskName',
     method: 'get',
     params: { taskName: keyword }
+  }).then(res => {
+    cb((res.data || []).map(v => ({ value: v })))
+  }).catch(() => cb([]))
+}
+
+function fetchSoftwareDemandNoSuggestions(keyword, cb) {
+  request({
+    url: '/project/task/searchSoftwareDemandNo',
+    method: 'get',
+    params: { softwareDemandNo: keyword }
   }).then(res => {
     cb((res.data || []).map(v => ({ value: v })))
   }).catch(() => cb([]))
@@ -260,7 +458,7 @@ async function onQueryYearChange(year) {
 function getList() {
   loading.value = true
   listTask(queryParams).then(res => {
-    subprojectList.value = res.rows
+    processDisplayList(res.rows)
     total.value = res.total
   }).finally(() => { loading.value = false })
 }
@@ -270,6 +468,7 @@ function resetQuery() {
   proxy.$refs['queryRef'].resetFields()
   parentProjectKeyword.value = ''
   queryParams.parentId = null
+  queryParams.parentProjectName = ''
   queryBatchOptions.value = []
   handleQuery()
 }
@@ -290,6 +489,10 @@ function handleDelete(row) {
 }
 
 onMounted(async () => {
+  // 加载部门树（用于部门路径显示）
+  request({ url: '/project/project/deptTreeAll', method: 'get' })
+    .then(res => { deptFlatList.value = res.data || [] })
+    .catch(() => {})
   try {
     const res = await getUsersByPost()
     managerOptions.value = res.data || []
@@ -299,3 +502,16 @@ onMounted(async () => {
   getList()
 })
 </script>
+
+<style scoped>
+:deep(.project-group-header) {
+  background-color: #ecf5ff !important;
+  color: #409eff !important;
+  font-weight: bold;
+}
+:deep(.task-group-header) {
+  background-color: #f0f9eb !important;
+  color: #67c23a !important;
+  font-weight: bold;
+}
+</style>

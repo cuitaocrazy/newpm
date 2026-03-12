@@ -224,7 +224,8 @@
             v-if="isDataRow(scope.row)"
             type="primary"
             class="project-name-cell"
-            @click="handleDetail(scope.row)"
+            :href="`/revenue/team/detail/${scope.row.projectId}`"
+            @click.prevent="handleDetail(scope.row)"
           >{{ scope.row.projectName }}</el-link>
         </template>
       </el-table-column>

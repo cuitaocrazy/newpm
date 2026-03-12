@@ -58,4 +58,6 @@ public interface TaskMapper {
     List<String> searchTaskCode(@Param("taskCode") String taskCode);
 
     List<String> searchTaskName(@Param("taskName") String taskName);
+
+    List<String> searchSoftwareDemandNo(@Param("softwareDemandNo") String softwareDemandNo);
 }

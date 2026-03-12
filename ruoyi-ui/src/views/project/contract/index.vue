@@ -149,8 +149,8 @@
               v-if="checkPermi(['project:contract:query'])"
               class="contract-name-link"
               type="primary"
-              @click="handleView(scope.row)"
-              @contextmenu.prevent="handleContextMenu($event, scope.row)">
+              :href="`/htkx/contract/detail/${scope.row.contractId}`"
+              @click.prevent="handleView(scope.row)">
               {{ scope.row.contractName }}
             </el-link>
             <span v-else>{{ scope.row.contractName }}</span>
@@ -601,13 +601,6 @@ function handleAdd() {
 /** 查看详情按钮操作 */
 function handleView(row) {
   router.push({ path: `/htkx/contract/detail/${row.contractId}` })
-}
-
-/** 右键菜单 - 在新标签页打开 */
-function handleContextMenu(event, row) {
-  event.preventDefault()
-  const url = router.resolve({ path: `/htkx/contract/detail/${row.contractId}` }).href
-  window.open(url, '_blank')
 }
 
 /** 修改按钮操作 */

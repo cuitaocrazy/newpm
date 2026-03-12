@@ -60,7 +60,7 @@
       </el-table-column>
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="200" fixed="left" show-overflow-tooltip>
         <template #default="scope">
-          <el-link v-if="!scope.row.isSummaryRow" type="primary" @click="handleReview(scope.row)" underline="never">
+          <el-link v-if="!scope.row.isSummaryRow" type="primary" :href="`/project/list/detail/${scope.row.projectId}`" @click.prevent="handleReview(scope.row)" underline="never">
             {{ scope.row.projectName }}
           </el-link>
         </template>

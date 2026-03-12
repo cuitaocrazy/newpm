@@ -180,7 +180,8 @@
               v-if="checkPermi(['project:contract:query'])"
               type="primary"
               underline="never"
-              @click="handleViewContract(scope.row)"
+              :href="`/htkx/contract/detail/${scope.row.contractId}?from=payment`"
+              @click.prevent="handleViewContract(scope.row)"
               class="contract-name-link"
               :title="scope.row.contractName">
               {{ scope.row.contractName }}

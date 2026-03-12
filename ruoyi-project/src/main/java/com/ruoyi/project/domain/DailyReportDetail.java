@@ -93,6 +93,18 @@ public class DailyReportDetail extends BaseEntity
     /** 项目经理姓名（扩展字段，非DB列） */
     private String projectManagerName;
 
+    /** 子任务预计人天（扩展字段，非DB列） */
+    private java.math.BigDecimal subProjectEstimatedWorkload;
+
+    /** 子任务实际人天（扩展字段，非DB列） */
+    private java.math.BigDecimal subProjectActualWorkload;
+
+    public void setSubProjectEstimatedWorkload(java.math.BigDecimal v) { this.subProjectEstimatedWorkload = v; }
+    public java.math.BigDecimal getSubProjectEstimatedWorkload() { return subProjectEstimatedWorkload; }
+
+    public void setSubProjectActualWorkload(java.math.BigDecimal v) { this.subProjectActualWorkload = v; }
+    public java.math.BigDecimal getSubProjectActualWorkload() { return subProjectActualWorkload; }
+
     public void setSubProjectBatchNo(String subProjectBatchNo) { this.subProjectBatchNo = subProjectBatchNo; }
     public String getSubProjectBatchNo() { return subProjectBatchNo; }
 

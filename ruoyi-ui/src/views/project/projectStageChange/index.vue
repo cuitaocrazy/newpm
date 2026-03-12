@@ -47,7 +47,7 @@
       <el-table-column label="序号" type="index" width="55" align="center" />
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220">
         <template #default="scope">
-          <div class="project-name-cell">{{ scope.row.projectName }}</div>
+          <el-link type="primary" :href="`/project/list/detail/${scope.row.projectId}`" class="project-name-cell">{{ scope.row.projectName }}</el-link>
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">

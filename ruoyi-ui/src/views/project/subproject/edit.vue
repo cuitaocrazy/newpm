@@ -278,24 +278,24 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="创建人">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskCreateByName || form.taskCreateBy || '-' }}</span>
+              <span style="line-height: 32px; color: #606266;">{{ form.createByName || form.createBy || '-' }}</span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="创建时间">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskCreateTime || '-' }}</span>
+              <span style="line-height: 32px; color: #606266;">{{ form.createTime || '-' }}</span>
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="更新人">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskUpdateByName || form.taskUpdateBy || '-' }}</span>
+              <span style="line-height: 32px; color: #606266;">{{ form.updateByName || form.updateBy || '-' }}</span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="更新时间">
-              <span style="line-height: 32px; color: #606266;">{{ form.taskUpdateTime || '-' }}</span>
+              <span style="line-height: 32px; color: #606266;">{{ form.updateTime || '-' }}</span>
             </el-form-item>
           </el-col>
         </el-row>
@@ -346,8 +346,7 @@ const form = ref({
   internalClosureDate: null, functionalTestDate: null, productionVersionDate: null,
   actualProductionDate: null,
   remark: null,
-  taskCreateBy: null, taskCreateTime: null, taskUpdateBy: null, taskUpdateTime: null,
-  taskCreateByName: null, taskUpdateByName: null
+  createBy: null, createByName: null, createTime: null, updateBy: null, updateByName: null, updateTime: null
 })
 
 const rules = ref({
@@ -509,12 +508,12 @@ onMounted(async () => {
       productionVersionDate: data.productionVersionDate,
       actualProductionDate: data.actualProductionDate,
       remark: data.remark,
-      taskCreateBy: data.taskCreateBy,
-      taskCreateTime: data.taskCreateTime,
-      taskUpdateBy: data.taskUpdateBy,
-      taskUpdateTime: data.taskUpdateTime,
-      taskCreateByName: data.taskCreateByName,
-      taskUpdateByName: data.taskUpdateByName
+      createBy: data.createBy,
+      createByName: data.createByName,
+      createTime: data.createTime,
+      updateBy: data.updateBy,
+      updateByName: data.updateByName,
+      updateTime: data.updateTime
     })
     if (data.productionYear) {
       const batchRes = await request({ url: '/project/productionBatch/byYear', method: 'get', params: { productionYear: data.productionYear } })

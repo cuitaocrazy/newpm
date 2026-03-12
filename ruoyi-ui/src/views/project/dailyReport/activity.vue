@@ -188,19 +188,24 @@
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
             <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
-            <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
+            <el-link type="primary" class="detail-link" @click="goToProject(detail.projectId)">{{ detail.projectName }}</el-link>
+            <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
             <span class="detail-workload">预计 <strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong> 天</span>
             <span class="detail-workload">已花 <strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong> 天</span>
-            <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
+            <template v-if="detail.workCategory">
+              <dict-tag v-for="cat in detail.workCategory.split(',')" :key="cat" :options="sys_gzlb" :value="cat.trim()" />
+            </template>
             <span class="detail-hours">{{ detail.workHours }}h</span>
           </div>
           <!-- 任务行：仅有 subProjectId 时显示 -->
           <div v-if="detail.subProjectId" class="detail-task-row">
             <el-tag v-if="detail.subProjectBatchNo" size="small" type="info">{{ detail.subProjectBatchNo }}</el-tag>
             <span v-if="detail.subProjectManagerName" class="detail-manager">{{ detail.subProjectManagerName }}</span>
-            <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <el-link type="success" class="detail-link" @click="goToSubproject(detail.subProjectId)">{{ detail.subProjectName }}</el-link>
             <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
-            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
+            <span class="detail-workload">预计 <strong>{{ detail.subProjectEstimatedWorkload != null ? detail.subProjectEstimatedWorkload : '-' }}</strong> 天</span>
+            <span class="detail-workload">已花 <strong>{{ detail.subProjectActualWorkload != null ? Number(detail.subProjectActualWorkload).toFixed(3) : '-' }}</strong> 天</span>
+            <dict-tag v-for="cat in detail.workCategory.split(',')" :key="cat" :options="sys_gzlb" :value="cat.trim()" v-if="detail.workCategory" />
           </div>
           <!-- 工作内容 -->
           <div class="detail-content" v-html="formatWorkContent(detail.workContent)"></div>
@@ -253,18 +258,23 @@
               {{ getDictLabel(sys_ndgl, detail.revenueConfirmYear) }}
             </el-tag>
             <span v-if="detail.projectManagerName" class="detail-manager">{{ detail.projectManagerName }}</span>
-            <el-tag size="small" type="primary">{{ detail.projectName }}</el-tag>
+            <el-link type="primary" class="detail-link" @click="goToProject(detail.projectId)">{{ detail.projectName }}</el-link>
+            <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
             <span class="detail-workload">预计 <strong>{{ detail.estimatedWorkload != null ? detail.estimatedWorkload : '-' }}</strong> 天</span>
             <span class="detail-workload">已花 <strong>{{ detail.actualWorkload != null ? Number(detail.actualWorkload).toFixed(3) : '-' }}</strong> 天</span>
-            <el-tag size="small" type="info">{{ detail.projectStageName }}</el-tag>
+            <template v-if="detail.workCategory">
+              <dict-tag v-for="cat in detail.workCategory.split(',')" :key="cat" :options="sys_gzlb" :value="cat.trim()" />
+            </template>
             <span class="detail-hours">{{ detail.workHours }}h</span>
           </div>
           <div v-if="detail.subProjectId" class="detail-task-row">
             <el-tag v-if="detail.subProjectBatchNo" size="small" type="info">{{ detail.subProjectBatchNo }}</el-tag>
             <span v-if="detail.subProjectManagerName" class="detail-manager">{{ detail.subProjectManagerName }}</span>
-            <el-tag size="small" type="success">{{ detail.subProjectName }}</el-tag>
+            <el-link type="success" class="detail-link" @click="goToSubproject(detail.subProjectId)">{{ detail.subProjectName }}</el-link>
             <el-tag v-if="detail.subProjectStage" size="small" type="warning">{{ getStageName(detail.subProjectStage) }}</el-tag>
-            <dict-tag v-if="detail.workCategory" :options="sys_gzlb" :value="detail.workCategory" />
+            <span class="detail-workload">预计 <strong>{{ detail.subProjectEstimatedWorkload != null ? detail.subProjectEstimatedWorkload : '-' }}</strong> 天</span>
+            <span class="detail-workload">已花 <strong>{{ detail.subProjectActualWorkload != null ? Number(detail.subProjectActualWorkload).toFixed(3) : '-' }}</strong> 天</span>
+            <dict-tag v-for="cat in detail.workCategory.split(',')" :key="cat" :options="sys_gzlb" :value="cat.trim()" v-if="detail.workCategory" />
           </div>
           <div class="detail-content" v-html="formatWorkContent(detail.workContent)"></div>
           <div style="font-size: 11px; color: #c0c4cc; margin-top: 3px;">
@@ -287,6 +297,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
+import { useRouter } from 'vue-router'
 import { User } from '@element-plus/icons-vue'
 import { getMonthlyReports, getProjectNameSuggestions } from '@/api/project/dailyReport'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
@@ -295,6 +306,9 @@ import MonthCalendar from '@/components/MonthCalendar/index.vue'
 
 const { proxy } = getCurrentInstance()
 const { sys_ndgl, sys_gzlb, sys_xmjd } = proxy.useDict('sys_ndgl', 'sys_gzlb', 'sys_xmjd')
+const router = useRouter()
+function goToProject(projectId) { if (projectId) router.push(`/project/list/detail/${projectId}`) }
+function goToSubproject(subProjectId) { if (subProjectId) router.push(`/task/subproject/detail/${subProjectId}`) }
 
 const todayStr = (() => {
   const d = new Date()
@@ -757,6 +771,15 @@ onMounted(async () => {
   font-size: 12px;
   color: #606266;
   white-space: nowrap;
+}
+.detail-link {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+  flex-shrink: 1;
 }
 .detail-workload {
   font-size: 12px;

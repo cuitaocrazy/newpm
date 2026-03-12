@@ -98,6 +98,7 @@ Dependencies: admin → framework → system → common. Project/quartz/generato
 | `WorkCalendar` | `pm_work_calendar` | 工作日历 |
 | `ProjectStageChange` | `pm_project_stage_change` | 项目阶段变更记录 |
 | `WorkloadCorrectLog` | `pm_workload_correct_log` | 人天补正审计日志 |
+| `Task` | `pm_task` | 任务管理（独立表，从 `pm_project.project_level=1` 迁移而来；**数据已迁移，应用代码迁移进行中**） |
 
 ### Business Workflows
 
@@ -133,7 +134,11 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 
 9. **Add Contract from Project:** List row shows "添加合同" / "查看合同" based on whether contract exists. Navigates to contract creation with pre-populated projectId, dept, customer.
 
-10. **Sub-project / Task Decomposition:** `pm_project` is self-referencing via `parent_id` / `project_level` (0=main project, 1=sub-project) / `task_code`. All main-project queries filter with `AND (project_level IS NULL OR project_level = 0)`. Sub-projects do **not** get their own `pm_project_member` rows — they inherit the parent's members. Extra endpoints:
+10. **Sub-project / Task Decomposition:** `pm_project` is self-referencing via `parent_id` / `project_level` (0=main project, 1=sub-project) / `task_code`. All main-project queries filter with `AND (project_level IS NULL OR project_level = 0)`. Sub-projects do **not** get their own `pm_project_member` rows — they inherit the parent's members.
+
+    > **Migration in progress**: `pm_task` table was created (`pm-sql/fix_task_table_split_2026.sql`) and task data (project_level=1) was migrated. The application code still reads from `pm_project.project_level=1`. Backend/frontend migration is pending. `pm_daily_report_detail.sub_project_id` values are unchanged (original project_id = new task_id). See `docs/plans/2026-03-12-task-table-split.md` for the full migration plan.
+
+    Extra endpoints:
     - `GET /project/project/subList` — paginated sub-project list (requires `parentId` param)
     - `GET /project/project/subProjectOptions?parentId=xxx` — lightweight options for daily report dropdowns (returns id, name, stage, task leader)
     Frontend: `ruoyi-ui/src/views/project/subproject/` (index / add / edit / detail). Route is hidden level-2 under 项目管理 (`/project/subproject`).
@@ -161,6 +166,7 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 | `DailyReportController` | `/project/dailyReport/**` | Daily reports |
 | `ProjectStatsController` | `/project/dailyReport/**` | Stats (shares prefix; `/projectStats`, `/projectNameSuggestions`, `POST /projectStats/{id}/correct`, `GET /projectStats/{id}/correctLog`) |
 | `ProjectReviewController` | `/project/review/**` | Company revenue view |
+| `TaskController` | `/project/task/**` | Task CRUD. Extra: `GET /options?projectId=` (lightweight for daily report dropdown), `GET /projectsHasTasks` (batch check which projects have tasks) |
 | `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue (different root) |
 
 Company revenue endpoints: `/project/project/revenue/**`. Frontend routes: `/project/{entity}` + `/revenue/company` + `/revenue/team`.
@@ -298,7 +304,7 @@ Database: `ry-vue` (MySQL 8.x, `utf8mb4_unicode_ci`). Init scripts in `pm-sql/in
 - `01_tables_data.sql` — Initial data (dict, config)
 - `02_menu_data.sql` — Menu and permission data
 
-Ad-hoc fixes: `pm-sql/fix_*.sql`. New tables → modify `00_tables_ddl.sql`. Schema changes on deployed DBs → create `fix_<feature>_<date>.sql`.
+Ad-hoc fixes: `pm-sql/fix_*.sql` — **not committed to git** (added to `.gitignore`). New tables → modify `00_tables_ddl.sql`. Schema changes on deployed DBs → create `fix_<feature>_<date>.sql`.
 
 ### Running SQL on Remote K3s MySQL
 
@@ -309,6 +315,31 @@ cat /tmp/migration.sql | ssh k3s001 "kubectl exec -i mysql-0 -n newpm -- mysql -
 # Local Docker
 CONTAINER=$(docker ps --filter "name=mysql" -q | head -1)
 cat fix_something.sql | docker exec -i $CONTAINER mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue
+```
+
+### Backup Strategy (Production k3s001)
+
+| 对象 | 频率 | 保留 | 存储路径 |
+|---|---|---|---|
+| 数据库 (`ry-vue`) | 每日 00:10 | 30天 | `/backup/newpm-mysql/newpm-YYYYMMDD.sql.gz` |
+| 附件 (upload-pvc) | 每周日 01:20 | 30天（约4份） | `/backup/newpm-upload/newpm-upload-YYYYMMDD.tar.gz` |
+
+脚本：`/usr/local/bin/backup-newpm-db.sh`、`/usr/local/bin/backup-newpm-upload.sh`（均在 root crontab）
+
+备份均存储在 k3s001 本机 `/backup/` 目录（148G 磁盘，当前 55% 占用）。**无异地备份**，如需恢复直接 ssh 取文件。
+
+```bash
+# 手动触发数据库备份
+ssh k3s001 "sudo /usr/local/bin/backup-newpm-db.sh"
+
+# 手动触发附件备份
+ssh k3s001 "sudo /usr/local/bin/backup-newpm-upload.sh"
+
+# 查看备份状态
+ssh k3s001 "ls -lah /backup/newpm-mysql/ && ls -lah /backup/newpm-upload/"
+
+# 恢复数据库（从备份文件）
+ssh k3s001 "zcat /backup/newpm-mysql/newpm-YYYYMMDD.sql.gz | kubectl exec -i mysql-0 -n newpm -- mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue"
 ```
 
 ## Code Generation Workflow

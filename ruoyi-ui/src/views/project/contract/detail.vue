@@ -222,7 +222,62 @@
       </el-table>
     </el-card>
 
-    <!-- 第七部分：备注与审计信息 -->
+    <!-- 第七部分：项目分解任务列表 -->
+    <el-card class="box-card" style="margin-top: 16px;">
+      <template #header>
+        <span style="font-size: 16px; font-weight: bold;">项目分解任务列表</span>
+      </template>
+      <el-empty v-if="contractTaskList.length === 0" description="暂无任务数据" :image-size="80" />
+      <el-table v-else :data="contractTaskList" border>
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column label="投产批次" align="center" prop="batchNo" width="120" show-overflow-tooltip>
+          <template #default="scope">{{ scope.row.batchNo || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="任务编号" align="center" prop="taskCode" width="120" show-overflow-tooltip>
+          <template #default="scope">{{ scope.row.taskCode || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="产品" align="center" prop="product" width="120" show-overflow-tooltip>
+          <template #default="scope">
+            <dict-tag :options="sys_product" :value="scope.row.product" />
+          </template>
+        </el-table-column>
+        <el-table-column label="任务名称" align="left" prop="taskName" show-overflow-tooltip>
+          <template #default="scope">
+            <el-link type="primary" @click="router.push(`/project/subproject/detail/${scope.row.taskId}`)">
+              {{ scope.row.taskName }}
+            </el-link>
+          </template>
+        </el-table-column>
+        <el-table-column label="排期状态" align="center" prop="scheduleStatus" width="110">
+          <template #default="scope">
+            <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" />
+          </template>
+        </el-table-column>
+        <el-table-column label="预估工作量(人天)" align="center" prop="estimatedWorkload" width="140">
+          <template #default="scope">{{ scope.row.estimatedWorkload || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="实际工作量(人天)" align="center" prop="actualWorkload" width="140">
+          <template #default="scope">
+            {{ scope.row.actualWorkload ? (scope.row.actualWorkload / 8).toFixed(3) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="功能测试版本日期" align="center" prop="functionalTestDate" width="150">
+          <template #default="scope">
+            {{ scope.row.functionalTestDate ? parseTime(scope.row.functionalTestDate, '{y}-{m}-{d}') : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="计划投产日期" align="center" prop="productionDate" width="130">
+          <template #default="scope">
+            {{ scope.row.productionDate ? parseTime(scope.row.productionDate, '{y}-{m}-{d}') : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="任务负责人" align="center" prop="taskManagerName" width="110">
+          <template #default="scope">{{ scope.row.taskManagerName || '-' }}</template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <!-- 第八部分：备注与审计信息 -->
     <el-card class="box-card" style="margin-top: 16px;">
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">备注与审计信息</span>
@@ -256,9 +311,10 @@ import { listAttachment, downloadAttachment } from "@/api/project/attachment"
 import { listCustomer } from "@/api/project/customer"
 import { listProject, getDeptTree as fetchDeptTree } from '@/api/project/project'
 import { saveAs } from 'file-saver'
+import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx, sys_jdgl } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx', 'sys_jdgl')
+const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx, sys_jdgl, sys_product, sys_pqzt } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx', 'sys_jdgl', 'sys_product', 'sys_pqzt')
 const route = useRoute()
 const router = useRouter()
 
@@ -267,6 +323,7 @@ const deptOptions = ref([])
 const customerOptions = ref([])
 const projectOptions = ref([])
 const projectList = ref([])
+const contractTaskList = ref([])
 const paymentList = ref([])
 const attachmentList = ref([])
 
@@ -422,6 +479,15 @@ function init() {
       // 查询关联项目列表
       if (response.data.projectList && response.data.projectList.length > 0) {
         projectList.value = response.data.projectList
+        // 加载所有关联项目的任务列表
+        const taskPromises = response.data.projectList.map(p =>
+          request({ url: '/project/task/list', method: 'get', params: { projectId: p.projectId } })
+            .then(r => r.rows || [])
+            .catch(() => [])
+        )
+        Promise.all(taskPromises).then(results => {
+          contractTaskList.value = results.flat()
+        })
       }
     })
 

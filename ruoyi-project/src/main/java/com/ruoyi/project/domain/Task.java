@@ -126,6 +126,12 @@ public class Task extends BaseEntity
     /** 投产批次号（来自 pm_production_batch，非数据库字段） */
     private String batchNo;
 
+    /** 创建人昵称（关联 sys_user.nick_name，非数据库字段） */
+    private String createByName;
+
+    /** 更新人昵称（关联 sys_user.nick_name，非数据库字段） */
+    private String updateByName;
+
     // ========== 查询参数字段（非DB） ==========
 
     /** 查询参数：按父项目ID筛选（等同 projectId，前端传参用） */
@@ -136,6 +142,21 @@ public class Task extends BaseEntity
 
     /** 查询参数：父项目部门（用于部门层级过滤） */
     private String projectDept;
+
+    /** 项目经理昵称（关联 sys_user.nick_name，非数据库字段） */
+    private String projectManagerName;
+
+    /** 项目所属部门名称（关联 sys_dept，非数据库字段） */
+    private String projectDeptName;
+
+    /** 父项目预算（来自 pm_project，非数据库字段） */
+    private BigDecimal parentProjectBudget;
+
+    /** 父项目预估工作量（来自 pm_project，非数据库字段） */
+    private BigDecimal parentEstimatedWorkload;
+
+    /** 父项目实际工作量（来自 pm_project，非数据库字段） */
+    private BigDecimal parentActualWorkload;
 
     public void setTaskId(Long taskId)
     {
@@ -409,6 +430,12 @@ public class Task extends BaseEntity
     public void setBatchNo(String batchNo)                   { this.batchNo = batchNo; }
     public String getBatchNo()                               { return batchNo; }
 
+    public void setCreateByName(String createByName)         { this.createByName = createByName; }
+    public String getCreateByName()                          { return createByName; }
+
+    public void setUpdateByName(String updateByName)         { this.updateByName = updateByName; }
+    public String getUpdateByName()                          { return updateByName; }
+
     public void setParentId(Long parentId)                   { this.parentId = parentId; }
     public Long getParentId()                                { return parentId; }
 
@@ -417,6 +444,21 @@ public class Task extends BaseEntity
 
     public void setProjectDept(String projectDept)           { this.projectDept = projectDept; }
     public String getProjectDept()                           { return projectDept; }
+
+    public void setProjectManagerName(String projectManagerName) { this.projectManagerName = projectManagerName; }
+    public String getProjectManagerName()                        { return projectManagerName; }
+
+    public void setProjectDeptName(String projectDeptName)   { this.projectDeptName = projectDeptName; }
+    public String getProjectDeptName()                       { return projectDeptName; }
+
+    public void setParentProjectBudget(BigDecimal parentProjectBudget)   { this.parentProjectBudget = parentProjectBudget; }
+    public BigDecimal getParentProjectBudget()                           { return parentProjectBudget; }
+
+    public void setParentEstimatedWorkload(BigDecimal parentEstimatedWorkload) { this.parentEstimatedWorkload = parentEstimatedWorkload; }
+    public BigDecimal getParentEstimatedWorkload()                             { return parentEstimatedWorkload; }
+
+    public void setParentActualWorkload(BigDecimal parentActualWorkload) { this.parentActualWorkload = parentActualWorkload; }
+    public BigDecimal getParentActualWorkload()                         { return parentActualWorkload; }
 
     @Override
     public String toString() {

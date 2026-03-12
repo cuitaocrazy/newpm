@@ -117,10 +117,10 @@ SELECT
   NULL                    AS schedule_status,
   NULL                    AS function_description,
   NULL                    AS implementation_plan,
-  p.create_by             AS create_by,
+  COALESCE(p.task_create_by, p.create_by) AS create_by,
   p.create_time           AS create_time,
-  p.update_by             AS update_by,
-  p.update_time           AS update_time,
+  COALESCE(p.task_update_by, p.update_by) AS update_by,
+  COALESCE(p.task_update_time, p.update_time) AS update_time,
   p.remark                AS remark
 FROM `pm_project` p
 WHERE p.project_level = 1

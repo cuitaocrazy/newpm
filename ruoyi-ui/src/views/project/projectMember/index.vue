@@ -34,9 +34,9 @@
       <el-table-column label="序号" type="index" width="55" align="center" />
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220">
         <template #default="scope">
-          <div class="project-name-cell" @click="handleDetail(scope.row)" style="cursor: pointer; color: #409eff;">
+          <el-link type="primary" :href="`/project/list/detail/${scope.row.projectId}`" @click.prevent="handleDetail(scope.row)" class="project-name-cell">
             {{ scope.row.projectName }}
-          </div>
+          </el-link>
         </template>
       </el-table-column>
       <el-table-column label="项目编号" align="center" prop="projectCode" width="160" />

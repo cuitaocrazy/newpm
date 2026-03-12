@@ -1148,3 +1148,48 @@ CREATE TABLE `pm_production_batch` (
   PRIMARY KEY (`batch_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='投产批次管理';
 
+
+
+-- ----------------------------
+-- 任务管理表
+-- ----------------------------
+CREATE TABLE IF NOT EXISTS `pm_task` (
+  `task_id`                 bigint        NOT NULL AUTO_INCREMENT                      COMMENT '任务ID',
+  `project_id`              bigint        NOT NULL                                     COMMENT '所属主项目ID(FK→pm_project.project_id)',
+  `task_code`               varchar(50)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '任务编号',
+  `task_name`               varchar(200)  COLLATE utf8mb4_unicode_ci NOT NULL          COMMENT '任务名称',
+  `task_stage`              varchar(50)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '任务阶段(sys_xmjd)',
+  `task_manager_id`         bigint        DEFAULT NULL                                 COMMENT '任务负责人ID(FK→sys_user.user_id)',
+  `product`                 varchar(50)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '产品(sys_product)',
+  `bank_demand_no`          varchar(100)  COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '总行需求号',
+  `software_demand_no`      varchar(100)  COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '软件中心需求编号',
+  `task_budget`             decimal(15,2) DEFAULT NULL                                 COMMENT '任务预算(元)',
+  `estimated_workload`      decimal(10,2) DEFAULT NULL                                 COMMENT '预估工作量(人天)',
+  `actual_workload`         decimal(10,2) DEFAULT '0.00'                               COMMENT '实际工作量(小时，由日报汇总)',
+  `production_year`         varchar(10)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '投产年度(sys_ndgl)',
+  `batch_id`                bigint        DEFAULT NULL                                 COMMENT '投产批次ID(FK→pm_production_batch.batch_id)',
+  `task_plan`               text          COLLATE utf8mb4_unicode_ci                   COMMENT '任务计划',
+  `task_description`        text          COLLATE utf8mb4_unicode_ci                   COMMENT '任务描述',
+  `start_date`              date          DEFAULT NULL                                 COMMENT '启动日期',
+  `end_date`                date          DEFAULT NULL                                 COMMENT '结束日期',
+  `production_date`         date          DEFAULT NULL                                 COMMENT '投产时间',
+  `production_version_date` date          DEFAULT NULL                                 COMMENT '生产版本日期',
+  `actual_production_date`  date          DEFAULT NULL                                 COMMENT '实际投产日期',
+  `internal_closure_date`   date          DEFAULT NULL                                 COMMENT '内部B包日期',
+  `functional_test_date`    date          DEFAULT NULL                                 COMMENT '功能测试版本日期',
+  `schedule_status`         varchar(50)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '排期状态(sys_pqzt)',
+  `function_description`    text          COLLATE utf8mb4_unicode_ci                   COMMENT '功能点说明',
+  `implementation_plan`     text          COLLATE utf8mb4_unicode_ci                   COMMENT '实施计划',
+  `create_by`               varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '创建者',
+  `create_time`             datetime      DEFAULT CURRENT_TIMESTAMP                    COMMENT '创建时间',
+  `update_by`               varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '更新者',
+  `update_time`             datetime      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark`                  text          COLLATE utf8mb4_unicode_ci                   COMMENT '备注',
+  PRIMARY KEY (`task_id`),
+  KEY `idx_project_id`      (`project_id`),
+  KEY `idx_task_stage`      (`task_stage`),
+  KEY `idx_task_manager_id` (`task_manager_id`),
+  KEY `idx_batch_id`        (`batch_id`),
+  KEY `idx_schedule_status` (`schedule_status`),
+  KEY `idx_create_time`     (`create_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务管理表';

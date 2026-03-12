@@ -167,7 +167,7 @@
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220" fixed="left">
         <template #default="scope">
           <div v-if="!scope.row.isSummaryRow" class="project-name-cell">
-            <el-link v-if="checkPermi(['project:project:query'])" type="primary" @click="handleDetail(scope.row)">{{ scope.row.projectName }}</el-link>
+            <el-link v-if="checkPermi(['project:project:query'])" type="primary" :href="`/project/list/detail/${scope.row.projectId}`" @click.prevent="handleDetail(scope.row)">{{ scope.row.projectName }}</el-link>
             <span v-else>{{ scope.row.projectName }}</span>
           </div>
         </template>
