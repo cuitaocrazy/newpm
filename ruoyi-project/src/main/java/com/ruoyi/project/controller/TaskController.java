@@ -47,6 +47,7 @@ public class TaskController extends BaseController {
     /**
      * 获取项目的任务轻量选项（日报填写下拉用）
      */
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query')")
     @GetMapping("/options")
     public AjaxResult getTaskOptions(@RequestParam Long projectId) {
         return AjaxResult.success(taskService.selectTaskOptions(projectId));
@@ -55,9 +56,10 @@ public class TaskController extends BaseController {
     /**
      * 批量判断哪些项目有任务（日报 hasSubProject 标记用）
      */
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query')")
     @GetMapping("/projectsHasTasks")
-    public AjaxResult getProjectsHasTasks(@RequestParam List<Long> projectIds) {
-        return AjaxResult.success(taskService.selectProjectsHasTasks(projectIds));
+    public AjaxResult getProjectsHasTasks(@RequestParam Long[] projectIds) {
+        return AjaxResult.success(taskService.selectProjectsHasTasks(java.util.Arrays.asList(projectIds)));
     }
 
     /**
