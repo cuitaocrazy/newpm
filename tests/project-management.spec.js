@@ -12,7 +12,7 @@ const API_URL = 'http://localhost:8080';
 // 测试用户
 const TEST_USER = {
   username: 'admin',
-  password: 'admin123'
+  password: '123456789'
 };
 
 // 测试数据

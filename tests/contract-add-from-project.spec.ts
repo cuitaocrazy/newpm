@@ -1,22 +1,21 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('从项目列表添加合同功能测试', () => {
+test.describe('从项目列表关联合同功能测试', () => {
   test.beforeEach(async ({ page }) => {
     // 登录
     await page.goto('http://localhost/login');
     await page.fill('input[placeholder="账号"]', 'admin');
-    await page.fill('input[placeholder="密码"]', 'admin123');
+    await page.fill('input[placeholder="密码"]', '123456789');
 
-    // 暂停，等待用户手动输入验证码
-    console.log('\n🔑 请在浏览器中输入验证码，然后点击登录按钮...');
-    await page.pause(); // 这会暂停测试，等待用户操作
+    // 点击登录按钮
+    await page.locator('button.el-button--primary').click();
 
     // 等待登录成功，跳转到首页
     await page.waitForURL('http://localhost/index', { timeout: 30000 });
     console.log('✅ 登录成功');
   });
 
-  test('点击项目列表的"添加合同"按钮，应该自动回显项目、部门、客户信息', async ({ page }) => {
+  test('点击项目列表的"关联合同"按钮，应该自动回显项目、部门、客户信息', async ({ page }) => {
     // 1. 导航到项目管理页面
     console.log('\n📍 导航到项目管理页面...');
     await page.goto('http://localhost/project/list');
@@ -26,19 +25,19 @@ test.describe('从项目列表添加合同功能测试', () => {
     await page.waitForSelector('.el-table__body', { timeout: 10000 });
     console.log('✅ 项目列表已加载');
 
-    // 3. 找到第一个有"添加合同"按钮的项目行
-    const addContractButton = page.locator('button:has-text("添加合同")').first();
+    // 3. 找到第一个有"关联合同"按钮的项目行
+    const addContractButton = page.locator('button:has-text("关联合同")').first();
 
-    // 检查是否存在"添加合同"按钮
+    // 检查是否存在"关联合同"按钮
     const buttonCount = await addContractButton.count();
     if (buttonCount === 0) {
-      console.log('❌ 未找到"添加合同"按钮，可能所有项目都已有合同');
+      console.log('❌ 未找到"关联合同"按钮，可能所有项目都已有合同');
       // 截图项目列表
       await page.screenshot({ path: 'screenshots/project-list-no-add-button.png', fullPage: true });
-      throw new Error('没有可用的"添加合同"按钮');
+      throw new Error('没有可用的"关联合同"按钮');
     }
 
-    console.log(`✅ 找到 ${buttonCount} 个"添加合同"按钮`);
+    console.log(`✅ 找到 ${buttonCount} 个"关联合同"按钮`);
 
     // 4. 获取项目行信息（在点击前）
     const projectRow = addContractButton.locator('xpath=ancestor::tr');
@@ -51,8 +50,8 @@ test.describe('从项目列表添加合同功能测试', () => {
     const projectRowText = await projectRow.innerText();
     console.log('\n📋 项目行内容:\n', projectRowText);
 
-    // 5. 点击"添加合同"按钮
-    console.log('\n🖱️  点击"添加合同"按钮...');
+    // 5. 点击"关联合同"按钮
+    console.log('\n🖱️  点击"关联合同"按钮...');
     await addContractButton.click();
 
     // 6. 等待跳转到合同新增页面

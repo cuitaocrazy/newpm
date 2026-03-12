@@ -143,11 +143,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="scheduleStatus != null and scheduleStatus != ''">schedule_status,</if>
             <if test="functionDescription != null">function_description,</if>
             <if test="implementationPlan != null">implementation_plan,</if>
+            <if test="remark != null and remark != ''">remark,</if>
             <if test="createBy != null and createBy != ''">create_by,</if>
             create_time,
             <if test="updateBy != null and updateBy != ''">update_by,</if>
-            update_time,
-            <if test="remark != null and remark != ''">remark</if>
+            update_time
         ) values (
             #{projectId},
             <if test="taskCode != null and taskCode != ''">#{taskCode},</if>
@@ -173,11 +173,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="scheduleStatus != null and scheduleStatus != ''">#{scheduleStatus},</if>
             <if test="functionDescription != null">#{functionDescription},</if>
             <if test="implementationPlan != null">#{implementationPlan},</if>
+            <if test="remark != null and remark != ''">#{remark},</if>
             <if test="createBy != null and createBy != ''">#{createBy},</if>
             NOW(),
             <if test="updateBy != null and updateBy != ''">#{updateBy},</if>
-            NOW(),
-            <if test="remark != null and remark != ''">#{remark}</if>
+            NOW()
         )
     </insert>
 
