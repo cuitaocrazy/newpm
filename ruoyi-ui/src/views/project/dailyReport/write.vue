@@ -75,7 +75,7 @@
               <div v-for="(item, idx) in leaveList" :key="idx" class="leave-item">
                 <span class="leave-color-dot" :style="{ background: LEAVE_TYPE_COLOR[item.entryType] || '#ccc' }"></span>
                 <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isEditable">
-                  <el-option v-for="d in sys_rbtype" :key="d.value" :label="d.label" :value="d.value" />
+                  <el-option v-for="d in sys_rbtype.filter(d => d.value !== 'work')" :key="d.value" :label="d.label" :value="d.value" />
                 </el-select>
                 <el-input-number
                   v-model="item.leaveHours"
