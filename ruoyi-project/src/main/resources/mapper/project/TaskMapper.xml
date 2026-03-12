@@ -67,8 +67,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectTaskList" parameterType="Task" resultMap="TaskResult">
         <include refid="selectTaskVo"/>
         <where>
-            <if test="projectId != null">and t.project_id = #{projectId}</if>
-            <if test="parentId != null">and t.project_id = #{parentId}</if>
+            <choose>
+                <when test="projectId != null">and t.project_id = #{projectId}</when>
+                <when test="parentId != null">and t.project_id = #{parentId}</when>
+            </choose>
             <if test="taskName != null and taskName != ''">and t.task_name like concat('%', #{taskName}, '%')</if>
             <if test="taskCode != null and taskCode != ''">and t.task_code like concat('%', #{taskCode}, '%')</if>
             <if test="taskStage != null and taskStage != ''">and t.task_stage = #{taskStage}</if>
@@ -221,12 +223,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectProjectsHasTasks" resultType="long">
-        select distinct project_id
-        from pm_task
-        where project_id in
-        <foreach item="id" collection="projectIds" open="(" separator="," close=")">
-            #{id}
-        </foreach>
+        <if test="projectIds == null or projectIds.size() == 0">
+            select distinct project_id from pm_task where 1=0
+        </if>
+        <if test="projectIds != null and projectIds.size() > 0">
+            select distinct project_id
+            from pm_task
+            where project_id in
+            <foreach item="id" collection="projectIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
     </select>
 
     <select id="countTasksByProjectId" parameterType="Long" resultType="int">
