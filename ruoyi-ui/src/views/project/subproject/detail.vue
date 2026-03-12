@@ -85,7 +85,7 @@
               <dict-tag :options="sys_product" :value="scope.row.product" />
             </template>
           </el-table-column>
-          <el-table-column label="任务名称" prop="projectName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
           <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
           <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
             <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
@@ -93,7 +93,7 @@
           <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
             <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
           </el-table-column>
-          <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" />
+          <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
         </el-table>
       </el-card>
 
@@ -101,11 +101,11 @@
       <el-card shadow="hover" style="margin-bottom: 15px;">
         <template #header><span style="font-size: 16px; font-weight: bold;">二、任务信息</span></template>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="任务名称">{{ form.projectName || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="任务负责人">{{ form.projectManagerName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="任务名称">{{ form.taskName || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="任务负责人">{{ form.taskManagerName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="任务编号">{{ form.taskCode || '-' }}</el-descriptions-item>
           <el-descriptions-item label="任务阶段">
-            <dict-tag :options="sys_xmjd" :value="form.projectStage" />
+            <dict-tag :options="sys_xmjd" :value="form.taskStage" />
           </el-descriptions-item>
           <el-descriptions-item label="总行需求号">{{ form.bankDemandNo || '-' }}</el-descriptions-item>
           <el-descriptions-item label="软件中心需求编号">{{ form.softwareDemandNo || '-' }}</el-descriptions-item>
@@ -122,7 +122,7 @@
             <el-input :model-value="form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) + ' 人天' : '-'" disabled />
           </el-descriptions-item>
           <el-descriptions-item label="任务预算">
-            {{ form.projectBudget != null ? formatAmount(form.projectBudget) + ' 元' : '-' }}
+            {{ form.taskBudget != null ? formatAmount(form.taskBudget) + ' 元' : '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="投产年度">
             <dict-tag :options="sys_ndgl" :value="form.productionYear" />
@@ -170,6 +170,7 @@
 <script setup name="SubprojectDetail">
 import { ref, getCurrentInstance, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { getTask } from '@/api/project/task'
 import { getProject } from '@/api/project/project'
 import request from '@/utils/request'
 
@@ -218,7 +219,7 @@ function formatDate(val) {
 }
 
 function goBack() {
-  router.push({ path: '/task/subproject', query: { parentId: form.value.parentId } })
+  router.push({ path: '/task/subproject', query: { parentId: form.value.projectId } })
 }
 
 onMounted(async () => {
@@ -230,14 +231,14 @@ onMounted(async () => {
   if (!projectId) return
   loading.value = true
   try {
-    const res = await getProject(Number(projectId))
+    const res = await getTask(Number(projectId))
     form.value = res.data || {}
-    if (form.value.parentId) {
-      const parentRes = await getProject(form.value.parentId)
+    if (form.value.projectId) {
+      const parentRes = await getProject(form.value.projectId)
       selectedProject.value = parentRes.data
       parentProjectDept.value = parentRes.data.projectDept ? Number(parentRes.data.projectDept) : null
-      request({ url: '/project/project/siblingTasks', method: 'get', params: { parentId: form.value.parentId } })
-        .then(r => { siblingTasks.value = r.data || [] })
+      request({ url: '/project/task/list', method: 'get', params: { projectId: form.value.projectId } })
+        .then(r => { siblingTasks.value = r.rows || [] })
         .catch(() => {})
       if (parentRes.data.customerId) {
         request({ url: `/project/customer/${parentRes.data.customerId}`, method: 'get' })

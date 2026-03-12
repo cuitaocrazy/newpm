@@ -643,16 +643,4 @@ public class ProjectServiceImpl implements IProjectService
         rel.setCreateTime(DateUtils.getNowDate());
         projectContractRelMapper.insertProjectContractRel(rel);
     }
-
-    @Override
-    public List<String> searchTaskCode(String taskCode)
-    {
-        return projectMapper.searchTaskCode(taskCode);
-    }
-
-    @Override
-    public List<String> searchTaskName(String projectName)
-    {
-        return projectMapper.searchTaskName(projectName);
-    }
 }

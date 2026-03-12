@@ -1150,33 +1150,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LIMIT 20
     </select>
 
-    <!-- 任务编号搜索（用于 autoComplete） -->
-    <select id="searchTaskCode" resultType="string">
-        SELECT DISTINCT task_code
-        FROM pm_project
-        WHERE del_flag = '0'
-        AND project_level = 1
-        AND task_code IS NOT NULL
-        <if test="taskCode != null and taskCode != ''">
-            AND task_code LIKE CONCAT('%', #{taskCode}, '%')
-        </if>
-        ORDER BY task_code
-        LIMIT 20
-    </select>
-
-    <select id="searchTaskName" resultType="string">
-        SELECT DISTINCT project_name
-        FROM pm_project
-        WHERE del_flag = '0'
-        AND project_level = 1
-        AND project_name IS NOT NULL
-        <if test="projectName != null and projectName != ''">
-            AND project_name LIKE CONCAT('%', #{projectName}, '%')
-        </if>
-        ORDER BY project_name
-        LIMIT 20
-    </select>
-
     <!-- 根据用户ID查询关联的项目列表（用于工作日报） -->
     <select id="selectProjectsByUserId" parameterType="Long" resultType="java.util.HashMap">
         select distinct p.project_id as projectId,

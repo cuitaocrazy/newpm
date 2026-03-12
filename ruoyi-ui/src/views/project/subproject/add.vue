@@ -15,13 +15,13 @@
         <template #header><span style="font-size: 16px; font-weight: bold;">一、基本信息</span></template>
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="任务负责人" prop="projectManagerId">
-              <user-select v-model="form.projectManagerId" post-code="pm" placeholder="请选择任务负责人" filterable />
+            <el-form-item label="任务负责人" prop="taskManagerId">
+              <user-select v-model="form.taskManagerId" post-code="pm" placeholder="请选择任务负责人" filterable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务名称" prop="projectName">
-              <el-input v-model="form.projectName" placeholder="请输入任务名称" />
+            <el-form-item label="任务名称" prop="taskName">
+              <el-input v-model="form.taskName" placeholder="请输入任务名称" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -32,8 +32,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务阶段" prop="projectStage">
-              <dict-select v-model="form.projectStage" dict-type="sys_xmjd" placeholder="请选择任务阶段" />
+            <el-form-item label="任务阶段" prop="taskStage">
+              <dict-select v-model="form.taskStage" dict-type="sys_xmjd" placeholder="请选择任务阶段" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -56,7 +56,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="任务预算">
-              <el-input v-model="form.projectBudget" placeholder="请输入金额">
+              <el-input v-model="form.taskBudget" placeholder="请输入金额">
                 <template #append>元</template>
               </el-input>
             </el-form-item>
@@ -117,14 +117,14 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="任务计划">
-              <el-input v-model="form.projectPlan" type="textarea" :rows="3" placeholder="请输入任务计划" />
+              <el-input v-model="form.taskPlan" type="textarea" :rows="3" placeholder="请输入任务计划" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="任务描述">
-              <el-input v-model="form.projectDescription" type="textarea" :rows="3" placeholder="请输入任务描述" />
+              <el-input v-model="form.taskDescription" type="textarea" :rows="3" placeholder="请输入任务描述" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -194,7 +194,8 @@
 <script setup name="TaskAdd">
 import { ref, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { addProject, getProject, getUsersByPost } from '@/api/project/project'
+import { addTask } from '@/api/project/task'
+import { getProject, getUsersByPost } from '@/api/project/project'
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
@@ -208,11 +209,11 @@ const batchOptions = ref([])
 const planProductionDateDisplay = ref('')
 
 const form = ref({
-  taskCode: null, projectName: null, projectManagerId: null, projectStage: null,
-  estimatedWorkload: null, projectBudget: null,
+  taskCode: null, taskName: null, taskManagerId: null, taskStage: null,
+  estimatedWorkload: null, taskBudget: null,
   productionYear: null, batchId: null,
   bankDemandNo: null, softwareDemandNo: null, product: null,
-  projectPlan: null, projectDescription: null,
+  taskPlan: null, taskDescription: null,
   startDate: null, endDate: null, productionDate: null,
   internalClosureDate: null, functionalTestDate: null, remark: null
 })
@@ -221,9 +222,9 @@ const rules = ref({
   taskCode:          [
     { max: 20, message: '任务编号最多 20 位', trigger: 'blur' }
   ],
-  projectManagerId:  [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
-  projectName:       [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
-  projectStage:      [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
+  taskManagerId:     [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
+  taskName:          [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
+  taskStage:         [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
   estimatedWorkload: [{ required: true, message: '预估工作量不能为空', trigger: 'blur'   }],
   startDate:         [{ required: true, message: '启动日期不能为空',   trigger: 'change' }],
   endDate:           [{ required: true, message: '结束日期不能为空',   trigger: 'change' }]
@@ -263,26 +264,29 @@ function submitForm() {
   formRef.value.validate(valid => {
     if (!valid) return
     const parentId = route.query.parentId ? Number(route.query.parentId) : null
-    const p = parentProject.value || {}
     const submitData = {
-      ...form.value,
-      parentId,
-      projectStatus: '0',
-      projectLevel: 1,
-      batchId: form.value.batchId || null,
+      projectId: parentId,
+      taskCode: form.value.taskCode || null,
+      taskName: form.value.taskName,
+      taskManagerId: form.value.taskManagerId,
+      taskStage: form.value.taskStage,
+      estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null,
+      taskBudget: form.value.taskBudget ? parseFloat(String(form.value.taskBudget).replace(/,/g, '')) : null,
       productionYear: form.value.productionYear || null,
-      projectDept: p.projectDept || null,
-      industry: p.industry || null,
-      region: p.region || null,
-      regionId: p.regionId || null,
-      regionCode: p.regionCode || null,
-      shortName: p.shortName || null,
-      establishedYear: p.establishedYear || null,
-      projectCategory: p.projectCategory || null,
-      projectBudget: form.value.projectBudget ? parseFloat(String(form.value.projectBudget).replace(/,/g, '')) : null,
-      estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null
+      batchId: form.value.batchId || null,
+      bankDemandNo: form.value.bankDemandNo || null,
+      softwareDemandNo: form.value.softwareDemandNo || null,
+      product: form.value.product || null,
+      taskPlan: form.value.taskPlan || null,
+      taskDescription: form.value.taskDescription || null,
+      startDate: form.value.startDate || null,
+      endDate: form.value.endDate || null,
+      productionDate: form.value.productionDate || null,
+      internalClosureDate: form.value.internalClosureDate || null,
+      functionalTestDate: form.value.functionalTestDate || null,
+      remark: form.value.remark || null
     }
-    addProject(submitData).then(() => {
+    addTask(submitData).then(() => {
       proxy.$modal.msgSuccess('新增成功')
       router.push({ path: '/task/subproject', query: { parentId } })
     })

@@ -64,4 +64,16 @@ public class TaskServiceImpl implements ITaskService {
         }
         return taskMapper.selectProjectsHasTasks(projectIds);
     }
+
+    @Override
+    public List<String> searchTaskCode(String taskCode)
+    {
+        return taskMapper.searchTaskCode(taskCode);
+    }
+
+    @Override
+    public List<String> searchTaskName(String taskName)
+    {
+        return taskMapper.searchTaskName(taskName);
+    }
 }

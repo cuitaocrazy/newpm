@@ -19,7 +19,7 @@
                 <span v-for="le in getDateLeaveEntries(dateStr)" :key="le.type"
                   class="cal-leave-badge"
                   :style="{ color: LEAVE_TYPE_COLOR[le.type] }">
-                  {{ LEAVE_TYPE_LABEL[le.type] }}{{ le.hours }}h
+                  {{ getDictLabel(sys_rbtype, le.type) }}{{ le.hours }}h
                 </span>
               </div>
             </template>
@@ -75,9 +75,7 @@
               <div v-for="(item, idx) in leaveList" :key="idx" class="leave-item">
                 <span class="leave-color-dot" :style="{ background: LEAVE_TYPE_COLOR[item.entryType] || '#ccc' }"></span>
                 <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isEditable">
-                  <el-option label="请假" value="leave" />
-                  <el-option label="倒休" value="comp" />
-                  <el-option label="年假" value="annual" />
+                  <el-option v-for="d in sys_rbtype" :key="d.value" :label="d.label" :value="d.value" />
                 </el-select>
                 <el-input-number
                   v-model="item.leaveHours"
@@ -120,8 +118,9 @@
                 <div class="prj-category-row">
                   <span class="hours-label">工作任务类型: <span style="color:#f56c6c;">*</span></span>
                   <el-select v-model="item.workCategory" placeholder="请选择工作任务类型（必填）" clearable
-                    size="small" style="width: 180px;" :disabled="!isEditable"
-                    :class="{ 'is-required-error': item.workHours > 0 && !item.workCategory }">
+                    multiple collapse-tags collapse-tags-tooltip
+                    size="small" style="width: 260px;" :disabled="!isEditable"
+                    :class="{ 'is-required-error': item.workHours > 0 && !item.workCategory?.length }">
                     <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
                   </el-select>
                 </div>
@@ -185,17 +184,18 @@
                   <div v-for="task in item.taskRows" :key="task.subProjectId" class="task-row">
                     <!-- 任务头（只读信息） -->
                     <div class="task-row-header">
-                      <span v-if="task.batchNo" class="task-batch">{{ task.batchNo }}</span>
-                      <span class="task-manager">{{ task.projectManagerName }}</span>
+                      <el-tag v-if="task.batchNo" size="small" type="info">{{ task.batchNo }}</el-tag>
+                      <span class="task-manager">{{ task.taskManagerName }}</span>
                       <span class="task-name">{{ task.taskName }}</span>
-                      <el-tag v-if="task.projectStage" size="small" type="info">{{ getStageName(task.projectStage) }}</el-tag>
-                      <span class="task-workload-info" style="margin-left: auto;">
+                      <el-tag v-if="task.taskStage" size="small" type="info">{{ getStageName(task.taskStage) }}</el-tag>
+                      <span class="task-workload-info">
                         预计：<strong>{{ task.estimatedWorkload != null ? task.estimatedWorkload : '-' }}</strong>天
                         &nbsp;实际：<strong>{{ task.actualWorkload != null ? Number(task.actualWorkload).toFixed(3) : '-' }}</strong>天
                       </span>
                       <el-select v-model="task.workCategory" placeholder="工作任务类别（必填）" clearable
-                        size="small" style="width: 150px; margin-left: 8px;" :disabled="!isEditable"
-                        :class="{ 'is-required-error': task.workHours > 0 && !task.workCategory }">
+                        multiple collapse-tags collapse-tags-tooltip
+                        size="small" style="width: 200px; margin-left: 8px;" :disabled="!isEditable"
+                        :class="{ 'is-required-error': task.workHours > 0 && !task.workCategory?.length }">
                         <el-option v-for="d in sys_gzlb" :key="d.value" :label="d.label" :value="d.value" />
                       </el-select>
                     </div>
@@ -232,7 +232,7 @@ import MonthCalendar from '@/components/MonthCalendar/index.vue'
 import useUserStore from '@/store/modules/user'
 
 const { proxy } = getCurrentInstance()
-const { sys_ndgl, sys_gzlb, sys_xmjd } = proxy.useDict('sys_ndgl', 'sys_gzlb', 'sys_xmjd')
+const { sys_ndgl, sys_gzlb, sys_xmjd, sys_rbtype } = proxy.useDict('sys_ndgl', 'sys_gzlb', 'sys_xmjd', 'sys_rbtype')
 
 const userStore = useUserStore()
 
@@ -267,7 +267,6 @@ function yearTagStyle(year) {
 
 // 假期类型颜色（不与现有绿/橙冲突）
 const LEAVE_TYPE_COLOR = { leave: '#f56c6c', comp: '#b37feb', annual: '#36cfc9' }
-const LEAVE_TYPE_LABEL = { leave: '请假', comp: '倒休', annual: '年假' }
 
 // 假期记录列表（当天）
 const leaveList = ref([])
@@ -377,19 +376,21 @@ async function loadProjects() {
 // 加载子任务行（有子任务的项目使用）
 async function loadTaskRows(item) {
   if (item.taskRows !== null && item.taskRows !== undefined) return
-  const res = await import('@/api/project/project').then(m => m.getSubProjectOptions(item.projectId))
+  const res = await import('@/api/project/task').then(m => m.getTaskOptions(item.projectId))
   const tasks = res.data || []
   item.taskRows = tasks.map(t => {
-    const existingDetail = (item._existingDetails || []).find(d => d.subProjectId === t.projectId)
+    const existingDetail = (item._existingDetails || []).find(d => d.subProjectId === t.taskId)
     return {
-      subProjectId: t.projectId,
-      taskName: t.projectName,
+      subProjectId: t.taskId,
+      taskName: t.taskName,
       batchNo: t.batchNo || '',
-      projectStage: t.projectStage,
-      projectManagerName: t.projectManagerName || '-',
+      taskStage: t.taskStage,
+      taskManagerName: t.taskManagerName || '-',
       estimatedWorkload: t.estimatedWorkload != null ? t.estimatedWorkload : null,
       actualWorkload: t.actualWorkload != null ? t.actualWorkload : null,
-      workCategory: existingDetail?.workCategory || null,
+      workCategory: existingDetail?.workCategory
+        ? existingDetail.workCategory.split(',').map(s => s.trim()).filter(Boolean)
+        : [],
       workHours: existingDetail ? Number(existingDetail.workHours) : 0,
       workContent: existingDetail?.workContent || ''
     }
@@ -441,7 +442,9 @@ async function loadDayReport(dateStr) {
           hasSubProject: false,
           workHours: detail ? Number(detail.workHours) : 0,
           workContent: detail ? detail.workContent : '',
-          workCategory: detail ? (detail.workCategory || null) : null
+          workCategory: detail?.workCategory
+            ? detail.workCategory.split(',').map(s => s.trim()).filter(Boolean)
+            : []
         }
       }
     })
@@ -519,7 +522,7 @@ async function handleSave() {
     if (item.hasSubProject && item.taskRows) {
       // 有子任务的项目：遍历 taskRows，工时>0 的生成 detail
       for (const t of item.taskRows.filter(t => t.workHours > 0)) {
-        if (!t.workCategory) {
+        if (!t.workCategory?.length) {
           proxy.$modal.msgWarning(`项目"${item.projectName}"的任务"${t.taskName}"工时已填写，请选择工作任务类别`)
           return
         }
@@ -530,13 +533,13 @@ async function handleSave() {
           workContent: t.workContent,
           entryType: 'work',
           subProjectId: t.subProjectId,
-          workCategory: t.workCategory || null
+          workCategory: t.workCategory?.length ? t.workCategory.join(',') : null
         })
       }
     } else if (!item.hasSubProject) {
       // 无子任务的项目：工时>0 时 workCategory 必须选择
       if (item.workHours > 0) {
-        if (!item.workCategory) {
+        if (!item.workCategory?.length) {
           proxy.$modal.msgWarning(`项目"${item.projectName}"工时已填写，请选择工作任务类型`)
           return
         }
@@ -548,7 +551,7 @@ async function handleSave() {
             workContent: item.workContent,
             entryType: 'work',
             subProjectId: null,
-            workCategory: item.workCategory || null
+            workCategory: item.workCategory?.length ? item.workCategory.join(',') : null
           })
         }
       }

@@ -54,4 +54,8 @@ public interface TaskMapper {
      * 用于确定哪些主项目需要用任务汇总更新工时
      */
     List<Long> selectProjectIdsByTaskIds(@Param("taskIds") List<Long> taskIds);
+
+    List<String> searchTaskCode(@Param("taskCode") String taskCode);
+
+    List<String> searchTaskName(@Param("taskName") String taskName);
 }

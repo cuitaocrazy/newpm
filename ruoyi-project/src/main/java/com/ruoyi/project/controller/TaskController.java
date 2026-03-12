@@ -91,4 +91,22 @@ public class TaskController extends BaseController {
     public AjaxResult remove(@PathVariable Long[] taskIds) {
         return toAjax(taskService.deleteTaskByIds(taskIds));
     }
+
+    /**
+     * 任务编号模糊搜索（自动完成）
+     */
+    @PreAuthorize("@ss.hasPermi('project:task:list')")
+    @GetMapping("/searchTaskCode")
+    public AjaxResult searchTaskCode(@RequestParam(required = false) String taskCode) {
+        return success(taskService.searchTaskCode(taskCode));
+    }
+
+    /**
+     * 任务名称模糊搜索（自动完成）
+     */
+    @PreAuthorize("@ss.hasPermi('project:task:list')")
+    @GetMapping("/searchTaskName")
+    public AjaxResult searchTaskName(@RequestParam(required = false) String taskName) {
+        return success(taskService.searchTaskName(taskName));
+    }
 }

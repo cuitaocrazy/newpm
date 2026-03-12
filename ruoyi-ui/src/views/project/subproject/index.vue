@@ -22,9 +22,9 @@
           </template>
         </el-autocomplete>
       </el-form-item>
-      <el-form-item label="任务名称" prop="projectName">
+      <el-form-item label="任务名称" prop="taskName">
         <el-autocomplete
-          v-model="queryParams.projectName"
+          v-model="queryParams.taskName"
           :fetch-suggestions="fetchTaskNameSuggestions"
           placeholder="请输入任务名称"
           style="width: 180px"
@@ -44,8 +44,8 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="当前阶段" prop="projectStage">
-        <el-select v-model="queryParams.projectStage" placeholder="请选择" clearable style="width: 180px">
+      <el-form-item label="当前阶段" prop="taskStage">
+        <el-select v-model="queryParams.taskStage" placeholder="请选择" clearable style="width: 180px">
           <el-option v-for="d in sys_xmjd" :key="d.value" :label="d.label" :value="d.value" />
         </el-select>
       </el-form-item>
@@ -71,8 +71,8 @@
           <el-option v-for="d in sys_product" :key="d.value" :label="d.label" :value="d.value" />
         </el-select>
       </el-form-item>
-      <el-form-item label="任务负责人" prop="projectManagerId">
-        <el-select v-model="queryParams.projectManagerId" placeholder="请选择" clearable filterable style="width: 180px">
+      <el-form-item label="任务负责人" prop="taskManagerId">
+        <el-select v-model="queryParams.taskManagerId" placeholder="请选择" clearable filterable style="width: 180px">
           <el-option v-for="u in managerOptions" :key="u.userId" :label="u.nickName" :value="u.userId" />
         </el-select>
       </el-form-item>
@@ -99,16 +99,16 @@
       <el-table-column type="index" label="序号" width="55" align="center" />
       <el-table-column label="所属主项目" prop="parentProjectName" min-width="160" show-overflow-tooltip v-if="columns.parentProjectName.visible" />
       <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible" />
-      <el-table-column label="任务名称" prop="projectName" width="220" v-if="columns.projectName.visible">
+      <el-table-column label="任务名称" prop="taskName" width="220" v-if="columns.taskName.visible">
         <template #default="scope">
-          <el-link type="primary" @click="handleDetail(scope.row)" style="white-space: normal; word-break: break-all; line-height: 1.4;"
-            v-if="checkPermi(['project:subproject:query'])">{{ scope.row.projectName }}</el-link>
-          <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.projectName }}</span>
+          <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`" @click.prevent="handleDetail(scope.row)" style="white-space: normal; word-break: break-all; line-height: 1.4;"
+            v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
+          <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.taskName }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="当前阶段" prop="projectStage" width="130" v-if="columns.projectStage.visible">
+      <el-table-column label="当前阶段" prop="taskStage" width="130" v-if="columns.taskStage.visible">
         <template #default="scope">
-          <dict-tag :options="sys_xmjd" :value="scope.row.projectStage" />
+          <dict-tag :options="sys_xmjd" :value="scope.row.taskStage" />
         </template>
       </el-table-column>
       <el-table-column label="项目状态" prop="projectStatus" width="100" align="center" v-if="columns.projectStatus.visible">
@@ -116,7 +116,7 @@
           <dict-tag :options="sys_xmzt" :value="scope.row.projectStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" v-if="columns.projectManagerName.visible" />
+      <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" v-if="columns.taskManagerName.visible" />
       <el-table-column label="预计人天" prop="estimatedWorkload" width="100" align="right" v-if="columns.estimatedWorkload.visible" />
       <el-table-column label="实际人天" prop="actualWorkload" width="100" align="right" v-if="columns.actualWorkload.visible">
         <template #default="scope">
@@ -129,11 +129,11 @@
       <el-table-column label="结束日期" prop="endDate" width="120" align="center" v-if="columns.endDate.visible" />
       <el-table-column label="操作" width="150" align="center" fixed="right" v-if="columns.actions.visible">
         <template #default="scope">
-          <el-button link type="primary" icon="View" v-hasPermi="['project:subproject:query']"
+          <el-button link type="primary" icon="View" v-hasPermi="['project:task:query']"
             @click="handleDetail(scope.row)">详情</el-button>
-          <el-button link type="primary" icon="Edit" v-hasPermi="['project:subproject:edit']"
+          <el-button link type="primary" icon="Edit" v-hasPermi="['project:task:edit']"
             @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button link type="danger" icon="Delete" v-hasPermi="['project:subproject:remove']"
+          <el-button link type="danger" icon="Delete" v-hasPermi="['project:task:remove']"
             @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -148,7 +148,8 @@
 <script setup name="SubprojectIndex">
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
-import { listSubProject, delProject, getUsersByPost } from '@/api/project/project'
+import { listTask, delTask } from '@/api/project/task'
+import { getUsersByPost } from '@/api/project/project'
 import { checkPermi } from '@/utils/permission'
 import request from '@/utils/request'
 
@@ -166,11 +167,11 @@ const parentProjectKeyword = ref('')
 
 const columns = ref({
   taskCode:          { label: '任务编号',   visible: true },
-  projectName:       { label: '任务名称',   visible: true },
+  taskName:          { label: '任务名称',   visible: true },
   parentProjectName: { label: '所属主项目', visible: true },
-  projectStage:      { label: '当前阶段',   visible: true },
+  taskStage:         { label: '当前阶段',   visible: true },
   projectStatus:     { label: '项目状态',   visible: true },
-  projectManagerName:{ label: '任务负责人', visible: true },
+  taskManagerName:   { label: '任务负责人', visible: true },
   estimatedWorkload: { label: '预计人天',   visible: true },
   actualWorkload:    { label: '实际人天',   visible: true },
   productionYear:    { label: '投产年份',   visible: true },
@@ -185,14 +186,14 @@ const queryParams = reactive({
   pageSize: 10,
   projectDept: null,
   parentId: null,
-  projectName: '',
+  taskName: '',
   taskCode: '',
-  projectStage: '',
+  taskStage: '',
   productionYear: null,
   batchId: null,
   parentRevenueConfirmYear: null,
   product: null,
-  projectManagerId: null,
+  taskManagerId: null,
   softwareDemandNo: '',
   scheduleStatus: null
 })
@@ -222,7 +223,7 @@ function onParentProjectClear() {
 
 function fetchTaskCodeSuggestions(keyword, cb) {
   request({
-    url: '/project/project/searchTaskCode',
+    url: '/project/task/searchTaskCode',
     method: 'get',
     params: { taskCode: keyword }
   }).then(res => {
@@ -232,9 +233,9 @@ function fetchTaskCodeSuggestions(keyword, cb) {
 
 function fetchTaskNameSuggestions(keyword, cb) {
   request({
-    url: '/project/project/searchTaskName',
+    url: '/project/task/searchTaskName',
     method: 'get',
-    params: { projectName: keyword }
+    params: { taskName: keyword }
   }).then(res => {
     cb((res.data || []).map(v => ({ value: v })))
   }).catch(() => cb([]))
@@ -258,7 +259,7 @@ async function onQueryYearChange(year) {
 
 function getList() {
   loading.value = true
-  listSubProject(queryParams).then(res => {
+  listTask(queryParams).then(res => {
     subprojectList.value = res.rows
     total.value = res.total
   }).finally(() => { loading.value = false })
@@ -274,14 +275,14 @@ function resetQuery() {
 }
 
 function handleEdit(row) {
-  router.push(`/task/subproject/edit/${row.projectId}`)
+  router.push(`/task/subproject/edit/${row.taskId}`)
 }
 function handleDetail(row) {
-  router.push(`/task/subproject/detail/${row.projectId}`)
+  router.push(`/task/subproject/detail/${row.taskId}`)
 }
 function handleDelete(row) {
-  proxy.$modal.confirm(`确认删除任务「${row.projectName}」？`).then(() => {
-    return delProject(row.projectId)
+  proxy.$modal.confirm(`确认删除任务「${row.taskName}」？`).then(() => {
+    return delTask(row.taskId)
   }).then(() => {
     proxy.$modal.msgSuccess('删除成功')
     getList()

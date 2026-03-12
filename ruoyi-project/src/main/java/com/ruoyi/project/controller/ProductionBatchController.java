@@ -116,7 +116,7 @@ public class ProductionBatchController extends BaseController
     /**
      * 按投产年份查询批次列表（用于任务管理联动下拉）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:subproject:list,project:subproject:add')")
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:add')")
     @GetMapping("/byYear")
     public AjaxResult byYear(@RequestParam String productionYear)
     {

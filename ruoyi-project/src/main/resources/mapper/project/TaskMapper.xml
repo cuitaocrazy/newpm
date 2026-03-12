@@ -264,4 +264,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </if>
     </select>
 
+    <select id="searchTaskCode" resultType="string">
+        SELECT DISTINCT task_code
+        FROM pm_task
+        WHERE task_code IS NOT NULL AND task_code != ''
+        <if test="taskCode != null and taskCode != ''">
+            AND task_code LIKE CONCAT('%', #{taskCode}, '%')
+        </if>
+        LIMIT 20
+    </select>
+
+    <select id="searchTaskName" resultType="string">
+        SELECT DISTINCT task_name
+        FROM pm_task
+        WHERE task_name IS NOT NULL AND task_name != ''
+        <if test="taskName != null and taskName != ''">
+            AND task_name LIKE CONCAT('%', #{taskName}, '%')
+        </if>
+        LIMIT 20
+    </select>
+
 </mapper>

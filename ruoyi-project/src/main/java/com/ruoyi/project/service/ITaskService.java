@@ -21,4 +21,8 @@ public interface ITaskService {
     List<Map<String, Object>> selectTaskOptions(Long projectId);
 
     List<Long> selectProjectsHasTasks(List<Long> projectIds);
+
+    List<String> searchTaskCode(String taskCode);
+
+    List<String> searchTaskName(String taskName);
 }

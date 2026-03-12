@@ -346,34 +346,34 @@ VALUES (2248, '查询', 2165, 0, '#', '', '', '', 1, 0, 'F', '0', '0', 'project:
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
 VALUES (2263, '任务管理', (SELECT menu_id FROM sys_menu WHERE menu_name='项目管理' AND parent_id=0), 10, 'subproject', 'project/subproject/index',
-  1, 0, 'C', '0', '0', 'project:subproject:list', 'list', 'admin', NOW(), '任务管理');
+  1, 0, 'C', '0', '0', 'project:task:list', 'list', 'admin', NOW(), '任务管理');
 
 -- ② 新增页（隐藏路由，挂在项目管理下 level 2，路由才能正确解析）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
 VALUES (2264, '任务新增页', (SELECT menu_id FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0), 1, 'subproject/add', 'project/subproject/add',
-  1, 0, 'C', '1', '0', 'project:subproject:add', '#', 'admin', NOW());
+  1, 0, 'C', '1', '0', 'project:task:add', '#', 'admin', NOW());
 
 -- ③ 编辑页（隐藏路由）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES (2265, '任务编辑页', (SELECT menu_id FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0), 2, 'subproject/edit/:projectId', 'project/subproject/edit',
-  1, 0, 'C', '1', '0', 'project:subproject:edit', '#', 'admin', NOW());
+VALUES (2265, '任务编辑页', (SELECT menu_id FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0), 2, 'subproject/edit/:taskId', 'project/subproject/edit',
+  1, 0, 'C', '1', '0', 'project:task:edit', '#', 'admin', NOW());
 
 -- ④ 详情页（隐藏路由）
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
-VALUES (2266, '任务详情页', (SELECT menu_id FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0), 3, 'subproject/detail/:projectId', 'project/subproject/detail',
-  1, 0, 'C', '1', '0', 'project:subproject:query', '#', 'admin', NOW());
+VALUES (2266, '任务详情页', (SELECT menu_id FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0), 3, 'subproject/detail/:taskId', 'project/subproject/detail',
+  1, 0, 'C', '1', '0', 'project:task:query', '#', 'admin', NOW());
 
 -- ⑤ 按钮权限
 INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
   is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time)
 VALUES
-  (2267, '任务查询', 2263, 4, '', '', 1, 0, 'F', '0', '0', 'project:subproject:query', '#', 'admin', NOW()),
-  (2268, '任务新增', 2263, 5, '', '', 1, 0, 'F', '0', '0', 'project:subproject:add',   '#', 'admin', NOW()),
-  (2269, '任务修改', 2263, 6, '', '', 1, 0, 'F', '0', '0', 'project:subproject:edit',  '#', 'admin', NOW()),
-  (2270, '任务删除', 2263, 7, '', '', 1, 0, 'F', '0', '0', 'project:subproject:remove','#', 'admin', NOW());
+  (2267, '任务查询', 2263, 4, '', '', 1, 0, 'F', '0', '0', 'project:task:query', '#', 'admin', NOW()),
+  (2268, '任务新增', 2263, 5, '', '', 1, 0, 'F', '0', '0', 'project:task:add',   '#', 'admin', NOW()),
+  (2269, '任务修改', 2263, 6, '', '', 1, 0, 'F', '0', '0', 'project:task:edit',  '#', 'admin', NOW()),
+  (2270, '任务删除', 2263, 7, '', '', 1, 0, 'F', '0', '0', 'project:task:remove','#', 'admin', NOW());
 
 -- ⑥ admin 角色授权
 INSERT INTO sys_role_menu (role_id, menu_id) VALUES
@@ -408,5 +408,5 @@ values('投产批次管理导出', @productionBatchMenuId, '5', '#', '', 1, 0, '
 -- ----------------------------
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 SELECT '项目分解任务', menu_id, 1, 'decompose', 'project/subproject/decompose',
-       1, 0, 'C', '0', '0', 'project:subproject:add', 'list', 'admin', NOW(), '', NULL, '项目分解任务'
+       1, 0, 'C', '0', '0', 'project:task:add', 'list', 'admin', NOW(), '', NULL, '项目分解任务'
 FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0;

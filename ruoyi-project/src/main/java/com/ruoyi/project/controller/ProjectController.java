@@ -374,26 +374,12 @@ public class ProjectController extends BaseController
      * @param projectName 项目名称（模糊搜索）
      * @return 返回精简字段：projectId, projectName, projectCode
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,revenue:team:list,revenue:company:list,project:managerChange:list,project:review:list,project:subproject:list,project:subproject:add')")
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,project:contract:list,revenue:team:list,revenue:company:list,project:managerChange:list,project:review:list,project:task:list,project:task:add')")
     @GetMapping("/search")
     public AjaxResult searchProjects(@RequestParam(required = false) String projectName,
                                      @RequestParam(required = false) String projectDept)
     {
         return success(projectService.searchProjectsByName(projectName, projectDept));
-    }
-
-    @PreAuthorize("@ss.hasAnyPermi('project:subproject:list,project:subproject:add')")
-    @GetMapping("/searchTaskCode")
-    public AjaxResult searchTaskCode(@RequestParam(required = false) String taskCode)
-    {
-        return success(projectService.searchTaskCode(taskCode));
-    }
-
-    @PreAuthorize("@ss.hasAnyPermi('project:subproject:list,project:subproject:add')")
-    @GetMapping("/searchTaskName")
-    public AjaxResult searchTaskName(@RequestParam(required = false) String projectName)
-    {
-        return success(projectService.searchTaskName(projectName));
     }
 
     /**

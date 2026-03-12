@@ -230,17 +230,4 @@ public interface ProjectMapper
      */
     public List<Map<String, Object>> selectProjectsByCodePrefix(@Param("codePrefix") String codePrefix,
                                                                 @Param("excludeProjectId") Long excludeProjectId);
-
-    public List<String> searchTaskCode(@Param("taskCode") String taskCode);
-
-    public List<String> searchTaskName(@Param("projectName") String projectName);
-
-    /**
-     * 更新项目实际工作量（小时），由日报明细聚合后写回
-     *
-     * @param projectId      项目ID
-     * @param actualWorkload 最新汇总工时（小时）
-     */
-    public void updateActualWorkload(@Param("projectId") Long projectId,
-                                     @Param("actualWorkload") java.math.BigDecimal actualWorkload);
 }

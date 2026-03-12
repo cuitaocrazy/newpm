@@ -99,7 +99,7 @@
             <dict-tag :options="sys_product" :value="scope.row.product" />
           </template>
         </el-table-column>
-        <el-table-column label="任务名称" prop="projectName" min-width="160" show-overflow-tooltip />
+        <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
         <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
         <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
           <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
@@ -107,7 +107,7 @@
         <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
           <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
         </el-table-column>
-        <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" />
+        <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
       </el-table>
     </el-card>
 
@@ -118,13 +118,13 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="任务名称" prop="projectName">
-              <el-input v-model="form.projectName" placeholder="请输入任务名称" />
+            <el-form-item label="任务名称" prop="taskName">
+              <el-input v-model="form.taskName" placeholder="请输入任务名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务负责人" prop="projectManagerId">
-              <user-select v-model="form.projectManagerId" post-code="pm" placeholder="请选择任务负责人" filterable />
+            <el-form-item label="任务负责人" prop="taskManagerId">
+              <user-select v-model="form.taskManagerId" post-code="pm" placeholder="请选择任务负责人" filterable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -135,8 +135,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务阶段" prop="projectStage">
-              <dict-select v-model="form.projectStage" dict-type="sys_xmjd" placeholder="请选择任务阶段" />
+            <el-form-item label="任务阶段" prop="taskStage">
+              <dict-select v-model="form.taskStage" dict-type="sys_xmjd" placeholder="请选择任务阶段" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -181,7 +181,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="任务预算">
-              <el-input v-model="form.projectBudget" placeholder="请输入金额">
+              <el-input v-model="form.taskBudget" placeholder="请输入金额">
                 <template #append>元</template>
               </el-input>
             </el-form-item>
@@ -312,7 +312,8 @@
 <script setup name="TaskEdit">
 import { ref, watch, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getProject, updateProject } from '@/api/project/project'
+import { getTask, updateTask } from '@/api/project/task'
+import { getProject } from '@/api/project/project'
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
@@ -335,9 +336,9 @@ const isInitializing = ref(true)
 const siblingTasks = ref([])
 
 const form = ref({
-  projectId: null, parentId: null,
-  taskCode: null, projectName: null, projectManagerId: null, projectStage: null,
-  estimatedWorkload: null, actualWorkload: null, projectBudget: null,
+  taskId: null, projectId: null,
+  taskCode: null, taskName: null, taskManagerId: null, taskStage: null,
+  estimatedWorkload: null, actualWorkload: null, taskBudget: null,
   productionYear: null, batchId: null,
   bankDemandNo: null, softwareDemandNo: null, product: null,
   scheduleStatus: null, functionDescription: null, implementationPlan: null,
@@ -351,9 +352,9 @@ const form = ref({
 
 const rules = ref({
   taskCode:          [{ max: 20, message: '任务编号最多 20 位', trigger: 'blur' }],
-  projectManagerId:  [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
-  projectName:       [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
-  projectStage:      [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
+  taskManagerId:     [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
+  taskName:          [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
+  taskStage:         [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
   estimatedWorkload: [{ required: true, message: '预估工作量不能为空', trigger: 'blur'   }],
   startDate:         [{ required: true, message: '启动日期不能为空',   trigger: 'change' }],
   endDate:           [{ required: true, message: '结束日期不能为空',   trigger: 'change' }]
@@ -407,7 +408,7 @@ async function onProjectSelect(item) {
   try {
     const res = await getProject(item.projectId)
     selectedProject.value = res.data
-    form.value.parentId = item.projectId
+    form.value.projectId = item.projectId
     projectKeyword.value = item.projectName
     projectCustomerName.value = ''
     loadSiblingTasks(item.projectId)
@@ -425,13 +426,13 @@ function onProjectClear() {
   selectedProject.value = null
   projectCustomerName.value = ''
   siblingTasks.value = []
-  form.value.parentId = null
+  form.value.projectId = null
 }
 
 async function loadSiblingTasks(parentId) {
   try {
-    const res = await request({ url: '/project/project/siblingTasks', method: 'get', params: { parentId } })
-    siblingTasks.value = res.data || []
+    const res = await request({ url: '/project/task/list', method: 'get', params: { projectId: parentId } })
+    siblingTasks.value = res.rows || []
   } catch (e) { console.error('加载兄弟任务失败', e) }
 }
 
@@ -458,18 +459,18 @@ function submitForm() {
     if (!valid) return
     const submitData = {
       ...form.value,
-      projectBudget: form.value.projectBudget ? parseFloat(String(form.value.projectBudget).replace(/,/g, '')) : null,
+      taskBudget: form.value.taskBudget ? parseFloat(String(form.value.taskBudget).replace(/,/g, '')) : null,
       estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null
     }
-    updateProject(submitData).then(() => {
+    updateTask(submitData).then(() => {
       proxy.$modal.msgSuccess('保存成功')
-      router.push({ path: '/task/subproject', query: { parentId: form.value.parentId } })
+      router.push({ path: '/task/subproject', query: { parentId: form.value.projectId } })
     })
   })
 }
 
 function cancel() {
-  router.push({ path: '/task/subproject', query: { parentId: form.value.parentId } })
+  router.push({ path: '/task/subproject', query: { parentId: form.value.projectId } })
 }
 
 onMounted(async () => {
@@ -481,18 +482,18 @@ onMounted(async () => {
   if (!taskId) return
   loading.value = true
   try {
-    const res = await getProject(Number(taskId))
+    const res = await getTask(Number(taskId))
     const data = res.data
     Object.assign(form.value, {
+      taskId: data.taskId,
       projectId: data.projectId,
-      parentId: data.parentId,
-      projectName: data.projectName,
-      projectManagerId: data.projectManagerId,
+      taskName: data.taskName,
+      taskManagerId: data.taskManagerId,
       taskCode: data.taskCode,
-      projectStage: data.projectStage,
+      taskStage: data.taskStage,
       estimatedWorkload: data.estimatedWorkload,
       actualWorkload: data.actualWorkload,
-      projectBudget: data.projectBudget,
+      taskBudget: data.taskBudget,
       productionYear: data.productionYear,
       batchId: data.batchId,
       bankDemandNo: data.bankDemandNo,
@@ -523,12 +524,12 @@ onMounted(async () => {
         planProductionDateDisplay.value = found ? (found.planProductionDate ? found.planProductionDate.substring(0, 10) : '') : ''
       }
     }
-    if (data.parentId) {
-      const parentRes = await getProject(data.parentId)
+    if (data.projectId) {
+      const parentRes = await getProject(data.projectId)
       selectedProject.value = parentRes.data
       projectKeyword.value = parentRes.data.projectName || ''
       searchDept.value = parentRes.data.projectDept ? Number(parentRes.data.projectDept) : null
-      loadSiblingTasks(data.parentId)
+      loadSiblingTasks(data.projectId)
       if (parentRes.data.customerId) {
         request({ url: `/project/customer/${parentRes.data.customerId}`, method: 'get' })
           .then(r => { projectCustomerName.value = r.data.customerSimpleName || r.data.customerFullName || '' })

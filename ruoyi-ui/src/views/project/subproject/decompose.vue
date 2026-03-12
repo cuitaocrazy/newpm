@@ -100,7 +100,7 @@
             <dict-tag :options="sys_product" :value="scope.row.product" />
           </template>
         </el-table-column>
-        <el-table-column label="任务名称" prop="projectName" min-width="160" show-overflow-tooltip />
+        <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
         <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
         <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
           <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
@@ -108,7 +108,7 @@
         <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
           <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
         </el-table-column>
-        <el-table-column label="任务负责人" prop="projectManagerName" width="100" align="center" />
+        <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
       </el-table>
     </el-card>
 
@@ -119,13 +119,13 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="任务名称" prop="projectName">
-              <el-input v-model="form.projectName" placeholder="请输入任务名称" />
+            <el-form-item label="任务名称" prop="taskName">
+              <el-input v-model="form.taskName" placeholder="请输入任务名称" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务负责人" prop="projectManagerId">
-              <user-select v-model="form.projectManagerId" post-code="pm" placeholder="请选择任务负责人" filterable />
+            <el-form-item label="任务负责人" prop="taskManagerId">
+              <user-select v-model="form.taskManagerId" post-code="pm" placeholder="请选择任务负责人" filterable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -136,8 +136,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务阶段" prop="projectStage">
-              <dict-select v-model="form.projectStage" dict-type="sys_xmjd" placeholder="请选择任务阶段" />
+            <el-form-item label="任务阶段" prop="taskStage">
+              <dict-select v-model="form.taskStage" dict-type="sys_xmjd" placeholder="请选择任务阶段" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -182,7 +182,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="任务预算">
-              <el-input v-model="form.projectBudget" placeholder="请输入金额">
+              <el-input v-model="form.taskBudget" placeholder="请输入金额">
                 <template #append>元</template>
               </el-input>
             </el-form-item>
@@ -285,7 +285,8 @@
 <script setup name="TaskDecompose">
 import { ref, watch, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
-import { addProject, getProject } from '@/api/project/project'
+import { addTask } from '@/api/project/task'
+import { getProject } from '@/api/project/project'
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
@@ -305,11 +306,11 @@ const planProductionDateDisplay = ref('')
 const siblingTasks = ref([])
 
 const form = ref({
-  projectName: null, projectManagerId: null, taskCode: null, projectStage: null,
+  taskName: null, taskManagerId: null, taskCode: null, taskStage: null,
   productionYear: null, batchId: null,
   bankDemandNo: null, softwareDemandNo: null, product: null,
   scheduleStatus: null, functionDescription: null, implementationPlan: null,
-  estimatedWorkload: null, projectBudget: null,
+  estimatedWorkload: null, taskBudget: null,
   startDate: null, endDate: null,
   internalClosureDate: null, functionalTestDate: null, productionVersionDate: null,
   actualProductionDate: null,
@@ -318,9 +319,9 @@ const form = ref({
 
 const rules = ref({
   taskCode:          [{ max: 20, message: '任务编号最多 20 位', trigger: 'blur' }],
-  projectManagerId:  [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
-  projectName:       [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
-  projectStage:      [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
+  taskManagerId:     [{ required: true, message: '任务负责人不能为空', trigger: 'change' }],
+  taskName:          [{ required: true, message: '任务名称不能为空',   trigger: 'blur'   }],
+  taskStage:         [{ required: true, message: '任务阶段不能为空',   trigger: 'change' }],
   estimatedWorkload: [{ required: true, message: '预估工作量不能为空', trigger: 'blur'   }],
   startDate:         [{ required: true, message: '启动日期不能为空',   trigger: 'change' }],
   endDate:           [{ required: true, message: '结束日期不能为空',   trigger: 'change' }]
@@ -397,8 +398,8 @@ function onProjectClear() {
 
 async function loadSiblingTasks(parentId) {
   try {
-    const res = await request({ url: '/project/project/siblingTasks', method: 'get', params: { parentId } })
-    siblingTasks.value = res.data || []
+    const res = await request({ url: '/project/task/list', method: 'get', params: { projectId: parentId } })
+    siblingTasks.value = res.rows || []
   } catch (e) { console.error('加载兄弟任务失败', e) }
 }
 
@@ -430,22 +431,30 @@ function submitForm() {
     if (!valid) return
     const p = selectedProject.value
     const submitData = {
-      ...form.value,
-      parentId: p.projectId,
-      projectStatus: '0',
-      projectLevel: 1,
-      projectDept: p.projectDept || null,
-      industry: p.industry || null,
-      region: p.region || null,
-      regionId: p.regionId || null,
-      regionCode: p.regionCode || null,
-      shortName: p.shortName || null,
-      establishedYear: p.establishedYear || null,
-      projectCategory: p.projectCategory || null,
-      projectBudget: form.value.projectBudget ? parseFloat(String(form.value.projectBudget).replace(/,/g, '')) : null,
-      estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null
+      projectId: p.projectId,
+      taskCode: form.value.taskCode || null,
+      taskName: form.value.taskName,
+      taskManagerId: form.value.taskManagerId,
+      taskStage: form.value.taskStage,
+      estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null,
+      taskBudget: form.value.taskBudget ? parseFloat(String(form.value.taskBudget).replace(/,/g, '')) : null,
+      productionYear: form.value.productionYear || null,
+      batchId: form.value.batchId || null,
+      bankDemandNo: form.value.bankDemandNo || null,
+      softwareDemandNo: form.value.softwareDemandNo || null,
+      product: form.value.product || null,
+      scheduleStatus: form.value.scheduleStatus || null,
+      functionDescription: form.value.functionDescription || null,
+      implementationPlan: form.value.implementationPlan || null,
+      startDate: form.value.startDate || null,
+      endDate: form.value.endDate || null,
+      internalClosureDate: form.value.internalClosureDate || null,
+      functionalTestDate: form.value.functionalTestDate || null,
+      productionVersionDate: form.value.productionVersionDate || null,
+      actualProductionDate: form.value.actualProductionDate || null,
+      remark: form.value.remark || null
     }
-    addProject(submitData).then(() => {
+    addTask(submitData).then(() => {
       proxy.$modal.msgSuccess('新增成功')
       router.push('/task/subproject')
     })

@@ -196,8 +196,4 @@ public interface IProjectService
      * 关联合同到项目
      */
     public void bindContractToProject(Long projectId, Long contractId);
-
-    public List<String> searchTaskCode(String taskCode);
-
-    public List<String> searchTaskName(String projectName);
 }
