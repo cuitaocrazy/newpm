@@ -39,10 +39,12 @@ CREATE TABLE IF NOT EXISTS `pm_task` (
   `create_time`             datetime      DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by`               varchar(64)   DEFAULT NULL           COMMENT '更新者',
   `update_time`             datetime      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `remark`                  varchar(500)  DEFAULT NULL           COMMENT '备注',
+  `remark`                  text          DEFAULT NULL           COMMENT '备注',
   PRIMARY KEY (`task_id`),
   KEY `idx_project_id`      (`project_id`),
   KEY `idx_task_stage`      (`task_stage`),
+  KEY `idx_task_manager_id` (`task_manager_id`),
+  KEY `idx_batch_id`        (`batch_id`),
   KEY `idx_schedule_status` (`schedule_status`),
   KEY `idx_create_time`     (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务管理表';
@@ -53,7 +55,9 @@ CREATE TABLE IF NOT EXISTS `pm_task` (
 -- function_description/implementation_plan/schedule_status/actual_production_date
 -- 为 pm_task 新增字段，pm_project 中不存在，迁移时置 NULL
 -- ============================================================
-INSERT INTO `pm_task` (
+START TRANSACTION;
+
+INSERT IGNORE INTO `pm_task` (
   `task_id`,
   `project_id`,
   `task_code`,
@@ -121,6 +125,8 @@ SELECT
 FROM `pm_project` p
 WHERE p.project_level = 1
   AND p.del_flag = '0';
+
+COMMIT;
 
 -- ============================================================
 -- 第3部分：重置 AUTO_INCREMENT 到最大 task_id + 1
