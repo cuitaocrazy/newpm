@@ -768,9 +768,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.project_manager_id  as "projectManagerId",
                u.nick_name           as "projectManagerName",
                p.estimated_workload  as "estimatedWorkload",
-               ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as "actualWorkload"
+               ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as "actualWorkload",
+               pb.batch_no           as "batchNo"
         from pm_project p
         left join sys_user u on p.project_manager_id = u.user_id
+        left join pm_production_batch pb on p.batch_id = pb.batch_id
         where p.del_flag = '0'
           and p.parent_id = #{parentId}
           and p.project_level = 1

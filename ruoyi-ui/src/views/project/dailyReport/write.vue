@@ -185,9 +185,10 @@
                   <div v-for="task in item.taskRows" :key="task.subProjectId" class="task-row">
                     <!-- 任务头（只读信息） -->
                     <div class="task-row-header">
+                      <span v-if="task.batchNo" class="task-batch">{{ task.batchNo }}</span>
+                      <span class="task-manager">{{ task.projectManagerName }}</span>
                       <span class="task-name">{{ task.taskName }}</span>
                       <el-tag v-if="task.projectStage" size="small" type="info">{{ getStageName(task.projectStage) }}</el-tag>
-                      <span class="task-manager">负责人：{{ task.projectManagerName }}</span>
                       <span class="task-workload-info" style="margin-left: auto;">
                         预计：<strong>{{ task.estimatedWorkload != null ? task.estimatedWorkload : '-' }}</strong>天
                         &nbsp;实际：<strong>{{ task.actualWorkload != null ? Number(task.actualWorkload).toFixed(3) : '-' }}</strong>天
@@ -382,7 +383,8 @@ async function loadTaskRows(item) {
     const existingDetail = (item._existingDetails || []).find(d => d.subProjectId === t.projectId)
     return {
       subProjectId: t.projectId,
-      taskName: t.taskCode ? `[${t.taskCode}] ${t.projectName}` : t.projectName,
+      taskName: t.projectName,
+      batchNo: t.batchNo || '',
       projectStage: t.projectStage,
       projectManagerName: t.projectManagerName || '-',
       estimatedWorkload: t.estimatedWorkload != null ? t.estimatedWorkload : null,
