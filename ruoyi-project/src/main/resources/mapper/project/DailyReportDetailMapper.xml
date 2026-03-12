@@ -36,11 +36,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dd.sub_project_id, dd.work_category,
             p.project_name,
             p.project_code,
-            sp.project_name as sub_project_name,
+            sp.task_name as sub_project_name,
             dict.dict_label as stage_name
         from pm_daily_report_detail dd
         left join pm_project p on dd.project_id = p.project_id
-        left join pm_project sp on dd.sub_project_id = sp.project_id and sp.del_flag = '0'
+        left join pm_task sp on dd.sub_project_id = sp.task_id
         left join sys_dict_data dict on dd.project_stage COLLATE utf8mb4_unicode_ci = dict.dict_value and dict.dict_type = 'sys_xmjd'
         where dd.report_id = #{reportId}
         order by dd.detail_id
