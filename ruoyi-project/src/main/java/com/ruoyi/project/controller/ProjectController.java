@@ -69,44 +69,6 @@ public class ProjectController extends BaseController
     }
 
     /**
-     * 查询子项目列表（分页，带数据权限）
-     */
-    @PreAuthorize("@ss.hasPermi('project:subproject:list')")
-    @GetMapping("/subList")
-    public TableDataInfo subList(Project project)
-    {
-        startPage();
-        return getDataTable(projectService.selectSubProjectList(project));
-    }
-
-    /**
-     * 获取子项目轻量选项（无需权限，日报/下拉场景使用）
-     */
-    @GetMapping("/subProjectOptions")
-    public AjaxResult subProjectOptions(@RequestParam Long parentId)
-    {
-        return success(projectService.selectSubProjectOptions(parentId));
-    }
-
-    /**
-     * 获取同父项目下所有兄弟任务（分解/编辑/详情页展示）
-     */
-    @GetMapping("/siblingTasks")
-    public AjaxResult siblingTasks(@RequestParam Long parentId)
-    {
-        return success(projectService.selectSiblingTasks(parentId));
-    }
-
-    /**
-     * 批量判断哪些项目有子项目（无需权限，日报场景使用）
-     */
-    @GetMapping("/projectsHasSubProject")
-    public AjaxResult projectsHasSubProject(@RequestParam List<Long> projectIds)
-    {
-        return success(projectService.selectProjectsHasSubProject(projectIds));
-    }
-
-    /**
      * 导出项目管理列表
      */
     @PreAuthorize("@ss.hasPermi('project:project:export')")
@@ -395,6 +357,16 @@ public class ProjectController extends BaseController
     {
         Contract contract = projectService.selectContractByProjectId(projectId);
         return success(contract);
+    }
+
+    /**
+     * 查询项目参与人员及其日报实际人天
+     */
+    @PreAuthorize("@ss.hasPermi('project:project:query')")
+    @GetMapping("/{projectId}/participantsWorkload")
+    public AjaxResult getParticipantsWorkload(@PathVariable Long projectId)
+    {
+        return success(projectService.selectParticipantsWithWorkload(projectId));
     }
 
     /**

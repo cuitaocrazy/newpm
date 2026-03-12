@@ -60,7 +60,7 @@ public interface ProjectMapper
     public int updateProject(Project project);
 
     /**
-     * 更新项目实际工作量(小时)
+     * 更新主项目实际工作量(小时)——由日报保存时汇总子任务后调用
      *
      * @param projectId      项目ID
      * @param actualWorkload 实际工作量(小时)
@@ -83,27 +83,6 @@ public interface ProjectMapper
      * @return 结果
      */
     public int deleteProjectByProjectIds(Long[] projectIds);
-
-    /** 统计子项目数量 */
-    int countSubProjects(@Param("parentId") Long parentId);
-
-    /** 查询子项目列表（分页，带数据权限） */
-    List<Project> selectSubProjectList(Project project);
-
-    /** 获取子项目轻量选项（下拉用，仅返回 id/name/taskCode） */
-    List<Map<String, Object>> selectSubProjectOptions(@Param("parentId") Long parentId);
-
-    /** 获取同父项目下所有兄弟任务（用于分解/编辑/详情页展示） */
-    List<Map<String, Object>> selectSiblingTasks(@Param("parentId") Long parentId);
-
-    /** 查询该父项目下子任务已用序号最大值（用于生成 project_code） */
-    int selectSubProjectMaxSeq(@Param("parentId") Long parentId);
-
-    /** 批量判断哪些主项目有子项目，返回有子项目的 parentId 集合 */
-    List<Long> selectProjectsHasSubProject(@Param("projectIds") List<Long> projectIds);
-
-    /** 汇总主项目下所有子任务的 actual_workload(小时) */
-    BigDecimal sumSubTasksWorkload(@Param("parentId") Long parentId);
 
     /**
      * 批量查询团队确认明细（用于列表分行展示）
@@ -206,6 +185,11 @@ public interface ProjectMapper
     public List<Map<String, Object>> selectProjectsByUserId(@Param("userId") Long userId);
 
     /**
+     * 查询项目参与人员及其日报实际人天
+     */
+    public List<Map<String, Object>> selectParticipantsWithWorkload(@Param("projectId") Long projectId);
+
+    /**
      * 查询所有部门信息（用于导出时构建部门路径）
      *
      * @return 部门列表（deptId, deptName, ancestors）
@@ -250,4 +234,13 @@ public interface ProjectMapper
     public List<String> searchTaskCode(@Param("taskCode") String taskCode);
 
     public List<String> searchTaskName(@Param("projectName") String projectName);
+
+    /**
+     * 更新项目实际工作量（小时），由日报明细聚合后写回
+     *
+     * @param projectId      项目ID
+     * @param actualWorkload 最新汇总工时（小时）
+     */
+    public void updateActualWorkload(@Param("projectId") Long projectId,
+                                     @Param("actualWorkload") java.math.BigDecimal actualWorkload);
 }

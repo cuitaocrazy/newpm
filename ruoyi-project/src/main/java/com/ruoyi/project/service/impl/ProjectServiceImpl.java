@@ -131,8 +131,7 @@ public class ProjectServiceImpl implements IProjectService
             if (project.getParentId() != null) {
                 Project parent = projectMapper.selectProjectByProjectId(project.getParentId());
                 if (parent != null && parent.getProjectCode() != null) {
-                    int maxSeq = projectMapper.selectSubProjectMaxSeq(project.getParentId());
-                    String code = String.format("%s-%07d", parent.getProjectCode(), maxSeq + 1);
+                    String code = String.format("%s-%07d", parent.getProjectCode(), 1);
                     project.setProjectCode(code);
                 }
             }
@@ -140,6 +139,15 @@ public class ProjectServiceImpl implements IProjectService
         // 校验 project_code 长度
         if (project.getProjectCode() != null && project.getProjectCode().length() > 500) {
             throw new com.ruoyi.common.exception.ServiceException("项目编号过长（超过500字符），请缩短项目简称");
+        }
+        // 主项目立项时自动初始化收入确认年度和收入确认状态
+        if (project.getProjectLevel() == null || project.getProjectLevel() == 0) {
+            if (project.getRevenueConfirmYear() == null) {
+                project.setRevenueConfirmYear("dd");   // sys_ndgl 待定
+            }
+            if (project.getRevenueConfirmStatus() == null) {
+                project.setRevenueConfirmStatus("0");  // sys_qrzt 待定
+            }
         }
         int rows = projectMapper.insertProject(project);
         syncProjectMembers(project);
@@ -199,11 +207,6 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public int deleteProjectByProjectId(Long projectId)
     {
-        // 检查是否有子项目，有则禁止删除
-        int subCount = projectMapper.countSubProjects(projectId);
-        if (subCount > 0) {
-            throw new ServiceException("该项目存在 " + subCount + " 个子项目，请先删除子项目再操作");
-        }
         return projectMapper.deleteProjectByProjectId(projectId);
     }
 
@@ -220,25 +223,8 @@ public class ProjectServiceImpl implements IProjectService
     }
 
     @Override
-    @DataScope(deptAlias = "d", userAlias = "u_create")
-    public List<Project> selectSubProjectList(Project project) {
-        return projectMapper.selectSubProjectList(project);
-    }
-
-    @Override
-    public List<Map<String, Object>> selectSubProjectOptions(Long parentId) {
-        return projectMapper.selectSubProjectOptions(parentId);
-    }
-
-    @Override
-    public List<Map<String, Object>> selectSiblingTasks(Long parentId) {
-        return projectMapper.selectSiblingTasks(parentId);
-    }
-
-    @Override
-    public List<Long> selectProjectsHasSubProject(List<Long> projectIds) {
-        if (projectIds == null || projectIds.isEmpty()) return Collections.emptyList();
-        return projectMapper.selectProjectsHasSubProject(projectIds);
+    public List<Map<String, Object>> selectParticipantsWithWorkload(Long projectId) {
+        return projectMapper.selectParticipantsWithWorkload(projectId);
     }
 
     /**

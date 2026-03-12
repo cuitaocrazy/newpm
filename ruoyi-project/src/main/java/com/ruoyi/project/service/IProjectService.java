@@ -74,17 +74,8 @@ public interface IProjectService
      */
     public int deleteProjectByProjectId(Long projectId);
 
-    /** 查询子项目列表（分页，带数据权限） */
-    List<Project> selectSubProjectList(Project project);
-
-    /** 获取子项目轻量选项（下拉用） */
-    List<Map<String, Object>> selectSubProjectOptions(Long parentId);
-
-    /** 获取同父项目下所有兄弟任务 */
-    List<Map<String, Object>> selectSiblingTasks(Long parentId);
-
-    /** 批量判断哪些主项目有子项目，返回有子项目的 projectId 数组 */
-    List<Long> selectProjectsHasSubProject(List<Long> projectIds);
+    /** 查询项目参与人员及其日报实际人天 */
+    List<Map<String, Object>> selectParticipantsWithWorkload(Long projectId);
 
     /**
      * 获取用户列表（按岗位过滤）
