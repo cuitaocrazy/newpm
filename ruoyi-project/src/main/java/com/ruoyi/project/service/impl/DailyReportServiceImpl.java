@@ -38,6 +38,9 @@ public class DailyReportServiceImpl implements IDailyReportService
     @Autowired
     private ProjectMapper projectMapper;
 
+    @Autowired
+    private com.ruoyi.project.mapper.TaskMapper taskMapper;
+
     /**
      * 查询工作日报
      *
@@ -103,7 +106,7 @@ public class DailyReportServiceImpl implements IDailyReportService
             List<Long> ids = list.stream()
                 .map(p -> Long.parseLong(p.get("projectId").toString()))
                 .collect(java.util.stream.Collectors.toList());
-            List<Long> hasSubIds = projectMapper.selectProjectsHasSubProject(ids);
+            List<Long> hasSubIds = taskMapper.selectProjectsHasTasks(ids);
             java.util.Set<Long> hasSubSet = new java.util.HashSet<>(hasSubIds);
             list.forEach(p -> p.put("hasSubProject", hasSubSet.contains(Long.parseLong(p.get("projectId").toString()))));
         }
@@ -219,9 +222,9 @@ public class DailyReportServiceImpl implements IDailyReportService
                 .map(DailyReportDetail::getSubProjectId)
                 .collect(Collectors.toSet());
         affectedSubProjectIds.addAll(oldSubProjectIds);
-        for (Long subProjectId : affectedSubProjectIds) {
-            BigDecimal subHours = detailMapper.sumWorkHoursBySubProjectId(subProjectId);
-            projectMapper.updateActualWorkload(subProjectId, subHours);
+        for (Long taskId : affectedSubProjectIds) {
+            BigDecimal taskHours = detailMapper.sumWorkHoursBySubProjectId(taskId);
+            taskMapper.updateActualWorkload(taskId, taskHours);
         }
 
         // Step 2：更新主项目工时（含旧明细中被删除行对应的项目）
