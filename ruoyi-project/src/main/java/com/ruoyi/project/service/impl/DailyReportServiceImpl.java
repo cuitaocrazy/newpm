@@ -232,9 +232,21 @@ public class DailyReportServiceImpl implements IDailyReportService
                 .map(DailyReportDetail::getProjectId)
                 .collect(Collectors.toSet());
         affectedProjectIds.addAll(oldProjectIds);
+
+        // 2a. 有子任务的主项目：从 pm_task 汇总（只更新那些确实有任务记录的父项目）
+        if (!affectedSubProjectIds.isEmpty()) {
+            List<Long> parentProjectIds = taskMapper.selectProjectIdsByTaskIds(
+                    new java.util.ArrayList<>(affectedSubProjectIds));
+            for (Long parentProjectId : parentProjectIds) {
+                BigDecimal totalTaskHours = taskMapper.sumActualWorkloadByProjectId(parentProjectId);
+                projectMapper.updateActualWorkload(parentProjectId, totalTaskHours);
+                affectedProjectIds.remove(parentProjectId);
+            }
+        }
+        // 2b. 普通项目（无子任务）：从日报明细直接汇总工时
         for (Long projectId : affectedProjectIds) {
-            java.math.BigDecimal totalTaskHours = taskMapper.sumActualWorkloadByProjectId(projectId);
-            projectMapper.updateActualWorkload(projectId, totalTaskHours);
+            BigDecimal directHours = detailMapper.sumWorkHoursByProjectId(projectId);
+            projectMapper.updateActualWorkload(projectId, directHours);
         }
 
         return rows;

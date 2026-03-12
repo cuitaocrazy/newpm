@@ -48,4 +48,10 @@ public interface TaskMapper {
      * 用于更新主项目 actual_workload
      */
     BigDecimal sumActualWorkloadByProjectId(@Param("projectId") Long projectId);
+
+    /**
+     * 批量查询任务所属的主项目ID（去重）
+     * 用于确定哪些主项目需要用任务汇总更新工时
+     */
+    List<Long> selectProjectIdsByTaskIds(@Param("taskIds") List<Long> taskIds);
 }

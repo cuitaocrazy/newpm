@@ -250,4 +250,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         WHERE project_id = #{projectId}
     </select>
 
+    <select id="selectProjectIdsByTaskIds" resultType="long">
+        <if test="taskIds == null or taskIds.size() == 0">
+            select distinct project_id from pm_task where 1=0
+        </if>
+        <if test="taskIds != null and taskIds.size() > 0">
+            select distinct project_id
+            from pm_task
+            where task_id in
+            <foreach item="id" collection="taskIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+
 </mapper>
