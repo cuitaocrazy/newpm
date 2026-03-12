@@ -802,7 +802,7 @@ function submitForm() {
     addProject(submitData).then(response => {
       proxy.$modal.msgSuccess("提交成功")
       router.push('/project/list')
-    })
+    }).catch(() => {})
   })
 }
 

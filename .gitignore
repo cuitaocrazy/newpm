@@ -35,3 +35,7 @@ Thumbs.db
 .history/
 nohup.out
 uploadPath/
+
+# Local fix/migration SQLs (not for VCS)
+pm-sql/fix_*.sql
+pm-sql/*.sql.bak

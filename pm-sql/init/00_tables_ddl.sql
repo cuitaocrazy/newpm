@@ -721,7 +721,7 @@ CREATE TABLE `pm_payment` (
 DROP TABLE IF EXISTS `pm_project`;
 CREATE TABLE `pm_project` (
   `project_id` bigint NOT NULL AUTO_INCREMENT COMMENT '项目ID',
-  `project_code` varchar(50) NOT NULL COMMENT '项目编号(格式:行业-一级区域-二级区域-简称-年份)',
+  `project_code` varchar(500) NOT NULL COMMENT '项目编号(格式:行业-一级区域-二级区域-简称-年份)',
   `project_name` varchar(200) NOT NULL COMMENT '项目名称',
   `industry` varchar(50) DEFAULT NULL COMMENT '行业',
   `region` varchar(50) DEFAULT NULL COMMENT '一级区域',

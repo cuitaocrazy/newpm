@@ -110,7 +110,7 @@ Full details in `docs/pm/PM需求.md`. Key notes:
    - `POST /project/approval/rollback` — `{ projectId, rollbackReason }`
    - `GET /project/approval/history/{projectId}`, `GET /project/approval/projectList`, `GET /project/approval/projectSummary`
 
-3. **Contract Management:** Many-to-many via `pm_project_contract_rel`. Dicts: `sys_htlx`, `sys_htzt` (未签署/已签署), `sys_fkzt` for payment status.
+3. **Contract Management:** Many-to-many via `pm_project_contract_rel`. Dicts: `sys_htlx`, `sys_htzt` (未签署/已签署), `sys_fkzt` for payment status, `sys_jdgl` for payment quarters. `Payment` supports multi-value filter fields (not persisted): `deptIds`, `paymentStatuses`, `expectedQuarters`, `actualQuarters` — passed as arrays in request body.
 
 4. **Daily Reports:** Master-detail: `pm_daily_report` → `pm_daily_report_detail`. Three views: `write.vue`, `activity.vue`, `stats.vue`.
 
@@ -120,6 +120,7 @@ Full details in `docs/pm/PM需求.md`. Key notes:
    - Click date → load detail via `GET /project/dailyReport/my/{reportDate}`. Save → `POST /project/dailyReport`.
    - **Week constraint**: only current calendar week (Mon–Sun) is editable. Past/future weeks are read-only.
    - **`pm_daily_report_detail`** extra fields: `sub_project_id` (FK to sub-project, NULL for plain projects), `work_category` (dict `sys_gzlb`, NULL for plain projects).
+   - **Entry types**: `entryType` field on detail — `work`=项目工时, `leave`=请假, `comp`=倒休, `annual`=年假. Non-work entries use `leaveHours` instead of `workHours`. `pm_daily_report.leaveSummary` is a virtual field (subquery aggregating non-work entries as `entryType:hours` pairs).
    - **Workload rollup**: saving recalculates sub-project `actual_workload`, then rolls up to parent project `actual_workload`.
 
 5. **Revenue Recognition:** Multi-dimensional filtering. Confirmation status: 未确认/待确认/已确认/无法确认. Batch operations supported. Revenue fields on `Project`: `confirmAmount`, `taxRate`, `afterTaxAmount` (= confirmAmount / (1 + taxRate/100)), `revenueConfirmStatus`, `revenueConfirmYear`.
@@ -136,10 +137,11 @@ Full details in `docs/pm/PM需求.md`. Key notes:
     - `GET /project/project/subList` — paginated sub-project list (requires `parentId` param)
     - `GET /project/project/subProjectOptions?parentId=xxx` — lightweight options for daily report dropdowns (returns id, name, stage, task leader)
     Frontend: `ruoyi-ui/src/views/project/subproject/` (index / add / edit / detail). Route is hidden level-2 under 项目管理 (`/project/subproject`).
+    Task-specific fields on `pm_project` (only populated when `project_level=1`): `batchId` (batch), `productionYear` (production year), `bankDemandNo` (bank demand #), `softwareDemandNo` (software demand #), `scheduleStatus` (dict `sys_pqzt`). Sibling task list is shown on sub-project pages (queries tasks sharing the same `parent_id`).
 
 ### Dictionary Dependencies
 
-`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-12，11=项目结项，12=技术投产), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`), `sys_gzlb` 工作任务类别(for `work_category` in `pm_daily_report_detail`)
+`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-12，11=项目结项，12=技术投产), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`), `sys_gzlb` 工作任务类别(for `work_category` in `pm_daily_report_detail`), `sys_pqzt` 排期状态(for `scheduleStatus` on sub-projects), `sys_jdgl` 季度管理(for `expectedQuarter`/`actualQuarter` in `pm_payment`)
 
 ### API URL Convention
 
@@ -148,7 +150,7 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 | `ProjectController` | `/project/project/**` | Project CRUD + proxy endpoints |
 | `ProjectApprovalController` | `/project/approval/**` | Approval workflow |
 | `ContractController` | `/project/contract/**` | Contract management |
-| `PaymentController` | `/project/payment/**` | Payment management |
+| `PaymentController` | `/project/payment/**` | Payment management. Extra: `GET /listWithContracts` (contracts+payments grouped), `GET /sumPaymentAmount` (total), `GET /checkAttachments/{id}` |
 | `CustomerController` | `/project/customer/**` | Customer + contacts |
 | `AttachmentController` | `/project/attachment/**` | File attachments |
 | `ProjectMemberController` | `/project/member/**` | Project members |

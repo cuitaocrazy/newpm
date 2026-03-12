@@ -699,7 +699,7 @@ function submitForm() {
       updateProject(submitData).then(response => {
         proxy.$modal.msgSuccess('保存成功')
         router.push('/project/list')
-      }).finally(() => {
+      }).catch(() => {}).finally(() => {
         submitLoading.value = false
       })
     })

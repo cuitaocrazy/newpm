@@ -26,46 +26,46 @@ public class Payment extends BaseEntity
     private Long contractId;
 
     /** 付款方式名称 */
-    @Excel(name = "付款里程碑名称", sort = 2)
+    @Excel(name = "付款里程碑名称", sort = 9)
     private String paymentMethodName;
 
     /** 付款总金额 */
-    @Excel(name = "付款金额（元）", sort = 4)
+    @Excel(name = "付款金额（元）", sort = 10)
     private BigDecimal paymentAmount;
 
+    /** 付款状态 */
+    @Excel(name = "付款状态", sort = 11, dictType = "sys_fkzt")
+    private String paymentStatus;
+
     /** 是否涉及违约扣款(1是 0否) */
-    @Excel(name = "是否涉及违约扣款", sort = 5, readConverterExp = "0=否,1=是")
+    @Excel(name = "是否涉及违约扣款", sort = 12, readConverterExp = "0=否,1=是")
     private String hasPenalty;
 
     /** 扣款金额(元) */
-    @Excel(name = "扣款金额（元）", sort = 6)
+    @Excel(name = "扣款金额（元）", sort = 13)
     private BigDecimal penaltyAmount;
 
-    /** 付款状态 */
-    @Excel(name = "付款状态", sort = 3, dictType = "sys_fkzt")
-    private String paymentStatus;
-
     /** 预计回款所属季度 */
-    @Excel(name = "预计回款季度", sort = 7, dictType = "sys_jdgl")
+    @Excel(name = "预计回款季度", sort = 14, dictType = "sys_jdgl")
     private String expectedQuarter;
 
     /** 实际回款所属季度 */
-    @Excel(name = "实际回款季度", sort = 8, dictType = "sys_jdgl")
+    @Excel(name = "实际回款季度", sort = 15, dictType = "sys_jdgl")
     private String actualQuarter;
-
-    /** 提交验收材料日期 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "提交验收材料日期", sort = 11, width = 30, dateFormat = "yyyy-MM-dd")
-    private Date submitAcceptanceDate;
 
     /** 实际回款日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "实际回款日期", sort = 9, width = 30, dateFormat = "yyyy-MM-dd")
+    @Excel(name = "实际回款日期", sort = 16, width = 30, dateFormat = "yyyy-MM-dd")
     private Date actualPaymentDate;
 
     /** 款项确认年份 */
-    @Excel(name = "里程碑确认年份", sort = 10, dictType = "sys_ndgl")
+    @Excel(name = "里程碑确认年份", sort = 17, dictType = "sys_ndgl")
     private String confirmYear;
+
+    /** 提交验收材料日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "开票日期", sort = 18, width = 30, dateFormat = "yyyy-MM-dd")
+    private Date submitAcceptanceDate;
 
     /** 删除标志(0正常 1删除) */
     private String delFlag;
@@ -75,34 +75,42 @@ public class Payment extends BaseEntity
     private String contractName;
 
     /** 合同编号（关联查询） */
+    @Excel(name = "合同编号", sort = 2)
     private String contractCode;
 
     /** 合同状态（关联查询） */
+    @Excel(name = "合同状态", sort = 3, dictType = "sys_htzt")
     private String contractStatus;
 
     /** 客户名称（关联查询） */
+    @Excel(name = "客户名称", sort = 4)
     private String customerName;
 
     /** 合同金额（关联查询） */
+    @Excel(name = "合同金额（元）", sort = 5)
     private BigDecimal contractAmount;
 
     /** 合同签订日期（关联查询） */
     @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "合同签订日期", sort = 6, width = 30, dateFormat = "yyyy-MM-dd")
     private Date contractSignDate;
 
     /** 免维期（关联查询） */
+    @Excel(name = "免维期（月）", sort = 7)
     private Integer freeMaintenancePeriod;
 
     /** 部门ID（关联查询） */
     private Long deptId;
 
     /** 部门名称（关联查询） */
+    @Excel(name = "合同所属团队", sort = 8)
     private String deptName;
 
     /** 创建人姓名（关联查询） */
     private String createByName;
 
     /** 更新人姓名（关联查询） */
+    @Excel(name = "更新人", sort = 21)
     private String updateByName;
 
     /** 多选过滤字段（不存库） */

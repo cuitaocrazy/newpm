@@ -52,6 +52,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <result property="subProjectManagerId"   column="detail_sub_project_manager_id"   />
             <result property="subProjectManagerName" column="detail_sub_project_manager_name" />
             <result property="subProjectTaskCode"    column="detail_sub_project_task_code"    />
+            <result property="subProjectBatchNo"     column="detail_sub_project_batch_no"     />
             <result property="projectManagerName"    column="detail_project_manager_name"     />
         </collection>
     </resultMap>
@@ -106,6 +107,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dd.work_category  as detail_work_category,
             sp.project_name   as detail_sub_project_name,
             sp.task_code          as detail_sub_project_task_code,
+            pb.batch_no           as detail_sub_project_batch_no,
             sp.project_stage      as detail_sub_project_stage,
             sp.project_manager_id as detail_sub_project_manager_id,
             su.nick_name          as detail_sub_project_manager_name,
@@ -116,6 +118,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join pm_daily_report_detail dd on r.report_id = dd.report_id
         left join pm_project p on dd.project_id = p.project_id
         left join pm_project sp on dd.sub_project_id = sp.project_id and sp.del_flag = '0'
+        left join pm_production_batch pb on sp.batch_id = pb.batch_id
         left join sys_user su on sp.project_manager_id = su.user_id
            and su.del_flag = '0'
         left join sys_user pu on p.project_manager_id = pu.user_id

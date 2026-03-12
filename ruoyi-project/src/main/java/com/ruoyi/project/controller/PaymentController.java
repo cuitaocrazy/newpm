@@ -96,12 +96,36 @@ public class PaymentController extends BaseController
     @PreAuthorize("@ss.hasPermi('project:payment:export')")
     @Log(title = "款项管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Payment payment)
+    public void export(HttpServletResponse response, Contract contract,
+            @RequestParam(required = false) String actualPaymentDateStart,
+            @RequestParam(required = false) String actualPaymentDateEnd)
     {
-        startPage();
-        List<Payment> list = paymentService.selectPaymentList(payment);
+        if (actualPaymentDateStart != null) {
+            contract.getParams().put("actualPaymentDateStart", actualPaymentDateStart);
+        }
+        if (actualPaymentDateEnd != null) {
+            contract.getParams().put("actualPaymentDateEnd", actualPaymentDateEnd);
+        }
+        // 不分页，全量查询（与列表页数据源一致）
+        List<Contract> contractList = contractService.selectContractWithPaymentsList(contract);
+        // 平铺：每个付款里程碑一行（无里程碑的合同跳过）
+        List<Payment> list = new java.util.ArrayList<>();
+        for (Contract c : contractList) {
+            if (c.getPaymentList() == null || c.getPaymentList().isEmpty()) continue;
+            for (Payment p : c.getPaymentList()) {
+                p.setContractName(c.getContractName());
+                p.setContractCode(c.getContractCode());
+                p.setContractStatus(c.getContractStatus());
+                p.setCustomerName(c.getCustomerName());
+                p.setContractAmount(c.getContractAmount());
+                p.setContractSignDate(c.getContractSignDate());
+                p.setFreeMaintenancePeriod(c.getFreeMaintenancePeriod());
+                p.setDeptName(c.getDeptName());
+                list.add(p);
+            }
+        }
         ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
-        util.exportExcel(response, list, "款项管理数据");
+        util.exportExcel(response, list, "付款里程碑数据");
     }
 
     /**
