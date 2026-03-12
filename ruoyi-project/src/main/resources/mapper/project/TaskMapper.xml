@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.TaskMapper">
+
+    <resultMap type="Task" id="TaskResult">
+        <result property="taskId"                  column="task_id"                  />
+        <result property="projectId"               column="project_id"               />
+        <result property="taskCode"                column="task_code"                />
+        <result property="taskName"                column="task_name"                />
+        <result property="taskStage"               column="task_stage"               />
+        <result property="taskManagerId"           column="task_manager_id"          />
+        <result property="product"                 column="product"                  />
+        <result property="bankDemandNo"            column="bank_demand_no"           />
+        <result property="softwareDemandNo"        column="software_demand_no"       />
+        <result property="taskBudget"              column="task_budget"              />
+        <result property="estimatedWorkload"       column="estimated_workload"       />
+        <result property="actualWorkload"          column="actual_workload"          />
+        <result property="productionYear"          column="production_year"          />
+        <result property="batchId"                 column="batch_id"                 />
+        <result property="taskPlan"                column="task_plan"                />
+        <result property="taskDescription"         column="task_description"         />
+        <result property="startDate"               column="start_date"               />
+        <result property="endDate"                 column="end_date"                 />
+        <result property="productionDate"          column="production_date"          />
+        <result property="productionVersionDate"   column="production_version_date"  />
+        <result property="actualProductionDate"    column="actual_production_date"   />
+        <result property="internalClosureDate"     column="internal_closure_date"    />
+        <result property="functionalTestDate"      column="functional_test_date"     />
+        <result property="scheduleStatus"          column="schedule_status"          />
+        <result property="functionDescription"     column="function_description"     />
+        <result property="implementationPlan"      column="implementation_plan"      />
+        <result property="createBy"                column="create_by"                />
+        <result property="createTime"              column="create_time"              />
+        <result property="updateBy"                column="update_by"                />
+        <result property="updateTime"              column="update_time"              />
+        <result property="remark"                  column="remark"                   />
+        <!-- 非DB展示字段 -->
+        <result property="taskManagerName"         column="task_manager_name"        />
+        <result property="parentProjectName"       column="parent_project_name"      />
+        <result property="projectStatus"           column="project_status"           />
+        <result property="batchNo"                 column="batch_no"                 />
+    </resultMap>
+
+    <sql id="selectTaskVo">
+        select t.task_id, t.project_id, t.task_code, t.task_name, t.task_stage,
+               t.task_manager_id, t.product, t.bank_demand_no, t.software_demand_no,
+               t.task_budget, t.estimated_workload, t.actual_workload,
+               t.production_year, t.batch_id,
+               t.task_plan, t.task_description,
+               t.start_date, t.end_date, t.production_date,
+               t.production_version_date, t.actual_production_date,
+               t.internal_closure_date, t.functional_test_date,
+               t.schedule_status, t.function_description, t.implementation_plan,
+               t.create_by, t.create_time, t.update_by, t.update_time, t.remark,
+               u.nick_name                      as task_manager_name,
+               p.project_name                   as parent_project_name,
+               p.project_status                 as project_status,
+               pb.batch_no                      as batch_no
+        from pm_task t
+        left join sys_user u   on t.task_manager_id = u.user_id
+        left join pm_project p on t.project_id = p.project_id
+        left join pm_production_batch pb on t.batch_id = pb.batch_id
+    </sql>
+
+    <select id="selectTaskList" parameterType="Task" resultMap="TaskResult">
+        <include refid="selectTaskVo"/>
+        <where>
+            <if test="projectId != null">and t.project_id = #{projectId}</if>
+            <if test="parentId != null">and t.project_id = #{parentId}</if>
+            <if test="taskName != null and taskName != ''">and t.task_name like concat('%', #{taskName}, '%')</if>
+            <if test="taskCode != null and taskCode != ''">and t.task_code like concat('%', #{taskCode}, '%')</if>
+            <if test="taskStage != null and taskStage != ''">and t.task_stage = #{taskStage}</if>
+            <if test="taskManagerId != null">and t.task_manager_id = #{taskManagerId}</if>
+            <if test="productionYear != null and productionYear != ''">and t.production_year = #{productionYear}</if>
+            <if test="batchId != null">and t.batch_id = #{batchId}</if>
+            <if test="scheduleStatus != null and scheduleStatus != ''">and t.schedule_status = #{scheduleStatus}</if>
+            <if test="softwareDemandNo != null and softwareDemandNo != ''">and t.software_demand_no like concat('%', #{softwareDemandNo}, '%')</if>
+            <if test="product != null and product != ''">and t.product = #{product}</if>
+            <if test="projectDept != null and projectDept != ''">
+                and (p.project_dept = #{projectDept}
+                     or p.project_dept in (select dept_id from sys_dept where find_in_set(#{projectDept}, ancestors) > 0))
+            </if>
+            <if test="parentRevenueConfirmYear != null and parentRevenueConfirmYear != ''">and p.revenue_confirm_year = #{parentRevenueConfirmYear}</if>
+        </where>
+        order by t.task_code, t.create_time desc
+    </select>
+
+    <select id="selectTaskById" parameterType="Long" resultMap="TaskResult">
+        <include refid="selectTaskVo"/>
+        where t.task_id = #{taskId}
+    </select>
+
+    <insert id="insertTask" parameterType="Task" useGeneratedKeys="true" keyProperty="taskId">
+        insert into pm_task (
+            project_id,
+            <if test="taskCode != null and taskCode != ''">task_code,</if>
+            task_name,
+            <if test="taskStage != null and taskStage != ''">task_stage,</if>
+            <if test="taskManagerId != null">task_manager_id,</if>
+            <if test="product != null and product != ''">product,</if>
+            <if test="bankDemandNo != null and bankDemandNo != ''">bank_demand_no,</if>
+            <if test="softwareDemandNo != null and softwareDemandNo != ''">software_demand_no,</if>
+            <if test="taskBudget != null">task_budget,</if>
+            <if test="estimatedWorkload != null">estimated_workload,</if>
+            <if test="productionYear != null and productionYear != ''">production_year,</if>
+            <if test="batchId != null">batch_id,</if>
+            <if test="taskPlan != null">task_plan,</if>
+            <if test="taskDescription != null">task_description,</if>
+            <if test="startDate != null">start_date,</if>
+            <if test="endDate != null">end_date,</if>
+            <if test="productionDate != null">production_date,</if>
+            <if test="productionVersionDate != null">production_version_date,</if>
+            <if test="actualProductionDate != null">actual_production_date,</if>
+            <if test="internalClosureDate != null">internal_closure_date,</if>
+            <if test="functionalTestDate != null">functional_test_date,</if>
+            <if test="scheduleStatus != null and scheduleStatus != ''">schedule_status,</if>
+            <if test="functionDescription != null">function_description,</if>
+            <if test="implementationPlan != null">implementation_plan,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            create_time,
+            <if test="updateBy != null and updateBy != ''">update_by,</if>
+            update_time,
+            <if test="remark != null and remark != ''">remark</if>
+        ) values (
+            #{projectId},
+            <if test="taskCode != null and taskCode != ''">#{taskCode},</if>
+            #{taskName},
+            <if test="taskStage != null and taskStage != ''">#{taskStage},</if>
+            <if test="taskManagerId != null">#{taskManagerId},</if>
+            <if test="product != null and product != ''">#{product},</if>
+            <if test="bankDemandNo != null and bankDemandNo != ''">#{bankDemandNo},</if>
+            <if test="softwareDemandNo != null and softwareDemandNo != ''">#{softwareDemandNo},</if>
+            <if test="taskBudget != null">#{taskBudget},</if>
+            <if test="estimatedWorkload != null">#{estimatedWorkload},</if>
+            <if test="productionYear != null and productionYear != ''">#{productionYear},</if>
+            <if test="batchId != null">#{batchId},</if>
+            <if test="taskPlan != null">#{taskPlan},</if>
+            <if test="taskDescription != null">#{taskDescription},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="productionDate != null">#{productionDate},</if>
+            <if test="productionVersionDate != null">#{productionVersionDate},</if>
+            <if test="actualProductionDate != null">#{actualProductionDate},</if>
+            <if test="internalClosureDate != null">#{internalClosureDate},</if>
+            <if test="functionalTestDate != null">#{functionalTestDate},</if>
+            <if test="scheduleStatus != null and scheduleStatus != ''">#{scheduleStatus},</if>
+            <if test="functionDescription != null">#{functionDescription},</if>
+            <if test="implementationPlan != null">#{implementationPlan},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            NOW(),
+            <if test="updateBy != null and updateBy != ''">#{updateBy},</if>
+            NOW(),
+            <if test="remark != null and remark != ''">#{remark}</if>
+        )
+    </insert>
+
+    <update id="updateTask" parameterType="Task">
+        update pm_task
+        <set>
+            <if test="projectId != null">project_id = #{projectId},</if>
+            <if test="taskCode != null and taskCode != ''">task_code = #{taskCode},</if>
+            <if test="taskName != null and taskName != ''">task_name = #{taskName},</if>
+            <if test="taskStage != null">task_stage = #{taskStage},</if>
+            <if test="taskManagerId != null">task_manager_id = #{taskManagerId},</if>
+            <if test="product != null">product = #{product},</if>
+            <if test="bankDemandNo != null">bank_demand_no = #{bankDemandNo},</if>
+            <if test="softwareDemandNo != null">software_demand_no = #{softwareDemandNo},</if>
+            <if test="taskBudget != null">task_budget = #{taskBudget},</if>
+            <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
+            <if test="productionYear != null">production_year = #{productionYear},</if>
+            <if test="batchId != null">batch_id = #{batchId},</if>
+            <if test="taskPlan != null">task_plan = #{taskPlan},</if>
+            <if test="taskDescription != null">task_description = #{taskDescription},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="productionDate != null">production_date = #{productionDate},</if>
+            <if test="productionVersionDate != null">production_version_date = #{productionVersionDate},</if>
+            <if test="actualProductionDate != null">actual_production_date = #{actualProductionDate},</if>
+            <if test="internalClosureDate != null">internal_closure_date = #{internalClosureDate},</if>
+            <if test="functionalTestDate != null">functional_test_date = #{functionalTestDate},</if>
+            <if test="scheduleStatus != null">schedule_status = #{scheduleStatus},</if>
+            <if test="functionDescription != null">function_description = #{functionDescription},</if>
+            <if test="implementationPlan != null">implementation_plan = #{implementationPlan},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = NOW()
+        </set>
+        where task_id = #{taskId}
+    </update>
+
+    <delete id="deleteTaskById" parameterType="Long">
+        DELETE FROM pm_task WHERE task_id = #{taskId}
+    </delete>
+
+    <delete id="deleteTaskByIds" parameterType="String">
+        DELETE FROM pm_task WHERE task_id in
+        <foreach item="taskId" collection="array" open="(" separator="," close=")">
+            #{taskId}
+        </foreach>
+    </delete>
+
+    <select id="selectTaskOptions" parameterType="Long" resultType="map">
+        select t.task_id          as "taskId",
+               t.task_name        as "taskName",
+               t.task_code        as "taskCode",
+               t.task_stage       as "taskStage",
+               t.task_manager_id  as "taskManagerId",
+               u.nick_name        as "taskManagerName",
+               t.estimated_workload as "estimatedWorkload",
+               ROUND(t.actual_workload / 8, 3) as "actualWorkload",
+               pb.batch_no        as "batchNo",
+               t.schedule_status  as "scheduleStatus"
+        from pm_task t
+        left join sys_user u on t.task_manager_id = u.user_id
+        left join pm_production_batch pb on t.batch_id = pb.batch_id
+        where t.project_id = #{projectId}
+          and (t.task_stage is null or t.task_stage != '11')
+        order by t.task_code, t.create_time
+    </select>
+
+    <select id="selectProjectsHasTasks" resultType="long">
+        select distinct project_id
+        from pm_task
+        where project_id in
+        <foreach item="id" collection="projectIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="countTasksByProjectId" parameterType="Long" resultType="int">
+        SELECT COUNT(*) FROM pm_task WHERE project_id = #{projectId}
+    </select>
+
+    <update id="updateActualWorkload">
+        UPDATE pm_task SET actual_workload = #{hours}, update_time = NOW() WHERE task_id = #{taskId}
+    </update>
+
+</mapper>
