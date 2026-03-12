@@ -244,4 +244,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         UPDATE pm_task SET actual_workload = #{hours}, update_time = NOW() WHERE task_id = #{taskId}
     </update>
 
+    <select id="sumActualWorkloadByProjectId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(actual_workload), 0)
+        FROM pm_task
+        WHERE project_id = #{projectId}
+    </select>
+
 </mapper>

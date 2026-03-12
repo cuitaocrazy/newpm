@@ -42,4 +42,10 @@ public interface TaskMapper {
      * @param hours 工时（小时）
      */
     int updateActualWorkload(@Param("taskId") Long taskId, @Param("hours") BigDecimal hours);
+
+    /**
+     * 汇总项目下所有任务的实际工时（小时）
+     * 用于更新主项目 actual_workload
+     */
+    BigDecimal sumActualWorkloadByProjectId(@Param("projectId") Long projectId);
 }

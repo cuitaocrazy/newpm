@@ -233,14 +233,8 @@ public class DailyReportServiceImpl implements IDailyReportService
                 .collect(Collectors.toSet());
         affectedProjectIds.addAll(oldProjectIds);
         for (Long projectId : affectedProjectIds) {
-            List<Long> hasSubList = projectMapper.selectProjectsHasSubProject(java.util.Collections.singletonList(projectId));
-            if (!hasSubList.isEmpty()) {
-                BigDecimal totalHours = projectMapper.sumSubTasksWorkload(projectId);
-                projectMapper.updateActualWorkload(projectId, totalHours);
-            } else {
-                BigDecimal totalHours = detailMapper.sumWorkHoursByProjectId(projectId);
-                projectMapper.updateActualWorkload(projectId, totalHours);
-            }
+            java.math.BigDecimal totalTaskHours = taskMapper.sumActualWorkloadByProjectId(projectId);
+            projectMapper.updateActualWorkload(projectId, totalTaskHours);
         }
 
         return rows;
