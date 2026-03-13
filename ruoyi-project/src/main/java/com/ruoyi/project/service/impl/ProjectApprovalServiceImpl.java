@@ -115,23 +115,22 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     @Transactional
     public int approveProject(Long projectId, String approvalStatus, String approvalReason)
     {
-        // 1. 更新项目表的审核状态
-        Project project = new Project();
-        project.setProjectId(projectId);
-        project.setApprovalStatus(approvalStatus);
-        project.setApprovalReason(approvalReason);
-        project.setApprovalTime(new Date());
-        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
-        projectMapper.updateProject(project);
+        Date now = new Date();
+        String approverId = String.valueOf(SecurityUtils.getUserId());
+        String approverName = SecurityUtils.getUsername();
 
-        // 2. 新增审核记录
+        // 1. 仅更新项目审核字段，不触碰 update_by / update_time
+        projectMapper.updateProjectApprovalFields(projectId, approvalStatus, approvalReason, now, approverId);
+
+        // 2. 新增审核记录（含 create_by / create_time）
         ProjectApproval approval = new ProjectApproval();
         approval.setProjectId(projectId);
         approval.setApprovalStatus(approvalStatus);
         approval.setApprovalReason(approvalReason);
-        approval.setApprovalTime(new Date());
+        approval.setApprovalTime(now);
         approval.setApproverId(SecurityUtils.getUserId());
-        approval.setCreateTime(new Date());
+        approval.setCreateBy(approverName);
+        approval.setCreateTime(now);
 
         return projectApprovalMapper.insertProjectApproval(approval);
     }
@@ -166,23 +165,22 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
             throw new ServiceException("只有审核通过的项目才能退回");
         }
 
-        // 更新项目审核状态为"退回待审核"
-        Project project = new Project();
-        project.setProjectId(projectId);
-        project.setApprovalStatus("3");
-        project.setApprovalReason(rollbackReason);
-        project.setApprovalTime(new Date());
-        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
-        projectMapper.updateProject(project);
+        Date now = new Date();
+        String approverId = String.valueOf(SecurityUtils.getUserId());
+        String approverName = SecurityUtils.getUsername();
 
-        // 记录退回日志
+        // 仅更新审核字段，不触碰 update_by / update_time
+        projectMapper.updateProjectApprovalFields(projectId, "3", rollbackReason, now, approverId);
+
+        // 记录退回日志（含 create_by / create_time）
         ProjectApproval approval = new ProjectApproval();
         approval.setProjectId(projectId);
         approval.setApprovalStatus("3");
         approval.setApprovalReason(rollbackReason);
-        approval.setApprovalTime(new Date());
+        approval.setApprovalTime(now);
         approval.setApproverId(SecurityUtils.getUserId());
-        approval.setCreateTime(new Date());
+        approval.setCreateBy(approverName);
+        approval.setCreateTime(now);
         return projectApprovalMapper.insertProjectApproval(approval);
     }
 }

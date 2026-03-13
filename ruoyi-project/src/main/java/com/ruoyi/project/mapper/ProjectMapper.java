@@ -52,6 +52,15 @@ public interface ProjectMapper
     public int insertProject(Project project);
 
     /**
+     * 仅更新项目审核相关字段（不触碰 update_by / update_time）
+     */
+    public int updateProjectApprovalFields(@Param("projectId") Long projectId,
+                                           @Param("approvalStatus") String approvalStatus,
+                                           @Param("approvalReason") String approvalReason,
+                                           @Param("approvalTime") java.util.Date approvalTime,
+                                           @Param("approverId") String approverId);
+
+    /**
      * 修改项目管理
      *
      * @param project 项目管理

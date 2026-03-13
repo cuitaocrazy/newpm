@@ -599,6 +599,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
+    <!-- 仅更新审核字段，不触碰 update_by / update_time -->
+    <update id="updateProjectApprovalFields">
+        UPDATE pm_project
+        SET approval_status = #{approvalStatus},
+            approval_reason = #{approvalReason},
+            approval_time   = #{approvalTime},
+            approver_id     = #{approverId}
+        WHERE project_id = #{projectId}
+    </update>
+
     <update id="updateProject" parameterType="Project">
         update pm_project
         <trim prefix="SET" suffixOverrides=",">
