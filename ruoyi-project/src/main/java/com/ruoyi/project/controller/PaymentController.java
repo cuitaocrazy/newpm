@@ -43,7 +43,7 @@ public class PaymentController extends BaseController
     /**
      * 查询款项管理列表
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:payment:list,project:project:query,project:contract:query,project:contract:add,project:payment:add,project:payment:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('project:payment:list,project:project:query,project:contract:query,project:contract:add,project:payment:add,project:payment:edit,project:task:query')")
     @GetMapping("/list")
     public TableDataInfo list(Payment payment)
     {

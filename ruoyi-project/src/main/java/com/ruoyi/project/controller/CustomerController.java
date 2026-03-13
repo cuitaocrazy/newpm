@@ -62,7 +62,7 @@ public class CustomerController extends BaseController
     /**
      * 获取客户管理详细信息
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:customer:query,project:customer:edit,project:project:query,project:project:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('project:customer:query,project:customer:edit,project:project:query,project:project:edit,project:task:query')")
     @GetMapping(value = "/{customerId}")
     public AjaxResult getInfo(@PathVariable("customerId") Long customerId)
     {
