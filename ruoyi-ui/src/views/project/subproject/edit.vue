@@ -477,7 +477,7 @@ onMounted(async () => {
     .then(res => { deptFlatList.value = res.data || [] })
     .catch(() => {})
 
-  const taskId = route.params.projectId || route.params.id || route.query.taskId
+  const taskId = route.params.taskId || route.params.projectId || route.params.id || route.query.taskId
   if (!taskId) return
   loading.value = true
   try {
