@@ -213,7 +213,7 @@
       <template #header>
         <span class="card-title">项目关联任务列表</span>
       </template>
-      <el-table v-if="projectTaskList.length > 0" :data="projectTaskList" border size="small" style="width: 100%">
+      <el-table :data="projectTaskList" border size="small" style="width: 100%">
         <el-table-column type="index" label="序号" width="55" align="center" />
         <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
         <el-table-column label="任务编号" prop="taskCode" width="130" />
@@ -259,7 +259,6 @@
         </el-table-column>
         <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
       </el-table>
-      <el-empty v-if="projectTaskList.length === 0" description="暂无项目相关任务列表信息" :image-size="80" />
     </el-card>
 
     <!-- 合同信息 -->
