@@ -94,8 +94,6 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
         project.setApprovalReason(rollbackReason);
         project.setApprovalTime(DateUtils.getNowDate());
         project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
-        project.setUpdateBy(SecurityUtils.getUsername());
-        project.setUpdateTime(DateUtils.getNowDate());
         projectMapper.updateProject(project);
 
         ProjectApproval approval = new ProjectApproval();
@@ -224,8 +222,6 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
         project.setApprovalReason(approvalReason);
         project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
         project.setApprovalTime(DateUtils.getNowDate());
-        project.setUpdateBy(SecurityUtils.getUsername());
-        project.setUpdateTime(DateUtils.getNowDate());
 
         int result = projectMapper.updateProject(project);
 

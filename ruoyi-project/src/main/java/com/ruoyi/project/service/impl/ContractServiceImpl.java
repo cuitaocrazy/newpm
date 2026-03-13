@@ -3,9 +3,11 @@ package com.ruoyi.project.service.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
@@ -72,6 +74,23 @@ public class ContractServiceImpl implements IContractService
                     projectIds.add(project.getProjectId());
                 }
                 contract.setProjectIds(projectIds);
+
+                // 附加团队收入确认明细
+                List<Map<String, Object>> details = projectMapper.selectTeamConfirmDetailsByIds(projectIds);
+                Map<Long, List<Map<String, Object>>> detailMap = details.stream()
+                    .collect(Collectors.groupingBy(d -> Long.parseLong(d.get("projectId").toString())));
+                for (Project project : projectList) {
+                    if (project.getProjectId() != null) {
+                        List<Map<String, Object>> confirmList = detailMap.getOrDefault(project.getProjectId(), Collections.emptyList());
+                        project.setTeamConfirmList(confirmList);
+                        String depts = confirmList.stream()
+                            .map(d -> (String) d.get("deptName"))
+                            .filter(java.util.Objects::nonNull)
+                            .distinct()
+                            .collect(Collectors.joining("、"));
+                        project.setTeamConfirmDepts(depts.isEmpty() ? null : depts);
+                    }
+                }
             }
 
             // 查询创建人和更新人姓名

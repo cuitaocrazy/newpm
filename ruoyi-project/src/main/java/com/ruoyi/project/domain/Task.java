@@ -158,6 +158,54 @@ public class Task extends BaseEntity
     /** 父项目实际工作量（来自 pm_project，非数据库字段） */
     private BigDecimal parentActualWorkload;
 
+    /** 父项目工时补正（来自 pm_project.adjust_workload，人天，非数据库字段） */
+    private BigDecimal parentAdjustWorkload;
+
+    /** 项目编号（来自 pm_project，非数据库字段） */
+    private String projectCode;
+
+    /** 项目阶段（来自 pm_project，非数据库字段） */
+    private String projectStage;
+
+    /** 项目分类（来自 pm_project，非数据库字段） */
+    private String projectCategory;
+
+    /** 行业（来自 pm_project，非数据库字段） */
+    private String industry;
+
+    /** 一级区域（来自 pm_project，非数据库字段） */
+    private String region;
+
+    /** 二级区域名称（来自 pm_project，非数据库字段） */
+    private String regionName;
+
+    /** 立项年度（来自 pm_project，非数据库字段） */
+    private String establishedYear;
+
+    /** 项目启动日期（来自 pm_project，非数据库字段） */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date projectStartDate;
+
+    /** 项目结束日期（来自 pm_project，非数据库字段） */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date projectEndDate;
+
+    /** 验收状态（来自 pm_project，非数据库字段） */
+    private String acceptanceStatus;
+
+    /** 验收日期（来自 pm_project，非数据库字段） */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date acceptanceDate;
+
+    /** 客户名称（来自 pm_customer，非数据库字段） */
+    private String customerName;
+
+    /** 市场经理姓名（来自 sys_user，非数据库字段） */
+    private String marketManagerName;
+
+    /** 销售负责人姓名（来自 sys_user，非数据库字段） */
+    private String salesManagerName;
+
     public void setTaskId(Long taskId)
     {
         this.taskId = taskId;
@@ -459,6 +507,51 @@ public class Task extends BaseEntity
 
     public void setParentActualWorkload(BigDecimal parentActualWorkload) { this.parentActualWorkload = parentActualWorkload; }
     public BigDecimal getParentActualWorkload()                         { return parentActualWorkload; }
+
+    public void setParentAdjustWorkload(BigDecimal parentAdjustWorkload) { this.parentAdjustWorkload = parentAdjustWorkload; }
+    public BigDecimal getParentAdjustWorkload()                          { return parentAdjustWorkload; }
+
+    public void setProjectCode(String projectCode)                     { this.projectCode = projectCode; }
+    public String getProjectCode()                                      { return projectCode; }
+
+    public void setProjectStage(String projectStage)                   { this.projectStage = projectStage; }
+    public String getProjectStage()                                     { return projectStage; }
+
+    public void setProjectCategory(String projectCategory)             { this.projectCategory = projectCategory; }
+    public String getProjectCategory()                                  { return projectCategory; }
+
+    public void setIndustry(String industry)                           { this.industry = industry; }
+    public String getIndustry()                                         { return industry; }
+
+    public void setRegion(String region)                               { this.region = region; }
+    public String getRegion()                                           { return region; }
+
+    public void setRegionName(String regionName)                       { this.regionName = regionName; }
+    public String getRegionName()                                       { return regionName; }
+
+    public void setEstablishedYear(String establishedYear)             { this.establishedYear = establishedYear; }
+    public String getEstablishedYear()                                  { return establishedYear; }
+
+    public void setProjectStartDate(Date projectStartDate)             { this.projectStartDate = projectStartDate; }
+    public Date getProjectStartDate()                                   { return projectStartDate; }
+
+    public void setProjectEndDate(Date projectEndDate)                 { this.projectEndDate = projectEndDate; }
+    public Date getProjectEndDate()                                     { return projectEndDate; }
+
+    public void setAcceptanceStatus(String acceptanceStatus)           { this.acceptanceStatus = acceptanceStatus; }
+    public String getAcceptanceStatus()                                 { return acceptanceStatus; }
+
+    public void setAcceptanceDate(Date acceptanceDate)                 { this.acceptanceDate = acceptanceDate; }
+    public Date getAcceptanceDate()                                     { return acceptanceDate; }
+
+    public void setCustomerName(String customerName)                   { this.customerName = customerName; }
+    public String getCustomerName()                                     { return customerName; }
+
+    public void setMarketManagerName(String marketManagerName)         { this.marketManagerName = marketManagerName; }
+    public String getMarketManagerName()                               { return marketManagerName; }
+
+    public void setSalesManagerName(String salesManagerName)           { this.salesManagerName = salesManagerName; }
+    public String getSalesManagerName()                                 { return salesManagerName; }
 
     @Override
     public String toString() {

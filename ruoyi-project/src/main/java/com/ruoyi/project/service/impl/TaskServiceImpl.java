@@ -1,5 +1,6 @@
 package com.ruoyi.project.service.impl;
 
+import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.Task;
@@ -19,6 +20,7 @@ public class TaskServiceImpl implements ITaskService {
     private TaskMapper taskMapper;
 
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
     public List<Task> selectTaskList(Task task) {
         return taskMapper.selectTaskList(task);
     }
@@ -87,5 +89,11 @@ public class TaskServiceImpl implements ITaskService {
     public List<String> searchSoftwareDemandNo(String softwareDemandNo)
     {
         return taskMapper.searchSoftwareDemandNo(softwareDemandNo);
+    }
+
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u_create")
+    public Map<String, Object> selectTaskSummary(Task task) {
+        return taskMapper.selectTaskSummary(task);
     }
 }

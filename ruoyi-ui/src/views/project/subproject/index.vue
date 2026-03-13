@@ -104,9 +104,14 @@
     </el-row>
 
     <el-table v-loading="loading" :data="displayList" border :row-style="{ height: 'auto' }"
-      :cell-style="{ verticalAlign: 'middle' }" :span-method="spanMethod" style="width: 100%">
+      :cell-style="{ verticalAlign: 'middle' }" :span-method="spanMethod" style="width: 100%"
+      :row-class-name="getRowClassName"
+      @sort-change="handleSortChange">
       <el-table-column label="序号" width="60" align="center" fixed="left" v-if="columns.index.visible">
-        <template #default="scope">{{ scope.$index + 1 }}</template>
+        <template #default="scope">
+          <strong v-if="scope.row.isSummaryRow">合计</strong>
+          <template v-else>{{ scope.$index }}</template>
+        </template>
       </el-table-column>
 
       <!-- 项目信息组 -->
@@ -114,112 +119,170 @@
         <el-table-column label="收入确认年度" prop="parentRevenueConfirmYear" width="120" align="center"
           fixed="left" v-if="columns.parentRevenueConfirmYear.visible">
           <template #default="scope">
-            <dict-tag :options="sys_ndgl" :value="scope.row.parentRevenueConfirmYear" v-if="scope.row.parentRevenueConfirmYear" />
-            <span v-else>-</span>
+            <template v-if="!scope.row.isSummaryRow">
+              <dict-tag :options="sys_ndgl" :value="scope.row.parentRevenueConfirmYear" v-if="scope.row.parentRevenueConfirmYear" />
+              <span v-else>-</span>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="项目名称" prop="parentProjectName" min-width="180" fixed="left"
           v-if="columns.parentProjectName.visible">
           <template #default="scope">
-            <el-link v-if="scope.row.projectId" type="primary"
-              :href="`/project/list/detail/${scope.row.projectId}`"
-              @click.prevent="$router.push(`/project/list/detail/${scope.row.projectId}`)"
-              style="white-space: normal; word-break: break-all; line-height: 1.4;">
-              {{ scope.row.parentProjectName }}
-            </el-link>
-            <span v-else>{{ scope.row.parentProjectName || '-' }}</span>
+            <template v-if="!scope.row.isSummaryRow">
+              <el-link v-if="scope.row.projectId" type="primary"
+                :href="`/project/list/detail/${scope.row.projectId}`"
+                @click.prevent="$router.push(`/project/list/detail/${scope.row.projectId}`)"
+                style="white-space: normal; word-break: break-all; line-height: 1.4;">
+                {{ scope.row.parentProjectName }}
+              </el-link>
+              <span v-else>{{ scope.row.parentProjectName || '-' }}</span>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="项目所属部门" prop="projectDeptName" min-width="150" align="center"
           show-overflow-tooltip v-if="columns.projectDeptName.visible">
-          <template #default="scope">{{ getDeptPath(scope.row.projectDept) }}</template>
+          <template #default="scope">
+            <template v-if="!scope.row.isSummaryRow">{{ getDeptPath(scope.row.projectDept) }}</template>
+          </template>
         </el-table-column>
         <el-table-column label="项目经理" prop="projectManagerName" width="100" align="center"
-          v-if="columns.projectManagerName.visible" />
-        <el-table-column label="项目预算(元)" prop="parentProjectBudget" width="130" align="right"
-          v-if="columns.parentProjectBudget.visible">
+          v-if="columns.projectManagerName.visible">
           <template #default="scope">
-            {{ scope.row.parentProjectBudget != null ? Number(scope.row.parentProjectBudget).toLocaleString() : '-' }}
+            <template v-if="!scope.row.isSummaryRow">{{ scope.row.projectManagerName }}</template>
+          </template>
+        </el-table-column>
+        <el-table-column label="项目预算(元)" prop="parentProjectBudget" width="130" align="right"
+          sortable="custom" v-if="columns.parentProjectBudget.visible">
+          <template #default="scope">
+            <strong v-if="scope.row.isSummaryRow">{{ Number(scope.row.totalProjectBudget || 0).toLocaleString() }}</strong>
+            <template v-else>
+              {{ scope.row.parentProjectBudget != null ? Number(scope.row.parentProjectBudget).toLocaleString() : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="项目预估人天" prop="parentEstimatedWorkload" width="110" align="right"
-          v-if="columns.parentEstimatedWorkload.visible">
+          sortable="custom" v-if="columns.parentEstimatedWorkload.visible">
           <template #default="scope">
-            {{ scope.row.parentEstimatedWorkload != null ? scope.row.parentEstimatedWorkload : '-' }}
+            <strong v-if="scope.row.isSummaryRow">{{ scope.row.totalProjectEstimatedWorkload || 0 }}</strong>
+            <template v-else>
+              {{ scope.row.parentEstimatedWorkload != null ? scope.row.parentEstimatedWorkload : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="项目实际人天" prop="parentActualWorkload" width="110" align="right"
-          v-if="columns.parentActualWorkload.visible">
+          sortable="custom" v-if="columns.parentActualWorkload.visible">
           <template #default="scope">
-            {{ scope.row.parentActualWorkload != null ? parseFloat((scope.row.parentActualWorkload / 8).toFixed(3)) : '-' }}
+            <strong v-if="scope.row.isSummaryRow">{{ scope.row.totalProjectActualWorkload || 0 }}</strong>
+            <template v-else>
+              {{ scope.row.parentActualWorkload != null
+                ? parseFloat((scope.row.parentActualWorkload / 8 + (scope.row.parentAdjustWorkload || 0)).toFixed(3))
+                : '-' }}
+            </template>
           </template>
         </el-table-column>
       </el-table-column>
 
       <!-- 任务信息组 -->
       <el-table-column label="任务信息" align="center" label-class-name="task-group-header">
-        <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible" />
-        <el-table-column label="任务名称" prop="taskName" min-width="200" v-if="columns.taskName.visible">
+        <el-table-column label="任务编号" prop="taskCode" width="130" v-if="columns.taskCode.visible">
           <template #default="scope">
-            <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`"
-              @click.prevent="handleDetail(scope.row)"
-              style="white-space: normal; word-break: break-all; line-height: 1.4;"
-              v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
-            <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.taskName }}</span>
+            <template v-if="!scope.row.isSummaryRow">{{ scope.row.taskCode }}</template>
           </template>
         </el-table-column>
-        <el-table-column label="投产批次" prop="batchNo" width="120" align="center" v-if="columns.batchNo.visible" />
+        <el-table-column label="任务名称" prop="taskName" min-width="200" v-if="columns.taskName.visible">
+          <template #default="scope">
+            <template v-if="!scope.row.isSummaryRow && scope.row.taskId">
+              <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`"
+                @click.prevent="handleDetail(scope.row)"
+                style="white-space: normal; word-break: break-all; line-height: 1.4;"
+                v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
+              <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.taskName }}</span>
+            </template>
+          </template>
+        </el-table-column>
+        <el-table-column label="投产批次" prop="batchNo" width="120" align="center" v-if="columns.batchNo.visible">
+          <template #default="scope">
+            <template v-if="!scope.row.isSummaryRow">{{ scope.row.batchNo }}</template>
+          </template>
+        </el-table-column>
+        <el-table-column label="任务预算(元)" prop="taskBudget" width="140" align="right"
+          sortable="custom" v-if="columns.taskBudget.visible">
+          <template #default="scope">
+            <strong v-if="scope.row.isSummaryRow">{{ Number(scope.row.totalBudget).toLocaleString() }}</strong>
+            <template v-else>
+              {{ scope.row.taskBudget != null ? Number(scope.row.taskBudget).toLocaleString() : '-' }}
+            </template>
+          </template>
+        </el-table-column>
         <el-table-column label="产品" prop="product" width="100" align="center" v-if="columns.product.visible">
           <template #default="scope">
-            <dict-tag :options="sys_product" :value="scope.row.product" v-if="scope.row.product" />
-            <span v-else>-</span>
+            <template v-if="!scope.row.isSummaryRow">
+              <dict-tag :options="sys_product" :value="scope.row.product" v-if="scope.row.product" />
+              <span v-else>-</span>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="提交功能测试版本日期" prop="functionalTestDate" width="170" align="center"
           v-if="columns.functionalTestDate.visible">
           <template #default="scope">
-            {{ scope.row.functionalTestDate ? parseTime(scope.row.functionalTestDate, '{y}-{m}-{d}') : '-' }}
+            <template v-if="!scope.row.isSummaryRow">
+              {{ scope.row.functionalTestDate ? parseTime(scope.row.functionalTestDate, '{y}-{m}-{d}') : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="投产版本日期" prop="productionVersionDate" width="120" align="center"
           v-if="columns.productionVersionDate.visible">
           <template #default="scope">
-            {{ scope.row.productionVersionDate ? parseTime(scope.row.productionVersionDate, '{y}-{m}-{d}') : '-' }}
+            <template v-if="!scope.row.isSummaryRow">
+              {{ scope.row.productionVersionDate ? parseTime(scope.row.productionVersionDate, '{y}-{m}-{d}') : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="计划投产日期" prop="productionDate" width="120" align="center"
           v-if="columns.productionDate.visible">
           <template #default="scope">
-            {{ scope.row.productionDate ? parseTime(scope.row.productionDate, '{y}-{m}-{d}') : '-' }}
+            <template v-if="!scope.row.isSummaryRow">
+              {{ scope.row.productionDate ? parseTime(scope.row.productionDate, '{y}-{m}-{d}') : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="排期状态" prop="scheduleStatus" width="100" align="center"
           v-if="columns.scheduleStatus.visible">
           <template #default="scope">
-            <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" v-if="scope.row.scheduleStatus" />
-            <span v-else>-</span>
+            <template v-if="!scope.row.isSummaryRow">
+              <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" v-if="scope.row.scheduleStatus" />
+              <span v-else>-</span>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="任务预估人天" prop="estimatedWorkload" width="115" align="right"
-          v-if="columns.estimatedWorkload.visible">
+          sortable="custom" v-if="columns.estimatedWorkload.visible">
           <template #default="scope">
-            {{ scope.row.estimatedWorkload != null ? scope.row.estimatedWorkload : '-' }}
+            <strong v-if="scope.row.isSummaryRow">{{ scope.row.totalEstimatedWorkload }}</strong>
+            <template v-else>
+              {{ scope.row.estimatedWorkload != null ? scope.row.estimatedWorkload : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="任务实际人天" prop="actualWorkload" width="115" align="right"
-          v-if="columns.actualWorkload.visible">
+          sortable="custom" v-if="columns.actualWorkload.visible">
           <template #default="scope">
-            {{ scope.row.actualWorkload != null ? parseFloat((scope.row.actualWorkload / 8).toFixed(3)) : '-' }}
+            <strong v-if="scope.row.isSummaryRow">{{ parseFloat((scope.row.totalActualWorkload / 8).toFixed(3)) }}</strong>
+            <template v-else>
+              {{ scope.row.actualWorkload != null ? parseFloat((scope.row.actualWorkload / 8).toFixed(3)) : '-' }}
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150" align="center" fixed="right" v-if="columns.actions.visible">
           <template #default="scope">
-            <el-button link type="primary" icon="View" v-hasPermi="['project:task:query']"
-              @click="handleDetail(scope.row)">详情</el-button>
-            <el-button link type="primary" icon="Edit" v-hasPermi="['project:task:edit']"
-              @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button link type="danger" icon="Delete" v-hasPermi="['project:task:remove']"
-              @click="handleDelete(scope.row)">删除</el-button>
+            <template v-if="!scope.row.isSummaryRow && scope.row.taskId">
+              <el-button link type="primary" icon="View" v-hasPermi="['project:task:query']"
+                @click="handleDetail(scope.row)">详情</el-button>
+              <el-button link type="primary" icon="Edit" v-hasPermi="['project:task:edit']"
+                @click="handleEdit(scope.row)">编辑</el-button>
+              <el-button link type="danger" icon="Delete" v-hasPermi="['project:task:remove']"
+                @click="handleDelete(scope.row)">删除</el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table-column>
@@ -281,6 +344,7 @@ const columns = ref({
   taskCode:                 { label: '任务编号',       visible: true },
   taskName:                 { label: '任务名称',       visible: true },
   batchNo:                  { label: '投产批次',       visible: true },
+  taskBudget:               { label: '任务预算(元)',   visible: true },
   product:                  { label: '产品',           visible: true },
   functionalTestDate:       { label: '功能测试版本日期', visible: true },
   productionVersionDate:    { label: '投产版本日期',   visible: true },
@@ -306,7 +370,9 @@ const queryParams = reactive({
   product: null,
   taskManagerId: null,
   softwareDemandNo: '',
-  scheduleStatus: null
+  scheduleStatus: null,
+  orderByColumn: null,
+  isAsc: null
 })
 
 // 需要合并的项目列
@@ -315,24 +381,24 @@ const mergeColumns = [
   'projectManagerName', 'parentProjectBudget', 'parentEstimatedWorkload', 'parentActualWorkload'
 ]
 
-function processDisplayList(rows) {
+function processDisplayList(rows, summaryData) {
   const list = []
   const grouped = new Map()
   const order = []
 
-  for (const task of rows) {
-    const pid = task.projectId
+  for (const row of rows) {
+    const pid = row.projectId
     if (!grouped.has(pid)) {
       grouped.set(pid, [])
       order.push(pid)
     }
-    grouped.get(pid).push(task)
+    grouped.get(pid).push(row)
   }
 
   for (const pid of order) {
     const tasks = grouped.get(pid)
     const first = tasks[0]
-    tasks.forEach((task, index) => {
+    tasks.forEach((row, index) => {
       list.push({
         // 项目字段（合并行用）
         projectId: first.projectId,
@@ -344,21 +410,23 @@ function processDisplayList(rows) {
         parentProjectBudget: first.parentProjectBudget,
         parentEstimatedWorkload: first.parentEstimatedWorkload,
         parentActualWorkload: first.parentActualWorkload,
+        parentAdjustWorkload: first.parentAdjustWorkload,
         projectStatus: first.projectStatus,
-        // 任务字段
-        taskId: task.taskId,
-        taskCode: task.taskCode,
-        taskName: task.taskName,
-        taskStage: task.taskStage,
-        product: task.product,
-        functionalTestDate: task.functionalTestDate,
-        productionVersionDate: task.productionVersionDate,
-        productionDate: task.productionDate,
-        scheduleStatus: task.scheduleStatus,
-        estimatedWorkload: task.estimatedWorkload,
-        actualWorkload: task.actualWorkload,
-        batchNo: task.batchNo,
-        taskManagerName: task.taskManagerName,
+        // 任务字段（无任务时为 null）
+        taskId: row.taskId,
+        taskCode: row.taskCode,
+        taskName: row.taskName,
+        taskStage: row.taskStage,
+        product: row.product,
+        functionalTestDate: row.functionalTestDate,
+        productionVersionDate: row.productionVersionDate,
+        productionDate: row.productionDate,
+        scheduleStatus: row.scheduleStatus,
+        estimatedWorkload: row.estimatedWorkload,
+        actualWorkload: row.actualWorkload,
+        taskBudget: row.taskBudget,
+        batchNo: row.batchNo,
+        taskManagerName: row.taskManagerName,
         // 合并标记
         isFirstRow: index === 0,
         rowSpan: index === 0 ? tasks.length : 0
@@ -366,10 +434,20 @@ function processDisplayList(rows) {
     })
   }
 
-  displayList.value = list
+  // 合计行插在第一条数据前
+  displayList.value = [
+    { isSummaryRow: true, ...summaryData },
+    ...list
+  ]
 }
 
-function spanMethod({ row, column }) {
+function spanMethod({ row, columnIndex }) {
+  // 合计行：不合并任何单元格
+  if (row.isSummaryRow) {
+    return { rowspan: 1, colspan: 1 }
+  }
+  // 普通行：按 property 合并项目列
+  const column = arguments[0].column
   if (mergeColumns.includes(column.property)) {
     if (row.isFirstRow) {
       return { rowspan: row.rowSpan, colspan: 1 }
@@ -377,6 +455,10 @@ function spanMethod({ row, column }) {
       return { rowspan: 0, colspan: 0 }
     }
   }
+}
+
+function getRowClassName({ row }) {
+  return row.isSummaryRow ? 'summary-row' : ''
 }
 
 function onDeptChange() {
@@ -457,9 +539,12 @@ async function onQueryYearChange(year) {
 
 function getList() {
   loading.value = true
-  listTask(queryParams).then(res => {
-    processDisplayList(res.rows)
-    total.value = res.total
+  Promise.all([
+    listTask(queryParams),
+    request({ url: '/project/task/summary', method: 'get', params: queryParams })
+  ]).then(([listRes, summaryRes]) => {
+    total.value = listRes.total
+    processDisplayList(listRes.rows, summaryRes.data || {})
   }).finally(() => { loading.value = false })
 }
 
@@ -470,7 +555,24 @@ function resetQuery() {
   queryParams.parentId = null
   queryParams.parentProjectName = ''
   queryBatchOptions.value = []
+  queryParams.orderByColumn = null
+  queryParams.isAsc = null
   handleQuery()
+}
+
+const sortColumnMap = {
+  taskBudget:              't.task_budget',
+  parentProjectBudget:     'p.project_budget',
+  parentEstimatedWorkload: 'p.estimated_workload',
+  parentActualWorkload:    'p.actual_workload',
+  estimatedWorkload:       't.estimated_workload',
+  actualWorkload:          't.actual_workload'
+}
+
+function handleSortChange({ prop, order }) {
+  queryParams.orderByColumn = order ? (sortColumnMap[prop] || null) : null
+  queryParams.isAsc = order === 'ascending' ? 'asc' : order === 'descending' ? 'desc' : null
+  getList()
 }
 
 function handleEdit(row) {
@@ -513,5 +615,10 @@ onMounted(async () => {
   background-color: #f0f9eb !important;
   color: #67c23a !important;
   font-weight: bold;
+}
+:deep(.summary-row td) {
+  background-color: #fdf6ec !important;
+  font-weight: bold;
+  color: #303133;
 }
 </style>

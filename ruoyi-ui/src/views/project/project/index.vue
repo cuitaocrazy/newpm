@@ -215,9 +215,22 @@
           <span v-else>{{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(3) : '-' }}</span>
         </template>
       </el-table-column>
+      <el-table-column label="合同编号" align="left" header-align="center" prop="contractCode" width="160" v-if="columns.contractCode.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummaryRow" style="white-space: pre-line; word-break: break-all;">{{ scope.row.contractCode || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="合同名称" align="left" header-align="center" prop="contractName" width="200" v-if="columns.contractName.visible">
         <template #default="scope">
-          <span v-if="!scope.row.isSummaryRow" style="white-space: pre-line; word-break: break-all;">{{ scope.row.contractName || '-' }}</span>
+          <el-link
+            v-if="!scope.row.isSummaryRow && scope.row.contractId"
+            type="primary"
+            :href="`/htkx/contract/detail/${scope.row.contractId}`"
+            @click.prevent="handleViewContract(scope.row)"
+            style="white-space: pre-line; word-break: break-all; text-align: left; line-height: 1.4;">
+            {{ scope.row.contractName }}
+          </el-link>
+          <span v-else-if="!scope.row.isSummaryRow" style="white-space: pre-line; word-break: break-all;">{{ scope.row.contractName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="合同金额(元)" align="center" prop="contractAmount" min-width="120" sortable="custom" v-if="columns.contractAmount.visible">
@@ -289,33 +302,15 @@
               icon="Link"
               @click="handleBindContract(scope.row)"
             >关联合同</el-button>
-            <el-button
-              v-if="scope.row.contractId"
-              v-hasPermi="['project:contract:unbind']"
-              link
-              type="danger"
-              icon="Delete"
-              @click="handleUnbindContract(scope.row)"
-            >解除关联</el-button>
 
-            <!-- 收入确认/查看按钮 -->
+            <!-- 收入确认按钮 -->
             <el-button
-              v-if="scope.row.revenueConfirmStatus === '0' || !scope.row.revenueConfirmStatus"
               link
               type="success"
               icon="Money"
               @click="handleRevenue(scope.row)"
               v-hasPermi="['revenue:company:edit']"
             >收入确认</el-button>
-
-            <el-button
-              v-else-if="scope.row.revenueConfirmStatus === '1'"
-              link
-              type="primary"
-              icon="View"
-              @click="handleRevenueView(scope.row)"
-              v-hasPermi="['revenue:company:query']"
-            >收入查看</el-button>
 
             <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:attachment']">附件管理</el-button>
             <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
@@ -393,7 +388,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, unbindContractFromProject } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -418,6 +413,7 @@ const columns = ref({
   projectBudget: { label: '项目预算(元)', visible: true },
   estimatedWorkload: { label: '预估工作量', visible: true },
   actualWorkload: { label: '实际人天', visible: true },
+  contractCode: { label: '合同编号', visible: true },
   contractName: { label: '合同名称', visible: true },
   contractAmount: { label: '合同金额(元)', visible: true },
   revenueConfirmYear: { label: '收入确认年度', visible: true },
@@ -454,16 +450,6 @@ const approvalHistory = ref([])
 // 关联合同：跳转到独立页面
 function handleBindContract(row) {
   router.push(`/project/list/bind-contract/${row.projectId}`)
-}
-
-// 解除合同关联
-function handleUnbindContract(row) {
-  proxy.$modal.confirm(`确认解除项目【${row.projectName}】与合同【${row.contractName}】的关联关系？`).then(() => {
-    return unbindContractFromProject(row.projectId)
-  }).then(() => {
-    proxy.$modal.msgSuccess('已解除合同关联')
-    getList()
-  }).catch(() => {})
 }
 
 // 辅助数据源

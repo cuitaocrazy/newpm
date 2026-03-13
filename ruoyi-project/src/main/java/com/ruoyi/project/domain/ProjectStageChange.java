@@ -67,6 +67,33 @@ public class ProjectStageChange extends BaseEntity
     @Excel(name = "当前阶段")
     private String projectStage;
 
+    /** 一级区域（dict: sys_yjqy）*/
+    private String region;
+
+    /** 二级区域ID */
+    private Long regionId;
+
+    /** 二级区域名称（来自 pm_secondary_region，非持久化）*/
+    private String regionName;
+
+    /** 预算金额（来自 pm_project.project_budget）*/
+    private BigDecimal projectBudget;
+
+    /** 预估工作量人天（来自 pm_project.estimated_workload）*/
+    private BigDecimal estimatedWorkload;
+
+    /** 实际人天（ROUND(actual_workload/8,3)+adjust_workload，非持久化）*/
+    private BigDecimal actualWorkloadDays;
+
+    /** 验收状态（dict: sys_yszt）*/
+    private String acceptanceStatus;
+
+    /** 当前项目状态（来自 pm_project.project_status，回显用，非持久化）*/
+    private String currentProjectStatus;
+
+    /** 新项目状态（变更目标，非持久化，null 则不更新）*/
+    private String newProjectStatus;
+
     // ===== 合同字段（来自 pm_contract，非持久化）=====
 
     /** 合同状态（字典:sys_htzt）*/
@@ -130,6 +157,33 @@ public class ProjectStageChange extends BaseEntity
 
     public String getProjectStage() { return projectStage; }
     public void setProjectStage(String projectStage) { this.projectStage = projectStage; }
+
+    public String getRegion() { return region; }
+    public void setRegion(String region) { this.region = region; }
+
+    public Long getRegionId() { return regionId; }
+    public void setRegionId(Long regionId) { this.regionId = regionId; }
+
+    public String getRegionName() { return regionName; }
+    public void setRegionName(String regionName) { this.regionName = regionName; }
+
+    public BigDecimal getProjectBudget() { return projectBudget; }
+    public void setProjectBudget(BigDecimal projectBudget) { this.projectBudget = projectBudget; }
+
+    public BigDecimal getEstimatedWorkload() { return estimatedWorkload; }
+    public void setEstimatedWorkload(BigDecimal estimatedWorkload) { this.estimatedWorkload = estimatedWorkload; }
+
+    public BigDecimal getActualWorkloadDays() { return actualWorkloadDays; }
+    public void setActualWorkloadDays(BigDecimal actualWorkloadDays) { this.actualWorkloadDays = actualWorkloadDays; }
+
+    public String getAcceptanceStatus() { return acceptanceStatus; }
+    public void setAcceptanceStatus(String acceptanceStatus) { this.acceptanceStatus = acceptanceStatus; }
+
+    public String getCurrentProjectStatus() { return currentProjectStatus; }
+    public void setCurrentProjectStatus(String currentProjectStatus) { this.currentProjectStatus = currentProjectStatus; }
+
+    public String getNewProjectStatus() { return newProjectStatus; }
+    public void setNewProjectStatus(String newProjectStatus) { this.newProjectStatus = newProjectStatus; }
 
     public String getContractStatus() { return contractStatus; }
     public void setContractStatus(String contractStatus) { this.contractStatus = contractStatus; }

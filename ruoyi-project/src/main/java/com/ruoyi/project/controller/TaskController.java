@@ -116,4 +116,13 @@ public class TaskController extends BaseController {
     public AjaxResult searchSoftwareDemandNo(@RequestParam(required = false) String softwareDemandNo) {
         return success(taskService.searchSoftwareDemandNo(softwareDemandNo));
     }
+
+    /**
+     * 全表汇总（金额/预估人天/实际工作量），与列表查询条件保持一致，不分页
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:project:query,project:project:list')")
+    @GetMapping("/summary")
+    public AjaxResult summary(Task task) {
+        return AjaxResult.success(taskService.selectTaskSummary(task));
+    }
 }

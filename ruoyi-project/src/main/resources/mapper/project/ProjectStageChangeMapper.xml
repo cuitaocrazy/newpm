@@ -23,6 +23,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="revenueConfirmStatus" column="revenue_confirm_status" />
         <result property="projectDept"          column="project_dept"           />
         <result property="projectStage"         column="project_stage"          />
+        <result property="region"               column="region"                 />
+        <result property="regionId"             column="region_id"              />
+        <result property="regionName"           column="region_name"            />
+        <result property="projectBudget"        column="project_budget"         />
+        <result property="estimatedWorkload"    column="estimated_workload"     />
+        <result property="actualWorkloadDays"   column="actual_workload_days"   />
+        <result property="acceptanceStatus"     column="acceptance_status"      />
+        <result property="currentProjectStatus" column="project_status"         />
         <!-- 合同信息 -->
         <result property="contractStatus"       column="contract_status"        />
         <result property="contractAmount"       column="contract_amount"        />
@@ -47,6 +55,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.revenue_confirm_status,
             p.project_dept,
             p.project_stage,
+            p.region,
+            p.region_id,
+            p.project_budget,
+            p.estimated_workload,
+            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload_days,
+            p.acceptance_status,
+            p.project_status,
+            sr.region_name,
             c.contract_status,
             c.contract_amount,
             psc.change_id,
@@ -56,6 +72,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             COALESCE(u.nick_name, psc.create_by) AS change_by,
             psc.create_time AS change_time
         FROM pm_project p
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
             SELECT project_id, MIN(contract_id) AS contract_id
             FROM pm_project_contract_rel
@@ -77,6 +94,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
         <where>
             p.del_flag = '0'
+            AND (p.project_level IS NULL OR p.project_level = 0)
             <if test="projectId != null">AND p.project_id = #{projectId}</if>
             <if test="projectName != null and projectName != ''">AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
             <if test="projectDept != null and projectDept != ''">
@@ -84,6 +102,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                      OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
             </if>
             <if test="projectStage != null and projectStage != ''">AND p.project_stage = #{projectStage}</if>
+            <if test="revenueConfirmYear != null and revenueConfirmYear != ''">AND p.revenue_confirm_year = #{revenueConfirmYear}</if>
+            <if test="region != null and region != ''">AND p.region = #{region}</if>
+            <if test="regionId != null">AND p.region_id = #{regionId}</if>
             ${params.dataScope}
         </where>
         ORDER BY p.update_time DESC
@@ -116,6 +137,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- ==================== 更新项目当前阶段 ==================== -->
     <update id="updateProjectStageByProjectId">
         UPDATE pm_project SET project_stage = #{projectStage}, update_time = NOW()
+        WHERE project_id = #{projectId}
+    </update>
+
+    <!-- ==================== 更新项目状态 ==================== -->
+    <update id="updateProjectStatusByProjectId">
+        UPDATE pm_project SET project_status = #{projectStatus}, update_time = NOW()
         WHERE project_id = #{projectId}
     </update>
 

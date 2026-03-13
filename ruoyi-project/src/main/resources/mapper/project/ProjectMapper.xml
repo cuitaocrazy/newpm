@@ -642,6 +642,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="purchaseCost != null">purchase_cost = #{purchaseCost},</if>
             <if test="approvalStatus != null">approval_status = #{approvalStatus},</if>
             <if test="approvalReason != null">approval_reason = #{approvalReason},</if>
+            <if test="approvalTime != null">approval_time = #{approvalTime},</if>
+            <if test="approverId != null">approver_id = #{approverId},</if>
             <if test="industryCode != null">industry_code = #{industryCode},</if>
             <if test="regionCode != null">region_code = #{regionCode},</if>
             <if test="remark != null">remark = #{remark},</if>
@@ -703,9 +705,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             t.project_id   AS projectId,
             t.dept_id      AS deptId,
             d.dept_name    AS deptName,
-            t.confirm_amount AS confirmAmount
+            t.confirm_amount AS confirmAmount,
+            t.confirm_time AS confirmTime,
+            p.revenue_confirm_year AS revenueConfirmYear
         FROM pm_team_revenue_confirmation t
         JOIN sys_dept d ON t.dept_id = d.dept_id
+        JOIN pm_project p ON t.project_id = p.project_id
         WHERE t.del_flag = '0'
         AND t.project_id IN
         <foreach item="id" collection="projectIds" open="(" separator="," close=")">
@@ -1093,6 +1098,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.acceptance_status,
             p.estimated_workload,
             ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload,
+            p.revenue_confirm_year,
+            p.revenue_confirm_date,
+            p.confirm_amount,
             p.project_address,
             p.project_plan,
             p.project_description,
@@ -1211,8 +1219,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 更新主项目实际工作量(小时)——由日报保存时汇总子任务后调用 -->
     <update id="updateActualWorkload">
         update pm_project
-        set actual_workload = #{actualWorkload},
-            update_time = now()
+        set actual_workload = #{actualWorkload}
         where project_id = #{projectId}
     </update>
 

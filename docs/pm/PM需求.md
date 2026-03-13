@@ -901,10 +901,54 @@
 - [x] 项目管理、合同管理、里程碑管理 有这些权限的人 一定要有任务的相关查询、查看等权限 需要处理 
 - [x] 项目管理：需要支持解除合同关联功能，添加了独立的解除合同关联按钮权限，给需要的角色添加权限。
   - 添加原因：关联合同页面 ，对于没有签署合同的项目错误的关联了一个合同，目前没法把这个关联关系去掉。
+  - 改造：项目管理：关联合同页面，添加 支持 选择项目、选择合同为空，去掉必填校验 支持为空。还要去掉解除合同
 - [x] 对比备份和本地项目的项目id和项目名称的项目表数据， 在备份 和本地 的创建人、创建时间、更新人、更新时间 分别是什么
   - 重点找一下 厦门中行员工绩效考核系统信创改造项目、2025年深圳分行聚合支付系统国密改造项目
+- [x] 任务管理：添加若依数据过滤权限
+  - [ ] 谈旭 说：我自己的任务，没有操作权限；任务里面我能看到其他人的任务
+- [x] 任务管理：查询列表 也要把那些没有关联任务的项目 都要列出来
+  - [x] 在改操作按钮那一列，无任务行要隐藏编辑/删除按钮，以及任务名称列显示为空
+- [x] 项目管理：查询列表中的列，在实际人天 列后面，添加 合同编号、合同名称（添加合同详情超链接，并添加右键打开浏览器的新标签）
+- [x] 公司收入确认的列表：增加显示列 合同编号，位置放在合同名称列前面；合同名称上增加链接可打开合同详情页，同时支持在合同名称上右键支持打开浏览器的新标签
+- [x] 合同的详情页：关联项目列表模块，中的 table增加显示列 在实际人天 列的后面，依次按照顺序添加：收入确认年度(字典管理 字典类型 sys_ndgl)，收入确认团队，确认金额，确认日期。这几个字段都是公司收入确认信息，不是团队收入确认信息。
+- [x] 项目详情：在合同信息 模块下方，添加 显示付款里程碑信息模块（付款里程碑table 显示列参考 合同详情页的**付款里程碑信息** 的字段）
+- [x] 项目阶段变更
+  - [x] 查询条件：增加公司收入确认年度，一级区域，二级区域
+  - [x] 查询列表：在项目名称后面添加显示列：预算金额、预算人天 、实际人天、验收状态
+  - [x] 项目阶段管理：查询列表的table与项目人员管理的table格式保持一致
+- [x] 项目状态变更：在项目阶段变更的dialog中 添加显示当前项目状态（回显），变更项目状态（字典表  字典类型sys_xmzt）,直接修改项目表的项目状态，并且记录日志，目前日志都记录了哪些信息？
+- [x] 任务管理：添加 金额/人天/工作量的合计功能，支持金额的升序和降序。合计是对全表数据的合计，不是当前页面的合计。
+  - 任务管理：查询列表中的列 项目预算(元)
+    项目预估人天
+    项目实际人天、任务预估人天
+    任务实际人天
+    都需要在table中添加 升序和降序的图标和功能
+- [x] 点击合同详情 报错：
+  - [ ] 在付款里程碑 ，点击合同名称的超链接 报错。访问地址：http://localhost/dev-api/project/task/list?projectId=234  合同名称：银联国库资金经收支付业务T+0清算需求HHAP-COR分项工作任务订单
+    \### Error querying database. Cause: java.sql.SQLSyntaxErrorException: Unknown column 'c.customer_name' in 'field list' ### The error may exist in URL [jar:nested:/Users/kongli/ws-claude/PM/newpm/ruoyi-admin/target/ruoyi-admin.jar/!BOOT-INF/lib/ruoyi-project-3.9.1.jar!/mapper/project/TaskMapper.xml] ### The error may involve com.ruoyi.project.mapper.TaskMapper.selectTaskList-Inline ### The error occurred while setting parameters ### SQL: select p.project_id, p.project_code, p.project_name as parent_project_name, p.project_status, p.project_stage, p.project_category, p.industry, p.region, sr.region_name, p.established_year, p.revenue_confirm_year as parent_revenue_confirm_year, p.project_dept, d.dept_name as project_dept_name, p.project_budget as parent_project_budget, p.estimated_workload as parent_estimated_workload, p.actual_workload as parent_actual_workload, p.start_date as project_start_date, p.end_date as project_end_date, p.acceptance_status, p.acceptance_date, u_pm.nick_name as project_manager_name, u_mm.nick_name as market_manager_name, u_sm.nick_name as sales_manager_name, c.customer_name, t.task_id, t.task_code, t.task_name, t.task_stage, t.task_manager_id, t.product, t.bank_demand_no, t.software_demand_no, t.task_budget, t.estimated_workload, t.actual_workload, t.production_year, t.batch_id, t.task_plan, t.task_description, t.start_date, t.end_date, t.production_date, t.production_version_date, t.actual_production_date, t.internal_closure_date, t.functional_test_date, t.schedule_status, t.function_description, t.implementation_plan, t.create_by, t.create_time, t.update_by, t.update_time, t.remark, u.nick_name as task_manager_name, u_cb.nick_name as create_by_name, u_ub.nick_name as update_by_name, pb.batch_no from pm_project p left join pm_task t on p.project_id = t.project_id left join sys_user u on t.task_manager_id = u.user_id left join sys_user u_cb on t.create_by COLLATE utf8mb4_unicode_ci = u_cb.user_name left join sys_user u_ub on t.update_by COLLATE utf8mb4_unicode_ci = u_ub.user_name left join sys_user u_pm on p.project_manager_id = u_pm.user_id left join sys_user u_mm on p.market_manager_id = u_mm.user_id left join sys_user u_sm on p.sales_manager_id = u_sm.user_id left join sys_dept d on p.project_dept = d.dept_id left join pm_production_batch pb on t.batch_id = pb.batch_id left join pm_customer c on p.customer_id = c.customer_id left join pm_secondary_region sr on p.region_id = sr.region_id WHERE (p.project_level IS NULL OR p.project_level = 0) and p.project_id = ? order by p.project_id asc, t.task_code asc LIMIT ? ### Cause: java.sql.SQLSyntaxErrorException: Unknown column 'c.customer_name' in 'field list' ; bad SQL grammar []
 
 
+
+
+
+
+
+
+
+
+
+- [x] 项目信息表的更新人和更新时间 不是该用户，查找原因
+  - 这个项目名称“2025年深圳分行聚合支付系统国密改造项目 ” 的 更新人是qiu.zhang  更新时间是 2026-03-1309:11:24
+  - 项目名称“厦门中行员工绩效考核系统信创改造项目”的更新人qiu.zhang  更新时间是 2026-03-1309:20:40 ，但是qiu.zhang 用户说根本没有操作过
+  - 更新人和更新时间 是一对数据 保存时 必须同时都要更新和保存，不能单独只更新一个时间 除非是同一个人操作。否则更新记录无法对上
+    - 项目人员管理、项目审核、日报
+  -   方案A：恢复备份值（推荐）
+      - 项目59：update_by=jun.qu，update_time=2026-03-07 12:59:15
+      - 项目99：update_by=yanlan.liang，update_time=2026-03-07 06:44:40
+
+![image-20260313152227472](/Users/kongli/Library/Application Support/typora-user-images/image-20260313152227472.png)
+
+![image-20260313152455107](/Users/kongli/Library/Application Support/typora-user-images/image-20260313152455107.png)
 
 ## 计划
 

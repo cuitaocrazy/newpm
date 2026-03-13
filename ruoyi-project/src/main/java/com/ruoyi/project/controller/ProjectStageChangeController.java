@@ -80,7 +80,7 @@ public class ProjectStageChangeController extends BaseController
     public AjaxResult batchChange(@RequestBody ProjectStageChange request)
     {
         return toAjax(projectStageChangeService.batchChange(
-                request.getProjectIds(), request.getNewStage(), request.getChangeReason()));
+                request.getProjectIds(), request.getNewStage(), request.getChangeReason(), request.getNewProjectStatus()));
     }
 
     /** 修改变更记录 */

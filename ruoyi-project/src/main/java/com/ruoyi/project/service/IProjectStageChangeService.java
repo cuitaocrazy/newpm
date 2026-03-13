@@ -22,8 +22,8 @@ public interface IProjectStageChangeService
     /** 新增变更记录（同时更新 pm_project.project_stage）*/
     int insertProjectStageChange(ProjectStageChange projectStageChange);
 
-    /** 批量变更阶段（为每个项目创建变更记录并更新 pm_project.project_stage）*/
-    int batchChange(Long[] projectIds, String newStage, String changeReason);
+    /** 批量变更阶段（为每个项目创建变更记录并更新 pm_project.project_stage；newProjectStatus 不为空时同步更新 project_status）*/
+    int batchChange(Long[] projectIds, String newStage, String changeReason, String newProjectStatus);
 
     int updateProjectStageChange(ProjectStageChange projectStageChange);
 

@@ -98,7 +98,8 @@ Dependencies: admin → framework → system → common. Project/quartz/generato
 | `WorkCalendar` | `pm_work_calendar` | 工作日历 |
 | `ProjectStageChange` | `pm_project_stage_change` | 项目阶段变更记录 |
 | `WorkloadCorrectLog` | `pm_workload_correct_log` | 人天补正审计日志 |
-| `Task` | `pm_task` | 任务管理（独立表，从 `pm_project.project_level=1` 迁移而来；**数据已迁移，应用代码迁移进行中**） |
+| `Task` | `pm_task` | 任务管理（独立表，迁移自 `pm_project.project_level=1`；**迁移已完成**，TaskController + 前端均已切换） |
+| `ProductionBatch` | `pm_production_batch` | 投产批次（`Task.batchId` FK）。`ProductionBatchController` → `/project/productionBatch/**`. |
 
 ### Business Workflows
 
@@ -120,7 +121,7 @@ Full details in `docs/pm/PM需求.md`. Key notes:
    - Right (17/24): project list from `pm_project_member`. API: `GET /project/dailyReport/myProjects` — returns `hasSubProject` flag per project. For projects with sub-tasks (`hasSubProject=true`), expand multi-task rows (one per sub-project); each row: hour slider + content textarea + `workCategory` (dict `sys_gzlb`). Plain projects get a single row (no `workCategory`).
    - Click date → load detail via `GET /project/dailyReport/my/{reportDate}`. Save → `POST /project/dailyReport`.
    - **Week constraint**: only current calendar week (Mon–Sun) is editable. Past/future weeks are read-only.
-   - **`pm_daily_report_detail`** extra fields: `sub_project_id` (FK to sub-project, NULL for plain projects), `work_category` (dict `sys_gzlb`, NULL for plain projects).
+   - **`pm_daily_report_detail`** extra fields: `sub_project_id` (now FK to `pm_task.task_id`; kept as `sub_project_id` column name for backwards compat, NULL for plain projects), `work_category` (dict `sys_gzlb`, NULL for plain projects).
    - **Entry types**: `entryType` field on detail — `work`=项目工时, `leave`=请假, `comp`=倒休, `annual`=年假. Non-work entries use `leaveHours` instead of `workHours`. `pm_daily_report.leaveSummary` is a virtual field (subquery aggregating non-work entries as `entryType:hours` pairs).
    - **Workload rollup**: saving recalculates sub-project `actual_workload`, then rolls up to parent project `actual_workload`.
 
@@ -134,19 +135,25 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 
 9. **Add Contract from Project:** List row shows "添加合同" / "查看合同" based on whether contract exists. Navigates to contract creation with pre-populated projectId, dept, customer.
 
-10. **Sub-project / Task Decomposition:** `pm_project` is self-referencing via `parent_id` / `project_level` (0=main project, 1=sub-project) / `task_code`. All main-project queries filter with `AND (project_level IS NULL OR project_level = 0)`. Sub-projects do **not** get their own `pm_project_member` rows — they inherit the parent's members.
+10. **Task Decomposition:** Tasks live in `pm_task` (FK `project_id` → parent project). **Migration is complete**: `pm_task` is populated, `TaskController` serves all task CRUD, and `subproject/` frontend fully calls TaskController endpoints. Cleanup of legacy task-specific columns from `pm_project` is in progress (`docs/plans/2026-03-13-cleanup-project-task-fields.md`).
 
-    > **Migration in progress**: `pm_task` table was created (`pm-sql/fix_task_table_split_2026.sql`) and task data (project_level=1) was migrated. The application code still reads from `pm_project.project_level=1`. Backend/frontend migration is pending. `pm_daily_report_detail.sub_project_id` values are unchanged (original project_id = new task_id). See `docs/plans/2026-03-12-task-table-split.md` for the full migration plan.
+    Task endpoints (`/project/task/**`):
+    - `GET /project/task/list` — paginated task list; supports `parentId` / `projectId` / `taskName` / `taskCode` / `taskStage` / `taskManagerId` / `productionYear` / `batchId` / `scheduleStatus` / `softwareDemandNo` / `product` / `projectDept` / `parentRevenueConfirmYear`
+    - `GET /project/task/options?projectId=xxx` — lightweight options for daily report dropdowns
+    - `GET /project/task/projectsHasTasks` — batch check which projects have tasks
+    - Standard CRUD: `GET /{taskId}`, `POST`, `PUT`, `DELETE /{taskIds}`
 
-    Extra endpoints:
-    - `GET /project/project/subList` — paginated sub-project list (requires `parentId` param)
-    - `GET /project/project/subProjectOptions?parentId=xxx` — lightweight options for daily report dropdowns (returns id, name, stage, task leader)
+    `TaskMapper.selectTaskList` queries `pm_project LEFT JOIN pm_task` — meaning tasks are always shown in the context of their parent project (project metadata is enriched onto Task). `pm_daily_report_detail.project_id` stores the **task ID** (from `pm_task`) for task-based entries.
+
     Frontend: `ruoyi-ui/src/views/project/subproject/` (index / add / edit / detail). Route is hidden level-2 under 项目管理 (`/project/subproject`).
-    Task-specific fields on `pm_project` (only populated when `project_level=1`): `batchId` (batch), `productionYear` (production year), `bankDemandNo` (bank demand #), `softwareDemandNo` (software demand #), `scheduleStatus` (dict `sys_pqzt`). Sibling task list is shown on sub-project pages (queries tasks sharing the same `parent_id`).
+
+    Task fields: `taskCode`, `taskName`, `taskStage` (dict `sys_xmjd`), `taskManagerId`, `product` (dict `sys_product`), `bankDemandNo`, `softwareDemandNo`, `taskBudget`, `estimatedWorkload`, `actualWorkload`, `productionYear` (dict `sys_ndgl`), `batchId` → `pm_production_batch`, `scheduleStatus` (dict `sys_pqzt`), `startDate`/`endDate`, `productionDate`, `productionVersionDate`, `actualProductionDate`, `internalClosureDate`, `functionalTestDate`, `functionDescription`, `implementationPlan`, `taskPlan`, `taskDescription`.
+
+    Sub-project members are **not** inserted into `pm_project_member` — they inherit the parent project's member list. Legacy `ProjectController` sub-project proxies (`/project/project/subList`, `/project/project/subProjectOptions`) are deprecated; use TaskController instead.
 
 ### Dictionary Dependencies
 
-`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-12，11=项目结项，12=技术投产), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`), `sys_gzlb` 工作任务类别(for `work_category` in `pm_daily_report_detail`), `sys_pqzt` 排期状态(for `scheduleStatus` on sub-projects), `sys_jdgl` 季度管理(for `expectedQuarter`/`actualQuarter` in `pm_payment`)
+`industry` 行业, `sys_yjqy` 区域, `sys_xmfl` 项目分类, `sys_xmjd` 项目阶段(0-12，11=项目结项，12=技术投产), `sys_yszt` 验收状态, `sys_xmzt` 项目状态, `sys_htlx` 合同类型, `sys_htzt` 合同状态, `sys_fkzt` 付款状态, `sys_wdlx` 文档类型, `sys_spzt` 审核状态(0-3), `sys_qrzt` 确认状态(1-4), `sys_srqrzt` 收入确认状态(0-3), `sys_ndgl` 年度管理(for `establishedYear`/`revenueConfirmYear`/`productionYear`), `sys_gzlb` 工作任务类别(for `work_category` in `pm_daily_report_detail`), `sys_pqzt` 排期状态(for `scheduleStatus` on tasks), `sys_jdgl` 季度管理(for `expectedQuarter`/`actualQuarter` in `pm_payment`), `sys_product` 产品(for `product` on tasks)
 
 ### API URL Convention
 
@@ -166,7 +173,8 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 | `DailyReportController` | `/project/dailyReport/**` | Daily reports |
 | `ProjectStatsController` | `/project/dailyReport/**` | Stats (shares prefix; `/projectStats`, `/projectNameSuggestions`, `POST /projectStats/{id}/correct`, `GET /projectStats/{id}/correctLog`) |
 | `ProjectReviewController` | `/project/review/**` | Company revenue view |
-| `TaskController` | `/project/task/**` | Task CRUD. Extra: `GET /options?projectId=` (lightweight for daily report dropdown), `GET /projectsHasTasks` (batch check which projects have tasks) |
+| `TaskController` | `/project/task/**` | Task CRUD (reads `pm_project LEFT JOIN pm_task`). Extra: `GET /options?projectId=` (lightweight for daily report dropdown), `GET /projectsHasTasks` (batch check which projects have tasks) |
+| `ProductionBatchController` | `/project/productionBatch/**` | 投产批次 CRUD |
 | `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue (different root) |
 
 Company revenue endpoints: `/project/project/revenue/**`. Frontend routes: `/project/{entity}` + `/revenue/company` + `/revenue/team`.
@@ -391,23 +399,18 @@ Applies to all PM mapper queries with `projectDept` filter.
 
 Two tables use hard delete (not soft `del_flag = '1'`):
 - `pm_project` — `DELETE FROM pm_project`
+- `pm_task` — `DELETE FROM pm_task` (no `del_flag` column)
 - `pm_daily_report` + `pm_daily_report_detail` — both hard-deleted in a transaction
 
 All other PM tables use soft delete. Do not add unique constraint workarounds for daily reports.
 
-### Sub-projects Must Not Appear in Main-project Queries
+### Task Fields Belong to pm_task, Not pm_project
 
-All `selectProjectList` / revenue / approval mapper queries guard against sub-project pollution:
-
-```xml
-AND (p.project_level IS NULL OR p.project_level = 0)
-```
-
-Any new mapper query on `pm_project` that should return only top-level projects **must** include this filter. Sub-project queries explicitly use `and p.project_level = 1`.
+All task-specific fields (`taskCode`, `batchId`, `productionYear`, `scheduleStatus`, `bankDemandNo`, `softwareDemandNo`, `product`, `internalClosureDate`, `functionalTestDate`, etc.) now live in `pm_task`. The `pm_project` table is being cleaned of these 19 legacy columns (see `docs/plans/2026-03-13-cleanup-project-task-fields.md`). Do NOT add task-related fields to `pm_project`.
 
 ### Project Members Include All Managers
 
-`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list.
+`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list. **Important**: `syncProjectMembers()` must NOT update `pm_project.update_by/update_time` — it only manages the `pm_project_member` table.
 
 ### Cross-module Permission
 

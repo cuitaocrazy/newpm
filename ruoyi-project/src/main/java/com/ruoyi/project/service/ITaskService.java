@@ -27,4 +27,6 @@ public interface ITaskService {
     List<String> searchTaskName(String taskName);
 
     List<String> searchSoftwareDemandNo(String softwareDemandNo);
+
+    Map<String, Object> selectTaskSummary(Task task);
 }

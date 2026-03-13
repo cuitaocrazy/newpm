@@ -60,4 +60,6 @@ public interface TaskMapper {
     List<String> searchTaskName(@Param("taskName") String taskName);
 
     List<String> searchSoftwareDemandNo(@Param("softwareDemandNo") String softwareDemandNo);
+
+    Map<String, Object> selectTaskSummary(Task task);
 }

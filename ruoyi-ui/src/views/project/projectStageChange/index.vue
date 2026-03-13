@@ -20,6 +20,19 @@
           <el-option v-for="dict in sys_xmjd" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
+      <el-form-item label="确认年度" prop="revenueConfirmYear">
+        <el-select v-model="queryParams.revenueConfirmYear" placeholder="请选择年度" clearable style="width: 160px">
+          <el-option v-for="dict in sys_ndgl" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="一级区域" prop="region">
+        <el-select v-model="queryParams.region" placeholder="请选择区域" clearable style="width: 160px" @change="onRegionChange">
+          <el-option v-for="dict in sys_yjqy" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="二级区域" prop="regionId">
+        <secondary-region-select :region-dict-value="queryParams.region" v-model="queryParams.regionId" style="width: 160px" />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -42,12 +55,32 @@
     </el-row>
 
     <!-- 数据表格 -->
-    <el-table v-loading="loading" :data="projectStageChangeList" @selection-change="handleSelectionChange">
+    <el-table v-loading="loading" :data="projectStageChangeList" @selection-change="handleSelectionChange" border stripe style="width: 100%">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" type="index" width="55" align="center" />
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220">
         <template #default="scope">
           <el-link type="primary" :href="`/project/list/detail/${scope.row.projectId}`" class="project-name-cell">{{ scope.row.projectName }}</el-link>
+        </template>
+      </el-table-column>
+      <el-table-column label="预算金额(元)" align="center" prop="projectBudget" width="150">
+        <template #default="scope">
+          <span>{{ formatAmountYuan(scope.row.projectBudget) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="预算人天" align="center" prop="estimatedWorkload" width="100">
+        <template #default="scope">
+          <span>{{ scope.row.estimatedWorkload != null ? scope.row.estimatedWorkload : '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="实际人天" align="center" prop="actualWorkloadDays" width="100">
+        <template #default="scope">
+          <span>{{ scope.row.actualWorkloadDays != null ? scope.row.actualWorkloadDays : '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="验收状态" align="center" prop="acceptanceStatus" width="100">
+        <template #default="scope">
+          <dict-tag :options="sys_yszt" :value="scope.row.acceptanceStatus" />
         </template>
       </el-table-column>
       <el-table-column label="收入确认年度" align="center" prop="revenueConfirmYear" width="120">
@@ -110,11 +143,22 @@
     />
 
     <!-- 变更 Dialog -->
-    <el-dialog :title="'变更项目阶段 - ' + changeForm.projectName" v-model="changeOpen" width="520px" append-to-body>
-      <el-form ref="changeFormRef" :model="changeForm" :rules="changeRules" label-width="90px">
+    <el-dialog :title="'变更项目阶段和状态 - ' + changeForm.projectName" v-model="changeOpen" width="520px" append-to-body>
+      <el-form ref="changeFormRef" :model="changeForm" :rules="changeRules" label-width="100px">
+        <el-form-item label="当前阶段">
+          <dict-tag :options="sys_xmjd" :value="changeForm.currentStage" />
+        </el-form-item>
         <el-form-item label="新阶段" prop="newStage">
           <el-select v-model="changeForm.newStage" placeholder="请选择新阶段" style="width: 100%">
             <el-option v-for="dict in sys_xmjd" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="当前项目状态">
+          <dict-tag :options="sys_xmzt" :value="changeForm.currentProjectStatus" />
+        </el-form-item>
+        <el-form-item label="变更项目状态">
+          <el-select v-model="changeForm.newProjectStatus" placeholder="不填则不变更" clearable style="width: 100%">
+            <el-option v-for="dict in sys_xmzt" :key="dict.value" :label="dict.label" :value="dict.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="变更原因">
@@ -154,11 +198,28 @@
     </el-dialog>
 
     <!-- 批量变更 Dialog -->
-    <el-dialog title="批量变更项目阶段" v-model="batchOpen" width="520px" append-to-body>
-      <el-form ref="batchFormRef" :model="batchForm" :rules="batchRules" label-width="90px">
+    <el-dialog title="批量变更项目阶段和状态" v-model="batchOpen" width="520px" append-to-body>
+      <el-form ref="batchFormRef" :model="batchForm" :rules="batchRules" label-width="100px">
+        <el-form-item label="当前阶段">
+          <span v-if="uniqueSelectedStages.length">
+            <dict-tag v-for="(stage, i) in uniqueSelectedStages" :key="i" :options="sys_xmjd" :value="stage" style="margin-right: 4px;" />
+          </span>
+          <span v-else style="color: #c0c4cc;">-</span>
+        </el-form-item>
         <el-form-item label="新阶段" prop="newStage">
           <el-select v-model="batchForm.newStage" placeholder="请选择新阶段" style="width: 100%">
             <el-option v-for="dict in sys_xmjd" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="当前项目状态">
+          <span v-if="uniqueSelectedStatuses.length">
+            <dict-tag v-for="(status, i) in uniqueSelectedStatuses" :key="i" :options="sys_xmzt" :value="status" style="margin-right: 4px;" />
+          </span>
+          <span v-else style="color: #c0c4cc;">-</span>
+        </el-form-item>
+        <el-form-item label="变更项目状态">
+          <el-select v-model="batchForm.newProjectStatus" placeholder="不填则不变更" clearable style="width: 100%">
+            <el-option v-for="dict in sys_xmzt" :key="dict.value" :label="dict.label" :value="dict.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="变更原因">
@@ -182,7 +243,7 @@ import { searchProjects } from "@/api/project/project"
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_xmjd, sys_htzt, sys_qrzt, sys_ndgl } = proxy.useDict('sys_xmjd', 'sys_htzt', 'sys_qrzt', 'sys_ndgl')
+const { sys_xmjd, sys_htzt, sys_qrzt, sys_ndgl, sys_yjqy, sys_yszt, sys_xmzt } = proxy.useDict('sys_xmjd', 'sys_htzt', 'sys_qrzt', 'sys_ndgl', 'sys_yjqy', 'sys_yszt', 'sys_xmzt')
 
 const projectStageChangeList = ref([])
 const loading = ref(true)
@@ -197,6 +258,9 @@ const data = reactive({
     projectName: null,
     projectDept: null,
     projectStage: null,
+    revenueConfirmYear: null,
+    region: null,
+    regionId: null,
   }
 })
 const { queryParams } = toRefs(data)
@@ -220,6 +284,14 @@ const batchForm = ref({})
 const batchRules = {
   newStage: [{ required: true, message: '请选择新阶段', trigger: 'change' }]
 }
+
+// 已选项目中去重后的当前阶段 / 当前状态（用于批量变更回显）
+const uniqueSelectedStages = computed(() =>
+  [...new Set(selectedRows.value.map(r => r.projectStage).filter(Boolean))]
+)
+const uniqueSelectedStatuses = computed(() =>
+  [...new Set(selectedRows.value.map(r => r.currentProjectStatus).filter(Boolean))]
+)
 
 function formatAmountYuan(val) {
   if (val == null || val === '') return '-'
@@ -272,7 +344,12 @@ function handleQuery() {
 function resetQuery() {
   proxy.resetForm('queryRef')
   queryParams.value.projectId = null
+  queryParams.value.regionId = null
   handleQuery()
+}
+
+function onRegionChange() {
+  queryParams.value.regionId = null
 }
 
 function handleSelectionChange(selection) {
@@ -287,6 +364,8 @@ function handleChange(row) {
     currentStage: row.projectStage,
     newStage: null,
     changeReason: null,
+    currentProjectStatus: row.currentProjectStatus,
+    newProjectStatus: null,
   }
   changeOpen.value = true
 }
@@ -299,6 +378,7 @@ function submitChange() {
         oldStage: changeForm.value.currentStage,
         newStage: changeForm.value.newStage,
         changeReason: changeForm.value.changeReason,
+        newProjectStatus: changeForm.value.newProjectStatus || null,
       }).then(() => {
         proxy.$modal.msgSuccess('变更成功')
         changeOpen.value = false
@@ -320,7 +400,7 @@ function handleHistory(row) {
 }
 
 function handleBatchChange() {
-  batchForm.value = { newStage: null, changeReason: null }
+  batchForm.value = { newStage: null, changeReason: null, newProjectStatus: null }
   batchOpen.value = true
 }
 
@@ -331,6 +411,7 @@ function submitBatchChange() {
         projectIds: selectedRows.value.map(r => r.projectId),
         newStage: batchForm.value.newStage,
         changeReason: batchForm.value.changeReason,
+        newProjectStatus: batchForm.value.newProjectStatus || null,
       }).then(() => {
         proxy.$modal.msgSuccess('批量变更成功')
         batchOpen.value = false

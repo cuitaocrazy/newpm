@@ -94,6 +94,8 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
         Project project = new Project();
         project.setProjectId(projectId);
         project.setParticipants(participants);
+        project.setUpdateBy(SecurityUtils.getUsername());
+        project.setUpdateTime(new Date());
         return projectMapper.updateProject(project);
     }
 }

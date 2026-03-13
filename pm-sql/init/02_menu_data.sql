@@ -95,9 +95,9 @@ VALUES ('详情', @memberMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:membe
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('编辑', @memberMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:member:edit', '#', 'admin', sysdate(), '', NULL, '');
 
--- ---- 项目阶段变更 ----
+-- ---- 项目阶段和状态变更 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES ('项目阶段变更', @projectRootMenuId, 6, 'projectStageChange', 'project/projectStageChange/index', 1, 0, 'C', '0', '0', 'project:projectStageChange:list', 'log', 'admin', sysdate(), '', NULL, '项目阶段变更菜单');
+VALUES ('项目阶段和状态变更', @projectRootMenuId, 6, 'projectStageChange', 'project/projectStageChange/index', 1, 0, 'C', '0', '0', 'project:projectStageChange:list', 'log', 'admin', sysdate(), '', NULL, '项目阶段和状态变更菜单');
 SELECT @stageChangeMenuId := LAST_INSERT_ID();
 
 -- 变更使用 project:projectStageChange:add，批量变更使用 project:projectStageChange:batchChange

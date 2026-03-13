@@ -195,7 +195,7 @@
         <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
       </template>
       <el-empty v-if="projectList.length === 0" description="该合同暂无关联项目" :image-size="80" />
-      <el-table v-else :data="projectList" border>
+      <el-table v-else :data="projectTableRows" border :span-method="projectSpanMethod">
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column label="项目名称" align="left" prop="projectName" show-overflow-tooltip>
           <template #default="scope">
@@ -214,10 +214,25 @@
             {{ scope.row.estimatedWorkload }}
           </template>
         </el-table-column>
-        <el-table-column label="实际人天" align="center" prop="actualWorkload" width="150">
+        <el-table-column label="实际人天" align="center" prop="actualWorkload" width="110">
           <template #default="scope">
             {{ scope.row.actualWorkload || '-' }}
           </template>
+        </el-table-column>
+        <el-table-column label="收入确认年度" align="center" width="120">
+          <template #default="scope">
+            <dict-tag v-if="scope.row.revenueConfirmYear" :options="sys_ndgl" :value="scope.row.revenueConfirmYear" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="收入确认团队" align="center" width="130" show-overflow-tooltip>
+          <template #default="scope">{{ scope.row.teamConfirmDepts || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="确认金额（元）" align="center" width="130">
+          <template #default="scope">{{ scope.row.confirmAmount != null ? formatAmount(scope.row.confirmAmount) : '-' }}</template>
+        </el-table-column>
+        <el-table-column label="确认日期" align="center" width="110">
+          <template #default="scope">{{ scope.row.revenueConfirmDate ? parseTime(scope.row.revenueConfirmDate, '{y}-{m}-{d}') : '-' }}</template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -326,6 +341,38 @@ const projectList = ref([])
 const contractTaskList = ref([])
 const paymentList = ref([])
 const attachmentList = ref([])
+
+/** 关联项目表格展开行（每条团队收入确认一行） */
+const projectTableRows = computed(() => {
+  const rows = []
+  projectList.value.forEach(project => {
+    const confirms = project.teamConfirmList || []
+    if (confirms.length === 0) {
+      rows.push({ ...project, _confirmIdx: 0, _confirmCount: 1, _deptName: null, _confirmAmount: null, _confirmTime: null, _confirmYear: project.revenueConfirmYear })
+    } else {
+      confirms.forEach((c, i) => {
+        rows.push({
+          ...project,
+          _confirmIdx: i,
+          _confirmCount: confirms.length,
+          _deptName: c.deptName,
+          _confirmAmount: c.confirmAmount,
+          _confirmTime: c.confirmTime,
+          _confirmYear: c.revenueConfirmYear ?? project.revenueConfirmYear
+        })
+      })
+    }
+  })
+  return rows
+})
+
+/** span-method：前9列均为项目级字段，按团队确认条数合并 */
+function projectSpanMethod({ row, columnIndex }) {
+  if (columnIndex < 9) {
+    return row._confirmIdx === 0 ? [row._confirmCount, 1] : [0, 0]
+  }
+  return [1, 1]
+}
 
 /** 付款里程碑列表（带合计行） */
 const paymentListWithSummary = computed(() => {

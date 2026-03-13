@@ -88,7 +88,7 @@
       <!-- 部门 + 合同 联动选择 -->
       <el-row :gutter="16" style="margin-top: 16px;">
         <el-col :span="12">
-          <div class="selector-label">选择部门 <span class="required">*</span></div>
+          <div class="selector-label">选择部门</div>
           <el-tree-select
             v-model="selectedDeptId"
             :data="deptTreeData"
@@ -102,7 +102,7 @@
           />
         </el-col>
         <el-col :span="12">
-          <div class="selector-label">选择合同 <span class="required">*</span></div>
+          <div class="selector-label">选择合同</div>
           <el-select
             v-model="selectedContractId"
             placeholder="请先选择部门"
@@ -232,8 +232,8 @@
 
       <!-- 操作按钮 -->
       <div class="action-bar">
-        <el-button type="primary" :disabled="!selectedContractId" @click="submitBind">
-          <el-icon><Check /></el-icon>&nbsp;确认关联
+        <el-button type="primary" @click="submitBind">
+          <el-icon><Check /></el-icon>&nbsp;保存
         </el-button>
         <el-button @click="goBack">取 消</el-button>
       </div>
@@ -242,7 +242,7 @@
 </template>
 
 <script setup name="BindContract">
-import { getProject, getDeptTree, bindContractToProject, getContractByProjectId } from '@/api/project/project'
+import { getProject, getDeptTree, bindContractToProject, getContractByProjectId, unbindContractFromProject } from '@/api/project/project'
 import { listContractsByDept, getContract } from '@/api/project/contract'
 import { listPayment } from '@/api/project/payment'
 import { handleTree } from '@/utils/ruoyi'
@@ -266,6 +266,7 @@ const contractLoading = ref(false)
 const selectedContractId = ref(null)
 const contractDetail = ref(null)
 const paymentList = ref([])
+const existingContractId = ref(null)  // 页面加载时已有的关联合同ID
 
 const paymentListWithSummary = computed(() => {
   if (paymentList.value.length === 0) return []
@@ -330,13 +331,25 @@ function onContractChange(contractId) {
   })
 }
 
-/** 提交关联 */
+/** 提交 */
 function submitBind() {
-  if (!selectedContractId.value) return
-  bindContractToProject(projectId.value, selectedContractId.value).then(() => {
-    proxy.$modal.msgSuccess('关联合同成功')
-    goBack()
-  })
+  if (selectedContractId.value) {
+    // 有选合同 → 关联
+    bindContractToProject(projectId.value, selectedContractId.value).then(() => {
+      proxy.$modal.msgSuccess('关联合同成功')
+      goBack()
+    })
+  } else if (existingContractId.value) {
+    // 合同已清空 且 原来有关联 → 解绑
+    proxy.$modal.confirm('确认解除当前项目与合同的关联关系？').then(() => {
+      return unbindContractFromProject(projectId.value)
+    }).then(() => {
+      proxy.$modal.msgSuccess('已解除合同关联')
+      goBack()
+    }).catch(() => {})
+  } else {
+    proxy.$modal.msgWarning('当前项目未关联合同，请先选择要关联的合同')
+  }
 }
 
 function goBack() {
@@ -356,6 +369,7 @@ async function init() {
   getContractByProjectId(projectId.value).then(res => {
     if (!res.data) return
     const c = res.data
+    existingContractId.value = c.contractId  // 记录原始关联
     if (c.deptId) {
       selectedDeptId.value = c.deptId
       contractLoading.value = true
@@ -383,9 +397,6 @@ init()
   font-size: 13px;
   color: #606266;
   margin-bottom: 6px;
-}
-.required {
-  color: #f56c6c;
 }
 .section-title {
   font-size: 14px;

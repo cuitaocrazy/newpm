@@ -255,68 +255,82 @@
           <span v-else>{{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(3) : '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[8].visible" label="合同名称" align="left" header-align="center" prop="contractName" min-width="180" show-overflow-tooltip>
+      <el-table-column v-if="columns[8].visible" label="合同编号" align="left" header-align="center" prop="contractCode" min-width="160" show-overflow-tooltip>
         <template #default="scope">
-          <span v-if="!scope.row.isSummaryRow" style="white-space: pre-line;">{{ scope.row.contractName || '-' }}</span>
+          <span v-if="!scope.row.isSummaryRow" style="white-space: pre-line;">{{ scope.row.contractCode || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[9].visible" label="合同金额(元)" align="right" prop="contractAmount" min-width="120">
+      <el-table-column v-if="columns[9].visible" label="合同名称" align="left" header-align="center" prop="contractName" min-width="180" show-overflow-tooltip>
+        <template #default="scope">
+          <template v-if="!scope.row.isSummaryRow">
+            <el-link
+              v-if="scope.row.contractId"
+              type="primary"
+              :href="`/htkx/contract/detail/${scope.row.contractId}`"
+              @click.prevent="router.push(`/htkx/contract/detail/${scope.row.contractId}`)"
+              style="white-space: pre-line; word-break: break-all; line-height: 1.5;"
+            >{{ scope.row.contractName }}</el-link>
+            <span v-else style="white-space: pre-line;">{{ scope.row.contractName || '-' }}</span>
+          </template>
+        </template>
+      </el-table-column>
+      <el-table-column v-if="columns[10].visible" label="合同金额(元)" align="right" prop="contractAmount" min-width="120">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow">{{ formatAmount(scope.row.contractAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.contractAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[10].visible" label="合同状态" align="center" prop="contractStatus" min-width="100">
+      <el-table-column v-if="columns[11].visible" label="合同状态" align="center" prop="contractStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_htzt" :value="scope.row.contractStatus"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[11].visible" label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120">
+      <el-table-column v-if="columns[12].visible" label="收入确认年度" align="center" prop="revenueConfirmYear" min-width="120">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_ndgl" :value="scope.row.revenueConfirmYear"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[12].visible" label="确认日期" align="center" prop="revenueConfirmDate" width="110">
+      <el-table-column v-if="columns[13].visible" label="确认日期" align="center" prop="revenueConfirmDate" width="110">
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ scope.row.revenueConfirmDate || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[13].visible" label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
+      <el-table-column v-if="columns[14].visible" label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_qrzt" :value="scope.row.revenueConfirmStatus"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[14].visible" label="验收状态" align="center" prop="acceptanceStatus" min-width="100">
+      <el-table-column v-if="columns[15].visible" label="验收状态" align="center" prop="acceptanceStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_yszt" :value="scope.row.acceptanceStatus"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[15].visible" label="确认金额（元）" align="right" prop="confirmAmount" min-width="130">
+      <el-table-column v-if="columns[16].visible" label="确认金额（元）" align="right" prop="confirmAmount" min-width="130">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow">{{ formatAmount(scope.row.confirmAmount) }}</span>
           <span v-else>{{ formatAmount(scope.row.confirmAmount) }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[16].visible" label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
+      <el-table-column v-if="columns[17].visible" label="参与人员" align="center" prop="participants" min-width="150" show-overflow-tooltip>
         <template #default="scope">
           <span v-if="!scope.row.isSummaryRow">{{ getParticipantsNames(scope.row.participants) }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[17].visible" label="启动日期" align="center" prop="startDate" width="100" />
-      <el-table-column v-if="columns[18].visible" label="结束日期" align="center" prop="endDate" width="100" />
-      <el-table-column v-if="columns[19].visible" label="验收日期" align="center" prop="acceptanceDate" width="100" />
-      <el-table-column v-if="columns[20].visible" label="审核状态" align="center" prop="approvalStatus" min-width="100">
+      <el-table-column v-if="columns[18].visible" label="启动日期" align="center" prop="startDate" width="100" />
+      <el-table-column v-if="columns[19].visible" label="结束日期" align="center" prop="endDate" width="100" />
+      <el-table-column v-if="columns[20].visible" label="验收日期" align="center" prop="acceptanceDate" width="100" />
+      <el-table-column v-if="columns[21].visible" label="审核状态" align="center" prop="approvalStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_spzt" :value="scope.row.approvalStatus"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[21].visible" label="项目状态" align="center" prop="projectStatus" min-width="100">
+      <el-table-column v-if="columns[22].visible" label="项目状态" align="center" prop="projectStatus" min-width="100">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummaryRow" :options="sys_xmzt" :value="scope.row.projectStatus"/>
         </template>
       </el-table-column>
-      <el-table-column v-if="columns[22].visible" label="更新人" align="center" prop="updateByName" min-width="100" />
-      <el-table-column v-if="columns[23].visible" label="更新时间" align="center" prop="updateTime" width="160" />
+      <el-table-column v-if="columns[23].visible" label="更新人" align="center" prop="updateByName" min-width="100" />
+      <el-table-column v-if="columns[24].visible" label="更新时间" align="center" prop="updateTime" width="160" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200" fixed="right">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
@@ -383,22 +397,23 @@ const columns = ref([
   { key: 5,  label: '项目预算(元)',     visible: true  },
   { key: 6,  label: '预估工作量(人天)', visible: true  },
   { key: 7,  label: '实际人天',        visible: true  },
-  { key: 8,  label: '合同名称',        visible: true  },
-  { key: 9,  label: '合同金额(元)',     visible: true  },
-  { key: 10, label: '合同状态',        visible: true  },
-  { key: 11, label: '收入确认年度',    visible: true  },
-  { key: 12, label: '确认日期',        visible: true  },
-  { key: 13, label: '收入确认状态',    visible: true  },
-  { key: 14, label: '验收状态',        visible: true  },
-  { key: 15, label: '确认金额(元)',     visible: true  },
-  { key: 16, label: '参与人员',        visible: true  },
-  { key: 17, label: '启动日期',        visible: true  },
-  { key: 18, label: '结束日期',        visible: true  },
-  { key: 19, label: '验收日期',        visible: true  },
-  { key: 20, label: '审核状态',        visible: true  },
-  { key: 21, label: '项目状态',        visible: true  },
-  { key: 22, label: '更新人',          visible: true  },
-  { key: 23, label: '更新时间',        visible: true  },
+  { key: 8,  label: '合同编号',        visible: true  },
+  { key: 9,  label: '合同名称',        visible: true  },
+  { key: 10, label: '合同金额(元)',     visible: true  },
+  { key: 11, label: '合同状态',        visible: true  },
+  { key: 12, label: '收入确认年度',    visible: true  },
+  { key: 13, label: '确认日期',        visible: true  },
+  { key: 14, label: '收入确认状态',    visible: true  },
+  { key: 15, label: '验收状态',        visible: true  },
+  { key: 16, label: '确认金额(元)',     visible: true  },
+  { key: 17, label: '参与人员',        visible: true  },
+  { key: 18, label: '启动日期',        visible: true  },
+  { key: 19, label: '结束日期',        visible: true  },
+  { key: 20, label: '验收日期',        visible: true  },
+  { key: 21, label: '审核状态',        visible: true  },
+  { key: 22, label: '项目状态',        visible: true  },
+  { key: 23, label: '更新人',          visible: true  },
+  { key: 24, label: '更新时间',        visible: true  },
 ])
 
 // 使用 UserSelect 组件的 ref 来获取用户列表

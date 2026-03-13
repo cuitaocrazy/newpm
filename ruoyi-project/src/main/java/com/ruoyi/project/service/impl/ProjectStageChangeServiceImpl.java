@@ -58,6 +58,12 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
             projectStageChangeMapper.updateProjectStageByProjectId(
                     projectStageChange.getProjectId(), projectStageChange.getNewStage());
         }
+        if (rows > 0 && projectStageChange.getProjectId() != null
+                && projectStageChange.getNewProjectStatus() != null && !projectStageChange.getNewProjectStatus().isEmpty())
+        {
+            projectStageChangeMapper.updateProjectStatusByProjectId(
+                    projectStageChange.getProjectId(), projectStageChange.getNewProjectStatus());
+        }
         return rows;
     }
 
@@ -66,7 +72,7 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
      */
     @Override
     @Transactional
-    public int batchChange(Long[] projectIds, String newStage, String changeReason)
+    public int batchChange(Long[] projectIds, String newStage, String changeReason, String newProjectStatus)
     {
         String changeBy = SecurityUtils.getUsername();
         for (Long projectId : projectIds)
@@ -82,6 +88,10 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
             change.setCreateTime(DateUtils.getNowDate());
             projectStageChangeMapper.insertProjectStageChange(change);
             projectStageChangeMapper.updateProjectStageByProjectId(projectId, newStage);
+            if (newProjectStatus != null && !newProjectStatus.isEmpty())
+            {
+                projectStageChangeMapper.updateProjectStatusByProjectId(projectId, newProjectStatus);
+            }
         }
         return projectIds.length;
     }

@@ -26,6 +26,9 @@ public interface ProjectStageChangeMapper
     /** 更新 pm_project.project_stage */
     int updateProjectStageByProjectId(@Param("projectId") Long projectId, @Param("projectStage") String projectStage);
 
+    /** 更新 pm_project.project_status */
+    int updateProjectStatusByProjectId(@Param("projectId") Long projectId, @Param("projectStatus") String projectStatus);
+
     int insertProjectStageChange(ProjectStageChange projectStageChange);
 
     int updateProjectStageChange(ProjectStageChange projectStageChange);
