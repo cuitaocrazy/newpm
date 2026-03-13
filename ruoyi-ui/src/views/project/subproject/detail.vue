@@ -76,30 +76,33 @@
       <!-- 本项目已分解的任务 -->
       <el-card v-if="selectedProject" shadow="hover" style="margin-bottom: 15px;">
         <template #header><span style="font-size: 16px; font-weight: bold;">本项目已分解的任务</span></template>
-        <el-table :data="siblingTasks" border size="small" style="width: 100%">
-          <el-table-column type="index" label="序号" width="55" align="center" />
-          <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
-          <el-table-column label="任务编号" prop="taskCode" width="130" />
-          <el-table-column label="产品" prop="product" width="120">
-            <template #default="scope">
-              <dict-tag :options="sys_product" :value="scope.row.product" />
-            </template>
-          </el-table-column>
-          <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
-          <el-table-column label="排期状态" prop="scheduleStatus" width="110" align="center">
-            <template #default="scope">
-              <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" />
-            </template>
-          </el-table-column>
-          <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
-          <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
-            <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
-          </el-table-column>
-          <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
-            <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
-          </el-table-column>
-          <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
-        </el-table>
+        <div v-if="siblingTasks.length > 0">
+          <el-table :data="siblingTasks" border size="small" style="width: 100%">
+            <el-table-column type="index" label="序号" width="55" align="center" />
+            <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
+            <el-table-column label="任务编号" prop="taskCode" width="130" />
+            <el-table-column label="产品" prop="product" width="120">
+              <template #default="scope">
+                <dict-tag :options="sys_product" :value="scope.row.product" />
+              </template>
+            </el-table-column>
+            <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
+            <el-table-column label="排期状态" prop="scheduleStatus" width="110" align="center">
+              <template #default="scope">
+                <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" />
+              </template>
+            </el-table-column>
+            <el-table-column label="预估工作量" prop="estimatedWorkload" width="100" align="right" />
+            <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="140" align="center">
+              <template #default="scope">{{ formatDate(scope.row.functionalTestDate) }}</template>
+            </el-table-column>
+            <el-table-column label="计划投产日期" prop="planProductionDate" width="120" align="center">
+              <template #default="scope">{{ formatDate(scope.row.planProductionDate) }}</template>
+            </el-table-column>
+            <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
+          </el-table>
+        </div>
+        <el-empty v-else description="本项目暂无已分解项目" :image-size="80" />
       </el-card>
 
       <!-- 二、任务信息 -->

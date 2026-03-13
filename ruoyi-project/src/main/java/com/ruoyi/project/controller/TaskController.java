@@ -29,7 +29,7 @@ public class TaskController extends BaseController {
      * 任务列表（分页）
      * 有项目/合同/里程碑查看权限的用户在详情页内也可读取任务列表，无需单独授予 task 权限
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:project:query,project:project:list,project:contract:list,project:contract:query,project:payment:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:project:query,project:project:list,project:contract:list,project:contract:query,project:payment:list,project:payment:query')")
     @GetMapping("/list")
     public TableDataInfo list(Task task) {
         startPage();

@@ -91,7 +91,10 @@ public class ProjectStageChange extends BaseEntity
     /** 当前项目状态（来自 pm_project.project_status，回显用，非持久化）*/
     private String currentProjectStatus;
 
-    /** 新项目状态（变更目标，非持久化，null 则不更新）*/
+    /** 变更前项目状态（持久化到 pm_project_stage_change）*/
+    private String oldProjectStatus;
+
+    /** 新项目状态（变更目标，持久化到 pm_project_stage_change，null 则不更新）*/
     private String newProjectStatus;
 
     // ===== 合同字段（来自 pm_contract，非持久化）=====
@@ -181,6 +184,9 @@ public class ProjectStageChange extends BaseEntity
 
     public String getCurrentProjectStatus() { return currentProjectStatus; }
     public void setCurrentProjectStatus(String currentProjectStatus) { this.currentProjectStatus = currentProjectStatus; }
+
+    public String getOldProjectStatus() { return oldProjectStatus; }
+    public void setOldProjectStatus(String oldProjectStatus) { this.oldProjectStatus = oldProjectStatus; }
 
     public String getNewProjectStatus() { return newProjectStatus; }
     public void setNewProjectStatus(String newProjectStatus) { this.newProjectStatus = newProjectStatus; }

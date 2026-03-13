@@ -23,6 +23,9 @@ public interface ProjectStageChangeMapper
     /** 查询项目当前阶段（来自 pm_project.project_stage） */
     String selectProjectStageByProjectId(Long projectId);
 
+    /** 查询项目当前状态（来自 pm_project.project_status） */
+    String selectProjectStatusByProjectId(Long projectId);
+
     /** 更新 pm_project.project_stage */
     int updateProjectStageByProjectId(@Param("projectId") Long projectId, @Param("projectStage") String projectStage);
 

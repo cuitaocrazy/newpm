@@ -42,9 +42,6 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
         return projectStageChangeMapper.selectHistoryByProjectId(projectId);
     }
 
-    /**
-     * 新增变更记录，同时更新 pm_project.project_stage
-     */
     @Override
     @Transactional
     public int insertProjectStageChange(ProjectStageChange projectStageChange)
@@ -52,6 +49,13 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
         projectStageChange.setDelFlag("0");
         projectStageChange.setCreateBy(SecurityUtils.getUsername());
         projectStageChange.setCreateTime(DateUtils.getNowDate());
+        // 记录变更前状态
+        if (projectStageChange.getProjectId() != null && projectStageChange.getNewProjectStatus() != null
+                && !projectStageChange.getNewProjectStatus().isEmpty())
+        {
+            String oldStatus = projectStageChangeMapper.selectProjectStatusByProjectId(projectStageChange.getProjectId());
+            projectStageChange.setOldProjectStatus(oldStatus);
+        }
         int rows = projectStageChangeMapper.insertProjectStageChange(projectStageChange);
         if (rows > 0 && projectStageChange.getProjectId() != null && projectStageChange.getNewStage() != null)
         {
@@ -67,9 +71,6 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
         return rows;
     }
 
-    /**
-     * 批量变更：为每个项目取当前阶段作为 old_stage，创建变更记录，更新 pm_project.project_stage
-     */
     @Override
     @Transactional
     public int batchChange(Long[] projectIds, String newStage, String changeReason, String newProjectStatus)
@@ -78,10 +79,14 @@ public class ProjectStageChangeServiceImpl implements IProjectStageChangeService
         for (Long projectId : projectIds)
         {
             String oldStage = projectStageChangeMapper.selectProjectStageByProjectId(projectId);
+            String oldStatus = (newProjectStatus != null && !newProjectStatus.isEmpty())
+                    ? projectStageChangeMapper.selectProjectStatusByProjectId(projectId) : null;
             ProjectStageChange change = new ProjectStageChange();
             change.setProjectId(projectId);
             change.setOldStage(oldStage);
             change.setNewStage(newStage);
+            change.setOldProjectStatus(oldStatus);
+            change.setNewProjectStatus(newProjectStatus);
             change.setChangeReason(changeReason);
             change.setDelFlag("0");
             change.setCreateBy(changeBy);

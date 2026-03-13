@@ -148,6 +148,103 @@
           </el-table-column>
         </el-table>
       </el-card>
+
+      <!-- 第四部分：关联项目列表 -->
+      <el-card class="form-card" shadow="never">
+        <template #header>
+          <div class="card-header">
+            <span class="card-title">关联项目列表</span>
+          </div>
+        </template>
+        <el-empty v-if="projectList.length === 0" description="该付款里程碑暂无关联项目" :image-size="80" />
+        <el-table v-else :data="projectList" border>
+          <el-table-column label="序号" type="index" width="60" align="center" />
+          <el-table-column label="项目名称" align="left" prop="projectName" show-overflow-tooltip>
+            <template #default="scope">
+              <el-link type="primary" @click="router.push(`/project/list/detail/${scope.row.projectId}`)">
+                {{ scope.row.projectName }}
+              </el-link>
+            </template>
+          </el-table-column>
+          <el-table-column label="当前阶段" align="center" prop="projectStage" width="110">
+            <template #default="scope">
+              <dict-tag :options="sys_xmjd" :value="scope.row.projectStage" />
+            </template>
+          </el-table-column>
+          <el-table-column label="预算金额（元）" align="center" prop="projectBudget" width="150">
+            <template #default="scope">
+              {{ formatMoney(scope.row.projectBudget) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="预估工作量（人天）" align="center" prop="estimatedWorkload" width="160">
+            <template #default="scope">
+              {{ scope.row.estimatedWorkload || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="实际人天" align="center" prop="actualWorkload" width="110">
+            <template #default="scope">
+              {{ scope.row.actualWorkload || '-' }}
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <!-- 第五部分：项目分解任务列表 -->
+      <el-card class="form-card" shadow="never">
+        <template #header>
+          <div class="card-header">
+            <span class="card-title">项目分解任务列表</span>
+          </div>
+        </template>
+        <el-empty v-if="taskList.length === 0" description="暂无项目相关任务列表信息" :image-size="80" />
+        <el-table v-else :data="taskList" border>
+          <el-table-column label="序号" type="index" width="60" align="center" />
+          <el-table-column label="投产批次" align="center" prop="batchNo" width="120" show-overflow-tooltip>
+            <template #default="scope">{{ scope.row.batchNo || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="任务编号" align="center" prop="taskCode" width="120" show-overflow-tooltip>
+            <template #default="scope">{{ scope.row.taskCode || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="产品" align="center" prop="product" width="120" show-overflow-tooltip>
+            <template #default="scope">
+              <dict-tag :options="sys_product" :value="scope.row.product" />
+            </template>
+          </el-table-column>
+          <el-table-column label="任务名称" align="left" prop="taskName" show-overflow-tooltip>
+            <template #default="scope">
+              <el-link type="primary" @click="router.push(`/project/subproject/detail/${scope.row.taskId}`)">
+                {{ scope.row.taskName }}
+              </el-link>
+            </template>
+          </el-table-column>
+          <el-table-column label="排期状态" align="center" prop="scheduleStatus" width="110">
+            <template #default="scope">
+              <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" />
+            </template>
+          </el-table-column>
+          <el-table-column label="预估工作量(人天)" align="center" prop="estimatedWorkload" width="140">
+            <template #default="scope">{{ scope.row.estimatedWorkload || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="实际工作量(人天)" align="center" prop="actualWorkload" width="140">
+            <template #default="scope">
+              {{ scope.row.actualWorkload ? (scope.row.actualWorkload / 8).toFixed(3) : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="功能测试版本日期" align="center" prop="functionalTestDate" width="150">
+            <template #default="scope">
+              {{ scope.row.functionalTestDate ? parseTime(scope.row.functionalTestDate, '{y}-{m}-{d}') : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="计划投产日期" align="center" prop="productionDate" width="130">
+            <template #default="scope">
+              {{ scope.row.productionDate ? parseTime(scope.row.productionDate, '{y}-{m}-{d}') : '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="任务负责人" align="center" prop="taskManagerName" width="110">
+            <template #default="scope">{{ scope.row.taskManagerName || '-' }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
     </el-form>
 
     <!-- 底部操作按钮 -->
@@ -163,18 +260,22 @@ import { useRouter, useRoute } from 'vue-router'
 import { getPayment } from '@/api/project/payment'
 import { getContract } from '@/api/project/contract'
 import { listAttachment, downloadAttachment } from '@/api/project/attachment'
+import { parseTime } from '@/utils/ruoyi'
+import request from '@/utils/request'
 import { saveAs } from 'file-saver'
 
 const router = useRouter()
 const route = useRoute()
 const { proxy } = getCurrentInstance()
-const { sys_ndgl, sys_jdgl, sys_fkzt, sys_htzt, sys_wdlx } = proxy.useDict('sys_ndgl', 'sys_jdgl', 'sys_fkzt', 'sys_htzt', 'sys_wdlx')
+const { sys_ndgl, sys_jdgl, sys_fkzt, sys_htzt, sys_wdlx, sys_xmjd, sys_pqzt, sys_product } = proxy.useDict('sys_ndgl', 'sys_jdgl', 'sys_fkzt', 'sys_htzt', 'sys_wdlx', 'sys_xmjd', 'sys_pqzt', 'sys_product')
 
 // 表单数据
 const formLoading = ref(false)
 const attachmentLoading = ref(false)
 const selectedContract = ref({})
 const attachmentList = ref([])
+const projectList = ref([])
+const taskList = ref([])
 
 const form = reactive({
   paymentId: null,
@@ -232,6 +333,18 @@ function loadPaymentDetail() {
           contractStatus: contract.contractStatus,
           freeMaintenancePeriod: contract.freeMaintenancePeriod,
           contractSignDate: contract.contractSignDate
+        }
+        // 提取关联项目列表并加载任务
+        if (contract.projectList && contract.projectList.length > 0) {
+          projectList.value = contract.projectList
+          const taskPromises = contract.projectList.map(p =>
+            request({ url: '/project/task/list', method: 'get', params: { projectId: p.projectId } })
+              .then(r => r.rows || [])
+              .catch(() => [])
+          )
+          Promise.all(taskPromises).then(results => {
+            taskList.value = results.flat()
+          })
         }
       })
     }

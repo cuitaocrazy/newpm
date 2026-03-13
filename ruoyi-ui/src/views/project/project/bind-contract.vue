@@ -372,16 +372,23 @@ async function init() {
     existingContractId.value = c.contractId  // 记录原始关联
     if (c.deptId) {
       selectedDeptId.value = c.deptId
+      // 立即用当前合同填充 options，确保 el-select 能立即显示合同名称
+      contractOptions.value = [{ contractId: c.contractId, contractName: c.contractName, contractCode: c.contractCode }]
+      selectedContractId.value = c.contractId
+      getContract(c.contractId).then(detailRes => {
+        contractDetail.value = detailRes.data
+      })
+      listPayment({ contractId: c.contractId }).then(pmtRes => {
+        paymentList.value = pmtRes.rows || []
+      })
+      // 异步加载完整列表（覆盖 options，同时确保当前合同保留在列表中）
       contractLoading.value = true
       listContractsByDept(c.deptId, '').then(listRes => {
-        contractOptions.value = listRes.data || []
-        selectedContractId.value = c.contractId
-        getContract(c.contractId).then(detailRes => {
-          contractDetail.value = detailRes.data
-        })
-        listPayment({ contractId: c.contractId }).then(pmtRes => {
-          paymentList.value = pmtRes.rows || []
-        })
+        const list = listRes.data || []
+        if (!list.some(o => o.contractId === c.contractId)) {
+          list.unshift({ contractId: c.contractId, contractName: c.contractName, contractCode: c.contractCode })
+        }
+        contractOptions.value = list
       }).finally(() => {
         contractLoading.value = false
       })

@@ -213,7 +213,7 @@
       <template #header>
         <span class="card-title">项目关联任务列表</span>
       </template>
-      <el-table :data="projectTaskList" border size="small" style="width: 100%">
+      <el-table v-if="projectTaskList.length > 0" :data="projectTaskList" border size="small" style="width: 100%">
         <el-table-column type="index" label="序号" width="55" align="center" />
         <el-table-column label="投产批次" prop="batchNo" width="120" align="center" />
         <el-table-column label="任务编号" prop="taskCode" width="130" />
@@ -259,6 +259,7 @@
         </el-table-column>
         <el-table-column label="任务负责人" prop="taskManagerName" width="100" align="center" />
       </el-table>
+      <el-empty v-if="projectTaskList.length === 0" description="暂无项目相关任务列表信息" :image-size="80" />
     </el-card>
 
     <!-- 合同信息 -->
@@ -316,11 +317,11 @@
     </el-card>
 
     <!-- 付款里程碑信息 -->
-    <el-card shadow="never" class="detail-card" v-if="contractInfo && paymentList.length > 0">
+    <el-card shadow="never" class="detail-card">
       <template #header>
         <span class="card-title">付款里程碑信息</span>
       </template>
-      <el-table :data="paymentListWithSummary" border>
+      <el-table v-if="paymentList.length > 0" :data="paymentListWithSummary" border>
         <el-table-column label="序号" type="index" width="60" align="center">
           <template #default="scope">
             <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
@@ -383,6 +384,7 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-empty v-if="paymentList.length === 0" description="暂无关联付款里程碑" :image-size="80" />
     </el-card>
 
     <!-- 项目附件列表 -->

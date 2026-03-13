@@ -1103,6 +1103,8 @@ CREATE TABLE `pm_project_stage_change` (
   `project_id` bigint NOT NULL COMMENT '项目ID',
   `old_stage` varchar(50) DEFAULT NULL COMMENT '变更前阶段(字典:sys_xmjd)',
   `new_stage` varchar(50) NOT NULL COMMENT '变更后阶段(字典:sys_xmjd)',
+  `old_project_status` varchar(50) DEFAULT NULL COMMENT '变更前项目状态(字典:sys_xmzt)',
+  `new_project_status` varchar(50) DEFAULT NULL COMMENT '变更后项目状态(字典:sys_xmzt)',
   `change_reason` varchar(500) DEFAULT NULL COMMENT '变更原因',
   `del_flag` char(1) NOT NULL DEFAULT '0' COMMENT '删除标志(0=正常,1=删除)',
   `create_by` varchar(64) DEFAULT NULL COMMENT '创建者',

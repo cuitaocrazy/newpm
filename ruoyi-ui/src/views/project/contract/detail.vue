@@ -195,7 +195,7 @@
         <span style="font-size: 16px; font-weight: bold;">关联项目列表</span>
       </template>
       <el-empty v-if="projectList.length === 0" description="该合同暂无关联项目" :image-size="80" />
-      <el-table v-else :data="projectTableRows" border :span-method="projectSpanMethod">
+      <el-table v-else :data="projectList" border>
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column label="项目名称" align="left" prop="projectName" show-overflow-tooltip>
           <template #default="scope">
@@ -225,8 +225,8 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="收入确认团队" align="center" width="130" show-overflow-tooltip>
-          <template #default="scope">{{ scope.row.teamConfirmDepts || '-' }}</template>
+        <el-table-column label="收入确认团队" align="center" min-width="160" show-overflow-tooltip>
+          <template #default="scope">{{ formatDeptPath(scope.row.projectDept) }}</template>
         </el-table-column>
         <el-table-column label="确认金额（元）" align="center" width="130">
           <template #default="scope">{{ scope.row.confirmAmount != null ? formatAmount(scope.row.confirmAmount) : '-' }}</template>
@@ -242,7 +242,7 @@
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">项目分解任务列表</span>
       </template>
-      <el-empty v-if="contractTaskList.length === 0" description="暂无任务数据" :image-size="80" />
+      <el-empty v-if="contractTaskList.length === 0" description="暂无项目相关任务列表信息" :image-size="80" />
       <el-table v-else :data="contractTaskList" border>
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column label="投产批次" align="center" prop="batchNo" width="120" show-overflow-tooltip>
@@ -335,6 +335,7 @@ const router = useRouter()
 
 const detailData = ref({})
 const deptOptions = ref([])
+const deptFlatList = ref([])
 const customerOptions = ref([])
 const projectOptions = ref([])
 const projectList = ref([])
@@ -403,6 +404,7 @@ const paymentListWithSummary = computed(() => {
 /** 查询部门下拉树结构 */
 function getDeptTree() {
   fetchDeptTree().then(response => {
+    deptFlatList.value = response.data || []
     const deptData = response.data.map((dept) => ({
       ...dept,
       id: dept.deptId,
@@ -410,6 +412,21 @@ function getDeptTree() {
     }))
     deptOptions.value = proxy.handleTree(deptData, "id")
   })
+}
+
+/** 格式化部门路径（三级及以下，以 - 分隔） */
+function formatDeptPath(deptId) {
+  if (!deptId) return '-'
+  const id = parseInt(deptId)
+  if (!id) return String(deptId)
+  const dept = deptFlatList.value.find(d => d.deptId === id)
+  if (!dept) return String(deptId)
+  const ancestorIds = (dept.ancestors || '').split(',').map(Number).filter(n => n > 0)
+  const fullPath = [...ancestorIds, id]
+  const displayIds = fullPath.length > 2 ? fullPath.slice(2) : fullPath
+  const flatMap = {}
+  deptFlatList.value.forEach(d => { flatMap[d.deptId] = d })
+  return displayIds.map(did => flatMap[did]?.deptName || String(did)).join(' - ')
 }
 
 /** 查询客户列表 */
