@@ -44,7 +44,9 @@ VALUES ('编辑', @projectMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'project:proj
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('查看合同', @projectMenuId, 4, '#', '', 1, 0, 'F', '0', '0', 'project:contract:query', '#', 'admin', sysdate(), '', NULL, '');
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
-VALUES ('添加合同', @projectMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:contract:add', '#', 'admin', sysdate(), '', NULL, '');
+VALUES ('关联合同', @projectMenuId, 5, '#', '', 1, 0, 'F', '0', '0', 'project:contract:add', '#', 'admin', sysdate(), '', NULL, '');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('解除合同关联', @projectMenuId, 14, '#', '', 1, 0, 'F', '0', '0', 'project:contract:unbind', 'Delete', 'admin', sysdate(), '', NULL, '');
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('收入确认', @projectMenuId, 6, '#', '', 1, 0, 'F', '0', '0', 'revenue:company:edit', '#', 'admin', sysdate(), '', NULL, '');
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)

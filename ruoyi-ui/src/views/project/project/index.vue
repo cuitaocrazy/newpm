@@ -283,20 +283,20 @@
               @click="handleViewContract(scope.row)"
             >查看合同</el-button>
             <el-button
-              v-if="scope.row.contractId"
-              v-hasPermi="['project:contract:add']"
-              link
-              type="danger"
-              icon="Disconnect"
-              @click="handleUnbindContract(scope.row)"
-            >解除关联</el-button>
-            <el-button
               v-hasPermi="['project:contract:add']"
               link
               type="primary"
               icon="Link"
               @click="handleBindContract(scope.row)"
             >关联合同</el-button>
+            <el-button
+              v-if="scope.row.contractId"
+              v-hasPermi="['project:contract:unbind']"
+              link
+              type="danger"
+              icon="Delete"
+              @click="handleUnbindContract(scope.row)"
+            >解除关联</el-button>
 
             <!-- 收入确认/查看按钮 -->
             <el-button
