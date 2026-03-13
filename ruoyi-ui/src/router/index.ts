@@ -256,6 +256,33 @@ export const constantRoutes = [
         meta: { title: '团队收入确认详情', activeMenu: '/revenue/team' }
       }
     ]
+  },
+  // 任务：编辑 / 详情（父路径 /task/subproject）
+  {
+    path: '/task/subproject/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':taskId(\\d+)',
+        component: () => import('@/views/project/subproject/edit.vue'),
+        name: 'TaskEdit',
+        meta: { title: '编辑任务', activeMenu: '/task/subproject' }
+      }
+    ]
+  },
+  {
+    path: '/task/subproject/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':taskId(\\d+)',
+        component: () => import('@/views/project/subproject/detail.vue'),
+        name: 'TaskDetail',
+        meta: { title: '任务详情', activeMenu: '/task/subproject' }
+      }
+    ]
   }
 ]
 
