@@ -112,6 +112,19 @@ export const constantRoutes = [
     ]
   },
   {
+    path: '/project/list/bind-contract',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':projectId(\\d+)',
+        component: () => import('@/views/project/project/bind-contract.vue'),
+        name: 'ProjectBindContract',
+        meta: { title: '关联合同', activeMenu: '/project/list' }
+      }
+    ]
+  },
+  {
     path: '/project/list/attachment',
     component: Layout,
     hidden: true,
