@@ -393,4 +393,16 @@ public class ProjectController extends BaseController
         projectService.bindContractToProject(projectId, contractId);
         return success();
     }
+
+    /**
+     * 解除项目的合同关联
+     */
+    @Log(title = "项目管理", businessType = BusinessType.UPDATE)
+    @PreAuthorize("@ss.hasAnyPermi('project:project:edit,project:contract:add')")
+    @DeleteMapping("/{projectId}/unbindContract")
+    public AjaxResult unbindContract(@PathVariable Long projectId)
+    {
+        projectService.unbindContractFromProject(projectId);
+        return success();
+    }
 }

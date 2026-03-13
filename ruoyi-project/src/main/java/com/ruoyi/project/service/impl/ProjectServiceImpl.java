@@ -628,6 +628,13 @@ public class ProjectServiceImpl implements IProjectService
 
     @Override
     @Transactional
+    public void unbindContractFromProject(Long projectId)
+    {
+        projectContractRelMapper.invalidateByProjectId(projectId);
+    }
+
+    @Override
+    @Transactional
     public void bindContractToProject(Long projectId, Long contractId)
     {
         // 先将该项目已有的有效关联置为失效

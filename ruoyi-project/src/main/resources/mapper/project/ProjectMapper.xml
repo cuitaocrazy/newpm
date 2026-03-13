@@ -73,6 +73,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="companyRevenueConfirmedBy"    column="company_revenue_confirmed_by"    />
         <result property="companyRevenueConfirmedTime"    column="company_revenue_confirmed_time"    />
         <!-- 关联字段 -->
+        <result property="contractId"        column="contract_id"        />
         <result property="contractAmount"    column="contract_amount"    />
         <result property="contractStatus"    column="contract_status"    />
         <result property="contractName"      column="contract_name"      />
@@ -144,7 +145,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.revenue_confirm_year, p.revenue_confirm_date, p.confirm_amount, p.after_tax_amount, p.company_revenue_confirmed_by,
                p.company_revenue_confirmed_time,
                sr.region_name,
-               ca.contract_amount, ca.contract_status, ca.contract_name, ca.contract_code,
+               ca.contract_amount, ca.contract_status, ca.contract_name, ca.contract_code, ca.contract_id,
                u_upd.nick_name AS update_by_name,
                u1.nick_name AS project_manager_name,
                tc.team_confirm_depts,
@@ -159,6 +160,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                    SUM(c.contract_amount) AS contract_amount,
                    MAX(c.contract_status) AS contract_status,
                    GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   MAX(c.contract_id) AS contract_id,
                    GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
@@ -266,6 +268,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                    SUM(c.contract_amount) AS contract_amount,
                    MAX(c.contract_status) AS contract_status,
                    GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   MAX(c.contract_id) AS contract_id,
                    GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
@@ -390,6 +393,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                ca.contract_amount AS contract_amount,
                ca.contract_status AS contract_status,
                ca.contract_name AS contract_name,
+               ca.contract_id AS contract_id,
                ca.contract_code AS contract_code,
                p.parent_id, p.project_level, p.task_code,
                p.batch_id, p.production_year,
@@ -418,6 +422,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                    SUM(c.contract_amount) AS contract_amount,
                    MAX(c.contract_status) AS contract_status,
                    GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   MAX(c.contract_id) AS contract_id,
                    GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
@@ -779,6 +784,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN (
             SELECT pcr.project_id,
                    GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   MAX(c.contract_id) AS contract_id,
                    GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code,
                    SUM(c.contract_amount)  AS contract_amount,
                    MAX(c.contract_status)  AS contract_status

@@ -169,3 +169,11 @@ export function bindContractToProject(projectId, contractId) {
     params: { contractId }
   })
 }
+
+// 解除项目合同关联
+export function unbindContractFromProject(projectId) {
+  return request({
+    url: `/project/project/${projectId}/unbindContract`,
+    method: 'delete'
+  })
+}

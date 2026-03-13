@@ -283,6 +283,14 @@
               @click="handleViewContract(scope.row)"
             >查看合同</el-button>
             <el-button
+              v-if="scope.row.contractId"
+              v-hasPermi="['project:contract:add']"
+              link
+              type="danger"
+              icon="Disconnect"
+              @click="handleUnbindContract(scope.row)"
+            >解除关联</el-button>
+            <el-button
               v-hasPermi="['project:contract:add']"
               link
               type="primary"
@@ -385,7 +393,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, unbindContractFromProject } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/approval"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -446,6 +454,16 @@ const approvalHistory = ref([])
 // 关联合同：跳转到独立页面
 function handleBindContract(row) {
   router.push(`/project/list/bind-contract/${row.projectId}`)
+}
+
+// 解除合同关联
+function handleUnbindContract(row) {
+  proxy.$modal.confirm(`确认解除项目【${row.projectName}】与合同【${row.contractName}】的关联关系？`).then(() => {
+    return unbindContractFromProject(row.projectId)
+  }).then(() => {
+    proxy.$modal.msgSuccess('已解除合同关联')
+    getList()
+  }).catch(() => {})
 }
 
 // 辅助数据源

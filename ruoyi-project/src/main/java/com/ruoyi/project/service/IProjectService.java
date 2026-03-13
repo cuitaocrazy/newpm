@@ -196,4 +196,9 @@ public interface IProjectService
      * 关联合同到项目
      */
     public void bindContractToProject(Long projectId, Long contractId);
+
+    /**
+     * 解除项目的合同关联
+     */
+    public void unbindContractFromProject(Long projectId);
 }
