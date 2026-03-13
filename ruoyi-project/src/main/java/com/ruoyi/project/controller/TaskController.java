@@ -27,8 +27,9 @@ public class TaskController extends BaseController {
 
     /**
      * 任务列表（分页）
+     * 有项目/合同/里程碑查看权限的用户在详情页内也可读取任务列表，无需单独授予 task 权限
      */
-    @PreAuthorize("@ss.hasPermi('project:task:list')")
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:project:query,project:project:list,project:contract:list,project:payment:list')")
     @GetMapping("/list")
     public TableDataInfo list(Task task) {
         startPage();
@@ -38,7 +39,7 @@ public class TaskController extends BaseController {
     /**
      * 任务详情
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query,project:project:query,project:project:list,project:contract:list,project:payment:list')")
     @GetMapping("/{taskId}")
     public AjaxResult getInfo(@PathVariable Long taskId) {
         return AjaxResult.success(taskService.selectTaskById(taskId));
@@ -47,7 +48,7 @@ public class TaskController extends BaseController {
     /**
      * 获取项目的任务轻量选项（日报填写下拉用）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query,project:project:query,project:project:list,project:contract:list,project:payment:list')")
     @GetMapping("/options")
     public AjaxResult getTaskOptions(@RequestParam Long projectId) {
         return AjaxResult.success(taskService.selectTaskOptions(projectId));
@@ -56,7 +57,7 @@ public class TaskController extends BaseController {
     /**
      * 批量判断哪些项目有任务（日报 hasSubProject 标记用）
      */
-    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query')")
+    @PreAuthorize("@ss.hasAnyPermi('project:task:list,project:task:query,project:project:query,project:project:list,project:contract:list,project:payment:list')")
     @GetMapping("/projectsHasTasks")
     public AjaxResult getProjectsHasTasks(@RequestParam Long[] projectIds) {
         return AjaxResult.success(taskService.selectProjectsHasTasks(java.util.Arrays.asList(projectIds)));
