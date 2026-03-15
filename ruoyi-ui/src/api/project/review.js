@@ -43,3 +43,11 @@ export function rollbackProject(data) {
     data: data
   })
 }
+
+// 查询审核历史（project/project/index.vue 使用）
+export function getApprovalHistory(projectId) {
+  return request({
+    url: '/project/approval/history/' + projectId,
+    method: 'get'
+  })
+}

@@ -223,12 +223,13 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip>
+        <el-table-column label="任务名称" prop="taskName" width="200" show-overflow-tooltip>
           <template #default="scope">
             <el-link type="primary" :href="`/task/subproject/detail/${scope.row.taskId}`"
               @click.prevent="$router.push(`/task/subproject/detail/${scope.row.taskId}`)"
+              style="white-space: normal; word-break: break-all; line-height: 1.4;"
               v-if="checkPermi(['project:task:query'])">{{ scope.row.taskName }}</el-link>
-            <span v-else>{{ scope.row.taskName }}</span>
+            <span v-else style="white-space: normal; word-break: break-all; line-height: 1.4;">{{ scope.row.taskName }}</span>
           </template>
         </el-table-column>
         <el-table-column label="排期状态" prop="scheduleStatus" width="110" align="center">
@@ -327,9 +328,15 @@
             <span v-else>{{ scope.$index }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="里程碑名称" align="center" prop="paymentMethodName" show-overflow-tooltip>
+        <el-table-column label="里程碑名称" align="left" header-align="center" prop="paymentMethodName" width="200" class-name="col-wrap">
           <template #default="scope">
-            <span v-if="!scope.row.isSummary">{{ scope.row.paymentMethodName }}</span>
+            <a
+              v-if="!scope.row.isSummary"
+              :href="`/htkx/payment/detail/${scope.row.paymentId}`"
+              class="el-link el-link--primary"
+              style="text-decoration: none;"
+              @click.prevent="router.push(`/htkx/payment/detail/${scope.row.paymentId}`)"
+            >{{ scope.row.paymentMethodName }}</a>
           </template>
         </el-table-column>
         <el-table-column label="付款金额（元）" align="center" prop="paymentAmount" width="150">
@@ -688,7 +695,7 @@ function loadCustomerContactPhone(customerId, contactId) {
 // 加载合同信息
 function loadProjectTasks(projectId) {
   request({ url: '/project/task/list', method: 'get', params: { projectId } })
-    .then(res => { projectTaskList.value = res.rows || [] })
+    .then(res => { projectTaskList.value = (res.rows || []).filter(t => t.taskId != null) })
     .catch(() => {})
 }
 
@@ -786,6 +793,11 @@ loadProjectData()
 </script>
 
 <style scoped lang="scss">
+:deep(.col-wrap .cell) {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.6;
+}
 .project-detail {
   .page-header {
     margin-bottom: 20px;

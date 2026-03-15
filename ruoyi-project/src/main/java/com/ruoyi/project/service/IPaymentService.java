@@ -68,10 +68,22 @@ public interface IPaymentService
     public int countAttachments(Long paymentId);
 
     /**
+     * 搜索付款方式名称（autocomplete）
+     */
+    public List<String> searchPaymentMethodNames(String keyword);
+
+    /**
      * 导出付款里程碑列表
      *
      * @param response HTTP响应
      * @param contractList 合同及付款里程碑列表
      */
     public void exportPaymentList(jakarta.servlet.http.HttpServletResponse response, java.util.List<com.ruoyi.project.domain.Contract> contractList);
+
+    /**
+     * 填充付款导出列表的部门路径层级字段
+     *
+     * @param list 付款列表
+     */
+    public void enrichDeptPathForExport(java.util.List<com.ruoyi.project.domain.Payment> list);
 }

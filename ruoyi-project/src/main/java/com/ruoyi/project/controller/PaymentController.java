@@ -121,9 +121,11 @@ public class PaymentController extends BaseController
                 p.setContractSignDate(c.getContractSignDate());
                 p.setFreeMaintenancePeriod(c.getFreeMaintenancePeriod());
                 p.setDeptName(c.getDeptName());
+                p.setDeptId(c.getDeptId());
                 list.add(p);
             }
         }
+        paymentService.enrichDeptPathForExport(list);
         ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
         util.exportExcel(response, list, "付款里程碑数据");
     }
@@ -158,6 +160,17 @@ public class PaymentController extends BaseController
     public AjaxResult edit(@RequestBody Payment payment)
     {
         return toAjax(paymentService.updatePayment(payment));
+    }
+
+    /**
+     * 搜索付款方式名称（autocomplete）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:payment:list,project:payment:query')")
+    @GetMapping("/searchPaymentMethodNames")
+    public AjaxResult searchPaymentMethodNames(@RequestParam(required = false) String keyword)
+    {
+        List<String> names = paymentService.searchPaymentMethodNames(keyword);
+        return success(names);
     }
 
     /**

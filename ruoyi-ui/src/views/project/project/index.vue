@@ -389,7 +389,7 @@
 
 <script setup name="ProjectList">
 import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects } from "@/api/project/project"
-import { approveProject, getApprovalHistory } from "@/api/project/approval"
+import { approveProject, getApprovalHistory } from "@/api/project/review"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
 import { checkPermi } from "@/utils/permission"

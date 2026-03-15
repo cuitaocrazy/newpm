@@ -58,7 +58,7 @@
           <span v-else>{{ scope.$index }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" min-width="200" fixed="left" show-overflow-tooltip>
+      <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220" fixed="left" class-name="col-wrap">
         <template #default="scope">
           <el-link v-if="!scope.row.isSummaryRow" type="primary" :href="`/project/list/detail/${scope.row.projectId}`" @click.prevent="handleReview(scope.row)" underline="never">
             {{ scope.row.projectName }}
@@ -502,6 +502,12 @@ getList()
   height: 100%;
   display: flex;
   flex-direction: column;
+
+  :deep(.col-wrap .cell) {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.6;
+  }
 
   :deep(.el-form--inline .el-form-item) {
     margin-right: 20px;

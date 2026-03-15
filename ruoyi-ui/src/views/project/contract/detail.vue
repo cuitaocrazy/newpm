@@ -95,7 +95,13 @@
         </el-table-column>
         <el-table-column label="里程碑名称" align="center" prop="paymentMethodName" show-overflow-tooltip>
           <template #default="scope">
-            <span v-if="!scope.row.isSummary">{{ scope.row.paymentMethodName }}</span>
+            <a
+              v-if="!scope.row.isSummary"
+              :href="`/htkx/payment/detail/${scope.row.paymentId}`"
+              class="el-link el-link--primary"
+              style="text-decoration: none;"
+              @click.prevent="router.push(`/htkx/payment/detail/${scope.row.paymentId}`)"
+            >{{ scope.row.paymentMethodName }}</a>
           </template>
         </el-table-column>
         <el-table-column label="付款金额（元）" align="center" prop="paymentAmount" width="130">
@@ -197,11 +203,14 @@
       <el-empty v-if="projectList.length === 0" description="该合同暂无关联项目" :image-size="80" />
       <el-table v-else :data="projectList" border>
         <el-table-column label="序号" type="index" width="60" align="center" />
-        <el-table-column label="项目名称" align="left" prop="projectName" show-overflow-tooltip>
+        <el-table-column label="项目名称" align="left" prop="projectName" width="220" class-name="col-wrap">
           <template #default="scope">
-            <el-link type="primary" @click="handleViewProject(scope.row.projectId)">
-              {{ scope.row.projectName }}
-            </el-link>
+            <a
+              :href="`/project/list/detail/${scope.row.projectId}?from=contract&contractId=${detailData.contractId}`"
+              class="el-link el-link--primary"
+              style="text-decoration: none;"
+              @click.prevent="handleViewProject(scope.row.projectId)"
+            >{{ scope.row.projectName }}</a>
           </template>
         </el-table-column>
         <el-table-column label="预算金额（元）" align="center" prop="projectBudget" width="150">
@@ -225,6 +234,12 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
+        <el-table-column label="确认状态" align="center" width="110">
+          <template #default="scope">
+            <dict-tag v-if="scope.row.revenueConfirmStatus != null" :options="sys_qrzt" :value="scope.row.revenueConfirmStatus" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="收入确认团队" align="center" min-width="160" show-overflow-tooltip>
           <template #default="scope">{{ formatDeptPath(scope.row.projectDept) }}</template>
         </el-table-column>
@@ -242,8 +257,7 @@
       <template #header>
         <span style="font-size: 16px; font-weight: bold;">项目分解任务列表</span>
       </template>
-      <el-empty v-if="contractTaskList.length === 0" description="暂无项目相关任务列表信息" :image-size="80" />
-      <el-table v-else :data="contractTaskList" border>
+      <el-table :data="contractTaskList" border>
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column label="投产批次" align="center" prop="batchNo" width="120" show-overflow-tooltip>
           <template #default="scope">{{ scope.row.batchNo || '-' }}</template>
@@ -329,7 +343,7 @@ import { saveAs } from 'file-saver'
 import request from '@/utils/request'
 
 const { proxy } = getCurrentInstance()
-const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx, sys_jdgl, sys_product, sys_pqzt } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx', 'sys_jdgl', 'sys_product', 'sys_pqzt')
+const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx, sys_jdgl, sys_product, sys_pqzt, sys_qrzt } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx', 'sys_jdgl', 'sys_product', 'sys_pqzt', 'sys_qrzt')
 const route = useRoute()
 const router = useRouter()
 
@@ -550,7 +564,7 @@ function init() {
             .catch(() => [])
         )
         Promise.all(taskPromises).then(results => {
-          contractTaskList.value = results.flat()
+          contractTaskList.value = results.flat().filter(t => t.taskId != null)
         })
       }
     })
@@ -567,6 +581,11 @@ init()
 </script>
 
 <style scoped>
+:deep(.col-wrap .cell) {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.6;
+}
 .card-header {
   display: flex;
   justify-content: space-between;

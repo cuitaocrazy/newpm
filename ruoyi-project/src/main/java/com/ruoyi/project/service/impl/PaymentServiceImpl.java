@@ -2,6 +2,8 @@ package com.ruoyi.project.service.impl;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.text.SimpleDateFormat;
 import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.common.annotation.DataScope;
@@ -133,6 +135,12 @@ public class PaymentServiceImpl implements IPaymentService
         return attachmentMapper.countByBusinessTypeAndId("payment", paymentId);
     }
 
+    @Override
+    public List<String> searchPaymentMethodNames(String keyword)
+    {
+        return paymentMapper.searchPaymentMethodNames(keyword);
+    }
+
     /**
      * 导出付款里程碑列表
      *
@@ -166,5 +174,45 @@ public class PaymentServiceImpl implements IPaymentService
         // 导出Excel
         ExcelUtil<Payment> util = new ExcelUtil<Payment>(Payment.class);
         util.exportExcel(response, exportList, fileName);
+    }
+
+    @Override
+    public void enrichDeptPathForExport(List<Payment> list)
+    {
+        if (list == null || list.isEmpty()) return;
+        // 查询所有部门，构建 deptId -> {deptName, ancestors} 映射
+        List<Map<String, Object>> allDepts = paymentMapper.selectAllDeptsForPath();
+        Map<Long, Map<String, Object>> deptMapById = new HashMap<>();
+        for (Map<String, Object> dept : allDepts) {
+            Object id = dept.get("deptId");
+            if (id != null) {
+                deptMapById.put(Long.parseLong(id.toString()), dept);
+            }
+        }
+        for (Payment p : list) {
+            if (p.getDeptId() == null) continue;
+            Map<String, Object> dept = deptMapById.get(p.getDeptId());
+            if (dept == null) continue;
+            String ancestors = (String) dept.get("ancestors");
+            List<Long> fullPath = new ArrayList<>();
+            if (ancestors != null && !ancestors.isEmpty()) {
+                for (String anc : ancestors.split(",")) {
+                    try { fullPath.add(Long.parseLong(anc.trim())); } catch (NumberFormatException ignored) {}
+                }
+            }
+            fullPath.add(p.getDeptId());
+            // 跳过根节点和一级节点
+            List<Long> displayIds = fullPath.size() > 2 ? fullPath.subList(2, fullPath.size()) : fullPath;
+            String[] levels = new String[displayIds.size()];
+            for (int i = 0; i < displayIds.size(); i++) {
+                Map<String, Object> d = deptMapById.get(displayIds.get(i));
+                levels[i] = d != null ? d.get("deptName").toString() : String.valueOf(displayIds.get(i));
+            }
+            if (levels.length > 0) p.setDeptOrgLevel2(levels[0]);
+            if (levels.length > 1) p.setDeptOrgLevel3(levels[1]);
+            if (levels.length > 2) p.setDeptOrgLevel4(levels[2]);
+            if (levels.length > 3) p.setDeptOrgLevel5(levels[3]);
+            if (levels.length > 4) p.setDeptOrgLevel6(levels[4]);
+        }
     }
 }

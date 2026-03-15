@@ -492,15 +492,21 @@ public class ProjectServiceImpl implements IProjectService
                             }
                         }
                         fullPath.add(deptId);
-                        // 从第2个索引起显示（跳过根节点和一级节点）
+                        // 从第2个索引起显示（跳过根节点和一级节点），按层级分列
                         List<Long> displayIds = fullPath.size() > 2 ? fullPath.subList(2, fullPath.size()) : fullPath;
-                        String path = displayIds.stream()
-                                .map(did -> {
-                                    Map<String, Object> d = deptMapById.get(did);
-                                    return d != null ? d.get("deptName").toString() : String.valueOf(did);
-                                })
-                                .collect(Collectors.joining(" - "));
-                        p.setDeptPathDisplay(path);
+                        // 将路径分解为层级字段（二级机构=index0, 三级机构=index1, ...）
+                        String[] levelSetters = new String[displayIds.size()];
+                        for (int i = 0; i < displayIds.size(); i++) {
+                            Map<String, Object> d = deptMapById.get(displayIds.get(i));
+                            levelSetters[i] = d != null ? d.get("deptName").toString() : String.valueOf(displayIds.get(i));
+                        }
+                        // 保留完整路径列
+                        p.setDeptPathDisplay(String.join(" - ", levelSetters));
+                        if (levelSetters.length > 0) p.setDeptOrgLevel2(levelSetters[0]);
+                        if (levelSetters.length > 1) p.setDeptOrgLevel3(levelSetters[1]);
+                        if (levelSetters.length > 2) p.setDeptOrgLevel4(levelSetters[2]);
+                        if (levelSetters.length > 3) p.setDeptOrgLevel5(levelSetters[3]);
+                        if (levelSetters.length > 4) p.setDeptOrgLevel6(levelSetters[4]);
                     }
                 }
                 catch (NumberFormatException ignored) {}

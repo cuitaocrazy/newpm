@@ -26,45 +26,45 @@ public class Payment extends BaseEntity
     private Long contractId;
 
     /** 付款方式名称 */
-    @Excel(name = "付款里程碑名称", sort = 9)
+    @Excel(name = "付款里程碑名称", sort = 14)
     private String paymentMethodName;
 
     /** 付款总金额 */
-    @Excel(name = "付款金额（元）", sort = 10)
+    @Excel(name = "付款金额（元）", sort = 15)
     private BigDecimal paymentAmount;
 
     /** 付款状态 */
-    @Excel(name = "付款状态", sort = 11, dictType = "sys_fkzt")
+    @Excel(name = "付款状态", sort = 16, dictType = "sys_fkzt")
     private String paymentStatus;
 
     /** 是否涉及违约扣款(1是 0否) */
-    @Excel(name = "是否涉及违约扣款", sort = 12, readConverterExp = "0=否,1=是")
+    @Excel(name = "是否涉及违约扣款", sort = 17, readConverterExp = "0=否,1=是")
     private String hasPenalty;
 
     /** 扣款金额(元) */
-    @Excel(name = "扣款金额（元）", sort = 13)
+    @Excel(name = "扣款金额（元）", sort = 18)
     private BigDecimal penaltyAmount;
 
     /** 预计回款所属季度 */
-    @Excel(name = "预计回款季度", sort = 14, dictType = "sys_jdgl")
+    @Excel(name = "预计回款季度", sort = 19, dictType = "sys_jdgl")
     private String expectedQuarter;
 
     /** 实际回款所属季度 */
-    @Excel(name = "实际回款季度", sort = 15, dictType = "sys_jdgl")
+    @Excel(name = "实际回款季度", sort = 20, dictType = "sys_jdgl")
     private String actualQuarter;
 
     /** 实际回款日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "实际回款日期", sort = 16, width = 30, dateFormat = "yyyy-MM-dd")
+    @Excel(name = "实际回款日期", sort = 21, width = 30, dateFormat = "yyyy-MM-dd")
     private Date actualPaymentDate;
 
     /** 款项确认年份 */
-    @Excel(name = "里程碑确认年份", sort = 17, dictType = "sys_ndgl")
+    @Excel(name = "里程碑确认年份", sort = 22, dictType = "sys_ndgl")
     private String confirmYear;
 
     /** 提交验收材料日期 */
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "开票日期", sort = 18, width = 30, dateFormat = "yyyy-MM-dd")
+    @Excel(name = "开票日期", sort = 23, width = 30, dateFormat = "yyyy-MM-dd")
     private Date submitAcceptanceDate;
 
     /** 删除标志(0正常 1删除) */
@@ -106,11 +106,31 @@ public class Payment extends BaseEntity
     @Excel(name = "合同所属团队", sort = 8)
     private String deptName;
 
+    /** 合同所属团队 二级机构（导出用，非数据库字段） */
+    @Excel(name = "二级机构", sort = 9)
+    private String deptOrgLevel2;
+
+    /** 合同所属团队 三级机构（导出用，非数据库字段） */
+    @Excel(name = "三级机构", sort = 10)
+    private String deptOrgLevel3;
+
+    /** 合同所属团队 四级机构（导出用，非数据库字段） */
+    @Excel(name = "四级机构", sort = 11)
+    private String deptOrgLevel4;
+
+    /** 合同所属团队 五级机构（导出用，非数据库字段） */
+    @Excel(name = "五级机构", sort = 12)
+    private String deptOrgLevel5;
+
+    /** 合同所属团队 六级机构（导出用，非数据库字段） */
+    @Excel(name = "六级机构", sort = 13)
+    private String deptOrgLevel6;
+
     /** 创建人姓名（关联查询） */
     private String createByName;
 
     /** 更新人姓名（关联查询） */
-    @Excel(name = "更新人", sort = 21)
+    @Excel(name = "更新人", sort = 26)
     private String updateByName;
 
     /** 多选过滤字段（不存库） */
@@ -338,6 +358,21 @@ public class Payment extends BaseEntity
     {
         return deptName;
     }
+
+    public void setDeptOrgLevel2(String deptOrgLevel2) { this.deptOrgLevel2 = deptOrgLevel2; }
+    public String getDeptOrgLevel2() { return deptOrgLevel2; }
+
+    public void setDeptOrgLevel3(String deptOrgLevel3) { this.deptOrgLevel3 = deptOrgLevel3; }
+    public String getDeptOrgLevel3() { return deptOrgLevel3; }
+
+    public void setDeptOrgLevel4(String deptOrgLevel4) { this.deptOrgLevel4 = deptOrgLevel4; }
+    public String getDeptOrgLevel4() { return deptOrgLevel4; }
+
+    public void setDeptOrgLevel5(String deptOrgLevel5) { this.deptOrgLevel5 = deptOrgLevel5; }
+    public String getDeptOrgLevel5() { return deptOrgLevel5; }
+
+    public void setDeptOrgLevel6(String deptOrgLevel6) { this.deptOrgLevel6 = deptOrgLevel6; }
+    public String getDeptOrgLevel6() { return deptOrgLevel6; }
 
     public void setCreateByName(String createByName)
     {

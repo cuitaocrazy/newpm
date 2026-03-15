@@ -62,6 +62,26 @@ public class Project extends BaseEntity
     @Excel(name = "项目部门路径", sort = 40)
     private String deptPathDisplay;
 
+    /** 项目部门 二级机构（导出用，非数据库字段） */
+    @Excel(name = "二级机构", sort = 41)
+    private String deptOrgLevel2;
+
+    /** 项目部门 三级机构（导出用，非数据库字段） */
+    @Excel(name = "三级机构", sort = 42)
+    private String deptOrgLevel3;
+
+    /** 项目部门 四级机构（导出用，非数据库字段） */
+    @Excel(name = "四级机构", sort = 43)
+    private String deptOrgLevel4;
+
+    /** 项目部门 五级机构（导出用，非数据库字段） */
+    @Excel(name = "五级机构", sort = 44)
+    private String deptOrgLevel5;
+
+    /** 项目部门 六级机构（导出用，非数据库字段） */
+    @Excel(name = "六级机构", sort = 45)
+    private String deptOrgLevel6;
+
     /** 项目状态 */
     @Excel(name = "项目状态", dictType = "sys_xmzt", sort = 190)
     private String projectStatus;
@@ -300,7 +320,7 @@ public class Project extends BaseEntity
     private String revenueConfirmStatus;
 
     /** 收入确认年度 */
-    @Excel(name = "收入确认年度", sort = 110)
+    @Excel(name = "收入确认年度", dictType = "sys_ndgl", sort = 110)
     private String revenueConfirmYear;
 
     /** 收入确认日期 */
@@ -389,6 +409,21 @@ public class Project extends BaseEntity
 
     public void setDeptPathDisplay(String deptPathDisplay) { this.deptPathDisplay = deptPathDisplay; }
     public String getDeptPathDisplay() { return deptPathDisplay; }
+
+    public void setDeptOrgLevel2(String deptOrgLevel2) { this.deptOrgLevel2 = deptOrgLevel2; }
+    public String getDeptOrgLevel2() { return deptOrgLevel2; }
+
+    public void setDeptOrgLevel3(String deptOrgLevel3) { this.deptOrgLevel3 = deptOrgLevel3; }
+    public String getDeptOrgLevel3() { return deptOrgLevel3; }
+
+    public void setDeptOrgLevel4(String deptOrgLevel4) { this.deptOrgLevel4 = deptOrgLevel4; }
+    public String getDeptOrgLevel4() { return deptOrgLevel4; }
+
+    public void setDeptOrgLevel5(String deptOrgLevel5) { this.deptOrgLevel5 = deptOrgLevel5; }
+    public String getDeptOrgLevel5() { return deptOrgLevel5; }
+
+    public void setDeptOrgLevel6(String deptOrgLevel6) { this.deptOrgLevel6 = deptOrgLevel6; }
+    public String getDeptOrgLevel6() { return deptOrgLevel6; }
 
     public void setUpdateByName(String updateByName) { this.updateByName = updateByName; }
     public String getUpdateByName() { return updateByName; }

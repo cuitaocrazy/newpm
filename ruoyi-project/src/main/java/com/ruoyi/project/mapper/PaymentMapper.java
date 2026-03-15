@@ -1,8 +1,10 @@
 package com.ruoyi.project.mapper;
 
 import java.util.List;
+import java.util.Map;
 import com.ruoyi.project.domain.Payment;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 款项管理Mapper接口
@@ -68,4 +70,14 @@ public interface PaymentMapper
      * @return 款项数量
      */
     public int countPaymentByContractId(Long contractId);
+
+    /**
+     * 搜索付款方式名称（autocomplete）
+     */
+    public List<String> searchPaymentMethodNames(@Param("keyword") String keyword);
+
+    /**
+     * 查询所有部门（导出时用于构建部门路径）
+     */
+    public List<Map<String, Object>> selectAllDeptsForPath();
 }
