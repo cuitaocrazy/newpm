@@ -829,11 +829,11 @@
   - [x] 任务管理详情页面：在”二、任务信息“ 模块下方，添加合同信息（参考项目详情中展示的合同信息模块部分）和付款里程碑信息（参考合同详情中展示的里程碑信息）
   - [x] 任务管理：查询列表中的项目名称、任务名称 右键需要支持打开浏览器的新标签；查询列表中的项目名称，添加 进入项目详情的超链接
 
-- [ ] 项目管理、任务管理、合同管理、里程碑管理：项目之间 支持查看详情中的4部分信息，并在名称上添加超链接
+- [x] 项目管理、任务管理、合同管理、里程碑管理：项目之间 支持查看详情中的4部分信息，并在名称上添加超链接
 
   - [x] 项目管理详情：在成本预算模块下方 添加 项目关联的任务列表（任务列表 table要素 参考 任务管理详情页面 **本项目已分解的任务** 模块中的table要素）。
   - [x] 合同管理详情：在关联项目列表模块下方，添加项目分解任务列表模块（列表要素 参照任务详情中的“**本项目已分解的任务**”模块）
-  - [ ] 里程碑管理详情：
+  - [x] 里程碑管理详情：添加任务和项目信息
 
 - [x] 项目管理、合同管理、付款里程碑、立项审核、项目经理变更、项目人员管理、项目阶段变更、公司收入确认、团队收入确认等：
 
@@ -894,51 +894,29 @@
 ## 20260113
 
 - [x] 项目经理点击项目详情，缺少任务管理查询的权限问题
-  - 点击项目详情页面，显示了当前项目的有任务的列表，如果该用户有权限查看项目详情页面，那么后台服务器必须要给该用户添加 通过查询该项目查看任务管理类标的接口给该用户。改后端 TaskController 的权限注解——只要有 project:project:query（能看项目详情）就能访问任务查询接口：访问生产地址  https://newpm.yadashuke.com/project/list/detail/198
-    xu.tan 用户登陆  是项目经理 点击啊项目管理的详情 报当前操作没有权限
-    但是我本地 xu.tan 用户登陆  是项目经理 点击啊项目管理的详情 没有报当前操作没有权限这个问题
-
 - [x] 项目管理、合同管理、里程碑管理 有这些权限的人 一定要有任务的相关查询、查看等权限 需要处理 
 - [x] 项目管理：需要支持解除合同关联功能，添加了独立的解除合同关联按钮权限，给需要的角色添加权限。
   - 添加原因：关联合同页面 ，对于没有签署合同的项目错误的关联了一个合同，目前没法把这个关联关系去掉。
   - 改造：项目管理：关联合同页面，添加 支持 选择项目、选择合同为空，去掉必填校验 支持为空。还要去掉解除合同
-- [x] 对比备份和本地项目的项目id和项目名称的项目表数据， 在备份 和本地 的创建人、创建时间、更新人、更新时间 分别是什么
-  - 重点找一下 厦门中行员工绩效考核系统信创改造项目、2025年深圳分行聚合支付系统国密改造项目
 - [x] 项目详情添加付款里程信息
   - 项目详情中 添加付款里程碑信息 如果没有的话 参考该页面的 合同信息 一样处理 保留模块 里面写 暂无关联付款里程碑
   - 项目详情中 项目关联任务列表 如果没有的话 参考该页面的 合同信息 一样处理 保留模块 里面写 暂无项目相关任务列表信息
-- [x] 任务管理：添加若依数据过滤权限
-  - [ ] 谈旭 说：我自己的任务，没有操作权限；任务里面我能看到其他人的任务
+- [x] 任务管理：添加若依数据过滤权限。谈旭 说：我自己的任务，没有操作权限；任务里面我能看到其他人的任务
 - [x] 任务管理：查询列表 也要把那些没有关联任务的项目 都要列出来
   - [x] 在改操作按钮那一列，无任务行要隐藏编辑/删除按钮，以及任务名称列显示为空
 - [x] 项目管理：查询列表中的列，在实际人天 列后面，添加 合同编号、合同名称（添加合同详情超链接，并添加右键打开浏览器的新标签）
 - [x] 公司收入确认的列表：增加显示列 合同编号，位置放在合同名称列前面；合同名称上增加链接可打开合同详情页，同时支持在合同名称上右键支持打开浏览器的新标签
 - [x] 合同的详情页：关联项目列表模块，中的 table增加显示列 在实际人天 列的后面，依次按照顺序添加：收入确认年度(字典管理 字典类型 sys_ndgl)，收入确认团队，确认金额，确认日期。这几个字段都是公司收入确认信息，不是团队收入确认信息。
-- [x] 项目详情：在合同信息 模块下方，添加 显示付款里程碑信息模块（付款里程碑table 显示列参考 合同详情页的**付款里程碑信息** 的字段）
+- [x] 项目详情：在合同信息模块下方，添加显示付款里程碑信息模块（付款里程碑table显示列参考 合同详情页**付款里程碑信息** 字段）
 - [x] 项目阶段变更
   - [x] 查询条件：增加公司收入确认年度，一级区域，二级区域
   - [x] 查询列表：在项目名称后面添加显示列：预算金额、预算人天 、实际人天、验收状态
   - [x] 项目阶段管理：查询列表的table与项目人员管理的table格式保持一致
 - [x] 项目状态变更：在项目阶段变更的dialog中 添加显示当前项目状态（回显），变更项目状态（字典表  字典类型sys_xmzt）,直接修改项目表的项目状态，并且记录日志，目前日志都记录了哪些信息？
 - [x] 任务管理：添加 金额/人天/工作量的合计功能，支持金额的升序和降序。合计是对全表数据的合计，不是当前页面的合计。
-  - 任务管理：查询列表中的列 项目预算(元)
-    项目预估人天
-    项目实际人天、任务预估人天
-    任务实际人天
-    都需要在table中添加 升序和降序的图标和功能
-- [x] 点击合同详情 报错：
-  - [ ] 在付款里程碑 ，点击合同名称的超链接 报错。访问地址：http://localhost/dev-api/project/task/list?projectId=234  合同名称：银联国库资金经收支付业务T+0清算需求HHAP-COR分项工作任务订单
-    \### Error querying database. Cause: java.sql.SQLSyntaxErrorException: Unknown column 'c.customer_name' in 'field list' ### The error may exist in URL [jar:nested:/Users/kongli/ws-claude/PM/newpm/ruoyi-admin/target/ruoyi-admin.jar/!BOOT-INF/lib/ruoyi-project-3.9.1.jar!/mapper/project/TaskMapper.xml] ### The error may involve com.ruoyi.project.mapper.TaskMapper.selectTaskList-Inline ### The error occurred while setting parameters ### SQL: select p.project_id, p.project_code, p.project_name as parent_project_name, p.project_status, p.project_stage, p.project_category, p.industry, p.region, sr.region_name, p.established_year, p.revenue_confirm_year as parent_revenue_confirm_year, p.project_dept, d.dept_name as project_dept_name, p.project_budget as parent_project_budget, p.estimated_workload as parent_estimated_workload, p.actual_workload as parent_actual_workload, p.start_date as project_start_date, p.end_date as project_end_date, p.acceptance_status, p.acceptance_date, u_pm.nick_name as project_manager_name, u_mm.nick_name as market_manager_name, u_sm.nick_name as sales_manager_name, c.customer_name, t.task_id, t.task_code, t.task_name, t.task_stage, t.task_manager_id, t.product, t.bank_demand_no, t.software_demand_no, t.task_budget, t.estimated_workload, t.actual_workload, t.production_year, t.batch_id, t.task_plan, t.task_description, t.start_date, t.end_date, t.production_date, t.production_version_date, t.actual_production_date, t.internal_closure_date, t.functional_test_date, t.schedule_status, t.function_description, t.implementation_plan, t.create_by, t.create_time, t.update_by, t.update_time, t.remark, u.nick_name as task_manager_name, u_cb.nick_name as create_by_name, u_ub.nick_name as update_by_name, pb.batch_no from pm_project p left join pm_task t on p.project_id = t.project_id left join sys_user u on t.task_manager_id = u.user_id left join sys_user u_cb on t.create_by COLLATE utf8mb4_unicode_ci = u_cb.user_name left join sys_user u_ub on t.update_by COLLATE utf8mb4_unicode_ci = u_ub.user_name left join sys_user u_pm on p.project_manager_id = u_pm.user_id left join sys_user u_mm on p.market_manager_id = u_mm.user_id left join sys_user u_sm on p.sales_manager_id = u_sm.user_id left join sys_dept d on p.project_dept = d.dept_id left join pm_production_batch pb on t.batch_id = pb.batch_id left join pm_customer c on p.customer_id = c.customer_id left join pm_secondary_region sr on p.region_id = sr.region_id WHERE (p.project_level IS NULL OR p.project_level = 0) and p.project_id = ? order by p.project_id asc, t.task_code asc LIMIT ? ### Cause: java.sql.SQLSyntaxErrorException: Unknown column 'c.customer_name' in 'field list' ; bad SQL grammar []
-
-
-
-
-
-
-
-
-
-
+  - 任务管理：查询列表中的列 项目预算(元)、项目预估人天、项目实际人天、任务预估人天、任务实际人天都需要在table中添加 升序和降序的图标和功能
+- [x] 点击合同详情 报错：在付款里程碑 ，点击合同名称的超链接 报错。
+- [x] 项目管理：关联合同 变成  支持机构和合同保存为空
 
 - [x] 项目信息表的更新人和更新时间 不是该用户，查找原因
   - 这个项目名称“2025年深圳分行聚合支付系统国密改造项目 ” 的 更新人是qiu.zhang  更新时间是 2026-03-1309:11:24
@@ -953,15 +931,102 @@
 
 ![image-20260313152455107](/Users/kongli/Library/Application Support/typora-user-images/image-20260313152455107.png)
 
+
+
+
+
+## 20260315
+
+1. 合同管理：合同详情页面 中的 关联项目列表模块， 项目名称 添加支持点击右键打开浏览器标签的功能
+
+2. 合同管理：合同详情页面 中的 关联项目列表模块， 收入确认年度 后面添加确认状态-revenue_confirm_status(数据源 翻译通过 字典表 字典类型 sys_qrzt)
+
+3. 合同管理：合同详情页面 中的 关联项目列表模块，确认日期-revenue_confirm_date ，为什么没有显示值？
+
+4. 合同管理：付款里程碑信息模块table 里程碑名称 支持超链接，支持右键 打开浏览器新标签
+
+5. 合同管理：合同详情 关联项目列表模块 中的 项目名称 固定列宽 支持换行
+
+6. 合同管理：合同详情中的项目分解任务列表 模块 没有任务信息 为什么要显示序号1 2 3
+   如果没有任务列表数据的话 那么 就在table表头下方的 显示数据的位置显示 暂无数据
+   没生效的问题
+
+7.  项目管理：项目详情 中的 里程碑付款信息模块中  的 里程碑名称 添加超链接，并添加支持 右键打开浏览器新标签
+
+8. 项目管理：项目详情：项目关联任务列表，任务名称 固定列宽 支持换行
+
+9. 项目管理：导出功能，导出文件 中的的收入确认年度 的值为什么 还有的是 WFQR、dd,需要通过字典表字典类型sys_ndgl翻译
+
+10. 项目管理：项目详情-付款里程碑信息模块，列名-里程碑名称 固定列宽 支持换行
+
+11. 项目管理：项目详情中的项目关联任务列表 模块 没有任务信息 为什么要显示序号1 2 3
+      如果没有任务列表数据的话 那么 就在table表头下方的 显示数据的位置显示 暂无数据
+
+      没有生效的问题
+
+12. 项目管理： 导出文件中的 列 项目部门路径，拆分为 5列，按照“-”进行拆分，列名依次为项目部门的二
+    级机构、三级机构、四级机构、五级机构、六级机构、如果有更多层次的机构也需要支持。
+
+13. 付款里程碑管理： 导出文件中的 列 合同所属团队 ，导出文件中的 列 合同所属团队 保留，不要去掉。 拆分为 5列，按照“-”进行拆分，列名依次为合同所属团队的二级机构、三级机构、四级机构、五级机构、六级机构、如果有更多层次的机构也需要支持的同时，根据合同所属团队中的机构需要多少层级 就展示多少列的机构。
+
+14. 付款里程碑：款项详情的名称  改为 付款里程碑详情；关联项目列表中的 项目名称，支持 右键 打开浏览器新标签
+
+15. 任务管理：本项目已分解任务 任务名称 添加 超链接 点击右键支持 打开浏览器新标签
+
+16. 项目阶段和状态：查询条件 统一查询条件的标签宽度 和 查询组件的宽度
+
+17. 项目管理、立项审核、项目经理变更、项目人员管理、项目阶段和状态变更、任务管理、公司收入确认、合同管理、付款里程碑管理、任务日报动态、项目人天补正、客户信息：这些功能的查询条件，如果是input框的 需要修改为autoCOmplete ，在此基础上 如果是autoComplete，还需要支持模糊查询，比如 输入 1 点击查询按钮 需要把 包含1 的相应的数据查询出来。你列一下 包含哪些 需要修改哪些？
+
+18. 立项审核：查询列表中的项目名称 固定列宽 支持换行
+
+    
+
+
+
 ## 计划
 
-立项申请-申请单下载
+立项申请
+
+- 提供打印功能
+
+  -  行   │                         左                          │            右             │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 1     │ 项目名称                                            │ 项目类型（sys_xmjd 字典） │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 2     │ 项目编号                                            │ 项目负责人（是指项目经理）              │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 3     │ 项目预算(元)                                        │ 工作量评估(人天)          │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 4     │ 客户单位                                            │ 地址                      │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 5     │ 客户联系人                                          │ 联系方式                  │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 6     │ 销售负责人                                          │ 联系方式                  │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 7     │ 项目参与人员（通栏）                                │                           │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 8     │ 项目概述（通栏）                                    │                           │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 9     │ 项目计划                                            │ 立项日期                  │
+      ├───────┼─────────────────────────────────────────────────────┼───────────────────────────┤
+      │ 10 申请人签字  立项日期
+
+  ​       11 部门经理意见（签字）
+  ​     12 销售部意见（签字）
+  13 财务部意见(签 字)
+  14 副总经理意见 (签字)
+
+  15 总经理意见(签 字)
+
+- 立项申请提交后添加通知
+
+- 
 
 团队日报
 
 日报统计记录（汇总）：添加单独的菜单
 
-立项申请提交后添加通知
+
 
 
 

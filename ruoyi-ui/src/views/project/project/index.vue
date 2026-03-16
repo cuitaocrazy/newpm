@@ -280,7 +280,7 @@
       </el-table-column>
       <el-table-column label="更新人" align="center" prop="updateByName" min-width="100" v-if="columns.updateBy.visible" />
       <el-table-column label="更新时间" align="center" prop="updateTime" width="160" v-if="columns.updateTime.visible" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="350" v-if="columns.actions.visible">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="380" v-if="columns.actions.visible">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
             <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
@@ -313,6 +313,7 @@
             >收入确认</el-button>
 
             <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:attachment']">附件管理</el-button>
+            <el-button link type="primary" icon="Printer" @click="handlePrint(scope.row)" v-hasPermi="['project:project:print']">打印</el-button>
             <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
           </template>
         </template>
@@ -326,6 +327,111 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 打印预览对话框 -->
+    <el-dialog
+      title="立项申请书预览"
+      v-model="printDialogVisible"
+      width="860px"
+      append-to-body
+      top="3vh"
+    >
+      <div v-loading="printLoading" style="min-height: 200px;">
+        <div v-if="printProject" id="print-content-area" class="print-document">
+          <h2 class="print-title">立项申请书</h2>
+          <table class="print-table">
+            <colgroup>
+              <col style="width: 14%">
+              <col style="width: 22%">
+              <col style="width: 14%">
+              <col style="width: 22%">
+              <col style="width: 12%">
+              <col style="width: 16%">
+            </colgroup>
+            <tbody>
+              <tr>
+                <td class="cell-label">项目名称</td>
+                <td colspan="2">{{ printProject.projectName }}</td>
+                <td class="cell-label">项目分类</td>
+                <td colspan="2">{{ getDictLabel(sys_xmfl, printProject.projectCategory) }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">项目编号</td>
+                <td colspan="2">{{ printProject.projectCode }}</td>
+                <td class="cell-label">项目负责人</td>
+                <td colspan="2">{{ printProject.projectManagerName || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">项目预算(元)</td>
+                <td colspan="2">{{ formatAmount(printProject.projectBudget) }}</td>
+                <td class="cell-label">工作量评估(人天)</td>
+                <td colspan="2">{{ printProject.estimatedWorkload != null ? printProject.estimatedWorkload : '-' }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">客户单位</td>
+                <td colspan="2">{{ printProject.customerName || '-' }}</td>
+                <td class="cell-label">地址</td>
+                <td colspan="2">{{ printProject.projectAddress || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">客户联系人</td>
+                <td colspan="2">{{ printProject.customerContactName || '-' }}</td>
+                <td class="cell-label">联系方式</td>
+                <td colspan="2">{{ printProject.customerContactPhone || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">销售负责人</td>
+                <td colspan="2">{{ printProject.salesManagerName || '-' }}</td>
+                <td class="cell-label">联系方式</td>
+                <td colspan="2">{{ printProject.salesContact || '-' }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">项目参与人员</td>
+                <td colspan="5">{{ getParticipantsNames(printProject.participants) }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">项目概述</td>
+                <td colspan="5" class="cell-content">{{ printProject.projectDescription || '' }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">项目计划</td>
+                <td colspan="5" class="cell-content">{{ printProject.projectPlan || '' }}</td>
+              </tr>
+              <tr class="sig-row">
+                <td class="cell-label">申请人(签字)</td>
+                <td colspan="2">{{ printProject.projectManagerName || '' }}</td>
+                <td class="cell-label">立项日期</td>
+                <td colspan="2">{{ printProject.startDate || (printProject.createTime ? printProject.createTime.substring(0, 10) : '-') }}</td>
+              </tr>
+              <tr class="sig-row">
+                <td class="cell-label">部门经理意见(签字)</td>
+                <td colspan="5"></td>
+              </tr>
+              <tr class="sig-row">
+                <td class="cell-label">销售部意见(签字)</td>
+                <td colspan="5"></td>
+              </tr>
+              <tr class="sig-row">
+                <td class="cell-label">财务部意见(签字)</td>
+                <td colspan="5"></td>
+              </tr>
+              <tr class="sig-row">
+                <td class="cell-label">副总经理意见(签字)</td>
+                <td colspan="5"></td>
+              </tr>
+              <tr class="sig-row">
+                <td class="cell-label">总经理意见(签字)</td>
+                <td colspan="5"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="printDialogVisible = false">关闭</el-button>
+        <el-button type="primary" icon="Printer" @click="doActualPrint" :disabled="!printProject">打印</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 审核对话框 -->
     <el-dialog title="项目审核" v-model="approvalDialogVisible" width="600px" append-to-body>
@@ -388,7 +494,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, getProject } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/review"
 import { useRouter } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -446,6 +552,11 @@ const approvalRules = {
 // 审核历史对话框
 const historyDialogVisible = ref(false)
 const approvalHistory = ref([])
+
+// 打印
+const printDialogVisible = ref(false)
+const printProject = ref(null)
+const printLoading = ref(false)
 
 // 关联合同：跳转到独立页面
 function handleBindContract(row) {
@@ -683,6 +794,57 @@ function handleAttachment(row) {
   router.push(`/project/list/attachment/${projectId}`)
 }
 
+/** 打印按钮操作 */
+function handlePrint(row) {
+  proxy.$modal.confirm('是否确认打印该项目的立项申请书？').then(() => {
+    printProject.value = null
+    printLoading.value = true
+    printDialogVisible.value = true
+    getProject(row.projectId).then(response => {
+      printProject.value = response.data
+    }).finally(() => {
+      printLoading.value = false
+    })
+  }).catch(() => {})
+}
+
+/** 获取字典标签 */
+function getDictLabel(options, value) {
+  if (!value) return '-'
+  const list = options?.value || options || []
+  const item = list.find(d => d.value === value)
+  return item ? item.label : value
+}
+
+/** 执行打印 */
+function doActualPrint() {
+  const el = document.getElementById('print-content-area')
+  if (!el) return
+  const projectName = printProject.value?.projectName || ''
+  const printContent = el.innerHTML
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(`<!DOCTYPE html><html>
+<head>
+  <title>立项申请书 - ${projectName}</title>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'SimSun', '宋体', serif; font-size: 12pt; margin: 15mm 20mm; }
+    h2 { text-align: center; font-size: 18pt; font-weight: bold; margin: 0 0 20px 0; letter-spacing: 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    td { border: 1px solid #000; padding: 8px 10px; vertical-align: middle; font-size: 11pt; }
+    .cell-label { background-color: #f0f0f0; font-weight: bold; white-space: nowrap; text-align: center; }
+    .cell-content { min-height: 60px; vertical-align: top; padding: 10px; }
+    .sig-row td { height: 55px; }
+  </style>
+</head>
+<body>${printContent}</body>
+</html>`)
+  printWindow.document.close()
+  printWindow.focus()
+  setTimeout(() => { printWindow.print() }, 400)
+}
+
 /** 删除按钮操作 */
 function handleDelete(row) {
   proxy.$modal.confirm('是否确认删除项目管理编号为"' + row.projectId + '"的数据项？').then(function() {
@@ -829,5 +991,47 @@ loadDeptTree()
   white-space: normal;
   line-height: 1.5;
   text-align: left;
+}
+
+.print-document {
+  padding: 10px 20px;
+
+  .print-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0 0 16px 0;
+    letter-spacing: 4px;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    td {
+      border: 1px solid #333;
+      padding: 8px 12px;
+      vertical-align: middle;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .cell-label {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    .cell-content {
+      min-height: 60px;
+      vertical-align: top;
+      padding: 10px 12px;
+    }
+
+    .sig-row td {
+      height: 55px;
+    }
+  }
 }
 </style>

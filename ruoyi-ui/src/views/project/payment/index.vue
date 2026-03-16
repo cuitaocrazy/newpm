@@ -3,12 +3,13 @@
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="140px">
       <!-- 主要查询条件 -->
       <el-form-item label="合同名称" prop="contractName">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.contractName"
+          :fetch-suggestions="fetchPaymentContractNameSuggestions"
           placeholder="请输入合同名称"
           clearable
-          @keyup.enter="handleQuery"
           style="width: 200px"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="合同所属团队" prop="deptIds">
@@ -37,12 +38,13 @@
         </el-select>
       </el-form-item>
       <el-form-item label="合同编号" prop="contractCode">
-        <el-input
+        <el-autocomplete
           v-model="queryParams.contractCode"
+          :fetch-suggestions="fetchPaymentContractCodeSuggestions"
           placeholder="请输入合同编号"
           clearable
-          @keyup.enter="handleQuery"
           style="width: 200px"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="合同状态" prop="contractStatus">
@@ -90,12 +92,13 @@
           </el-select>
         </el-form-item>
         <el-form-item label="付款方式名称" prop="paymentMethodName">
-          <el-input
+          <el-autocomplete
             v-model="queryParams.paymentMethodName"
+            :fetch-suggestions="fetchPaymentMethodNameSuggestions"
             placeholder="请输入付款方式名称"
             clearable
-            @keyup.enter="handleQuery"
             style="width: 200px"
+            @keyup.enter="handleQuery"
           />
         </el-form-item>
         <el-form-item label="是否涉及违约扣款" prop="hasPenalty">
@@ -330,8 +333,10 @@
 
 <script setup name="Payment">
 import { listPaymentWithContracts, delPayment, checkAttachments, sumPaymentAmount } from "@/api/project/payment"
-import { getDeptTree } from "@/api/project/project"
+import { getDeptTree, searchProjects } from "@/api/project/project"
+import { searchContracts } from "@/api/project/contract"
 import { listAllCustomer } from "@/api/project/customer"
+import request from '@/utils/request'
 import { handleTree } from '@/utils/ruoyi'
 import { watch } from 'vue'
 import { useRoute } from 'vue-router'
@@ -620,6 +625,27 @@ function queryCustomerNames(queryString, callback) {
     ? customerOptions.value.filter(c => c.label.toLowerCase().includes(queryString.toLowerCase()))
     : customerOptions.value
   callback(results)
+}
+
+/** 合同名称 autocomplete */
+function fetchPaymentContractNameSuggestions(queryStr, cb) {
+  searchContracts({ keyword: queryStr }).then(res => {
+    cb((res.data || []).map(c => ({ value: c.contractName })))
+  }).catch(() => cb([]))
+}
+
+/** 合同编号 autocomplete */
+function fetchPaymentContractCodeSuggestions(queryStr, cb) {
+  searchContracts({ keyword: queryStr }).then(res => {
+    cb((res.data || []).map(c => ({ value: c.contractCode })).filter(c => c.value))
+  }).catch(() => cb([]))
+}
+
+/** 付款方式名称 autocomplete */
+function fetchPaymentMethodNameSuggestions(queryStr, cb) {
+  request({ url: '/project/payment/searchPaymentMethodNames', method: 'get', params: { keyword: queryStr } })
+    .then(res => cb((res.data || []).map(v => ({ value: v }))))
+    .catch(() => cb([]))
 }
 
 /** 新增按钮操作 */

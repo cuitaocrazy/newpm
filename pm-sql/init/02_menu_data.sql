@@ -53,6 +53,8 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('附件管理', @projectMenuId, 7, '#', '', 1, 0, 'F', '0', '0', 'project:project:attachment', '#', 'admin', sysdate(), '', NULL, '');
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('删除', @projectMenuId, 8, '#', '', 1, 0, 'F', '0', '0', 'project:project:remove', '#', 'admin', sysdate(), '', NULL, '');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('打印', @projectMenuId, 9, '#', '', 1, 0, 'F', '0', '0', 'project:project:print', '#', 'admin', sysdate(), '', NULL, '');
 
 -- 项目管理 - 隐藏路由
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name, active_menu)

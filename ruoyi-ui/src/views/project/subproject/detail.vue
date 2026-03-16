@@ -86,7 +86,16 @@
                 <dict-tag :options="sys_product" :value="scope.row.product" />
               </template>
             </el-table-column>
-            <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
+            <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip>
+              <template #default="scope">
+                <a
+                  :href="`/task/subproject/detail/${scope.row.taskId}`"
+                  class="el-link el-link--primary"
+                  style="text-decoration: none;"
+                  @click.prevent="router.push(`/task/subproject/detail/${scope.row.taskId}`)"
+                >{{ scope.row.taskName }}</a>
+              </template>
+            </el-table-column>
             <el-table-column label="排期状态" prop="scheduleStatus" width="110" align="center">
               <template #default="scope">
                 <dict-tag :options="sys_pqzt" :value="scope.row.scheduleStatus" />

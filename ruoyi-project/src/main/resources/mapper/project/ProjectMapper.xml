@@ -1138,6 +1138,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.approval_reason,
             p.approval_time,
             p.approver_id,
+            p.revenue_confirm_status,
             p.del_flag,
             p.create_by,
             p.create_time,

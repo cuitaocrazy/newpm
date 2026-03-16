@@ -305,7 +305,6 @@ const { contact_tag, sys_yjqy, industry } = proxy.useDict('contact_tag', 'sys_yj
 const customerList = ref([])
 const customerContactList = ref([])
 const salesManagerList = ref([])
-const customerSimpleNameList = ref([])
 const open = ref(false)
 const openDetail = ref(false)
 const detailData = ref({})
@@ -524,23 +523,11 @@ function loadSalesManagers() {
   })
 }
 
-/** 加载客户简称列表 */
-function loadCustomerSimpleNames() {
-  listCustomer({ pageNum: 1, pageSize: 10000 }).then(response => {
-    customerSimpleNameList.value = response.rows.map(item => ({
-      value: item.customerSimpleName
-    }))
-  })
-}
-
-/** 客户简称搜索方法 */
-function querySearchCustomer(queryString, cb) {
-  const results = queryString
-    ? customerSimpleNameList.value.filter(item =>
-        item.value.toLowerCase().includes(queryString.toLowerCase())
-      )
-    : customerSimpleNameList.value
-  cb(results)
+/** 客户简称搜索方法（远程模糊查询） */
+function querySearchCustomer(queryStr, cb) {
+  listCustomer({ customerSimpleName: queryStr, pageSize: 50 }).then(res => {
+    cb((res.rows || []).map(c => ({ value: c.customerSimpleName })))
+  }).catch(() => cb([]))
 }
 
 /** 计算表格高度 */
@@ -560,7 +547,6 @@ onMounted(() => {
   calcTableHeight()
   window.addEventListener('resize', calcTableHeight)
   loadSalesManagers()
-  loadCustomerSimpleNames()
 })
 
 onUnmounted(() => {

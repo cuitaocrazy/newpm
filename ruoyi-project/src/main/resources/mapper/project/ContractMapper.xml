@@ -89,7 +89,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_user u2 on c.update_by = u2.user_name COLLATE utf8mb4_0900_ai_ci
         <where>
             c.del_flag = '0'
-            <if test="contractCode != null  and contractCode != ''"> and c.contract_code = #{contractCode}</if>
+            <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
             <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null "> and c.customer_id = #{customerId}</if>
             <if test="deptId != null ">
@@ -134,7 +134,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from pm_contract c
         <where>
             c.del_flag = '0'
-            <if test="contractCode != null  and contractCode != ''"> and c.contract_code = #{contractCode}</if>
+            <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
             <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null "> and c.customer_id = #{customerId}</if>
             <if test="deptId != null ">

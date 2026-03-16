@@ -8,7 +8,7 @@
           :fetch-suggestions="loadProjectOptions"
           clearable
           placeholder="输入关键字搜索，或直接选择下拉数据"
-          style="width: 240px"
+          style="width: 200px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -16,22 +16,22 @@
         <project-dept-select v-model="queryParams.projectDept" style="width: 200px" />
       </el-form-item>
       <el-form-item label="当前阶段" prop="projectStage">
-        <el-select v-model="queryParams.projectStage" placeholder="请选择阶段" clearable style="width: 160px">
+        <el-select v-model="queryParams.projectStage" placeholder="请选择阶段" clearable style="width: 200px">
           <el-option v-for="dict in sys_xmjd" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="确认年度" prop="revenueConfirmYear">
-        <el-select v-model="queryParams.revenueConfirmYear" placeholder="请选择年度" clearable style="width: 160px">
+        <el-select v-model="queryParams.revenueConfirmYear" placeholder="请选择年度" clearable style="width: 200px">
           <el-option v-for="dict in sys_ndgl" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="一级区域" prop="region">
-        <el-select v-model="queryParams.region" placeholder="请选择区域" clearable style="width: 160px" @change="onRegionChange">
+        <el-select v-model="queryParams.region" placeholder="请选择区域" clearable style="width: 200px" @change="onRegionChange">
           <el-option v-for="dict in sys_yjqy" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="二级区域" prop="regionId">
-        <secondary-region-select :region-dict-value="queryParams.region" v-model="queryParams.regionId" style="width: 160px" />
+        <secondary-region-select :region-dict-value="queryParams.region" v-model="queryParams.regionId" style="width: 200px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>

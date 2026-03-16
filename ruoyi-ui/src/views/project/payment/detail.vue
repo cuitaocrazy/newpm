@@ -161,9 +161,12 @@
           <el-table-column label="序号" type="index" width="60" align="center" />
           <el-table-column label="项目名称" align="left" prop="projectName" show-overflow-tooltip>
             <template #default="scope">
-              <el-link type="primary" @click="router.push(`/project/list/detail/${scope.row.projectId}`)">
-                {{ scope.row.projectName }}
-              </el-link>
+              <a
+                :href="`/project/list/detail/${scope.row.projectId}`"
+                class="el-link el-link--primary"
+                style="text-decoration: none;"
+                @click.prevent="router.push(`/project/list/detail/${scope.row.projectId}`)"
+              >{{ scope.row.projectName }}</a>
             </template>
           </el-table-column>
           <el-table-column label="当前阶段" align="center" prop="projectStage" width="110">

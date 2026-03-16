@@ -226,7 +226,7 @@ export const constantRoutes = [
         path: ':paymentId(\\d+)',
         component: () => import('@/views/project/payment/detail.vue'),
         name: 'PaymentDetail',
-        meta: { title: '款项详情', activeMenu: '/htkx/payment' }
+        meta: { title: '付款里程碑详情', activeMenu: '/htkx/payment' }
       }
     ]
   },

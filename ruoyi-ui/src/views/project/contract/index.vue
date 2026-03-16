@@ -57,12 +57,13 @@
       </el-form-item>
       <template v-if="showMoreQuery">
         <el-form-item label="合同编号" prop="contractCode">
-          <el-input
+          <el-autocomplete
             v-model="queryParams.contractCode"
+            :fetch-suggestions="fetchContractCodeSuggestions"
             placeholder="请输入合同编号"
             clearable
-            @keyup.enter="handleQuery"
             style="width: 200px"
+            @keyup.enter="handleQuery"
           />
         </el-form-item>
         <el-form-item label="合同签订日期" prop="contractSignDate">
@@ -584,6 +585,13 @@ function handleQuery() {
 function fetchContractNameSuggestions(queryStr, cb) {
   searchContracts({ keyword: queryStr }).then(res => {
     cb(res.data || [])
+  }).catch(() => cb([]))
+}
+
+/** 合同编号 autocomplete */
+function fetchContractCodeSuggestions(queryStr, cb) {
+  searchContracts({ keyword: queryStr }).then(res => {
+    cb((res.data || []).map(c => ({ value: c.contractCode })).filter(c => c.value))
   }).catch(() => cb([]))
 }
 
