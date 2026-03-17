@@ -38,6 +38,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="contractStatusName"    column="contract_status_name"    />
         <result property="createByName"    column="create_by_name"    />
         <result property="updateByName"    column="update_by_name"    />
+        <result property="projectBudgetTotal"          column="project_budget_total"          />
+        <result property="estimatedWorkloadTotal"      column="estimated_workload_total"      />
+        <result property="actualWorkloadTotal"         column="actual_workload_total"         />
+        <result property="revenueConfirmAmountTotal"   column="revenue_confirm_amount_total"  />
     </resultMap>
 
     <resultMap type="Contract" id="ContractWithPaymentsResult" extends="ContractResult">
@@ -79,7 +83,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             dict1.dict_label as contract_type_name,
             dict2.dict_label as contract_status_name,
             u1.nick_name as create_by_name,
-            u2.nick_name as update_by_name
+            u2.nick_name as update_by_name,
+            IFNULL(p_agg.project_budget_total, 0)         AS project_budget_total,
+            IFNULL(p_agg.estimated_workload_total, 0)     AS estimated_workload_total,
+            IFNULL(p_agg.actual_workload_total, 0)        AS actual_workload_total,
+            IFNULL(p_agg.revenue_confirm_amount_total, 0) AS revenue_confirm_amount_total
         from pm_contract c
         left join sys_dept d on c.dept_id = d.dept_id
         left join pm_customer cust on c.customer_id = cust.customer_id
@@ -87,6 +95,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_dict_data dict2 on c.contract_status COLLATE utf8mb4_unicode_ci = dict2.dict_value and dict2.dict_type = 'sys_htzt'
         left join sys_user u1 on c.create_by = u1.user_name COLLATE utf8mb4_0900_ai_ci
         left join sys_user u2 on c.update_by = u2.user_name COLLATE utf8mb4_0900_ai_ci
+        left join (
+            select rel.contract_id,
+                   IFNULL(SUM(p.project_budget), 0)                                                                   AS project_budget_total,
+                   IFNULL(SUM(p.estimated_workload), 0)                                                                AS estimated_workload_total,
+                   IFNULL(SUM(ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0)), 0)                    AS actual_workload_total,
+                   IFNULL(SUM(p.confirm_amount), 0)                                                                    AS revenue_confirm_amount_total
+            from pm_project p
+            inner join pm_project_contract_rel rel on p.project_id = rel.project_id and rel.del_flag = '0'
+            where p.del_flag = '0'
+            group by rel.contract_id
+        ) p_agg on c.contract_id = p_agg.contract_id
         <where>
             c.del_flag = '0'
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
@@ -130,8 +149,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectContractSummary" parameterType="Contract" resultType="map">
         select
             IFNULL(SUM(c.contract_amount), 0) as contractAmountSum,
-            IFNULL(SUM(c.amount_no_tax), 0) as amountNoTaxSum
+            IFNULL(SUM(c.amount_no_tax), 0) as amountNoTaxSum,
+            IFNULL(SUM(p_agg.project_budget_total), 0)         as projectBudgetSum,
+            IFNULL(SUM(p_agg.estimated_workload_total), 0)     as estimatedWorkloadSum,
+            IFNULL(SUM(p_agg.actual_workload_total), 0)        as actualWorkloadSum,
+            IFNULL(SUM(p_agg.revenue_confirm_amount_total), 0) as revenueConfirmAmountSum
         from pm_contract c
+        left join (
+            select rel.contract_id,
+                   IFNULL(SUM(p.project_budget), 0)                                                                    AS project_budget_total,
+                   IFNULL(SUM(p.estimated_workload), 0)                                                                 AS estimated_workload_total,
+                   IFNULL(SUM(ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0)), 0)                     AS actual_workload_total,
+                   IFNULL(SUM(p.confirm_amount), 0)                                                                     AS revenue_confirm_amount_total
+            from pm_project p
+            inner join pm_project_contract_rel rel on p.project_id = rel.project_id and rel.del_flag = '0'
+            where p.del_flag = '0'
+            group by rel.contract_id
+        ) p_agg on c.contract_id = p_agg.contract_id
         <where>
             c.del_flag = '0'
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
@@ -319,7 +353,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
-            <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            <if test="confirmYear != null and confirmYear != ''"> and p.confirm_year = #{confirmYear}</if>
             <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
             <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
             <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
@@ -328,7 +362,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="expectedQuarters != null and expectedQuarters.size() > 0"> and p.expected_quarter in <foreach collection="expectedQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
             <if test="actualQuarters != null and actualQuarters.size() > 0"> and p.actual_quarter in <foreach collection="actualQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
-            <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
             ${params.dataScope}
@@ -358,7 +391,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <if test="contractType != null and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
-            <if test="confirmYear != null and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            <if test="confirmYear != null and confirmYear != ''"> and p.confirm_year = #{confirmYear}</if>
             <if test="params.paymentMethodName != null and params.paymentMethodName != ''"> and p.payment_method_name like concat('%', #{params.paymentMethodName}, '%')</if>
             <if test="params.hasPenalty != null and params.hasPenalty != ''"> and p.has_penalty = #{params.hasPenalty}</if>
             <if test="params.paymentStatus != null and params.paymentStatus != ''"> and p.payment_status = #{params.paymentStatus}</if>
@@ -367,7 +400,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="expectedQuarters != null and expectedQuarters.size() > 0"> and p.expected_quarter in <foreach collection="expectedQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
             <if test="params.actualQuarter != null and params.actualQuarter != ''"> and p.actual_quarter = #{params.actualQuarter}</if>
             <if test="actualQuarters != null and actualQuarters.size() > 0"> and p.actual_quarter in <foreach collection="actualQuarters" item="s" open="(" separator="," close=")">#{s}</foreach></if>
-            <if test="params.paymentConfirmYear != null and params.paymentConfirmYear != ''"> and p.confirm_year = #{params.paymentConfirmYear}</if>
             <if test="params.actualPaymentDateStart != null and params.actualPaymentDateStart != ''"> and p.actual_payment_date &gt;= #{params.actualPaymentDateStart}</if>
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''"> and p.actual_payment_date &lt;= #{params.actualPaymentDateEnd}</if>
         </where>
