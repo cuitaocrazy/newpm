@@ -94,4 +94,26 @@ public interface DailyReportMapper
      * @return 用户列表
      */
     public List<Map<String, Object>> selectActivityUsers(DailyReport query);
+
+    /**
+     * 按日期统计已提交人数（指定日期范围内每天去重计数）
+     * 用于日报统计报表的汇总数据
+     */
+    List<Map<String, Object>> selectSubmittedCountByDate(DailyReport query);
+
+    /**
+     * 查询数据权限范围内的活跃用户总数（排除白名单）
+     * 用于计算未提交人数 = 总数 - 已提交数
+     */
+    int selectTotalUserCount(DailyReport query);
+
+    /**
+     * 查询某天已提交人员明细（含工时和工作内容摘要）
+     */
+    List<Map<String, Object>> selectSubmittedUsersOnDate(DailyReport query);
+
+    /**
+     * 查询某天未提交人员明细（排除白名单）
+     */
+    List<Map<String, Object>> selectUnsubmittedUsersOnDate(DailyReport query);
 }
