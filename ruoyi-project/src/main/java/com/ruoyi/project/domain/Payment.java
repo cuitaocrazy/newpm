@@ -96,7 +96,7 @@ public class Payment extends BaseEntity
     private Date contractSignDate;
 
     /** 免维期（关联查询） */
-    @Excel(name = "免维期（月）", sort = 7)
+    @Excel(name = "免维期（月）", sort = 7, cellType = Excel.ColumnType.TEXT)
     private Integer freeMaintenancePeriod;
 
     /** 部门ID（关联查询） */
