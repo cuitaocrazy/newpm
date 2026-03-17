@@ -159,23 +159,6 @@
         </template>
       </el-table-column>
       <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" />
-      <el-table-column label="关联项目" align="left" prop="projectList" min-width="160" v-if="columns.projectList.visible">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">
-            <template v-if="scope.row.projectList && scope.row.projectList.length > 0">
-              <div v-for="(project, index) in scope.row.projectList" :key="project.projectId">
-                {{ index + 1 }}、{{ project.projectName }}
-              </div>
-            </template>
-            <span v-else>-</span>
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="客户名称" align="center" prop="customerName" min-width="140" show-overflow-tooltip v-if="columns.customerId.visible">
-        <template #default="scope">
-          <span v-if="!scope.row.isSummary">{{ scope.row.customerName || '-' }}</span>
-        </template>
-      </el-table-column>
       <el-table-column label="合同所属部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip v-if="columns.deptId.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getDeptName(scope.row.deptId) }}</span>
@@ -218,6 +201,127 @@
       <el-table-column label="免维期(月)" align="center" prop="freeMaintenancePeriod" width="100" v-if="columns.freeMaintenancePeriod.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ scope.row.freeMaintenancePeriod }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="关联项目" align="left" prop="projectList" min-width="160" v-if="columns.projectList.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <template v-if="scope.row.projectList && scope.row.projectList.length > 0">
+              <div v-for="(project, index) in scope.row.projectList" :key="project.projectId">
+                {{ index + 1 }}、{{ project.projectName }}
+              </div>
+            </template>
+            <span v-else>-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目所属部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip v-if="columns.projectDept.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ project.deptName || '-' }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="120" v-if="columns.projectStage.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              <dict-tag :options="sys_xmjd" :value="project.projectStage" />
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目经理" align="center" prop="projectManager" min-width="100" v-if="columns.projectManager.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ project.projectManagerName || '-' }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="二级区域" align="center" prop="secondaryRegion" min-width="100" v-if="columns.secondaryRegion.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ project.regionName || '-' }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目预算(元)" align="right" prop="projectBudget" min-width="130" sortable="custom" v-if="columns.projectBudget.visible">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ formatAmount(scope.row.projectBudgetTotal) }}</span>
+          <span v-else>
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ formatAmount(project.projectBudget) }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="预估工作量(人天)" align="right" prop="estimatedWorkload" min-width="140" sortable="custom" v-if="columns.estimatedWorkload.visible">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ scope.row.estimatedWorkloadTotal }}</span>
+          <span v-else>
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ project.estimatedWorkload != null ? project.estimatedWorkload : '-' }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="实际人天" align="right" prop="actualWorkload" min-width="110" sortable="custom" v-if="columns.actualWorkload.visible">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ scope.row.actualWorkloadTotal }}</span>
+          <span v-else>
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ project.actualWorkload != null ? Number(project.actualWorkload).toFixed(3) : '-' }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="公司收入确认年度" align="center" prop="revenueConfirmYear" min-width="140" v-if="columns.revenueConfirmYear.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              <dict-tag :options="sys_ndgl" :value="project.revenueConfirmYear" />
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="公司收入确认金额(元)" align="right" prop="revenueConfirmAmount" min-width="170" sortable="custom" v-if="columns.revenueConfirmAmount.visible">
+        <template #default="scope">
+          <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ formatAmount(scope.row.revenueConfirmAmountTotal) }}</span>
+          <span v-else>
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              {{ formatAmount(project.confirmAmount) }}
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120" v-if="columns.revenueConfirmStatus.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">
+            <div v-for="project in scope.row.projectList" :key="project.projectId">
+              <dict-tag :options="sys_qrzt" :value="project.revenueConfirmStatus" />
+            </div>
+            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="客户名称" align="center" prop="customerName" min-width="140" show-overflow-tooltip v-if="columns.customerId.visible">
+        <template #default="scope">
+          <span v-if="!scope.row.isSummary">{{ scope.row.customerName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" min-width="150" show-overflow-tooltip v-if="columns.remark.visible">
@@ -357,7 +461,7 @@ import { getToken } from "@/utils/auth"
 import { checkPermi } from "@/utils/permission"
 
 const { proxy } = getCurrentInstance()
-const { sys_ndgl, sys_htlx, sys_htzt, sys_wdlx } = proxy.useDict('sys_ndgl', 'sys_htlx', 'sys_htzt', 'sys_wdlx')
+const { sys_ndgl, sys_htlx, sys_htzt, sys_wdlx, sys_xmjd, sys_qrzt } = proxy.useDict('sys_ndgl', 'sys_htlx', 'sys_htzt', 'sys_wdlx', 'sys_xmjd', 'sys_qrzt')
 const router = useRouter()
 const route = useRoute()
 
@@ -372,7 +476,11 @@ const tableDataWithSummary = computed(() => {
   const summary = {
     isSummary: true,
     contractAmount: Number(summaryData.value.contractAmountSum || 0).toFixed(2),
-    amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2)
+    amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2),
+    projectBudgetTotal: Number(summaryData.value.projectBudgetSum || 0).toFixed(2),
+    estimatedWorkloadTotal: Number(summaryData.value.estimatedWorkloadSum || 0).toFixed(3),
+    actualWorkloadTotal: Number(summaryData.value.actualWorkloadSum || 0).toFixed(3),
+    revenueConfirmAmountTotal: Number(summaryData.value.revenueConfirmAmountSum || 0).toFixed(2),
   }
 
   // 将合计行放在第一行
@@ -404,9 +512,7 @@ const columns = ref({
   index: { label: '序号', visible: true },
   contractName: { label: '合同名称', visible: true },
   contractCode: { label: '合同编号', visible: true },
-  projectList: { label: '关联项目', visible: true },
-  customerId: { label: '客户名称', visible: true },
-  deptId: { label: '部门', visible: true },
+  deptId: { label: '合同所属部门', visible: true },
   contractType: { label: '合同类型', visible: true },
   contractStatus: { label: '合同状态', visible: true },
   contractSignDate: { label: '合同签订日期', visible: true },
@@ -414,6 +520,18 @@ const columns = ref({
   contractAmount: { label: '合同金额', visible: true },
   amountNoTax: { label: '不含税金额', visible: true },
   freeMaintenancePeriod: { label: '免维期', visible: true },
+  projectList: { label: '关联项目', visible: true },
+  projectDept: { label: '项目所属部门', visible: true },
+  projectStage: { label: '项目阶段', visible: true },
+  projectManager: { label: '项目经理', visible: true },
+  secondaryRegion: { label: '二级区域', visible: true },
+  projectBudget: { label: '项目预算', visible: true },
+  estimatedWorkload: { label: '预估工作量', visible: true },
+  actualWorkload: { label: '实际人天', visible: true },
+  revenueConfirmYear: { label: '公司收入确认年度', visible: true },
+  revenueConfirmAmount: { label: '公司收入确认金额', visible: true },
+  revenueConfirmStatus: { label: '收入确认状态', visible: true },
+  customerId: { label: '客户名称', visible: true },
   remark: { label: '备注', visible: true },
   createTime: { label: '创建日期', visible: true },
   createByName: { label: '创建人', visible: true },
@@ -465,7 +583,11 @@ const handleSortChange = ({ column, prop, order }) => {
     // 将驼峰命名转换为下划线命名（后端数据库字段格式）
     const columnMap = {
       'contractSignDate': 'contract_sign_date',
-      'contractAmount': 'contract_amount'
+      'contractAmount': 'contract_amount',
+      'projectBudget': 'project_budget_total',
+      'estimatedWorkload': 'estimated_workload_total',
+      'actualWorkload': 'actual_workload_total',
+      'revenueConfirmAmount': 'revenue_confirm_amount_total',
     }
     queryParams.value.orderByColumn = columnMap[prop] || prop
     queryParams.value.isAsc = order === 'ascending' ? 'asc' : 'desc'

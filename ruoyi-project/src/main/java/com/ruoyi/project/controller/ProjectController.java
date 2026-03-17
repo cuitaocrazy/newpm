@@ -379,7 +379,10 @@ public class ProjectController extends BaseController
     public AjaxResult searchProjects(@RequestParam(required = false) String projectName,
                                      @RequestParam(required = false) String projectDept)
     {
-        return success(projectService.searchProjectsByName(projectName, projectDept));
+        Project project = new Project();
+        project.setProjectName(projectName);
+        project.setProjectDept(projectDept);
+        return success(projectService.searchProjectsByName(project));
     }
 
     /**

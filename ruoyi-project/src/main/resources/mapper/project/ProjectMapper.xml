@@ -1145,9 +1145,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.update_by,
             p.update_time,
             p.remark,
-            d.dept_name AS dept_name
+            d.dept_name AS dept_name,
+            u_pm.nick_name AS project_manager_name,
+            sr.region_name AS region_name
         FROM pm_project p
         LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
+        LEFT JOIN sys_user u_pm ON p.project_manager_id = u_pm.user_id
+        LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         INNER JOIN pm_project_contract_rel rel ON p.project_id = rel.project_id
         WHERE rel.contract_id = #{contractId}
           AND p.del_flag = '0'
@@ -1155,23 +1159,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY p.create_time DESC
     </select>
 
-    <!-- 项目搜索（轻量接口，用于 autocomplete） -->
-    <select id="searchProjectsByName" resultType="java.util.Map">
+    <!-- 项目搜索（轻量接口，用于 autocomplete，含数据权限过滤） -->
+    <select id="searchProjectsByName" parameterType="Project" resultType="java.util.Map">
         SELECT
-            project_id as projectId,
-            project_name as projectName,
-            project_code as projectCode
-        FROM pm_project
-        WHERE del_flag = '0'
-        AND (project_level IS NULL OR project_level = 0)
+            p.project_id as projectId,
+            p.project_name as projectName,
+            p.project_code as projectCode
+        FROM pm_project p
+        LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
+        LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
+        WHERE p.del_flag = '0'
+        AND (p.project_level IS NULL OR p.project_level = 0)
         <if test="projectDept != null and projectDept != ''">
-            AND (project_dept = #{projectDept}
-                 OR project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
+            AND (p.project_dept = #{projectDept}
+                 OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
         </if>
         <if test="projectName != null and projectName != ''">
-            AND project_name LIKE CONCAT('%', #{projectName}, '%')
+            AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
         </if>
-        ORDER BY create_time DESC
+        ${params.dataScope}
+        ORDER BY p.create_time DESC
         LIMIT 20
     </select>
 

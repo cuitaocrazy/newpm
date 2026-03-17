@@ -407,9 +407,10 @@ public class ProjectServiceImpl implements IProjectService
      * @return 精简字段列表：projectId, projectName, projectCode
      */
     @Override
-    public List<Map<String, Object>> searchProjectsByName(String projectName, String projectDept)
+    @DataScope(deptAlias = "d", userAlias = "u_create")
+    public List<Map<String, Object>> searchProjectsByName(Project project)
     {
-        return projectMapper.searchProjectsByName(projectName, projectDept);
+        return projectMapper.searchProjectsByName(project);
     }
 
     /**

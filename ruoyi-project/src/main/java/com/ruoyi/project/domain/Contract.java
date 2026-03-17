@@ -59,7 +59,7 @@ public class Contract extends BaseEntity
     private Date contractSignDate;
 
     /** 合同周期(月) */
-    @Excel(name = "合同周期(月)", handler = AmountFormatHandler.class)
+    @Excel(name = "合同周期(月)", handler = AmountFormatHandler.class, args = {"0"})
     private Integer contractPeriod;
 
     /** 合同金额(含税) */
@@ -67,7 +67,7 @@ public class Contract extends BaseEntity
     private BigDecimal contractAmount;
 
     /** 税率(%) */
-    @Excel(name = "税率(%)", handler = AmountFormatHandler.class)
+    @Excel(name = "税率(%)", handler = AmountFormatHandler.class, args = {"0"})
     private BigDecimal taxRate;
 
     /** 不含税金额 */
@@ -87,7 +87,7 @@ public class Contract extends BaseEntity
     private String confirmYear;
 
     /** 免维期(月) */
-    @Excel(name = "免维期(月)")
+    @Excel(name = "免维期(月)", handler = AmountFormatHandler.class, args = {"0"})
     private Integer freeMaintenancePeriod;
 
     /** 删除标志 */
@@ -143,6 +143,18 @@ public class Contract extends BaseEntity
 
     /** 行合并数量（扩展字段，用于前端合并单元格） */
     private Integer rowSpan;
+
+    /** 项目预算合计（聚合字段，用于列表合计和排序） */
+    private BigDecimal projectBudgetTotal;
+
+    /** 预估工作量合计（聚合字段，用于列表合计和排序） */
+    private BigDecimal estimatedWorkloadTotal;
+
+    /** 实际人天合计（聚合字段，用于列表合计和排序） */
+    private BigDecimal actualWorkloadTotal;
+
+    /** 公司收入确认金额合计（聚合字段，用于列表合计和排序） */
+    private BigDecimal revenueConfirmAmountTotal;
 
     /** 多选过滤字段（付款里程碑查询用，不存库） */
     private List<Long> deptIds;
@@ -509,6 +521,18 @@ public class Contract extends BaseEntity
     {
         return rowSpan;
     }
+
+    public BigDecimal getProjectBudgetTotal() { return projectBudgetTotal; }
+    public void setProjectBudgetTotal(BigDecimal projectBudgetTotal) { this.projectBudgetTotal = projectBudgetTotal; }
+
+    public BigDecimal getEstimatedWorkloadTotal() { return estimatedWorkloadTotal; }
+    public void setEstimatedWorkloadTotal(BigDecimal estimatedWorkloadTotal) { this.estimatedWorkloadTotal = estimatedWorkloadTotal; }
+
+    public BigDecimal getActualWorkloadTotal() { return actualWorkloadTotal; }
+    public void setActualWorkloadTotal(BigDecimal actualWorkloadTotal) { this.actualWorkloadTotal = actualWorkloadTotal; }
+
+    public BigDecimal getRevenueConfirmAmountTotal() { return revenueConfirmAmountTotal; }
+    public void setRevenueConfirmAmountTotal(BigDecimal revenueConfirmAmountTotal) { this.revenueConfirmAmountTotal = revenueConfirmAmountTotal; }
 
     public List<Long> getDeptIds() { return deptIds; }
     public void setDeptIds(List<Long> deptIds) { this.deptIds = deptIds; }

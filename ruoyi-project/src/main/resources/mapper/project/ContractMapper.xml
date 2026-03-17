@@ -146,28 +146,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where c.contract_id = #{contractId}
     </select>
 
+    <!-- 合计统计：以 pm_project 为主表，与项目管理口径一致（排除子项目，每个项目只算一次） -->
     <select id="selectContractSummary" parameterType="Contract" resultType="map">
         select
-            IFNULL(SUM(c.contract_amount), 0) as contractAmountSum,
-            IFNULL(SUM(c.amount_no_tax), 0) as amountNoTaxSum,
-            IFNULL(SUM(p_agg.project_budget_total), 0)         as projectBudgetSum,
-            IFNULL(SUM(p_agg.estimated_workload_total), 0)     as estimatedWorkloadSum,
-            IFNULL(SUM(p_agg.actual_workload_total), 0)        as actualWorkloadSum,
-            IFNULL(SUM(p_agg.revenue_confirm_amount_total), 0) as revenueConfirmAmountSum
-        from pm_contract c
-        left join (
-            select rel.contract_id,
-                   IFNULL(SUM(p.project_budget), 0)                                                                    AS project_budget_total,
-                   IFNULL(SUM(p.estimated_workload), 0)                                                                 AS estimated_workload_total,
-                   IFNULL(SUM(ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0)), 0)                     AS actual_workload_total,
-                   IFNULL(SUM(p.confirm_amount), 0)                                                                     AS revenue_confirm_amount_total
-            from pm_project p
-            inner join pm_project_contract_rel rel on p.project_id = rel.project_id and rel.del_flag = '0'
-            where p.del_flag = '0'
-            group by rel.contract_id
-        ) p_agg on c.contract_id = p_agg.contract_id
+            IFNULL(SUM(c.contract_amount), 0)                                                    as contractAmountSum,
+            IFNULL(SUM(c.amount_no_tax), 0)                                                      as amountNoTaxSum,
+            IFNULL(SUM(p.project_budget), 0)                                                     as projectBudgetSum,
+            IFNULL(SUM(p.estimated_workload), 0)                                                 as estimatedWorkloadSum,
+            IFNULL(SUM(ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0)), 0)     as actualWorkloadSum,
+            IFNULL(SUM(p.confirm_amount), 0)                                                     as revenueConfirmAmountSum
+        from pm_project p
+        left join pm_project_contract_rel rel on p.project_id = rel.project_id and rel.del_flag = '0'
+        left join pm_contract c on rel.contract_id = c.contract_id and c.del_flag = '0'
         <where>
-            c.del_flag = '0'
+            p.del_flag = '0'
+            and (p.project_level is null or p.project_level = 0)
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
             <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null "> and c.customer_id = #{customerId}</if>

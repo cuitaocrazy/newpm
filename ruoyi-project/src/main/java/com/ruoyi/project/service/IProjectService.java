@@ -158,7 +158,7 @@ public interface IProjectService
      * @param projectName 项目名称（模糊搜索）
      * @return 精简字段列表：projectId, projectName, projectCode
      */
-    public List<Map<String, Object>> searchProjectsByName(String projectName, String projectDept);
+    public List<Map<String, Object>> searchProjectsByName(Project project);
 
     /**
      * 为导出填充附加字段：部门路径、参与人员名称、更新时间显示
