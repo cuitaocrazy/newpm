@@ -12,6 +12,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.DailyReportDetail;
 import com.ruoyi.project.mapper.DailyReportDetailMapper;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.project.mapper.ProjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.project.mapper.DailyReportMapper;
 import com.ruoyi.project.domain.DailyReport;
 import com.ruoyi.project.service.IDailyReportService;
+import com.ruoyi.project.service.IDailyReportWhitelistService;
 
 /**
  * 工作日报Service业务层处理
@@ -37,6 +39,9 @@ public class DailyReportServiceImpl implements IDailyReportService
 
     @Autowired
     private ProjectMapper projectMapper;
+
+    @Autowired
+    private IDailyReportWhitelistService whitelistService;
 
     @Autowired
     private com.ruoyi.project.mapper.TaskMapper taskMapper;
@@ -125,6 +130,10 @@ public class DailyReportServiceImpl implements IDailyReportService
     public int saveDailyReport(DailyReport report)
     {
         Long userId = SecurityUtils.getUserId();
+        // 白名单用户禁止提交日报
+        if (whitelistService.isInWhitelist(userId)) {
+            throw new ServiceException("您已被设置为无需填写日报，如有疑问请联系管理员");
+        }
         Long deptId = SecurityUtils.getDeptId();
         String username = SecurityUtils.getUsername();
 
