@@ -48,7 +48,7 @@ npx playwright test contract-add-from-project.spec.ts   # specific file
 npx playwright test --ui && npx playwright show-report
 ```
 
-Test files at project root (not `tests/`): `project-management.spec.js`, `contract-add-from-project.spec.ts`, `network-request-debug.spec.js`
+Test files in `tests/` directory: `project-management.spec.js`, `contract-add-from-project.spec.ts`, `network-request-debug.spec.js`, `query-smoke.spec.js`
 
 ### Prerequisites
 
@@ -410,7 +410,7 @@ All task-specific fields (`taskCode`, `batchId`, `productionYear`, `scheduleStat
 
 ### Project Members Include All Managers
 
-`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list. **Important**: `syncProjectMembers()` must NOT update `pm_project.update_by/update_time` — it only manages the `pm_project_member` table.
+`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list. **Important**: `syncProjectMembers()` manages `pm_project_member` and MUST also update `pm_project.update_by/update_time` directly.
 
 ### Cross-module Permission
 
@@ -444,7 +444,7 @@ Never display raw `actual_workload` hours as person-days. Adjustments logged in 
 
 **GitHub Actions** (`.github/workflows/deploy.yml`): Push to `main` → Docker build → push `cuitaocrazy/newpm:latest` → SSH → `kubectl rollout restart deployment/ruoyi-app -n newpm`.
 
-Ignores: `k8s/`, `sql/`, `*.md`, `.github/`, `docker-compose*.yml`.
+Ignores: `k8s/`, `pm-sql/`, `*.md`, `.github/`, `docker-compose*.yml`.
 
 ## Deployment
 

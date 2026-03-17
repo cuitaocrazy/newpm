@@ -62,7 +62,7 @@ public class Contract extends BaseEntity
     private Integer contractPeriod;
 
     /** 合同金额(含税) */
-    @Excel(name = "合同金额(含税)")
+    @Excel(name = "合同金额(含税)", cellType = Excel.ColumnType.TEXT)
     private BigDecimal contractAmount;
 
     /** 税率(%) */
@@ -70,15 +70,15 @@ public class Contract extends BaseEntity
     private BigDecimal taxRate;
 
     /** 不含税金额 */
-    @Excel(name = "不含税金额")
+    @Excel(name = "不含税金额", cellType = Excel.ColumnType.TEXT)
     private BigDecimal amountNoTax;
 
     /** 税金 */
-    @Excel(name = "税金")
+    @Excel(name = "税金", cellType = Excel.ColumnType.TEXT)
     private BigDecimal taxAmount;
 
     /** 合同确认金额 */
-    @Excel(name = "合同确认金额")
+    @Excel(name = "合同确认金额", cellType = Excel.ColumnType.TEXT)
     private BigDecimal confirmAmount;
 
     /** 确认年份 */

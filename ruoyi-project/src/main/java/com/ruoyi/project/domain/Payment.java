@@ -30,7 +30,7 @@ public class Payment extends BaseEntity
     private String paymentMethodName;
 
     /** 付款总金额 */
-    @Excel(name = "付款金额（元）", sort = 15)
+    @Excel(name = "付款金额（元）", sort = 15, cellType = Excel.ColumnType.TEXT)
     private BigDecimal paymentAmount;
 
     /** 付款状态 */
@@ -42,7 +42,7 @@ public class Payment extends BaseEntity
     private String hasPenalty;
 
     /** 扣款金额(元) */
-    @Excel(name = "扣款金额（元）", sort = 18)
+    @Excel(name = "扣款金额（元）", sort = 18, cellType = Excel.ColumnType.TEXT)
     private BigDecimal penaltyAmount;
 
     /** 预计回款所属季度 */
@@ -87,7 +87,7 @@ public class Payment extends BaseEntity
     private String customerName;
 
     /** 合同金额（关联查询） */
-    @Excel(name = "合同金额（元）", sort = 5)
+    @Excel(name = "合同金额（元）", sort = 5, cellType = Excel.ColumnType.TEXT)
     private BigDecimal contractAmount;
 
     /** 合同签订日期（关联查询） */
