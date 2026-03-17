@@ -55,13 +55,19 @@
         </el-avatar>
         <div style="flex: 1;">
           <div style="font-size: 17px; font-weight: 700;">{{ currentDeptName || '全部部门' }}</div>
-          <div style="font-size: 13px; color: #909399;">点击日历格子中的人员可查看个人详情</div>
+          <div style="font-size: 13px; color: #909399;">点击日历格子中的人员或"+N人"可查看日报详情；点击日期格可切换已填写/未填写汇总，点击数字可查看人员明细</div>
         </div>
         <div style="display: flex; gap: 24px;">
           <div class="stat-box"><div class="stat-num">{{ teamStats.total }}</div><div class="stat-label">团队人数</div></div>
-          <div class="stat-box"><div class="stat-num">{{ teamStats.reported }}</div><div class="stat-label">今日已填</div></div>
-          <div class="stat-box"><div class="stat-num">{{ teamStats.unreported }}</div><div class="stat-label">今日未填</div></div>
-          <div class="stat-box"><div class="stat-num">{{ teamStats.avgHours }}h</div><div class="stat-label">今日人均工时</div></div>
+          <div class="stat-box stat-clickable" @click="openStatsDialog('filled')">
+            <div class="stat-num" style="color: #67c23a;">{{ teamStats.reported }}</div>
+            <div class="stat-label">已填写 · {{ focusedDateLabel }}</div>
+          </div>
+          <div class="stat-box stat-clickable" @click="openStatsDialog('unfilled')">
+            <div class="stat-num" style="color: #f56c6c;">{{ teamStats.unreported }}</div>
+            <div class="stat-label">未填写 · {{ focusedDateLabel }}</div>
+          </div>
+          <div class="stat-box"><div class="stat-num">{{ teamStats.avgHours }}h</div><div class="stat-label">{{ focusedDateLabel }} 人均</div></div>
         </div>
       </div>
     </el-card>
@@ -157,6 +163,22 @@
         <span class="legend-item"><span class="legend-dot" style="background:#36cfc9"></span>年假</span>
       </div>
     </el-card>
+
+    <!-- 已填/未填人员详情弹框 -->
+    <el-dialog v-model="statsDialogVisible" :title="statsDialogTitle" width="680px" destroy-on-close>
+      <el-table :data="statsDialogRows" border stripe size="small" max-height="500">
+        <el-table-column label="用户昵称" prop="nickName" width="110" />
+        <el-table-column label="所属机构" prop="deptName" width="180" />
+        <el-table-column label="关联项目" min-width="220">
+          <template #default="{ row }">
+            <template v-if="row.projects && row.projects.length">
+              <el-tag v-for="p in row.projects" :key="p" size="small" type="info" style="margin: 2px 2px 2px 0;">{{ p }}</el-tag>
+            </template>
+            <span v-else style="color: #c0c4cc;">—</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
 
     <!-- 抽屉（团队模式查看某天详情） -->
     <el-drawer v-model="drawerVisible" :title="drawerTitle" size="1000px">
@@ -344,6 +366,27 @@ const LEAVE_TYPE_LABEL = { leave: '请假', comp: '倒休', annual: '年假' }
 const personColorMap = {}
 let colorIndex = 0
 
+// 当前聚焦日期（驱动已填/未填统计，默认今天）
+const focusedDate = ref(todayStr)
+const statsDialogVisible = ref(false)
+const statsDialogType = ref('filled') // 'filled' | 'unfilled'
+const statsDialogRows = ref([])
+
+const focusedDateLabel = computed(() => {
+  if (focusedDate.value === todayStr) return '今日'
+  const d = new Date(focusedDate.value + 'T00:00:00')
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六']
+  return `${d.getMonth() + 1}月${d.getDate()}日(周${weekdays[d.getDay()]})`
+})
+
+const statsDialogTitle = computed(() => {
+  const label = focusedDateLabel.value
+  const count = statsDialogRows.value.length
+  return statsDialogType.value === 'filled'
+    ? `${label} 已填写日报（${count} 人）`
+    : `${label} 未填写日报（${count} 人）`
+})
+
 function getDictLabel(dictList, value) {
   return dictList?.find(d => d.value == value)?.label || value
 }
@@ -437,20 +480,18 @@ const dataByDate = computed(() => {
   return map
 })
 
-// 团队统计
+// 团队统计（基于 focusedDate，点日历格子时动态更新）
 const teamStats = computed(() => {
-  const todayData = dataByDate.value[todayStr] || []
-  const todayTotalH = todayData.reduce((s, r) => s + Number(r.totalWorkHours || 0), 0)
-  const avgH = todayData.length > 0 ? (todayTotalH / todayData.length).toFixed(1) : '0.0'
-  // 有项目筛选时：团队人数 = 本月内有该项目填报记录的不重复用户数
-  // 无筛选时：团队人数 = 数据权限范围内的全部用户数
+  const focusedData = dataByDate.value[focusedDate.value] || []
+  const focusedTotalH = focusedData.reduce((s, r) => s + Number(r.totalWorkHours || 0), 0)
+  const avgH = focusedData.length > 0 ? (focusedTotalH / focusedData.length).toFixed(1) : '0.0'
   const total = queryParams.value.projectName
     ? new Set(displayReportData.value.map(r => r.userId)).size
     : userList.value.length
   return {
     total,
-    reported: todayData.length,
-    unreported: total - todayData.length,
+    reported: focusedData.length,
+    unreported: total - focusedData.length,
     avgHours: avgH
   }
 })
@@ -589,10 +630,43 @@ function openDrawer(dateStr) {
 }
 
 function handleCellClick(dateStr) {
-  if (!queryParams.value.userId) {
-    openDrawer(dateStr)
+  focusedDate.value = dateStr
+}
+
+function openStatsDialog(type) {
+  statsDialogType.value = type
+  statsDialogRows.value = getStatsDialogRows(type)
+  statsDialogVisible.value = true
+}
+
+/**
+ * TODO(human): 将当前 focusedDate 的已填/未填数据转换为弹框展示行
+ * type: 'filled' | 'unfilled'
+ * 返回: Array<{ nickName: string, deptName: string, projects: string[] }>
+ *
+ * 提示：
+ * - 已填人员来自 dataByDate.value[focusedDate.value]，每人有 detailList
+ * - 未填人员 = userList.value 中不在已填集合里的人（按 userId 判断）
+ * - projects 字段：已填人员取当日 detailList 中的 projectName（去重），未填为 []
+ * - 只统计 work 类型条目（entryType 为空或 'work'），排除请假等
+ */
+function getStatsDialogRows(type) {
+  const filled = dataByDate.value[focusedDate.value] || []
+  if (type === 'filled') {
+    return filled.map(person => {
+      const projects = [...new Set(
+        (person.detailList || [])
+          .filter(d => !d.entryType || d.entryType === 'work')
+          .map(d => d.projectName)
+          .filter(Boolean)
+      )]
+      return { nickName: person.nickName, deptName: person.deptName, projects }
+    })
   } else {
-    openPersonDrawer(dateStr)
+    const filledIds = new Set(filled.map(r => r.userId))
+    return userList.value
+      .filter(u => !filledIds.has(u.userId))
+      .map(u => ({ nickName: u.nickName, deptName: u.deptName, projects: [] }))
   }
 }
 
@@ -672,6 +746,9 @@ function handleProjectSelect(item) {
 // MonthCalendar 事件
 function handleMonthChange({ yearMonth }) {
   currentYearMonth.value = yearMonth
+  // 切换月份时，聚焦日期重置为：当月则今天，否则该月第一天
+  const todayYM = todayStr.substring(0, 7)
+  focusedDate.value = yearMonth === todayYM ? todayStr : `${yearMonth}-01`
   loadData()
 }
 
@@ -693,6 +770,8 @@ onMounted(async () => {
 .stat-box:last-child { border-right: none; }
 .stat-num { font-size: 22px; font-weight: 700; color: #409eff; }
 .stat-label { font-size: 12px; color: #909399; margin-top: 2px; }
+.stat-clickable { cursor: pointer; border-radius: 8px; transition: background 0.15s, transform 0.1s; }
+.stat-clickable:hover { background: #f0f7ff; transform: scale(1.05); }
 
 /* 覆盖 MonthCalendar 的 td hover（活动页面用 shadow 代替 outline） */
 :deep(.mc-table td:hover:not(.mc-empty)) {

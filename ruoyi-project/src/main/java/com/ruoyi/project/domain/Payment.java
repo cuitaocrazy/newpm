@@ -8,6 +8,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+import com.ruoyi.project.utils.AmountFormatHandler;
 
 /**
  * 款项管理对象 pm_payment
@@ -30,7 +31,7 @@ public class Payment extends BaseEntity
     private String paymentMethodName;
 
     /** 付款总金额 */
-    @Excel(name = "付款金额（元）", sort = 15, cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "付款金额（元）", sort = 15, handler = AmountFormatHandler.class)
     private BigDecimal paymentAmount;
 
     /** 付款状态 */
@@ -42,7 +43,7 @@ public class Payment extends BaseEntity
     private String hasPenalty;
 
     /** 扣款金额(元) */
-    @Excel(name = "扣款金额（元）", sort = 18, cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "扣款金额（元）", sort = 18, handler = AmountFormatHandler.class)
     private BigDecimal penaltyAmount;
 
     /** 预计回款所属季度 */
@@ -87,7 +88,7 @@ public class Payment extends BaseEntity
     private String customerName;
 
     /** 合同金额（关联查询） */
-    @Excel(name = "合同金额（元）", sort = 5, cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "合同金额（元）", sort = 5, handler = AmountFormatHandler.class)
     private BigDecimal contractAmount;
 
     /** 合同签订日期（关联查询） */
@@ -96,7 +97,7 @@ public class Payment extends BaseEntity
     private Date contractSignDate;
 
     /** 免维期（关联查询） */
-    @Excel(name = "免维期（月）", sort = 7, cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "免维期（月）", sort = 7, cellType = Excel.ColumnType.NUMERIC)
     private Integer freeMaintenancePeriod;
 
     /** 部门ID（关联查询） */

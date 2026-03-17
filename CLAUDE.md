@@ -410,7 +410,7 @@ All task-specific fields (`taskCode`, `batchId`, `productionYear`, `scheduleStat
 
 ### Project Members Include All Managers
 
-`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list. **Important**: `syncProjectMembers()` manages `pm_project_member` and MUST also update `pm_project.update_by/update_time` directly.
+`projectManagerId`, `marketManagerId`, `salesManagerId`, `teamLeaderId`, and `participants` on `pm_project` are all inserted into `pm_project_member` via `syncProjectMembers()`. Sub-project members are **not** inserted — they inherit the parent project's member list. **Important**: `syncProjectMembers()` must NOT update `pm_project.update_by/update_time` — it only manages the `pm_project_member` table.
 
 ### Cross-module Permission
 

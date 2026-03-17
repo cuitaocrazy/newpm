@@ -1,14 +1,14 @@
 package com.ruoyi.project.utils;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Workbook;
 import com.ruoyi.common.utils.poi.ExcelHandlerAdapter;
 
 /**
- * 金额千分位格式化处理器（导出 Excel 用）
- * 输出格式: 1,234,567.89
+ * 金额数值格式化处理器（导出 Excel 用）
+ * 写入真实数值，单元格格式 #,##0.00（千分位，保留两位小数）
  */
 public class AmountFormatHandler implements ExcelHandlerAdapter
 {
@@ -30,8 +30,15 @@ public class AmountFormatHandler implements ExcelHandlerAdapter
             {
                 amount = new BigDecimal(value.toString());
             }
-            DecimalFormat df = new DecimalFormat("#,##0.00");
-            return df.format(amount);
+            // 写入数值
+            cell.setCellValue(amount.doubleValue());
+            // 克隆现有样式，使用 Excel 内置格式索引 4（#,##0.00），确保分类显示为"数值"而非"自定义"
+            CellStyle newStyle = wb.createCellStyle();
+            newStyle.cloneStyleFrom(cell.getCellStyle());
+            newStyle.setDataFormat((short) 4);
+            cell.setCellStyle(newStyle);
+            // 返回 null：通知 ExcelUtil 跳过 setCellValue，避免覆盖已写入的数值
+            return null;
         }
         catch (Exception e)
         {

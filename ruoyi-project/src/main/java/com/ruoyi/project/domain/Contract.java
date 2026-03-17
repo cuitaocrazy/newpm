@@ -8,6 +8,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+import com.ruoyi.project.utils.AmountFormatHandler;
 
 /**
  * 合同管理对象 pm_contract
@@ -62,7 +63,7 @@ public class Contract extends BaseEntity
     private Integer contractPeriod;
 
     /** 合同金额(含税) */
-    @Excel(name = "合同金额(含税)", cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "合同金额(含税)", handler = AmountFormatHandler.class)
     private BigDecimal contractAmount;
 
     /** 税率(%) */
@@ -70,15 +71,15 @@ public class Contract extends BaseEntity
     private BigDecimal taxRate;
 
     /** 不含税金额 */
-    @Excel(name = "不含税金额", cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "不含税金额", handler = AmountFormatHandler.class)
     private BigDecimal amountNoTax;
 
     /** 税金 */
-    @Excel(name = "税金", cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "税金", handler = AmountFormatHandler.class)
     private BigDecimal taxAmount;
 
     /** 合同确认金额 */
-    @Excel(name = "合同确认金额", cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "合同确认金额", handler = AmountFormatHandler.class)
     private BigDecimal confirmAmount;
 
     /** 确认年份 */

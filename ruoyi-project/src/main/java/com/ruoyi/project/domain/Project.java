@@ -95,11 +95,11 @@ public class Project extends BaseEntity
     private String acceptanceStatus;
 
     /** 预估工作量(人天) */
-    @Excel(name = "预估工作量(人天)", sort = 70, cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "预估工作量(人天)", sort = 70)
     private BigDecimal estimatedWorkload;
 
     /** 实际工作量(人天) */
-    @Excel(name = "实际人天", sort = 80, cellType = Excel.ColumnType.TEXT)
+    @Excel(name = "实际人天", sort = 80)
     private BigDecimal actualWorkload;
 
     /** 调整工作量(人天) */
@@ -167,7 +167,7 @@ public class Project extends BaseEntity
     private Date acceptanceDate;
 
     /** 项目预算(元) */
-    @Excel(name = "项目预算(元)", sort = 60, cellType = Excel.ColumnType.TEXT, handler = AmountFormatHandler.class)
+    @Excel(name = "项目预算(元)", sort = 60, handler = AmountFormatHandler.class)
     private BigDecimal projectBudget;
 
     /** 项目费用(元) */
@@ -328,7 +328,7 @@ public class Project extends BaseEntity
     private Date revenueConfirmDate;
 
     /** 确认金额（含税） */
-    @Excel(name = "确认金额(元)", sort = 130, cellType = Excel.ColumnType.TEXT, handler = AmountFormatHandler.class)
+    @Excel(name = "确认金额(元)", sort = 130, handler = AmountFormatHandler.class)
     private BigDecimal confirmAmount;
 
     /** 税后金额 */
@@ -342,7 +342,7 @@ public class Project extends BaseEntity
     private Date companyRevenueConfirmedTime;
 
     /** 合同金额（关联字段，非数据库字段） */
-    @Excel(name = "合同金额(元)", sort = 90, cellType = Excel.ColumnType.TEXT, handler = AmountFormatHandler.class)
+    @Excel(name = "合同金额(元)", sort = 90, handler = AmountFormatHandler.class)
     private BigDecimal contractAmount;
 
     /** 合同名称（关联字段，非数据库字段） */

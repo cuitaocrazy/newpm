@@ -1176,7 +1176,11 @@ public class ExcelUtil<T>
                 }
                 else if (!attr.handler().equals(ExcelHandlerAdapter.class))
                 {
-                    cell.setCellValue(dataFormatHandlerAdapter(value, attr, cell));
+                    String handlerResult = dataFormatHandlerAdapter(value, attr, cell);
+                    if (handlerResult != null)
+                    {
+                        cell.setCellValue(handlerResult);
+                    }
                 }
                 else
                 {
@@ -1434,7 +1438,7 @@ public class ExcelUtil<T>
         {
             log.error("不能格式化数据 " + excel.handler(), e.getMessage());
         }
-        return Convert.toStr(value);
+        return value == null ? null : Convert.toStr(value);
     }
 
     /**

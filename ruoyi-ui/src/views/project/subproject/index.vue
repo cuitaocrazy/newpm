@@ -296,7 +296,7 @@
 
 <script setup name="SubprojectIndex">
 import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { listTask, delTask } from '@/api/project/task'
 import { getUsersByPost } from '@/api/project/project'
 import { checkPermi } from '@/utils/permission'
@@ -550,6 +550,7 @@ function getList() {
 
 function handleQuery() { queryParams.pageNum = 1; getList() }
 function resetQuery() {
+  sessionStorage.removeItem(SEARCH_STATE_KEY)
   proxy.$refs['queryRef'].resetFields()
   parentProjectKeyword.value = ''
   queryParams.parentId = null
@@ -575,6 +576,28 @@ function handleSortChange({ prop, order }) {
   getList()
 }
 
+const SEARCH_STATE_KEY = 'task_search_state'
+
+function saveSearchState() {
+  const state = {
+    queryParams: { ...queryParams },
+    parentProjectKeyword: parentProjectKeyword.value,
+    queryBatchOptions: queryBatchOptions.value
+  }
+  sessionStorage.setItem(SEARCH_STATE_KEY, JSON.stringify(state))
+}
+
+function restoreSearchState() {
+  // TODO(human): 从 sessionStorage 中读取保存的搜索状态并恢复
+  // 需要恢复：queryParams 的所有字段、parentProjectKeyword.value、queryBatchOptions.value
+  // 读取成功后记得清除 sessionStorage 中的数据（避免下次无关的进入也被恢复）
+  // 如果有数据返回 true，没有返回 false
+}
+
+onBeforeRouteLeave(() => {
+  saveSearchState()
+})
+
 function handleEdit(row) {
   router.push(`/task/subproject/edit/${row.taskId}`)
 }
@@ -591,6 +614,7 @@ function handleDelete(row) {
 }
 
 onMounted(async () => {
+  restoreSearchState()
   // 加载部门树（用于部门路径显示）
   request({ url: '/project/project/deptTreeAll', method: 'get' })
     .then(res => { deptFlatList.value = res.data || [] })
