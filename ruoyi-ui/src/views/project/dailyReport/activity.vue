@@ -169,6 +169,14 @@
       <el-table :data="statsDialogRows" border stripe size="small" max-height="500">
         <el-table-column label="用户昵称" prop="nickName" width="110" />
         <el-table-column label="所属机构" prop="deptName" width="180" />
+        <el-table-column label="实际工作量（小时）" width="140" align="center">
+          <template #default="{ row }">
+            <span v-if="row.totalWorkHours != null" :style="{ color: row.totalWorkHours >= 8 ? '#67c23a' : '#e6a23c', fontWeight: 700 }">
+              {{ row.totalWorkHours }}h
+            </span>
+            <span v-else style="color: #c0c4cc;">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="关联项目" min-width="220">
           <template #default="{ row }">
             <template v-if="row.projects && row.projects.length">
@@ -660,13 +668,13 @@ function getStatsDialogRows(type) {
           .map(d => d.projectName)
           .filter(Boolean)
       )]
-      return { nickName: person.nickName, deptName: person.deptName, projects }
+      return { nickName: person.nickName, deptName: person.deptName, projects, totalWorkHours: person.totalWorkHours }
     })
   } else {
     const filledIds = new Set(filled.map(r => r.userId))
     return userList.value
       .filter(u => !filledIds.has(u.userId))
-      .map(u => ({ nickName: u.nickName, deptName: u.deptName, projects: [] }))
+      .map(u => ({ nickName: u.nickName, deptName: u.deptName, projects: [], totalWorkHours: null }))
   }
 }
 
