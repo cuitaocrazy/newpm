@@ -1,19 +1,32 @@
 package com.ruoyi.project.service.impl;
 
 import java.math.BigDecimal;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.project.domain.DailyReportDetail;
+import com.ruoyi.project.domain.WorkCalendar;
+import com.ruoyi.project.domain.vo.DailySubmissionStat;
 import com.ruoyi.project.mapper.DailyReportDetailMapper;
+import com.ruoyi.project.mapper.WorkCalendarMapper;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.project.mapper.ProjectMapper;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +58,9 @@ public class DailyReportServiceImpl implements IDailyReportService
 
     @Autowired
     private com.ruoyi.project.mapper.TaskMapper taskMapper;
+
+    @Autowired
+    private WorkCalendarMapper workCalendarMapper;
 
     /**
      * 查询工作日报
@@ -290,4 +306,173 @@ public class DailyReportServiceImpl implements IDailyReportService
     {
         return dailyReportMapper.selectActivityUsers(query);
     }
+
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public List<DailySubmissionStat> selectWeeklyStats(DailyReport query)
+    {
+        // 解析月份，获取起止日期
+        YearMonth ym = YearMonth.parse(query.getYearMonth());
+        LocalDate start = ym.atDay(1);
+        LocalDate end = ym.atEndOfMonth();
+        query.setStartDate(start.toString());
+        query.setEndDate(end.toString());
+
+        // 查询该月每天已提交人数 → Map<date, count>
+        List<Map<String, Object>> submittedRows = dailyReportMapper.selectSubmittedCountByDate(query);
+        Map<String, Integer> submittedMap = new HashMap<>();
+        for (Map<String, Object> row : submittedRows) {
+            String date = row.get("reportDate").toString();
+            int count = ((Number) row.get("submittedCount")).intValue();
+            submittedMap.put(date, count);
+        }
+
+        // 查询总用户数
+        int total = dailyReportMapper.selectTotalUserCount(query);
+
+        // 查询工作日历（按年）
+        Map<String, String> calendarMap = new HashMap<>();
+        List<WorkCalendar> calendars = workCalendarMapper.selectByYear(start.getYear());
+        // 如果跨年则追加下一年（极少发生）
+        if (start.getYear() != end.getYear()) {
+            calendars.addAll(workCalendarMapper.selectByYear(end.getYear()));
+        }
+        for (WorkCalendar wc : calendars) {
+            if (wc.getCalendarDateStr() != null) {
+                calendarMap.put(wc.getCalendarDateStr(), wc.getDayType());
+            } else if (wc.getCalendarDate() != null) {
+                String ds = new SimpleDateFormat("yyyy-MM-dd").format(wc.getCalendarDate());
+                calendarMap.put(ds, wc.getDayType());
+            }
+        }
+
+        // 星期名称（ISO: 1=周一 ... 7=周日）
+        String[] weekNames = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+
+        // 构建结果
+        List<DailySubmissionStat> result = new ArrayList<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            String dateStr = date.toString();
+            int submitted = submittedMap.getOrDefault(dateStr, 0);
+
+            boolean workday;
+            if (calendarMap.containsKey(dateStr)) {
+                workday = "workday".equals(calendarMap.get(dateStr));
+            } else {
+                DayOfWeek dow = date.getDayOfWeek();
+                workday = dow != DayOfWeek.SATURDAY && dow != DayOfWeek.SUNDAY;
+            }
+
+            DailySubmissionStat stat = new DailySubmissionStat();
+            stat.setReportDate(dateStr);
+            stat.setDayOfWeek(weekNames[date.getDayOfWeek().getValue() - 1]);
+            stat.setIsWorkday(workday);
+            stat.setSubmittedCount(submitted);
+            stat.setUnsubmittedCount(workday ? Math.max(0, total - submitted) : 0);
+            result.add(stat);
+        }
+        return result;
+    }
+
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public List<Map<String, Object>> selectSubmittedDetail(DailyReport query)
+    {
+        return dailyReportMapper.selectSubmittedUsersOnDate(query);
+    }
+
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public List<Map<String, Object>> selectUnsubmittedDetail(DailyReport query)
+    {
+        return dailyReportMapper.selectUnsubmittedUsersOnDate(query);
+    }
+
+    @Override
+    public void exportWeeklyStats(HttpServletResponse response, List<DailySubmissionStat> statList, DailyReport query)
+    {
+        try (XSSFWorkbook wb = new XSSFWorkbook()) {
+            // Sheet1：汇总表
+            Sheet sheet1 = wb.createSheet("汇总");
+            String[] headers1 = {"日期", "星期", "是否工作日", "已提交人数", "未提交人数"};
+            Row h1 = sheet1.createRow(0);
+            for (int i = 0; i < headers1.length; i++) h1.createCell(i).setCellValue(headers1[i]);
+            int r1 = 1;
+            for (DailySubmissionStat s : statList) {
+                Row row = sheet1.createRow(r1++);
+                row.createCell(0).setCellValue(s.getReportDate());
+                row.createCell(1).setCellValue(s.getDayOfWeek());
+                row.createCell(2).setCellValue(Boolean.TRUE.equals(s.getIsWorkday()) ? "是" : "否");
+                row.createCell(3).setCellValue(s.getSubmittedCount() != null ? s.getSubmittedCount() : 0);
+                row.createCell(4).setCellValue(s.getUnsubmittedCount() != null ? s.getUnsubmittedCount() : 0);
+            }
+
+            // Sheet2：明细表
+            Sheet sheet2 = wb.createSheet("明细");
+            String[] headers2 = {"日期", "姓名", "部门", "提交状态", "工时合计"};
+            Row h2 = sheet2.createRow(0);
+            for (int i = 0; i < headers2.length; i++) h2.createCell(i).setCellValue(headers2[i]);
+            int r2 = 1;
+            for (DailySubmissionStat s : statList) {
+                if (!Boolean.TRUE.equals(s.getIsWorkday())) continue;
+                DailyReport detailQuery = new DailyReport();
+                detailQuery.setReportDate(null); // 使用 String reportDate
+                detailQuery.setStartDate(s.getReportDate());
+                detailQuery.setEndDate(s.getReportDate());
+                detailQuery.setDeptId(query.getDeptId());
+                // 传递 dataScope：复用 query 的 params
+                detailQuery.setParams(query.getParams());
+
+                // 通过 selectSubmittedUsersOnDate 和 selectUnsubmittedUsersOnDate 查明细
+                DailyReport singleQuery = new DailyReport();
+                singleQuery.setDeptId(query.getDeptId());
+                singleQuery.setParams(query.getParams());
+
+                // 已提交人员：借 Map 传 reportDate 字符串（XML 用 #{reportDate}）
+                singleQuery.getParams().put("reportDateStr", s.getReportDate());
+
+                List<Map<String, Object>> submitted = dailyReportMapper.selectSubmittedUsersOnDate(buildDetailQuery(query, s.getReportDate()));
+                for (Map<String, Object> p : submitted) {
+                    Row row = sheet2.createRow(r2++);
+                    row.createCell(0).setCellValue(s.getReportDate());
+                    row.createCell(1).setCellValue(str(p.get("nickName")));
+                    row.createCell(2).setCellValue(str(p.get("deptName")));
+                    row.createCell(3).setCellValue("已提交");
+                    Object h = p.get("totalWorkHours");
+                    row.createCell(4).setCellValue(h != null ? h.toString() : "0");
+                }
+                List<Map<String, Object>> unsubmitted = dailyReportMapper.selectUnsubmittedUsersOnDate(buildDetailQuery(query, s.getReportDate()));
+                for (Map<String, Object> p : unsubmitted) {
+                    Row row = sheet2.createRow(r2++);
+                    row.createCell(0).setCellValue(s.getReportDate());
+                    row.createCell(1).setCellValue(str(p.get("nickName")));
+                    row.createCell(2).setCellValue(str(p.get("deptName")));
+                    row.createCell(3).setCellValue("未提交");
+                    row.createCell(4).setCellValue("");
+                }
+            }
+
+            String filename = URLEncoder.encode("日报统计报表_" + query.getYearMonth() + ".xlsx", "UTF-8");
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+            wb.write(response.getOutputStream());
+        } catch (Exception e) {
+            throw new ServiceException("导出失败：" + e.getMessage());
+        }
+    }
+
+    private DailyReport buildDetailQuery(DailyReport base, String reportDateStr) {
+        DailyReport q = new DailyReport();
+        q.setDeptId(base.getDeptId());
+        q.setParams(base.getParams());
+        // XML 中用 #{reportDate}，DailyReport.reportDate 是 Date 类型
+        // 通过 params Map 绕过类型转换，在 XML 中改为 #{params.reportDateStr}
+        // 但现有 XML 用 #{reportDate}，故直接用 java.sql.Date 包装
+        try {
+            q.setReportDate(new java.text.SimpleDateFormat("yyyy-MM-dd").parse(reportDateStr));
+        } catch (Exception ignored) {}
+        return q;
+    }
+
+    private String str(Object o) { return o != null ? o.toString() : ""; }
 }

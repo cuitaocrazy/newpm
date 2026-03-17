@@ -2,7 +2,9 @@ package com.ruoyi.project.service;
 
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.project.domain.DailyReport;
+import com.ruoyi.project.domain.vo.DailySubmissionStat;
 /**
  * 工作日报Service接口
  *
@@ -73,4 +75,27 @@ public interface IDailyReportService
      * @return 用户列表
      */
     public List<Map<String, Object>> selectActivityUsers(DailyReport query);
+
+    /**
+     * 查询某月每天日报提交统计（已提交/未提交人数）
+     * @param query 查询条件（yearMonth 必填，deptId 可选）
+     */
+    List<DailySubmissionStat> selectWeeklyStats(DailyReport query);
+
+    /**
+     * 查询某天已提交人员明细（含工时和工作内容摘要）
+     * @param query 查询条件（reportDate 必填，deptId 可选）
+     */
+    List<Map<String, Object>> selectSubmittedDetail(DailyReport query);
+
+    /**
+     * 查询某天未提交人员明细
+     * @param query 查询条件（reportDate 必填，deptId 可选）
+     */
+    List<Map<String, Object>> selectUnsubmittedDetail(DailyReport query);
+
+    /**
+     * 导出日报统计报表为 Excel（双 Sheet）
+     */
+    void exportWeeklyStats(HttpServletResponse response, List<DailySubmissionStat> statList, DailyReport query);
 }

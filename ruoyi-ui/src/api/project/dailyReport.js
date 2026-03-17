@@ -94,3 +94,31 @@ export function getProjectNameSuggestions(keyword) {
     params: { keyword }
   })
 }
+
+// 日报统计报表 - 按天汇总（按月）
+export function getWeeklyStats(query) {
+  return request({
+    url: '/project/dailyReport/weeklyStats',
+    method: 'get',
+    params: query
+  })
+}
+
+// 日报统计报表 - 人员明细
+export function getWeeklyStatsDetail(query) {
+  return request({
+    url: '/project/dailyReport/weeklyStatsDetail',
+    method: 'get',
+    params: query
+  })
+}
+
+// 日报统计报表 - Excel 导出
+export function exportWeeklyStats(query) {
+  return request({
+    url: '/project/dailyReport/weeklyStatsExport',
+    method: 'get',
+    params: query,
+    responseType: 'blob'
+  })
+}

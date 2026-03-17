@@ -2,6 +2,7 @@ package com.ruoyi.project.controller;
 
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.project.domain.DailyReport;
+import com.ruoyi.project.domain.vo.DailySubmissionStat;
 import com.ruoyi.project.service.IDailyReportService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -117,5 +119,44 @@ public class DailyReportController extends BaseController
     {
         List<Map<String, Object>> list = dailyReportService.selectActivityUsers(dailyReport);
         return success(list);
+    }
+
+    /**
+     * 日报统计报表 - 按天汇总
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")
+    @GetMapping("/weeklyStats")
+    public AjaxResult weeklyStats(DailyReport dailyReport)
+    {
+        List<DailySubmissionStat> list = dailyReportService.selectWeeklyStats(dailyReport);
+        return success(list);
+    }
+
+    /**
+     * 日报统计报表 - 人员明细
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")
+    @GetMapping("/weeklyStatsDetail")
+    public AjaxResult weeklyStatsDetail(DailyReport dailyReport)
+    {
+        List<Map<String, Object>> list;
+        if ("submitted".equals(dailyReport.getType())) {
+            list = dailyReportService.selectSubmittedDetail(dailyReport);
+        } else {
+            list = dailyReportService.selectUnsubmittedDetail(dailyReport);
+        }
+        return success(list);
+    }
+
+    /**
+     * 日报统计报表 - Excel 导出（双 Sheet）
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStatsExport')")
+    @Log(title = "日报统计报表", businessType = BusinessType.EXPORT)
+    @GetMapping("/weeklyStatsExport")
+    public void weeklyStatsExport(HttpServletResponse response, DailyReport dailyReport)
+    {
+        List<DailySubmissionStat> statList = dailyReportService.selectWeeklyStats(dailyReport);
+        dailyReportService.exportWeeklyStats(response, statList, dailyReport);
     }
 }
