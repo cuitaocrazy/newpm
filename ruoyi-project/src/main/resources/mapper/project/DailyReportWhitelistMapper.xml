@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.DailyReportWhitelistMapper">
+
+    <resultMap type="com.ruoyi.project.domain.DailyReportWhitelist" id="WhitelistResult">
+        <id     property="id"          column="id"          />
+        <result property="userId"      column="user_id"     />
+        <result property="reason"      column="reason"      />
+        <result property="delFlag"     column="del_flag"    />
+        <result property="createBy"    column="create_by"   />
+        <result property="createTime"  column="create_time" />
+        <result property="nickName"    column="nick_name"   />
+        <result property="deptName"    column="dept_name"   />
+    </resultMap>
+
+    <select id="selectWhitelistPage" parameterType="com.ruoyi.project.domain.DailyReportWhitelist"
+            resultMap="WhitelistResult">
+        SELECT w.id, w.user_id, w.reason, w.del_flag,
+               w.create_by, w.create_time,
+               u.nick_name, d.dept_name
+        FROM pm_daily_report_whitelist w
+        INNER JOIN sys_user u ON w.user_id = u.user_id
+        LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+        WHERE w.del_flag = '0'
+        <if test="keyword != null and keyword != ''">
+            AND (u.nick_name LIKE CONCAT('%', #{keyword}, '%')
+              OR d.dept_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY w.create_time DESC
+    </select>
+
+    <select id="countByUserId" parameterType="Long" resultType="int">
+        SELECT COUNT(*) FROM pm_daily_report_whitelist
+        WHERE user_id = #{userId} AND del_flag = '0'
+    </select>
+
+    <select id="checkSelfInWhitelist" parameterType="Long" resultType="int">
+        SELECT COUNT(*) FROM pm_daily_report_whitelist
+        WHERE user_id = #{userId} AND del_flag = '0'
+    </select>
+
+    <insert id="insertWhitelist" parameterType="com.ruoyi.project.domain.DailyReportWhitelist"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO pm_daily_report_whitelist
+            (user_id, reason, del_flag, create_by, create_time, update_by, update_time)
+        VALUES
+            (#{userId}, #{reason}, '0', #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
+    </insert>
+
+    <update id="deleteWhitelistById" parameterType="Long">
+        UPDATE pm_daily_report_whitelist
+        SET del_flag = '1', update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
