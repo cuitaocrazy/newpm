@@ -18,16 +18,16 @@
 
 **⚠️ CRITICAL**：本阶段完成前任何用户故事不可开始实现
 
-- [ ] T001 检查并补全 `DailyReport.java` 的查询参数字段（`yearMonth`、`startDate`、`endDate`、`reportDate`、`type` 均需存在；文件路径 `ruoyi-project/src/main/java/com/ruoyi/project/domain/DailyReport.java`）
-- [ ] T002 新建 VO 类 `ruoyi-project/src/main/java/com/ruoyi/project/domain/vo/DailySubmissionStat.java`（字段：`reportDate`/`dayOfWeek`/`isWorkday`/`submittedCount`/`unsubmittedCount`，均有 getter/setter）
-- [ ] T003 在 `ruoyi-project/src/main/java/com/ruoyi/project/mapper/DailyReportMapper.java` 接口末尾新增 4 个方法：`selectSubmittedCountByDate(DailyReport)`、`selectTotalUserCount(DailyReport)`、`selectSubmittedUsersOnDate(DailyReport)`、`selectUnsubmittedUsersOnDate(DailyReport)`
-- [ ] T004 在 `ruoyi-project/src/main/resources/mapper/project/DailyReportMapper.xml` 末尾（`</mapper>` 之前）追加 4 条 SQL（按 plan.md Task 3 中的完整 SQL 编写）：
+- [x] T001 检查并补全 `DailyReport.java` 的查询参数字段（`yearMonth`、`startDate`、`endDate`、`reportDate`、`type` 均需存在；文件路径 `ruoyi-project/src/main/java/com/ruoyi/project/domain/DailyReport.java`）
+- [x] T002 新建 VO 类 `ruoyi-project/src/main/java/com/ruoyi/project/domain/vo/DailySubmissionStat.java`（字段：`reportDate`/`dayOfWeek`/`isWorkday`/`submittedCount`/`unsubmittedCount`，均有 getter/setter）
+- [x] T003 在 `ruoyi-project/src/main/java/com/ruoyi/project/mapper/DailyReportMapper.java` 接口末尾新增 4 个方法：`selectSubmittedCountByDate(DailyReport)`、`selectTotalUserCount(DailyReport)`、`selectSubmittedUsersOnDate(DailyReport)`、`selectUnsubmittedUsersOnDate(DailyReport)`
+- [x] T004 在 `ruoyi-project/src/main/resources/mapper/project/DailyReportMapper.xml` 末尾（`</mapper>` 之前）追加 4 条 SQL（按 plan.md Task 3 中的完整 SQL 编写）：
   - `selectSubmittedCountByDate`：JOIN sys_user/sys_dept，`BETWEEN #{startDate} AND #{endDate}`，可选 deptId 过滤 + `${params.dataScope}`
   - `selectTotalUserCount`：COUNT(*)，可选 deptId 过滤 + `${params.dataScope}`，**且必须加白名单排除**：`AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')`
   - `selectSubmittedUsersOnDate`：GROUP_CONCAT 工作内容摘要 LEFT 50 字，可选 deptId 过滤 + `${params.dataScope}`
   - `selectUnsubmittedUsersOnDate`：NOT IN 子查询排除已提交，可选 deptId 过滤 + `${params.dataScope}`，**且必须加白名单排除**：`AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')`
-- [ ] T005 编译验证：`mvn clean compile -pl ruoyi-project -am`
-- [ ] T006 提交基础层：`git add ruoyi-project/src/main/java/com/ruoyi/project/domain/ ruoyi-project/src/main/java/com/ruoyi/project/mapper/DailyReportMapper.java ruoyi-project/src/main/resources/mapper/project/DailyReportMapper.xml && git commit -m "feat: 日报统计报表 VO、Mapper 方法和 SQL（含白名单排除）"`
+- [x] T005 编译验证：`mvn clean compile -pl ruoyi-project -am`
+- [x] T006 提交基础层：`git add ruoyi-project/src/main/java/com/ruoyi/project/domain/ ruoyi-project/src/main/java/com/ruoyi/project/mapper/DailyReportMapper.java ruoyi-project/src/main/resources/mapper/project/DailyReportMapper.xml && git commit -m "feat: 日报统计报表 VO、Mapper 方法和 SQL（含白名单排除）"`
 
 **Checkpoint**：后端 Mapper 层就绪，各用户故事可并行开发
 
@@ -41,14 +41,14 @@
 
 ### US1 实现
 
-- [ ] T007 [US1] 在 `ruoyi-project/src/main/java/com/ruoyi/project/service/IDailyReportService.java` 末尾追加方法签名：`List<DailySubmissionStat> selectWeeklyStats(DailyReport query)`
-- [ ] T008 [US1] 在 `ruoyi-project/src/main/java/com/ruoyi/project/service/impl/DailyReportServiceImpl.java` 实现 `selectWeeklyStats`（按 plan.md Task 4 步骤：解析 yearMonth → 起止日期；调 `selectSubmittedCountByDate` → Map；调 `selectTotalUserCount` → total；通过 `workCalendarMapper`（autowire）查 `pm_work_calendar` 构建 calendarMap；遍历日期范围填充 DailySubmissionStat 列表；`@DataScope(deptAlias="d", userAlias="u")`）
-- [ ] T009 [US1] 在 `ruoyi-project/src/main/java/com/ruoyi/project/controller/DailyReportController.java` 追加 `weeklyStats` 端点（`@GetMapping("/weeklyStats")`，`@PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")`，返回 `success(list)`）
-- [ ] T010 [P] [US1] 在 `ruoyi-ui/src/api/project/dailyReport.js` 末尾追加 `getWeeklyStats(query)` 函数（GET `/project/dailyReport/weeklyStats`）
-- [ ] T011 [US1] 新建 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`（查询栏：仅月份 `<el-date-picker type="month">`；表格：按周分组（每周一个 `el-table` 或统一表格 + 分组行），列：日期、星期、已提交人数、未提交人数；非工作日行加 CSS 类 `.non-workday` 灰色背景；默认加载当月数据；**本阶段无部门筛选、无明细弹框、无导出、无周选择器**）
-- [ ] T012 [US1] 在 `pm-sql/init/02_menu_data.sql` 日报管理菜单段末尾追加日报统计报表菜单 SQL（按 plan.md Task 9：菜单 + 查询权限按钮 + 导出权限按钮；用子查询 `SELECT menu_id FROM sys_menu WHERE menu_name='日报管理' AND parent_id=0` 获取父菜单 ID）；同时创建 `pm-sql/fix_weekly_stats_menu_20260317.sql`（独立完整 SQL，gitignored，供已部署环境执行）
-- [ ] T013 [US1] 编译验证：`mvn clean compile -pl ruoyi-project -am`；将 fix SQL 在本地 Docker MySQL 执行建菜单：`cat pm-sql/fix_weekly_stats_menu_20260317.sql | docker exec -i 3523a41063b7 mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue`
-- [ ] T014 [US1] 提交 US1：`git add ruoyi-project/src/main/java/com/ruoyi/project/service/ ruoyi-project/src/main/java/com/ruoyi/project/controller/DailyReportController.java ruoyi-ui/src/api/project/dailyReport.js ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue pm-sql/init/02_menu_data.sql && git commit -m "feat: 日报统计报表 US1 — 月度统计总览"`
+- [x] T007 [US1] 在 `ruoyi-project/src/main/java/com/ruoyi/project/service/IDailyReportService.java` 末尾追加方法签名：`List<DailySubmissionStat> selectWeeklyStats(DailyReport query)`
+- [x] T008 [US1] 在 `ruoyi-project/src/main/java/com/ruoyi/project/service/impl/DailyReportServiceImpl.java` 实现 `selectWeeklyStats`（按 plan.md Task 4 步骤：解析 yearMonth → 起止日期；调 `selectSubmittedCountByDate` → Map；调 `selectTotalUserCount` → total；通过 `workCalendarMapper`（autowire）查 `pm_work_calendar` 构建 calendarMap；遍历日期范围填充 DailySubmissionStat 列表；`@DataScope(deptAlias="d", userAlias="u")`）
+- [x] T009 [US1] 在 `ruoyi-project/src/main/java/com/ruoyi/project/controller/DailyReportController.java` 追加 `weeklyStats` 端点（`@GetMapping("/weeklyStats")`，`@PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")`，返回 `success(list)`）
+- [x] T010 [P] [US1] 在 `ruoyi-ui/src/api/project/dailyReport.js` 末尾追加 `getWeeklyStats(query)` 函数（GET `/project/dailyReport/weeklyStats`）
+- [x] T011 [US1] 新建 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`（查询栏：仅月份 `<el-date-picker type="month">`；表格：按周分组（每周一个 `el-table` 或统一表格 + 分组行），列：日期、星期、已提交人数、未提交人数；非工作日行加 CSS 类 `.non-workday` 灰色背景；默认加载当月数据；**本阶段无部门筛选、无明细弹框、无导出、无周选择器**）
+- [x] T012 [US1] 在 `pm-sql/init/02_menu_data.sql` 日报管理菜单段末尾追加日报统计报表菜单 SQL（按 plan.md Task 9：菜单 + 查询权限按钮 + 导出权限按钮；用子查询 `SELECT menu_id FROM sys_menu WHERE menu_name='日报管理' AND parent_id=0` 获取父菜单 ID）；同时创建 `pm-sql/fix_weekly_stats_menu_20260317.sql`（独立完整 SQL，gitignored，供已部署环境执行）
+- [x] T013 [US1] 编译验证：`mvn clean compile -pl ruoyi-project -am`；将 fix SQL 在本地 Docker MySQL 执行建菜单：`cat pm-sql/fix_weekly_stats_menu_20260317.sql | docker exec -i 3523a41063b7 mysql -u root -ppassword --default-character-set=utf8mb4 ry-vue`
+- [x] T014 [US1] 提交 US1：`git add ruoyi-project/src/main/java/com/ruoyi/project/service/ ruoyi-project/src/main/java/com/ruoyi/project/controller/DailyReportController.java ruoyi-ui/src/api/project/dailyReport.js ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue pm-sql/init/02_menu_data.sql && git commit -m "feat: 日报统计报表 US1 — 月度统计总览"`
 
 **Checkpoint**：管理员可查看月度统计，US1 独立可验证
 
@@ -62,8 +62,8 @@
 
 ### US2 实现
 
-- [ ] T015 [US2] 修改 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`：查询栏新增 `<project-dept-select>` 组件绑定 `queryParams.deptId`；`handleQuery` 时将 `deptId` 带入请求参数
-- [ ] T016 [US2] 提交 US2：`git add ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue && git commit -m "feat: 日报统计报表 US2 — 部门筛选"`
+- [x] T015 [US2] 修改 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`：查询栏新增 `<project-dept-select>` 组件绑定 `queryParams.deptId`；`handleQuery` 时将 `deptId` 带入请求参数
+- [x] T016 [US2] 提交 US2：`git add ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue && git commit -m "feat: 日报统计报表 US2 — 部门筛选"`
 
 **Checkpoint**：部门筛选生效，US2 独立可验证
 
@@ -77,12 +77,12 @@
 
 ### US3 实现
 
-- [ ] T017 [P] [US3] 在 `IDailyReportService.java` 追加 `selectSubmittedDetail(DailyReport)` 和 `selectUnsubmittedDetail(DailyReport)` 方法签名
-- [ ] T018 [P] [US3] 在 `DailyReportServiceImpl.java` 实现两个 detail 方法（`@DataScope`；分别调 `selectSubmittedUsersOnDate` 和 `selectUnsubmittedUsersOnDate`）
-- [ ] T019 [US3] 在 `DailyReportController.java` 追加 `weeklyStatsDetail` 端点（`@GetMapping("/weeklyStatsDetail")`，`@PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")`；根据 `dailyReport.getType()` 分发调 submitted/unsubmitted detail）
-- [ ] T020 [P] [US3] 在 `ruoyi-ui/src/api/project/dailyReport.js` 追加 `getWeeklyStatsDetail(query)` 函数
-- [ ] T021 [US3] 修改 `weeklyStats.vue`：已提交/未提交人数在 >0 时改为 `<el-button link>` 可点击；点击调 `getWeeklyStatsDetail`；新增 `<el-dialog>` 展示明细表（已提交列：姓名/部门/工时/工作内容摘要；未提交列：姓名/部门）
-- [ ] T022 [US3] 编译验证 + 提交：`mvn clean compile -pl ruoyi-project -am && git add ... && git commit -m "feat: 日报统计报表 US3 — 人员明细弹框"`
+- [x] T017 [P] [US3] 在 `IDailyReportService.java` 追加 `selectSubmittedDetail(DailyReport)` 和 `selectUnsubmittedDetail(DailyReport)` 方法签名
+- [x] T018 [P] [US3] 在 `DailyReportServiceImpl.java` 实现两个 detail 方法（`@DataScope`；分别调 `selectSubmittedUsersOnDate` 和 `selectUnsubmittedUsersOnDate`）
+- [x] T019 [US3] 在 `DailyReportController.java` 追加 `weeklyStatsDetail` 端点（`@GetMapping("/weeklyStatsDetail")`，`@PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")`；根据 `dailyReport.getType()` 分发调 submitted/unsubmitted detail）
+- [x] T020 [P] [US3] 在 `ruoyi-ui/src/api/project/dailyReport.js` 追加 `getWeeklyStatsDetail(query)` 函数
+- [x] T021 [US3] 修改 `weeklyStats.vue`：已提交/未提交人数在 >0 时改为 `<el-button link>` 可点击；点击调 `getWeeklyStatsDetail`；新增 `<el-dialog>` 展示明细表（已提交列：姓名/部门/工时/工作内容摘要；未提交列：姓名/部门）
+- [x] T022 [US3] 编译验证 + 提交：`mvn clean compile -pl ruoyi-project -am && git add ... && git commit -m "feat: 日报统计报表 US3 — 人员明细弹框"`
 
 **Checkpoint**：明细弹框可用，US3 独立可验证
 
@@ -96,12 +96,12 @@
 
 ### US4 实现
 
-- [ ] T023 [P] [US4] 在 `IDailyReportService.java` 追加 `exportWeeklyStats(HttpServletResponse, List<DailySubmissionStat>, DailyReport)` 方法签名
-- [ ] T024 [US4] 在 `DailyReportServiceImpl.java` 实现 `exportWeeklyStats`（使用 Apache POI `XSSFWorkbook`：Sheet1 写 statList 汇总数据；Sheet2 遍历每天调 selectSubmittedDetail/selectUnsubmittedDetail 填写明细行；设置 response Content-Type 和 Content-Disposition；按 plan.md Task 6 完整实现）
-- [ ] T025 [US4] 在 `DailyReportController.java` 追加 `weeklyStatsExport` 端点（`@GetMapping("/weeklyStatsExport")`，`@PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStatsExport')")`，`@Log(title="日报统计报表", businessType=BusinessType.EXPORT)`，调 `exportWeeklyStats`）
-- [ ] T026 [P] [US4] 在 `ruoyi-ui/src/api/project/dailyReport.js` 追加 `exportWeeklyStats(query)` 函数（`responseType: 'blob'`）
-- [ ] T027 [US4] 修改 `weeklyStats.vue`：查询栏右侧新增"导出 Excel"按钮，点击调 `exportWeeklyStats` 并触发浏览器下载（使用 `URL.createObjectURL` + `<a>` 标签模拟下载）
-- [ ] T028 [US4] 编译验证 + 提交：`mvn clean compile -pl ruoyi-project -am && git add ... && git commit -m "feat: 日报统计报表 US4 — Excel 双Sheet导出"`
+- [x] T023 [P] [US4] 在 `IDailyReportService.java` 追加 `exportWeeklyStats(HttpServletResponse, List<DailySubmissionStat>, DailyReport)` 方法签名
+- [x] T024 [US4] 在 `DailyReportServiceImpl.java` 实现 `exportWeeklyStats`（使用 Apache POI `XSSFWorkbook`：Sheet1 写 statList 汇总数据；Sheet2 遍历每天调 selectSubmittedDetail/selectUnsubmittedDetail 填写明细行；设置 response Content-Type 和 Content-Disposition；按 plan.md Task 6 完整实现）
+- [x] T025 [US4] 在 `DailyReportController.java` 追加 `weeklyStatsExport` 端点（`@GetMapping("/weeklyStatsExport")`，`@PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStatsExport')")`，`@Log(title="日报统计报表", businessType=BusinessType.EXPORT)`，调 `exportWeeklyStats`）
+- [x] T026 [P] [US4] 在 `ruoyi-ui/src/api/project/dailyReport.js` 追加 `exportWeeklyStats(query)` 函数（`responseType: 'blob'`）
+- [x] T027 [US4] 修改 `weeklyStats.vue`：查询栏右侧新增"导出 Excel"按钮，点击调 `exportWeeklyStats` 并触发浏览器下载（使用 `URL.createObjectURL` + `<a>` 标签模拟下载）
+- [x] T028 [US4] 编译验证 + 提交：`mvn clean compile -pl ruoyi-project -am && git add ... && git commit -m "feat: 日报统计报表 US4 — Excel 双Sheet导出"`
 
 **Checkpoint**：导出功能可用，US4 独立可验证
 
@@ -115,8 +115,8 @@
 
 ### US5 实现
 
-- [ ] T029 [US5] 修改 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`：新增 `computeWeekOptions(yearMonth)` 函数（按 plan.md Task 8 逻辑：用 dayjs 遍历月份，生成 `{label, value, startDate, endDate}` 数组，label 格式"第N周（MM-DD～MM-DD）"）；查询栏月份后新增周次下拉（`el-select`，选项含"全部"）；筛选逻辑：前端对后端返回的 statList 按选中周的 `startDate`/`endDate` 过滤展示（无需重新请求后端）；切换月份时重置周选为"全部"并重新请求
-- [ ] T030 [US5] 提交 US5：`git add ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue && git commit -m "feat: 日报统计报表 US5 — 周次快速筛选"`
+- [x] T029 [US5] 修改 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`：新增 `computeWeekOptions(yearMonth)` 函数（按 plan.md Task 8 逻辑：用 dayjs 遍历月份，生成 `{label, value, startDate, endDate}` 数组，label 格式"第N周（MM-DD～MM-DD）"）；查询栏月份后新增周次下拉（`el-select`，选项含"全部"）；筛选逻辑：前端对后端返回的 statList 按选中周的 `startDate`/`endDate` 过滤展示（无需重新请求后端）；切换月份时重置周选为"全部"并重新请求
+- [x] T030 [US5] 提交 US5：`git add ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue && git commit -m "feat: 日报统计报表 US5 — 周次快速筛选"`
 
 **Checkpoint**：周选择器可用，US5 独立可验证
 
@@ -126,8 +126,8 @@
 
 **目的**：端到端验证所有用户故事，构建打包，推送分支
 
-- [ ] T031 后端完整打包：`mvn clean package -pl ruoyi-admin -am -Dmaven.test.skip=true`
-- [ ] T032 [P] 验证菜单 SQL 已在本地 Docker MySQL 执行（检查"日报管理"下是否出现"日报统计报表"子菜单）：`docker exec -i 3523a41063b7 mysql -u root -ppassword ry-vue -e "SELECT menu_name FROM sys_menu WHERE menu_name='日报统计报表';" 2>/dev/null | grep -v Warning`
+- [x] T031 后端完整打包：`mvn clean package -pl ruoyi-admin -am -Dmaven.test.skip=true`
+- [x] T032 [P] 验证菜单 SQL 已在本地 Docker MySQL 执行（检查"日报管理"下是否出现"日报统计报表"子菜单）：`docker exec -i 3523a41063b7 mysql -u root -ppassword ry-vue -e "SELECT menu_name FROM sys_menu WHERE menu_name='日报统计报表';" 2>/dev/null | grep -v Warning`
 - [ ] T033 端到端验证 US1：启动后端，访问日报统计报表页面，切换月份验证数据刷新
 - [ ] T034 端到端验证 US3：点击已提交/未提交人数弹出明细，人数与弹框行数一致
 - [ ] T035 端到端验证 US4：点击导出，验证 xlsx 双 Sheet 数据正确
