@@ -53,7 +53,7 @@ public class Task extends BaseEntity
     private BigDecimal taskBudget;
 
     /** 预估工作量(人天) */
-    @Excel(name = "预估工作量(人天)")
+    @Excel(name = "预估工作量(人天)", handler = AmountFormatHandler.class, args = {"id:1"})
     private BigDecimal estimatedWorkload;
 
     /** 实际工作量(小时，日报汇总，只读) */

@@ -588,10 +588,18 @@ function saveSearchState() {
 }
 
 function restoreSearchState() {
-  // TODO(human): 从 sessionStorage 中读取保存的搜索状态并恢复
-  // 需要恢复：queryParams 的所有字段、parentProjectKeyword.value、queryBatchOptions.value
-  // 读取成功后记得清除 sessionStorage 中的数据（避免下次无关的进入也被恢复）
-  // 如果有数据返回 true，没有返回 false
+  try {
+    const raw = sessionStorage.getItem(SEARCH_STATE_KEY)
+    if (!raw) return false
+    const state = JSON.parse(raw)
+    Object.assign(queryParams, state.queryParams)
+    parentProjectKeyword.value = state.parentProjectKeyword || ''
+    queryBatchOptions.value = state.queryBatchOptions || []
+    sessionStorage.removeItem(SEARCH_STATE_KEY)
+    return true
+  } catch {
+    return false
+  }
 }
 
 onBeforeRouteLeave(() => {

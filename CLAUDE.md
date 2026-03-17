@@ -159,7 +159,7 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 
 | Controller | URL Prefix | Purpose |
 |---|---|---|
-| `ProjectController` | `/project/project/**` | Project CRUD + proxy endpoints |
+| `ProjectController` | `/project/project/**` | Project CRUD + proxy endpoints. Extra: `GET /summary` (aggregation), `GET /checkCode`, `GET /listByDept`, `GET /listByName`, `GET /{id}/participantsWorkload`, `POST /{id}/bindContract`, `DELETE /{id}/unbindContract` (perm: `project:contract:unbind`). Print 立项申请书 is frontend-only (`project:project:print`). |
 | `ProjectApprovalController` | `/project/approval/**` | Approval workflow |
 | `ContractController` | `/project/contract/**` | Contract management |
 | `PaymentController` | `/project/payment/**` | Payment management. Extra: `GET /listWithContracts` (contracts+payments grouped), `GET /sumPaymentAmount` (total), `GET /checkAttachments/{id}` |
@@ -170,10 +170,10 @@ Full details in `docs/pm/PM需求.md`. Key notes:
 | `ProjectStageChangeController` | `/project/projectStageChange/**` | Stage change records |
 | `SecondaryRegionController` | `/project/secondaryRegion/**` | Secondary regions |
 | `WorkCalendarController` | `/project/workCalendar/**` | Work calendar |
-| `DailyReportController` | `/project/dailyReport/**` | Daily reports |
+| `DailyReportController` | `/project/dailyReport/**` | Daily reports. Extra: `GET /monthly` (month summary), `GET /activityUsers` (已填写/未填写人员统计) |
 | `ProjectStatsController` | `/project/dailyReport/**` | Stats (shares prefix; `/projectStats`, `/projectNameSuggestions`, `POST /projectStats/{id}/correct`, `GET /projectStats/{id}/correctLog`) |
 | `ProjectReviewController` | `/project/review/**` | Company revenue view |
-| `TaskController` | `/project/task/**` | Task CRUD (reads `pm_project LEFT JOIN pm_task`). Extra: `GET /options?projectId=` (lightweight for daily report dropdown), `GET /projectsHasTasks` (batch check which projects have tasks) |
+| `TaskController` | `/project/task/**` | Task CRUD (reads `pm_project LEFT JOIN pm_task`). Extra: `GET /options?projectId=` (lightweight for daily report dropdown), `GET /projectsHasTasks` (batch check which projects have tasks), `GET /summary` (aggregation row for list page), `GET /searchTaskCode|searchTaskName|searchSoftwareDemandNo` (autocomplete suggestions) |
 | `ProductionBatchController` | `/project/productionBatch/**` | 投产批次 CRUD |
 | `TeamRevenueConfirmationController` | `/revenue/team/**` | Team revenue (different root) |
 
@@ -295,6 +295,53 @@ function handleSortChange({ prop, order }) {
   handleQuery()
 }
 ```
+
+### Search State Caching Pattern
+
+Used to preserve query conditions when navigating to detail/edit pages and returning. Uses `sessionStorage` (tab-scoped, not persistent across refreshes) with `onBeforeRouteLeave` to save and `onMounted` to restore. Use raw `sessionStorage` directly — `src/plugins/cache.ts` exports `cache.session.setJSON`/`getJSON`/`remove` as a cleaner wrapper.
+
+```typescript
+import { onBeforeRouteLeave } from 'vue-router'
+
+const SEARCH_STATE_KEY = 'xxx_search_state'  // unique per list page
+
+function saveSearchState() {
+  sessionStorage.setItem(SEARCH_STATE_KEY, JSON.stringify({
+    queryParams: { ...queryParams },
+    someKeyword: someKeyword.value,         // any extra display-only refs
+    asyncDropdownOptions: options.value     // cache async-loaded dropdown data too
+  }))
+}
+
+function restoreSearchState(): boolean {
+  try {
+    const raw = sessionStorage.getItem(SEARCH_STATE_KEY)
+    if (!raw) return false
+    const state = JSON.parse(raw)
+    Object.assign(queryParams, state.queryParams)
+    someKeyword.value = state.someKeyword || ''
+    options.value = state.asyncDropdownOptions || []
+    sessionStorage.removeItem(SEARCH_STATE_KEY)  // one-time consume
+    return true
+  } catch { return false }
+}
+
+onBeforeRouteLeave(() => saveSearchState())
+
+onMounted(() => {
+  restoreSearchState()   // restore before first getList()
+  // ... other init logic
+  getList()
+})
+
+function resetQuery() {
+  sessionStorage.removeItem(SEARCH_STATE_KEY)  // clear cache on manual reset
+  // ... resetFields, getList
+}
+```
+
+**Key rules:** Cache async-loaded dropdown data (e.g., batch options) alongside query params, or the restored dropdown will be empty. Clear cache in `resetQuery`. Implemented in `subproject/index.vue` as reference.
+
 
 ## Configuration
 

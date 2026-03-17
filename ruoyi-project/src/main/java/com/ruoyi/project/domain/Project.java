@@ -95,11 +95,11 @@ public class Project extends BaseEntity
     private String acceptanceStatus;
 
     /** 预估工作量(人天) */
-    @Excel(name = "预估工作量(人天)", sort = 70)
+    @Excel(name = "预估工作量(人天)", sort = 70, handler = AmountFormatHandler.class, args = {"id:1"})
     private BigDecimal estimatedWorkload;
 
     /** 实际工作量(人天) */
-    @Excel(name = "实际人天", sort = 80)
+    @Excel(name = "实际人天", sort = 80, handler = AmountFormatHandler.class, args = {"0.000"})
     private BigDecimal actualWorkload;
 
     /** 调整工作量(人天) */

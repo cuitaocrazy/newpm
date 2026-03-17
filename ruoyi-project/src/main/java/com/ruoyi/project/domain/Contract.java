@@ -59,7 +59,7 @@ public class Contract extends BaseEntity
     private Date contractSignDate;
 
     /** 合同周期(月) */
-    @Excel(name = "合同周期(月)")
+    @Excel(name = "合同周期(月)", handler = AmountFormatHandler.class)
     private Integer contractPeriod;
 
     /** 合同金额(含税) */
@@ -67,7 +67,7 @@ public class Contract extends BaseEntity
     private BigDecimal contractAmount;
 
     /** 税率(%) */
-    @Excel(name = "税率(%)")
+    @Excel(name = "税率(%)", handler = AmountFormatHandler.class)
     private BigDecimal taxRate;
 
     /** 不含税金额 */

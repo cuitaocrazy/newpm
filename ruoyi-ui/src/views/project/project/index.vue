@@ -496,7 +496,7 @@
 <script setup name="ProjectList">
 import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, getProject } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/review"
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
 import { checkPermi } from "@/utils/permission"
 
@@ -742,6 +742,7 @@ function handleQuery() {
 
 /** 重置按钮操作 */
 function resetQuery() {
+  sessionStorage.removeItem('project_search_state')
   proxy.resetForm("queryRef")
   handleQuery()
 }
@@ -937,6 +938,20 @@ onUnmounted(() => {
 watch(showSearch, () => {
   calcTableHeight()
 })
+
+onBeforeRouteLeave(() => {
+  sessionStorage.setItem('project_search_state', JSON.stringify({ queryParams: queryParams.value }))
+})
+
+;(() => {
+  try {
+    const raw = sessionStorage.getItem('project_search_state')
+    if (raw) {
+      Object.assign(queryParams.value, JSON.parse(raw).queryParams)
+      sessionStorage.removeItem('project_search_state')
+    }
+  } catch {}
+})()
 
 getList()
 loadDeptTree()
