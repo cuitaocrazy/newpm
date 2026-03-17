@@ -1,34 +1,34 @@
-# Specification Quality Checklist: 日报统计报表
+# 规格质量检查清单：日报统计报表
 
-**Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-03-17
-**Feature**: [spec.md](../spec.md)
+**用途**：在进入规划阶段前，验证规格文档的完整性和质量
+**创建日期**：2026-03-17
+**关联文档**：[spec.md](../spec.md)
 
-## Content Quality
+## 内容质量
 
-- [x] No implementation details (languages, frameworks, APIs)
-- [x] Focused on user value and business needs
-- [x] Written for non-technical stakeholders
-- [x] All mandatory sections completed
+- [x] 无实现细节（无语言、框架、API 等技术描述）
+- [x] 聚焦用户价值和业务需求
+- [x] 面向非技术读者撰写
+- [x] 所有必填章节已完成
 
-## Requirement Completeness
+## 需求完整性
 
-- [x] No [NEEDS CLARIFICATION] markers remain
-- [x] Requirements are testable and unambiguous
-- [x] Success criteria are measurable
-- [x] Success criteria are technology-agnostic (no implementation details)
-- [x] All acceptance scenarios are defined
-- [x] Edge cases are identified
-- [x] Scope is clearly bounded
-- [x] Dependencies and assumptions identified
+- [x] 无 [NEEDS CLARIFICATION] 待澄清标记
+- [x] 需求可测试、无歧义
+- [x] 成功标准可量化
+- [x] 成功标准与技术无关（无实现细节）
+- [x] 所有验收场景已定义
+- [x] 边界情况已识别
+- [x] 功能范围已明确界定
+- [x] 依赖项和假设已说明
 
-## Feature Readiness
+## 功能就绪度
 
-- [x] All functional requirements have clear acceptance criteria
-- [x] User scenarios cover primary flows
-- [x] Feature meets measurable outcomes defined in Success Criteria
-- [x] No implementation details leak into specification
+- [x] 所有功能需求有明确的验收标准
+- [x] 用户故事覆盖主要使用流程
+- [x] 功能满足成功标准中定义的可量化目标
+- [x] 规格中无实现细节泄露
 
-## Notes
+## 备注
 
-All items pass. Spec is ready for `/speckit.plan`.
+所有检查项均通过，规格文档已就绪，可执行 `/speckit.plan`。
