@@ -1,5 +1,6 @@
 package com.ruoyi.project.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
@@ -122,14 +123,28 @@ public class DailyReportController extends BaseController
     }
 
     /**
-     * 日报统计报表 - 按天汇总
+     * 日报统计报表 - 按天汇总（返回 list + totalUsers）
      */
     @PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")
     @GetMapping("/weeklyStats")
     public AjaxResult weeklyStats(DailyReport dailyReport)
     {
         List<DailySubmissionStat> list = dailyReportService.selectWeeklyStats(dailyReport);
-        return success(list);
+        int totalUsers = dailyReportService.selectTotalUsersForStats(dailyReport);
+        Map<String, Object> data = new HashMap<>();
+        data.put("list", list);
+        data.put("totalUsers", totalUsers);
+        return success(data);
+    }
+
+    /**
+     * 日报统计报表 - 部门树（三级及以下）
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:weeklyStats')")
+    @GetMapping("/weeklyStatsDeptTree")
+    public AjaxResult weeklyStatsDeptTree(DailyReport dailyReport)
+    {
+        return success(dailyReportService.selectStatsDeptTree(dailyReport));
     }
 
     /**

@@ -78,9 +78,19 @@ public interface IDailyReportService
 
     /**
      * 查询某月每天日报提交统计（已提交/未提交人数）
-     * @param query 查询条件（yearMonth 必填，deptId 可选）
+     * @param query 查询条件（yearMonth 必填，deptId/deptIds 可选）
      */
     List<DailySubmissionStat> selectWeeklyStats(DailyReport query);
+
+    /**
+     * 查询统计范围内活跃用户总数（排除白名单，供统计报表展示）
+     */
+    int selectTotalUsersForStats(DailyReport query);
+
+    /**
+     * 查询日报统计报表专用部门树（三级及以下）
+     */
+    List<Map<String, Object>> selectStatsDeptTree(DailyReport query);
 
     /**
      * 查询某天已提交人员明细（含工时和工作内容摘要）

@@ -392,6 +392,20 @@ public class DailyReportServiceImpl implements IDailyReportService
     }
 
     @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public int selectTotalUsersForStats(DailyReport query)
+    {
+        return dailyReportMapper.selectTotalUserCount(query);
+    }
+
+    @Override
+    @DataScope(deptAlias = "d")
+    public List<Map<String, Object>> selectStatsDeptTree(DailyReport query)
+    {
+        return dailyReportMapper.selectStatsDeptTree(query);
+    }
+
+    @Override
     public void exportWeeklyStats(HttpServletResponse response, List<DailySubmissionStat> statList, DailyReport query)
     {
         try (XSSFWorkbook wb = new XSSFWorkbook()) {

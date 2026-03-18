@@ -29,12 +29,31 @@
         </el-select>
       </el-form-item>
       <el-form-item label="部门">
-        <project-dept-select
-          v-model="queryParams.deptId"
-          style="width: 200px"
-          placeholder="全部部门"
+        <el-tree-select
+          v-model="queryParams.deptIds"
+          :data="deptOptions"
+          :props="treeProps"
+          multiple
+          check-strictly
           clearable
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="全部部门"
+          style="width: 220px"
+          node-key="deptId"
+          :render-after-expand="false"
           @change="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="项目名称">
+        <el-autocomplete
+          v-model="queryParams.projectName"
+          :fetch-suggestions="fetchProjectSuggestions"
+          placeholder="项目名称"
+          clearable
+          style="width: 200px"
+          @select="handleQuery"
+          @clear="handleQuery"
         />
       </el-form-item>
       <el-form-item>
@@ -49,6 +68,11 @@
         >导出 Excel</el-button>
       </el-form-item>
     </el-form>
+
+    <!-- 总人数提示 -->
+    <div v-if="!loading" class="stats-summary">
+      统计范围活跃人数：<strong>{{ totalUsers }}</strong> 人
+    </div>
 
     <!-- 双列周卡片网格（倒序：最新周在前） -->
     <div v-loading="loading" class="week-grid">
@@ -102,6 +126,7 @@
         <el-table-column label="姓名" prop="nickName" min-width="90" />
         <el-table-column label="部门" prop="deptName" min-width="130" />
         <template v-if="detailType === 'submitted'">
+          <el-table-column label="项目名称" prop="projectNames" min-width="160" show-overflow-tooltip />
           <el-table-column label="工时(h)" prop="totalWorkHours" width="82" align="center">
             <template #default="{ row }">
               <span :class="hoursClass(row.totalWorkHours)">{{ row.totalWorkHours }}</span>
@@ -122,7 +147,14 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'
 import { ElMessage } from 'element-plus'
-import { getWeeklyStats, getWeeklyStatsDetail, exportWeeklyStats } from '@/api/project/dailyReport'
+import { handleTree } from '@/utils/ruoyi'
+import {
+  getWeeklyStats,
+  getWeeklyStatsDetail,
+  exportWeeklyStats,
+  getWeeklyStatsDeptTree
+} from '@/api/project/dailyReport'
+import request from '@/utils/request'
 
 dayjs.extend(isoWeek)
 
@@ -153,10 +185,14 @@ interface WeekGroup {
 const loading = ref(false)
 const exporting = ref(false)
 const statList = ref<DailySubmissionStat[]>([])
+const totalUsers = ref(0)
+const deptOptions = ref<any[]>([])
+const treeProps = { label: 'deptName', value: 'deptId', children: 'children' }
 
 const queryParams = reactive({
   yearMonth: dayjs().format('YYYY-MM'),
-  deptId: null as number | null
+  deptIds: [] as number[],
+  projectName: ''
 })
 
 const selectedWeek = ref<number | null>(null)
@@ -165,6 +201,7 @@ const weekOptions = ref<WeekOption[]>([])
 function computeWeekOptions(yearMonth: string): WeekOption[] {
   const firstDay = dayjs(yearMonth + '-01')
   const lastDay = firstDay.endOf('month')
+  const today = dayjs()
   const weeks: WeekOption[] = []
   let current = firstDay
   let weekNum = 1
@@ -173,12 +210,15 @@ function computeWeekOptions(yearMonth: string): WeekOption[] {
     const weekEnd = current.endOf('isoWeek')
     const clampedStart = weekStart.isBefore(firstDay) ? firstDay : weekStart
     const clampedEnd = weekEnd.isAfter(lastDay) ? lastDay : weekEnd
-    weeks.push({
-      value: weekNum,
-      label: `第${weekNum}周（${clampedStart.format('MM-DD')}～${clampedEnd.format('MM-DD')}）`,
-      startDate: clampedStart.format('YYYY-MM-DD'),
-      endDate: clampedEnd.format('YYYY-MM-DD')
-    })
+    // 只加入已开始的周
+    if (!today.isBefore(dayjs(clampedStart.format('YYYY-MM-DD')))) {
+      weeks.push({
+        value: weekNum,
+        label: `第${weekNum}周（${clampedStart.format('MM-DD')}～${clampedEnd.format('MM-DD')}）`,
+        startDate: clampedStart.format('YYYY-MM-DD'),
+        endDate: clampedEnd.format('YYYY-MM-DD')
+      })
+    }
     current = weekEnd.add(1, 'day')
     weekNum++
   }
@@ -198,19 +238,46 @@ function groupByWeeks(stats: DailySubmissionStat[], options: WeekOption[]): Week
 
 const allWeeks = computed<WeekGroup[]>(() => groupByWeeks(statList.value, weekOptions.value))
 
+// 只保留已开始的周（startDate <= 今天）
+const startedWeeks = computed<WeekGroup[]>(() => {
+  const today = dayjs().format('YYYY-MM-DD')
+  return allWeeks.value.filter(w => w.startDate <= today)
+})
+
 // 倒序展示（最新周在前）；按周筛选时保持正序
 const displayedWeeks = computed<WeekGroup[]>(() => {
-  if (selectedWeek.value) return allWeeks.value.filter(w => w.weekNum === selectedWeek.value)
-  return [...allWeeks.value].reverse()
+  if (selectedWeek.value) return startedWeeks.value.filter(w => w.weekNum === selectedWeek.value)
+  return [...startedWeeks.value].reverse()
 })
 
 async function loadStats() {
   loading.value = true
   try {
-    const res = await getWeeklyStats(queryParams)
-    statList.value = res.data || []
+    const params: any = {
+      yearMonth: queryParams.yearMonth,
+      projectName: queryParams.projectName || undefined,
+      deptIds: queryParams.deptIds.length > 0 ? queryParams.deptIds.join(',') : undefined
+    }
+    const res = await getWeeklyStats(params)
+    statList.value = res.data?.list || []
+    totalUsers.value = res.data?.totalUsers ?? 0
   } finally {
     loading.value = false
+  }
+}
+
+async function loadDeptTree() {
+  const res = await getWeeklyStatsDeptTree()
+  deptOptions.value = handleTree(res.data || [], 'deptId', 'parentId')
+}
+
+async function fetchProjectSuggestions(keyword: string, cb: (suggestions: any[]) => void) {
+  if (!keyword) { cb([]); return }
+  try {
+    const res = await request({ url: '/project/dailyReport/projectNameSuggestions', method: 'get', params: { keyword } })
+    cb((res.data || []).map((name: string) => ({ value: name })))
+  } catch {
+    cb([])
   }
 }
 
@@ -226,7 +293,8 @@ function handleQuery() { loadStats() }
 
 function resetQuery() {
   queryParams.yearMonth = dayjs().format('YYYY-MM')
-  queryParams.deptId = null
+  queryParams.deptIds = []
+  queryParams.projectName = ''
   selectedWeek.value = null
   weekOptions.value = computeWeekOptions(queryParams.yearMonth)
   loadStats()
@@ -255,7 +323,12 @@ async function openDetail(date: string, type: 'submitted' | 'unsubmitted') {
   detailLoading.value = true
   detailList.value = []
   try {
-    const res = await getWeeklyStatsDetail({ reportDate: date, type, deptId: queryParams.deptId })
+    const params: any = {
+      reportDate: date,
+      type,
+      deptIds: queryParams.deptIds.length > 0 ? queryParams.deptIds.join(',') : undefined
+    }
+    const res = await getWeeklyStatsDetail(params)
     detailList.value = res.data || []
   } finally {
     detailLoading.value = false
@@ -266,7 +339,12 @@ async function openDetail(date: string, type: 'submitted' | 'unsubmitted') {
 async function handleExport() {
   exporting.value = true
   try {
-    const res = await exportWeeklyStats(queryParams)
+    const params: any = {
+      yearMonth: queryParams.yearMonth,
+      projectName: queryParams.projectName || undefined,
+      deptIds: queryParams.deptIds.length > 0 ? queryParams.deptIds.join(',') : undefined
+    }
+    const res = await exportWeeklyStats(params)
     const url = URL.createObjectURL(new Blob([res]))
     const a = document.createElement('a')
     a.href = url
@@ -282,11 +360,23 @@ async function handleExport() {
 
 onMounted(() => {
   weekOptions.value = computeWeekOptions(queryParams.yearMonth)
+  loadDeptTree()
   loadStats()
 })
 </script>
 
 <style scoped>
+/* 总人数统计行 */
+.stats-summary {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #606266;
+}
+.stats-summary strong {
+  color: #303133;
+  font-size: 15px;
+}
+
 /* 双列网格 */
 .week-grid {
   display: grid;

@@ -4,6 +4,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.project.mapper.DailyReportMapper">
 
+    <!-- 部门过滤片段：优先 deptIdList（多选），降级到 deptId（单选） -->
+    <sql id="deptFilter">
+        <choose>
+            <when test="deptIdList != null and deptIdList.size() > 0">
+                AND (
+                <foreach collection="deptIdList" item="did" separator=" OR ">
+                    (u.dept_id = #{did} OR u.dept_id IN (SELECT dept_id FROM sys_dept WHERE find_in_set(#{did}, ancestors) > 0))
+                </foreach>
+                )
+            </when>
+            <when test="deptId != null">
+                AND (u.dept_id = #{deptId}
+                     OR u.dept_id IN (SELECT dept_id FROM sys_dept WHERE find_in_set(#{deptId}, ancestors) > 0))
+            </when>
+        </choose>
+    </sql>
+
     <!-- 基础结果映射（列表查询用，不含明细） -->
     <resultMap type="DailyReport" id="DailyReportResult">
         <id     property="reportId"       column="report_id"        />
@@ -290,7 +307,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by d.dept_name, u.nick_name
     </select>
 
-    <!-- 按日期统计已提交人数（日报统计报表用） -->
+    <!-- 按日期统计已提交人数（日报统计报表用，排除白名单） -->
     <select id="selectSubmittedCountByDate" parameterType="DailyReport" resultType="java.util.Map">
         SELECT r.report_date AS reportDate,
                COUNT(DISTINCT r.user_id) AS submittedCount
@@ -300,12 +317,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             r.del_flag = '0'
             AND u.del_flag = '0' AND u.status = '0'
+            AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
             AND r.report_date BETWEEN #{startDate} AND #{endDate}
-            <if test="deptId != null">
-                AND (u.dept_id = #{deptId}
-                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
-                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
-            </if>
+            <include refid="deptFilter" />
             ${params.dataScope}
         </where>
         GROUP BY r.report_date
@@ -319,20 +333,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             u.del_flag = '0' AND u.status = '0'
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
-            <if test="deptId != null">
-                AND (u.dept_id = #{deptId}
-                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
-                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
-            </if>
+            <include refid="deptFilter" />
             ${params.dataScope}
         </where>
     </select>
 
-    <!-- 某天已提交人员明细（含工时和工作内容摘要） -->
+    <!-- 某天已提交人员明细（含工时、工作内容摘要、项目名称） -->
     <select id="selectSubmittedUsersOnDate" parameterType="DailyReport" resultType="java.util.Map">
         SELECT u.user_id AS userId,
                u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
                d.dept_name AS deptName,
+               GROUP_CONCAT(DISTINCT p.project_name ORDER BY p.project_name SEPARATOR '、') AS projectNames,
                r.total_work_hours AS totalWorkHours,
                LEFT(GROUP_CONCAT(
                    dd.work_content ORDER BY dd.detail_id SEPARATOR '；'
@@ -344,15 +355,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                ON dd.report_id = r.report_id
               AND dd.entry_type = 'work'
               AND dd.del_flag = '0'
+        LEFT JOIN pm_project p ON dd.project_id = p.project_id AND p.del_flag = '0'
         <where>
             r.del_flag = '0'
             AND u.del_flag = '0' AND u.status = '0'
             AND r.report_date = #{reportDate}
-            <if test="deptId != null">
-                AND (u.dept_id = #{deptId}
-                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
-                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
-            </if>
+            <include refid="deptFilter" />
             ${params.dataScope}
         </where>
         GROUP BY r.report_id, u.user_id, u.nick_name, d.dept_name, r.total_work_hours
@@ -373,14 +381,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 SELECT r.user_id FROM pm_daily_report r
                 WHERE r.report_date = #{reportDate} AND r.del_flag = '0'
             )
-            <if test="deptId != null">
-                AND (u.dept_id = #{deptId}
-                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
-                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
-            </if>
+            <include refid="deptFilter" />
             ${params.dataScope}
         </where>
         ORDER BY d.dept_name, u.nick_name COLLATE utf8mb4_unicode_ci
+    </select>
+
+    <!-- 日报统计报表部门树：仅返回三级及以下，三级节点 parentId 设为 0 作为根节点 -->
+    <select id="selectStatsDeptTree" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT
+            d.dept_id AS deptId,
+            CASE WHEN (LENGTH(d.ancestors) - LENGTH(REPLACE(d.ancestors, ',', ''))) = 2
+                 THEN 0 ELSE d.parent_id END AS parentId,
+            d.dept_name AS deptName,
+            d.ancestors,
+            d.order_num AS orderNum
+        FROM sys_dept d
+        WHERE d.del_flag = '0'
+          AND d.status = '0'
+          AND (LENGTH(d.ancestors) - LENGTH(REPLACE(d.ancestors, ',', ''))) >= 2
+        ${params.dataScope}
+        ORDER BY d.parent_id, d.order_num
     </select>
 
 </mapper>
