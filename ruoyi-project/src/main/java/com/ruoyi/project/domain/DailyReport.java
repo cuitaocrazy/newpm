@@ -1,8 +1,10 @@
 package com.ruoyi.project.domain;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -237,6 +239,21 @@ public class DailyReport extends BaseEntity
 
     public void setType(String type) { this.type = type; }
     public String getType() { return type; }
+
+    /** 查询条件：多部门ID，逗号分隔字符串，如 "1,2,3"（日报统计报表多选） */
+    private String deptIds;
+
+    public void setDeptIds(String deptIds) { this.deptIds = deptIds; }
+    public String getDeptIds() { return deptIds; }
+
+    /** 将 deptIds 字符串解析为 Long 列表，供 MyBatis OGNL 使用 */
+    public List<Long> getDeptIdList() {
+        if (deptIds == null || deptIds.trim().isEmpty()) return null;
+        return Arrays.stream(deptIds.split(","))
+                .map(String::trim).filter(s -> !s.isEmpty())
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public String toString() {

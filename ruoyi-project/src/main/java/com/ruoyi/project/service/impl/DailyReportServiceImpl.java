@@ -350,10 +350,11 @@ public class DailyReportServiceImpl implements IDailyReportService
         String[] weekNames = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
 
         // 构建结果
+        LocalDate today = LocalDate.now();
         List<DailySubmissionStat> result = new ArrayList<>();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             String dateStr = date.toString();
-            int submitted = submittedMap.getOrDefault(dateStr, 0);
+            boolean future = date.isAfter(today);
 
             boolean workday;
             if (calendarMap.containsKey(dateStr)) {
@@ -367,8 +368,10 @@ public class DailyReportServiceImpl implements IDailyReportService
             stat.setReportDate(dateStr);
             stat.setDayOfWeek(weekNames[date.getDayOfWeek().getValue() - 1]);
             stat.setIsWorkday(workday);
-            stat.setSubmittedCount(submitted);
-            stat.setUnsubmittedCount(workday ? Math.max(0, total - submitted) : 0);
+            stat.setIsFuture(future);
+            // 未来日期不统计人数
+            stat.setSubmittedCount(future ? null : submittedMap.getOrDefault(dateStr, 0));
+            stat.setUnsubmittedCount(future ? null : (workday ? Math.max(0, total - submittedMap.getOrDefault(dateStr, 0)) : 0));
             result.add(stat);
         }
         return result;
@@ -386,6 +389,20 @@ public class DailyReportServiceImpl implements IDailyReportService
     public List<Map<String, Object>> selectUnsubmittedDetail(DailyReport query)
     {
         return dailyReportMapper.selectUnsubmittedUsersOnDate(query);
+    }
+
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public int selectTotalUsersForStats(DailyReport query)
+    {
+        return dailyReportMapper.selectTotalUserCount(query);
+    }
+
+    @Override
+    @DataScope(deptAlias = "d")
+    public List<Map<String, Object>> selectStatsDeptTree(DailyReport query)
+    {
+        return dailyReportMapper.selectStatsDeptTree(query);
     }
 
     @Override

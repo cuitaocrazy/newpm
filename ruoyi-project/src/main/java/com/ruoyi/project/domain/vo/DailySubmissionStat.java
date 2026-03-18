@@ -20,6 +20,9 @@ public class DailySubmissionStat {
     /** 未提交人数（= 数据权限范围内总人数 - 已提交人数） */
     private Integer unsubmittedCount;
 
+    /** 是否为未来日期（未来日期不统计提交情况） */
+    private Boolean isFuture;
+
     public String getReportDate() { return reportDate; }
     public void setReportDate(String reportDate) { this.reportDate = reportDate; }
 
@@ -34,4 +37,7 @@ public class DailySubmissionStat {
 
     public Integer getUnsubmittedCount() { return unsubmittedCount; }
     public void setUnsubmittedCount(Integer unsubmittedCount) { this.unsubmittedCount = unsubmittedCount; }
+
+    public Boolean getIsFuture() { return isFuture; }
+    public void setIsFuture(Boolean isFuture) { this.isFuture = isFuture; }
 }

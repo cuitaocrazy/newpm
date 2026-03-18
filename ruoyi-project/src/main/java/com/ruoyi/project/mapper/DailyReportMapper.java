@@ -116,4 +116,9 @@ public interface DailyReportMapper
      * 查询某天未提交人员明细（排除白名单）
      */
     List<Map<String, Object>> selectUnsubmittedUsersOnDate(DailyReport query);
+
+    /**
+     * 查询日报统计报表专用部门树（三级及以下，三级节点 parentId=0 作为根节点）
+     */
+    List<Map<String, Object>> selectStatsDeptTree(DailyReport query);
 }

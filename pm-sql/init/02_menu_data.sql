@@ -280,15 +280,15 @@ VALUES ('工作日报动态', @dailyReportRootId, 2, 'activity', 'project/dailyR
 
 -- ---- 工作日历（无按钮）----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
-VALUES ('工作日历', @dailyReportRootId, 3, 'workCalendar', 'project/workCalendar/index', 1, 0, 'C', '0', '0', 'project:workCalendar:list', 'date-range', 'admin', sysdate(), '', NULL, '工作日历菜单', 'WorkCalendar');
+VALUES ('工作日历', @dailyReportRootId, 4, 'workCalendar', 'project/workCalendar/index', 1, 0, 'C', '0', '0', 'project:workCalendar:list', 'date-range', 'admin', sysdate(), '', NULL, '工作日历菜单', 'WorkCalendar');
 
 -- ---- 团队日报（无按钮）----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
-VALUES ('团队日报', @dailyReportRootId, 4, 'teamReport', 'project/dailyReport/teamReport', 1, 0, 'C', '0', '0', 'project:dailyReport:activity', 'peoples', 'admin', sysdate(), '', NULL, '团队日报菜单', 'TeamDailyReport');
+VALUES ('团队日报', @dailyReportRootId, 5, 'teamReport', 'project/dailyReport/teamReport', 1, 0, 'C', '0', '0', 'project:dailyReport:activity', 'peoples', 'admin', sysdate(), '', NULL, '团队日报菜单', 'TeamDailyReport');
 
 -- ---- 项目人天统计 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
-VALUES ('项目人天统计', @dailyReportRootId, 5, 'stats', 'project/dailyReport/stats', 1, 0, 'C', '0', '0', 'project:dailyReport:list', 'chart', 'admin', sysdate(), '', NULL, '项目人天统计菜单', 'ProjectStats');
+VALUES ('项目人天统计', @dailyReportRootId, 6, 'stats', 'project/dailyReport/stats', 1, 0, 'C', '0', '0', 'project:dailyReport:list', 'chart', 'admin', sysdate(), '', NULL, '项目人天统计菜单', 'ProjectStats');
 SELECT @statsMenuId := LAST_INSERT_ID();
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
@@ -433,7 +433,7 @@ VALUES ('移除', @whitelistMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'project:wh
 
 -- ---- 日报统计报表 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
-VALUES ('日报统计报表', @dailyReportRootId, 6, 'weeklyStats', 'project/dailyReport/weeklyStats', 1, 0, 'C', '0', '0', 'project:dailyReport:weeklyStats', 'bar-chart', 'admin', sysdate(), '', NULL, '日报统计报表菜单', 'DailyReportWeeklyStats');
+VALUES ('日报统计报表', @dailyReportRootId, 3, 'weeklyStats', 'project/dailyReport/weeklyStats', 1, 0, 'C', '0', '0', 'project:dailyReport:weeklyStats', 'build', 'admin', sysdate(), '', NULL, '日报统计报表菜单', 'DailyReportWeeklyStats');
 SELECT @weeklyStatsMenuId := LAST_INSERT_ID();
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('查询', @weeklyStatsMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:dailyReport:weeklyStats', '#', 'admin', sysdate(), '', NULL, '');

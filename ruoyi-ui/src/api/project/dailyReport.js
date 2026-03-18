@@ -95,12 +95,20 @@ export function getProjectNameSuggestions(keyword) {
   })
 }
 
-// 日报统计报表 - 按天汇总（按月）
+// 日报统计报表 - 按天汇总（按月），返回 { list, totalUsers }
 export function getWeeklyStats(query) {
   return request({
     url: '/project/dailyReport/weeklyStats',
     method: 'get',
     params: query
+  })
+}
+
+// 日报统计报表 - 部门树（三级及以下）
+export function getWeeklyStatsDeptTree() {
+  return request({
+    url: '/project/dailyReport/weeklyStatsDeptTree',
+    method: 'get'
   })
 }
 
