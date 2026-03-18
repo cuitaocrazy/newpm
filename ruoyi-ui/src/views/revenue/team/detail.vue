@@ -12,7 +12,7 @@
 
           <!-- 项目基本信息 -->
           <div class="section-title">项目基本信息</div>
-          <el-descriptions :column="2" border>
+          <el-descriptions :column="2" border label-width="120px">
             <el-descriptions-item label="行业"><dict-tag :options="industry" :value="form.industry" /></el-descriptions-item>
             <el-descriptions-item label="一级区域">{{ getDictLabel(sys_yjqy, form.region) }}</el-descriptions-item>
             <el-descriptions-item label="二级区域">{{ form.regionName || '-' }}</el-descriptions-item>
@@ -43,7 +43,7 @@
 
           <!-- 人员配置 -->
           <div class="section-title">人员配置</div>
-          <el-descriptions :column="2" border>
+          <el-descriptions :column="2" border label-width="120px">
             <el-descriptions-item label="项目经理">{{ form.projectManagerName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="市场经理">{{ form.marketManagerName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="销售负责人" :span="2">{{ form.salesManagerName || '-' }}</el-descriptions-item>
@@ -53,7 +53,7 @@
 
           <!-- 客户信息 -->
           <div class="section-title">客户信息</div>
-          <el-descriptions :column="2" border>
+          <el-descriptions :column="2" border label-width="120px">
             <el-descriptions-item label="客户名称" :span="2">{{ form.customerName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="客户联系人">{{ form.customerContactName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="客户联系方式">{{ customerContactPhone || form.customerContactPhone || '-' }}</el-descriptions-item>
@@ -63,7 +63,7 @@
 
           <!-- 时间规划 -->
           <div class="section-title">时间规划</div>
-          <el-descriptions :column="2" border>
+          <el-descriptions :column="2" border label-width="120px">
             <el-descriptions-item label="启动日期">{{ parseTime(form.startDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
             <el-descriptions-item label="结束日期">{{ parseTime(form.endDate, '{y}-{m}-{d}') || '-' }}</el-descriptions-item>
             <el-descriptions-item label="实施年度" :span="2">{{ form.reservedField1 || '-' }}</el-descriptions-item>
@@ -73,7 +73,7 @@
 
           <!-- 成本预算 -->
           <div class="section-title">成本预算</div>
-          <el-descriptions :column="2" border>
+          <el-descriptions :column="2" border label-width="120px">
             <el-descriptions-item label="项目费用">{{ form.projectCost != null ? formatAmount(form.projectCost) + ' 元' : '- 元' }}</el-descriptions-item>
             <el-descriptions-item label="费用预算">{{ form.expenseBudget != null ? formatAmount(form.expenseBudget) + ' 元' : '- 元' }}</el-descriptions-item>
             <el-descriptions-item label="成本预算">{{ form.costBudget != null ? formatAmount(form.costBudget) + ' 元' : '- 元' }}</el-descriptions-item>
@@ -83,7 +83,7 @@
 
           <!-- 其他信息 -->
           <div class="section-title">其他信息</div>
-          <el-descriptions :column="1" border>
+          <el-descriptions :column="1" border label-width="120px">
             <el-descriptions-item label="备注"><span style="white-space: pre-line;">{{ form.remark || '-' }}</span></el-descriptions-item>
           </el-descriptions>
         </el-card>
@@ -336,6 +336,23 @@ watch(
 </script>
 
 <style scoped>
+/* 固定左侧所有 descriptions 的 label 列宽 */
+:deep(.el-descriptions__label) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  white-space: nowrap;
+}
+
+:deep(.el-descriptions__content) {
+  min-width: 0;
+}
+
+:deep(.el-descriptions__body table) {
+  table-layout: fixed;
+  width: 100%;
+}
+
 .section-title {
   font-size: 14px;
   font-weight: bold;
