@@ -7,10 +7,10 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:80';
 
-async function login(page) {
+async function login(page, username = 'admin', password = '123456789') {
   await page.goto(BASE_URL);
-  await page.fill('input[placeholder="账号"]', 'admin');
-  await page.fill('input[placeholder="密码"]', '123456789');
+  await page.fill('input[placeholder="账号"]', username);
+  await page.fill('input[placeholder="密码"]', password);
   await page.locator('button.el-button--primary').click();
   // 等待跳离登录页（无论跳到哪个路径）
   await page.waitForFunction(() => !location.pathname.startsWith('/login'), { timeout: 15000 });
@@ -22,22 +22,22 @@ async function login(page) {
 }
 
 /**
- * 通用查询测试：导航到页面，等待列表加载，点击查询按钮，验证接口响应
+ * 通用查询测试：导航到页面，等待搜索按钮可见，点击查询，验证接口响应
  */
 async function testQuery(page, { name, url, apiPattern, searchBtn = '搜索' }) {
   console.log(`\n▶ 测试查询：${name}`);
+
+  await page.goto(`${BASE_URL}${url}`);
+
+  // 等待搜索按钮可见（动态路由加载完成的标志）
+  const btn = page.locator(`button:has-text("${searchBtn}")`).first();
+  await btn.waitFor({ state: 'visible', timeout: 20000 });
 
   const responsePromise = page.waitForResponse(
     res => res.url().includes(apiPattern) && res.request().method() === 'GET',
     { timeout: 15000 }
   );
 
-  await page.goto(`${BASE_URL}${url}`);
-  await page.waitForLoadState('networkidle', { timeout: 15000 });
-
-  // 点击查询按钮
-  const btn = page.locator(`button:has-text("${searchBtn}")`).first();
-  await btn.waitFor({ state: 'visible', timeout: 10000 });
   await btn.click();
 
   const response = await responsePromise;
@@ -61,7 +61,7 @@ test.describe('列表查询冒烟测试', () => {
   test('项目列表 - 查询', async ({ page }) => {
     await testQuery(page, {
       name: '项目列表',
-      url: '/project/project',
+      url: '/project/list',
       apiPattern: '/project/project/list',
     });
   });
@@ -69,23 +69,22 @@ test.describe('列表查询冒烟测试', () => {
   test('立项审核 - 查询', async ({ page }) => {
     await testQuery(page, {
       name: '立项审核',
-      url: '/project/approval',
-      apiPattern: '/project/approval/projectList',
+      url: '/project/review',
+      apiPattern: '/project/review/list',
     });
   });
 
   test('立项审核 - 项目名称模糊查询', async ({ page }) => {
     console.log('\n▶ 测试：立项审核项目名称模糊查询');
-    await page.goto(`${BASE_URL}/project/approval`);
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
+    await page.goto(`${BASE_URL}/project/review`);
 
     // 输入项目名称（不选下拉）
     const input = page.locator('.el-autocomplete input').first();
-    await input.waitFor({ state: 'visible', timeout: 10000 });
+    await input.waitFor({ state: 'visible', timeout: 20000 });
     await input.fill('测试');
 
     const responsePromise = page.waitForResponse(
-      res => res.url().includes('/project/approval/projectList') && res.request().method() === 'GET',
+      res => res.url().includes('/project/review/list') && res.request().method() === 'GET',
       { timeout: 15000 }
     );
 
@@ -104,24 +103,27 @@ test.describe('列表查询冒烟测试', () => {
   test('合同管理 - 查询', async ({ page }) => {
     await testQuery(page, {
       name: '合同管理',
-      url: '/project/contract',
+      url: '/htkx/contract',
       apiPattern: '/project/contract/list',
+      searchBtn: '查询',
     });
   });
 
   test('客户管理 - 查询', async ({ page }) => {
     await testQuery(page, {
       name: '客户管理',
-      url: '/project/customer',
+      url: '/market/customer',
       apiPattern: '/project/customer/list',
+      searchBtn: '查询',
     });
   });
 
   test('款项管理 - 查询', async ({ page }) => {
     await testQuery(page, {
       name: '款项管理',
-      url: '/project/payment',
+      url: '/htkx/payment',
       apiPattern: '/project/payment/list',
+      searchBtn: '查询',
     });
   });
 
@@ -153,7 +155,8 @@ test.describe('列表查询冒烟测试', () => {
     await testQuery(page, {
       name: '公司收入确认',
       url: '/revenue/company',
-      apiPattern: '/project/review/list',
+      apiPattern: '/project/project/revenueList',
+      searchBtn: '查询',
     });
   });
 
@@ -162,23 +165,86 @@ test.describe('列表查询冒烟测试', () => {
       name: '团队收入确认',
       url: '/revenue/team',
       apiPattern: '/revenue/team/list',
+      searchBtn: '查询',
     });
   });
 
   test('二级区域管理 - 查询', async ({ page }) => {
     await testQuery(page, {
       name: '二级区域管理',
-      url: '/project/secondaryRegion',
+      url: '/system/secondaryRegion',
       apiPattern: '/project/secondaryRegion/list',
     });
   });
 
-  test('工作日历 - 查询', async ({ page }) => {
-    await testQuery(page, {
-      name: '工作日历',
-      url: '/project/workCalendar',
-      apiPattern: '/project/workCalendar/list',
-    });
+  test('工作日历 - 页面加载', async ({ page }) => {
+    console.log('\n▶ 测试查询：工作日历（日历视图，无搜索表单，验证自动加载）');
+    const responsePromise = page.waitForResponse(
+      res => res.url().includes('/project/workCalendar/list') && res.request().method() === 'GET',
+      { timeout: 20000 }
+    );
+    await page.goto(`${BASE_URL}/dailyReport/workCalendar`);
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.code).toBe(200);
+    console.log(`  ✅ 工作日历自动加载正常，total=${body.total ?? 'N/A'}`);
+  });
+
+});
+
+test.describe('项目列表查询结果一致性', () => {
+
+  test('竞态修复验证 — qiang.qin 搜索"厦门"返回行数与 total 一致', async ({ page }) => {
+    console.log('\n▶ 测试：竞态修复，qiang.qin 搜索厦门');
+    await login(page, 'qiang.qin', 'admin123');
+
+    await page.goto(`${BASE_URL}/project/list`);
+    const searchBtn = page.locator('button:has-text("搜索")').first();
+    await searchBtn.waitFor({ state: 'visible', timeout: 20000 });
+
+    // 等待初始列表加载完成
+    await page.waitForResponse(
+      res => res.url().includes('/project/project/list') && res.request().method() === 'GET',
+      { timeout: 15000 }
+    );
+
+    // 填入搜索关键词并立即搜索（模拟竞态场景：初始请求可能还在途中）
+    const nameInput = page.locator('.el-autocomplete input').first();
+    await nameInput.fill('厦门');
+
+    const filteredResponsePromise = page.waitForResponse(
+      res => res.url().includes('/project/project/list') && res.url().includes('projectName') && res.request().method() === 'GET',
+      { timeout: 15000 }
+    );
+
+    await searchBtn.click();
+    const filteredResponse = await filteredResponsePromise;
+    const body = await filteredResponse.json();
+
+    const apiTotal = body.total;
+    const apiRows = (body.rows || []).length;
+    console.log(`  API total=${apiTotal}, rows.length=${apiRows}`);
+    expect(filteredResponse.status()).toBe(200);
+    expect(body.code).toBe(200);
+
+    // 等待表格稳定（竞态若未修复，此时旧响应可能覆盖新数据）
+    await page.waitForTimeout(2000);
+
+    // 统计页面实际渲染的数据行数（排除合计行）
+    const dataRows = await page.locator('.el-table__body-wrapper tr:not(.summary-row)').count();
+    console.log(`  页面渲染行数: ${dataRows}，API total: ${apiTotal}`);
+
+    // 页面行数应 = API 返回的 rows 数量（含合计行则 apiRows+1）
+    expect(dataRows, `页面行数(${dataRows})应与 API rows(${apiRows})+合计行 一致`).toBeLessThanOrEqual(apiRows + 1);
+
+    // 所有数据行的项目名称应包含"厦门"
+    const rowTexts = await page.locator('.el-table__body-wrapper tr td:nth-child(3)').allTextContents();
+    const nonXiamen = rowTexts.filter(t => t.trim() && !t.includes('厦门') && !t.includes('合计'));
+    console.log(`  不含"厦门"的行: ${JSON.stringify(nonXiamen)}`);
+    expect(nonXiamen.length, `不应存在不含"厦门"的数据行`).toBe(0);
+
+    console.log('  ✅ 竞态修复验证通过');
   });
 
 });

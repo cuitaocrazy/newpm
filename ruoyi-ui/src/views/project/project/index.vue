@@ -156,6 +156,7 @@
     </el-row>
 
     <el-table v-loading="loading" :data="projectList" :height="tableHeight"
+              row-key="projectId"
               border stripe style="width: 100%"
               :row-class-name="tableRowClassName" @sort-change="handleSortChange">
       <el-table-column label="序号" width="55" align="center" fixed="left">
@@ -505,6 +506,7 @@ const router = useRouter()
 const { industry, sys_yjqy, sys_ndgl, sys_xmfl, sys_xmjd, sys_xmzt, sys_yszt, sys_spzt, sys_htzt, sys_qrzt } = proxy.useDict('industry', 'sys_yjqy', 'sys_ndgl', 'sys_xmfl', 'sys_xmjd', 'sys_xmzt', 'sys_yszt', 'sys_spzt', 'sys_htzt', 'sys_qrzt')
 
 const projectList = ref([])
+let listRequestId = 0
 const loading = ref(true)
 const showSearch = ref(true)
 const total = ref(0)
@@ -606,12 +608,16 @@ function handleSortChange({ prop, order }) {
 }
 
 /** 查询项目管理列表 */
-function getList() {  loading.value = true
+function getList() {
+  loading.value = true
+  const myRequestId = ++listRequestId
   // 并行请求分页列表和全量合计
   Promise.all([
     listProject(queryParams.value),
     getProjectSummary(queryParams.value)
   ]).then(([listRes, summaryRes]) => {
+    // 丢弃已被更新请求覆盖的过期响应
+    if (myRequestId !== listRequestId) return
     const rows = listRes.rows || []
     const s = summaryRes.data || {}
 
