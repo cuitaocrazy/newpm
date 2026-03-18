@@ -16,30 +16,37 @@
 | `yearMonth` | string | ✅ | 月份，格式 `yyyy-MM`（如 `2026-03`） |
 | `deptId` | number | ❌ | 部门ID，不传则按数据权限范围 |
 
-**响应**：`AjaxResult`，`data` 为数组
+**响应**：`AjaxResult`，`data` 为对象（含 `totalUsers` + `list`）
 
 ```json
 {
   "code": 200,
   "msg": "操作成功",
-  "data": [
-    {
-      "reportDate": "2026-03-09",
-      "dayOfWeek": "周一",
-      "isWorkday": true,
-      "submittedCount": 18,
-      "unsubmittedCount": 2
-    },
-    {
-      "reportDate": "2026-03-15",
-      "dayOfWeek": "周日",
-      "isWorkday": false,
-      "submittedCount": 3,
-      "unsubmittedCount": 17
-    }
-  ]
+  "data": {
+    "totalUsers": 148,
+    "list": [
+      {
+        "reportDate": "2026-03-09",
+        "dayOfWeek": "周一",
+        "isWorkday": true,
+        "submittedCount": 18,
+        "unsubmittedCount": 130
+      },
+      {
+        "reportDate": "2026-03-15",
+        "dayOfWeek": "周日",
+        "isWorkday": false,
+        "submittedCount": 3,
+        "unsubmittedCount": null
+      }
+    ]
+  }
 }
 ```
+
+> `totalUsers`：统计范围活跃用户总数（排除超级管理员 user_id=1 和白名单，随部门筛选联动）
+> 非工作日的 `unsubmittedCount` 为 `null`（前端显示"非工作日"）
+> 未来日期的 `submittedCount` / `unsubmittedCount` 均为 `null`（前端显示灰色 `—`）
 
 ---
 

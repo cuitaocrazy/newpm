@@ -317,6 +317,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             r.del_flag = '0'
             AND u.del_flag = '0' AND u.status = '0'
+            AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
             AND r.report_date BETWEEN #{startDate} AND #{endDate}
             <include refid="deptFilter" />
@@ -332,6 +333,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
         <where>
             u.del_flag = '0' AND u.status = '0'
+            AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
             <include refid="deptFilter" />
             ${params.dataScope}
@@ -376,6 +378,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
         <where>
             u.del_flag = '0' AND u.status = '0'
+            AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
             AND u.user_id NOT IN (
                 SELECT r.user_id FROM pm_daily_report r
