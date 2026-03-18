@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 查询公司收入确认列表
 export function listRevenueCompany(query: any) {
   return request({
-    url: '/project/project/revenueList',
+    url: '/project/project/revenue/list',
     method: 'get',
     params: query
   })
