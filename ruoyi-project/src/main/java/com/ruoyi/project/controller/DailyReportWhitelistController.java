@@ -24,8 +24,8 @@ public class DailyReportWhitelistController extends BaseController {
     @Autowired
     private IDailyReportWhitelistService whitelistService;
 
-    /** 白名单列表（仅 admin） */
-    @PreAuthorize("@ss.hasRole('admin')")
+    /** 白名单列表 */
+    @PreAuthorize("@ss.hasPermi('project:whitelist:list')")
     @GetMapping("/list")
     public TableDataInfo list(DailyReportWhitelist whitelist) {
         startPage();
@@ -33,16 +33,16 @@ public class DailyReportWhitelistController extends BaseController {
         return getDataTable(list);
     }
 
-    /** 添加白名单（仅 admin） */
-    @PreAuthorize("@ss.hasRole('admin')")
+    /** 添加白名单 */
+    @PreAuthorize("@ss.hasPermi('project:whitelist:add')")
     @Log(title = "日报白名单", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@Validated @RequestBody DailyReportWhitelist whitelist) {
         return toAjax(whitelistService.addToWhitelist(whitelist));
     }
 
-    /** 移除白名单（仅 admin） */
-    @PreAuthorize("@ss.hasRole('admin')")
+    /** 移除白名单 */
+    @PreAuthorize("@ss.hasPermi('project:whitelist:remove')")
     @Log(title = "日报白名单", businessType = BusinessType.DELETE)
     @DeleteMapping("/{id}")
     public AjaxResult remove(@PathVariable Long id) {
