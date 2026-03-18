@@ -490,16 +490,17 @@ const dataByDate = computed(() => {
 
 // 团队统计（基于 focusedDate，点日历格子时动态更新）
 const teamStats = computed(() => {
-  const focusedData = dataByDate.value[focusedDate.value] || []
+  const allFocusedData = dataByDate.value[focusedDate.value] || []
+  // 项目过滤激活时，只统计当天实际填写了该项目的人（排除 detailList 为空的记录）
+  const focusedData = queryParams.value.projectName
+    ? allFocusedData.filter(r => (r.detailList || []).length > 0)
+    : allFocusedData
   const focusedTotalH = focusedData.reduce((s, r) => s + Number(r.totalWorkHours || 0), 0)
   const avgH = focusedData.length > 0 ? (focusedTotalH / focusedData.length).toFixed(1) : '0.0'
-  const total = queryParams.value.projectName
-    ? new Set(displayReportData.value.map(r => r.userId)).size
-    : userList.value.length
   return {
-    total,
+    total: userList.value.length,
     reported: focusedData.length,
-    unreported: total - focusedData.length,
+    unreported: userList.value.length - focusedData.length,
     avgHours: avgH
   }
 })
@@ -659,7 +660,11 @@ function openStatsDialog(type) {
  * - 只统计 work 类型条目（entryType 为空或 'work'），排除请假等
  */
 function getStatsDialogRows(type) {
-  const filled = dataByDate.value[focusedDate.value] || []
+  const allFilled = dataByDate.value[focusedDate.value] || []
+  // 项目过滤激活时，只统计实际填写了该项目的人
+  const filled = queryParams.value.projectName
+    ? allFilled.filter(r => (r.detailList || []).length > 0)
+    : allFilled
   if (type === 'filled') {
     return filled.map(person => {
       const projects = [...new Set(
