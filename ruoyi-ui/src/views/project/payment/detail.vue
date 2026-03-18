@@ -199,8 +199,7 @@
             <span class="card-title">项目分解任务列表</span>
           </div>
         </template>
-        <el-empty v-if="taskList.length === 0" description="暂无项目相关任务列表信息" :image-size="80" />
-        <el-table v-else :data="taskList" border>
+        <el-table :data="taskList" border empty-text="暂无数据">
           <el-table-column label="序号" type="index" width="60" align="center" />
           <el-table-column label="投产批次" align="center" prop="batchNo" width="120" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.batchNo || '-' }}</template>
@@ -346,7 +345,7 @@ function loadPaymentDetail() {
               .catch(() => [])
           )
           Promise.all(taskPromises).then(results => {
-            taskList.value = results.flat()
+            taskList.value = results.flat().filter(t => t.taskId != null)
           })
         }
       })
