@@ -520,3 +520,10 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 - **Frontend build errors**: Delete `node_modules/` + reinstall; port 80 needs sudo; delete `node_modules/.vite/` for cache
 - **Code generation**: Build CLI first; ensure valid MySQL 8.0 DDL; check menu SQL imported
 - **Collation mismatch**: Add `COLLATE utf8mb4_unicode_ci` when joining system tables
+
+## Active Technologies
+- Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Apache POI (Excel), Vue 3.5, Element Plus 2.13, dayjs (001-daily-report-stats)
+- MySQL 8.x (`ry-vue`)，涉及表：`pm_daily_report`、`pm_daily_report_detail`、`sys_user`、`sys_dept`、`pm_work_calendar`、`pm_daily_report_whitelist` (001-daily-report-stats)
+
+## Recent Changes
+- 001-daily-report-stats: Added Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Apache POI (Excel), Vue 3.5, Element Plus 2.13, dayjs

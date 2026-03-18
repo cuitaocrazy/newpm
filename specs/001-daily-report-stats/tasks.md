@@ -135,6 +135,22 @@
 
 ---
 
+## Phase 8：规格澄清变更（2026-03-18）
+
+**背景**：spec 澄清 — "统计范围活跃人数"需排除超级管理员（`user_id=1`），同时页面顶部展示总用户数（随部门筛选联动）。
+
+**⚠️ CRITICAL**：T037–T040 必须在 T033–T035 集成验证之前完成
+
+- [x] T037 修改 `ruoyi-project/src/main/resources/mapper/project/DailyReportMapper.xml` — 在 `selectTotalUserCount` 的 `<where>` 块追加 `AND u.user_id != 1`（紧接 `u.del_flag = '0' AND u.status = '0'` 之后）
+- [x] T038 修改同文件 `selectUnsubmittedUsersOnDate` 的 `<where>` 块追加 `AND u.user_id != 1`（保持与 selectTotalUserCount 口径一致）
+- [x] T039 修改同文件 `selectSubmittedCountByDate` 的 `<where>` 块，在 `JOIN sys_user u` 后追加 `AND u.user_id != 1`（已提交统计口径与总数口径对称，防止出现 unsubmittedCount < 0 的情况）
+- [x] T040 [P] 修改 `ruoyi-project/src/main/java/com/ruoyi/project/controller/DailyReportController.java` 的 `weeklyStats` 端点：响应从 `success(list)` 改为 `success(Map.of("totalUsers", total, "list", list))`；同时在 service 层（`DailyReportServiceImpl.selectWeeklyStats`）将 `selectTotalUserCount` 的结果也暴露给 controller（可通过返回 `WeeklyStatsResult` VO 或直接在 controller 额外调用 `selectTotalUserCount`）
+- [x] T041 修改 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue`：接口响应从 `res.data`（数组）改为 `res.data.list`（数组）+ `res.data.totalUsers`（数字）；在搜索栏右侧增加灰色标签展示"统计范围：**{{ totalUsers }} 人**"；`totalUsers` 随每次搜索（含部门筛选变更）实时更新
+- [x] T043 [P] 修改 `ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue` 已提交明细弹框中的工时列：当 `row.totalWorkHours < 8` 时，使用 `<template #default>` 自定义渲染，给工时值外层 `<span>` 加内联样式 `background-color: #ffecec; display: block; padding: 4px 8px; border-radius: 4px`；`>= 8` 时无特殊样式（FR-008 澄清，2026-03-18）
+- [ ] T042 编译验证 + 提交：`mvn clean compile -pl ruoyi-project -am && git add ruoyi-project/src/main/resources/mapper/project/DailyReportMapper.xml ruoyi-project/src/main/java/com/ruoyi/project/controller/DailyReportController.java ruoyi-ui/src/views/project/dailyReport/weeklyStats.vue && git commit -m "fix: 统计范围排除超级管理员，顶部展示活跃用户总数，工时不足8小时标淡红色"`
+
+---
+
 ## 依赖关系与执行顺序
 
 ### Phase 依赖

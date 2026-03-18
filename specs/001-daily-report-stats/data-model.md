@@ -66,7 +66,20 @@ GROUP BY r.report_date
 
 ### Query 2：数据权限范围内活跃用户总数
 
-复用 `selectActivityUsers` 的 SQL，但只取 COUNT，不取列表。
+复用 `selectActivityUsers` 的 SQL 结构，增加超管排除条件，只取 COUNT：
+
+```sql
+SELECT COUNT(*)
+FROM sys_user u
+LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+WHERE u.del_flag = '0' AND u.status = '0'
+  AND u.user_id != 1  -- 排除超级管理员（2026-03-18 澄清）
+  AND u.user_id NOT IN (
+      SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0'
+  )
+  [可选部门过滤]
+  ${params.dataScope}
+```
 
 ### Query 3：某天已提交人员明细
 
@@ -99,6 +112,10 @@ SELECT u.user_id AS userId,
 FROM sys_user u
 LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
 WHERE u.del_flag = '0' AND u.status = '0'
+  AND u.user_id != 1  -- 排除超级管理员
+  AND u.user_id NOT IN (
+      SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0'
+  )
   AND u.user_id NOT IN (
       SELECT r.user_id FROM pm_daily_report r
       WHERE r.report_date = #{reportDate} AND r.del_flag = '0'

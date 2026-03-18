@@ -1,7 +1,7 @@
 # 研究报告：日报统计报表
 
 **特性分支**：`001-daily-report-stats`
-**日期**：2026-03-17
+**日期**：2026-03-17（更新：2026-03-18）
 
 ---
 
@@ -75,3 +75,24 @@ RuoYi 内置的 `ExcelUtil` 只支持单 Sheet，无法满足需求。改用 POI
 ```
 
 实现：遍历月份第一天到最后一天，按 ISO 周分组，只保留在本月内有日期的周。
+
+---
+
+## 决策 6：活跃用户计算口径（2026-03-18 澄清）
+
+**决策**：活跃用户 = `sys_user` 中满足以下全部条件的用户：
+
+```sql
+u.del_flag = '0'       -- 未删除
+AND u.status = '0'     -- 未禁用
+AND u.user_id != 1     -- 排除超级管理员（user_id=1）
+AND u.user_id NOT IN (
+    SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0'
+)                      -- 排除日报白名单
+```
+
+`selectTotalUserCount` SQL 需追加 `AND u.user_id != 1`（超级管理员排除条件）。
+
+**Rationale**：`SecurityUtils.isAdmin()` 使用 `userId == 1`，与此一致；spec 澄清中已明确"除了白名单和超级管理员之外"。
+
+**放弃方案**：排除所有 `roleKey='admin'` 角色 → 被否决，admin 角色可分配普通管理员，过度排除。

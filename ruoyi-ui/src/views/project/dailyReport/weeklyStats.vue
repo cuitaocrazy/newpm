@@ -30,14 +30,11 @@
       </el-form-item>
       <el-form-item label="部门">
         <el-tree-select
-          v-model="queryParams.deptIds"
+          v-model="queryParams.deptId"
           :data="deptOptions"
           :props="treeProps"
-          multiple
           check-strictly
           clearable
-          collapse-tags
-          collapse-tags-tooltip
           placeholder="全部部门"
           style="width: 220px"
           node-key="deptId"
@@ -49,7 +46,8 @@
         <el-autocomplete
           v-model="queryParams.projectName"
           :fetch-suggestions="fetchProjectSuggestions"
-          placeholder="项目名称"
+          placeholder="输入关键字搜索，或直接选择下拉数据"
+          :trigger-on-focus="true"
           clearable
           style="width: 200px"
           @select="handleQuery"
@@ -71,7 +69,7 @@
 
     <!-- 总人数提示 -->
     <div v-if="!loading" class="stats-summary">
-      统计范围活跃人数：<strong>{{ totalUsers }}</strong> 人
+      需要提交日报人数：<strong>{{ totalUsers }}</strong> 人
     </div>
 
     <!-- 双列周卡片网格（倒序：最新周在前） -->
@@ -154,7 +152,7 @@ import {
   exportWeeklyStats,
   getWeeklyStatsDeptTree
 } from '@/api/project/dailyReport'
-import request from '@/utils/request'
+import { searchProjects } from '@/api/project/project'
 
 dayjs.extend(isoWeek)
 
@@ -191,7 +189,7 @@ const treeProps = { label: 'deptName', value: 'deptId', children: 'children' }
 
 const queryParams = reactive({
   yearMonth: dayjs().format('YYYY-MM'),
-  deptIds: [] as number[],
+  deptId: undefined as number | undefined,
   projectName: ''
 })
 
@@ -256,7 +254,7 @@ async function loadStats() {
     const params: any = {
       yearMonth: queryParams.yearMonth,
       projectName: queryParams.projectName || undefined,
-      deptIds: queryParams.deptIds.length > 0 ? queryParams.deptIds.join(',') : undefined
+      deptId: queryParams.deptId || undefined
     }
     const res = await getWeeklyStats(params)
     statList.value = res.data?.list || []
@@ -272,10 +270,9 @@ async function loadDeptTree() {
 }
 
 async function fetchProjectSuggestions(keyword: string, cb: (suggestions: any[]) => void) {
-  if (!keyword) { cb([]); return }
   try {
-    const res = await request({ url: '/project/dailyReport/projectNameSuggestions', method: 'get', params: { keyword } })
-    cb((res.data || []).map((name: string) => ({ value: name })))
+    const res = await searchProjects(keyword || '')
+    cb((res.data || []).map((p: any) => ({ value: p.projectName })))
   } catch {
     cb([])
   }
@@ -293,19 +290,18 @@ function handleQuery() { loadStats() }
 
 function resetQuery() {
   queryParams.yearMonth = dayjs().format('YYYY-MM')
-  queryParams.deptIds = []
+  queryParams.deptId = undefined
   queryParams.projectName = ''
   selectedWeek.value = null
   weekOptions.value = computeWeekOptions(queryParams.yearMonth)
   loadStats()
 }
 
-// 工时颜色：< 8h 红色警告，> 8h 橙色提示
+// 工时颜色：< 8h 淡红色背景，>= 8h 默认样式
 function hoursClass(hours: number | null): string {
   if (hours == null) return ''
   const h = Number(hours)
   if (h < 8) return 'hours-low'
-  if (h > 8) return 'hours-high'
   return ''
 }
 
@@ -326,7 +322,7 @@ async function openDetail(date: string, type: 'submitted' | 'unsubmitted') {
     const params: any = {
       reportDate: date,
       type,
-      deptIds: queryParams.deptIds.length > 0 ? queryParams.deptIds.join(',') : undefined
+      deptId: queryParams.deptId || undefined
     }
     const res = await getWeeklyStatsDetail(params)
     detailList.value = res.data || []
@@ -342,7 +338,7 @@ async function handleExport() {
     const params: any = {
       yearMonth: queryParams.yearMonth,
       projectName: queryParams.projectName || undefined,
-      deptIds: queryParams.deptIds.length > 0 ? queryParams.deptIds.join(',') : undefined
+      deptId: queryParams.deptId || undefined
     }
     const res = await exportWeeklyStats(params)
     const url = URL.createObjectURL(new Blob([res]))
@@ -433,6 +429,5 @@ onMounted(() => {
 .all-submitted { color: #67c23a; font-size: 12px; }
 
 /* 工时颜色 */
-.hours-low  { color: #f56c6c; font-weight: 600; }
-.hours-high { color: #e6a23c; font-weight: 600; }
+.hours-low  { background-color: #ffecec; border-radius: 4px; padding: 2px 6px; }
 </style>
