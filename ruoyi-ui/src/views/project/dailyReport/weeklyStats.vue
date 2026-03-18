@@ -50,59 +50,63 @@
       </el-form-item>
     </el-form>
 
-    <!-- 按周分组表格 -->
-    <div v-loading="loading">
-      <template v-for="(week, wi) in displayedWeeks" :key="wi">
-        <div class="week-header">
-          第 {{ week.weekNum }} 周（{{ week.startDate }} ～ {{ week.endDate }}）
+    <!-- 双列周卡片网格（倒序：最新周在前） -->
+    <div v-loading="loading" class="week-grid">
+      <div
+        v-for="(week, wi) in displayedWeeks"
+        :key="wi"
+        class="week-card"
+        :class="{ 'current-week': week.isCurrent }"
+      >
+        <div class="week-card-header">
+          <span class="week-title">
+            第 {{ week.weekNum }} 周
+            <span class="week-range">{{ week.startDate }} ～ {{ week.endDate }}</span>
+          </span>
+          <el-tag v-if="week.isCurrent" size="small" type="warning">本周</el-tag>
         </div>
-        <el-table :data="week.days" border style="width: 100%; margin-bottom: 16px">
-          <el-table-column label="日期" prop="reportDate" width="120" />
-          <el-table-column label="星期" prop="dayOfWeek" width="80" />
-          <el-table-column label="已提交" width="120">
+        <el-table :data="week.days" border size="small" class="week-table">
+          <el-table-column label="日期" prop="reportDate" width="100" />
+          <el-table-column label="周" prop="dayOfWeek" width="46" align="center" />
+          <el-table-column label="已提交" width="82" align="center">
             <template #default="{ row }">
+              <span v-if="row.isFuture" class="dash">—</span>
               <el-button
-                v-if="row.submittedCount > 0"
-                link
-                type="primary"
+                v-else-if="row.submittedCount > 0"
+                link type="primary"
                 @click="openDetail(row.reportDate, 'submitted')"
               >{{ row.submittedCount }} 人</el-button>
               <span v-else class="text-muted">0 人</span>
             </template>
           </el-table-column>
-          <el-table-column label="未提交">
+          <el-table-column label="未提交" align="center">
             <template #default="{ row }">
-              <template v-if="!row.isWorkday">
-                <span class="non-workday-label">非工作日</span>
-              </template>
-              <template v-else>
-                <el-button
-                  v-if="row.unsubmittedCount > 0"
-                  link
-                  type="danger"
-                  @click="openDetail(row.reportDate, 'unsubmitted')"
-                >{{ row.unsubmittedCount }} 人</el-button>
-                <span v-else class="text-muted">0 人</span>
-              </template>
+              <span v-if="!row.isWorkday" class="non-workday">非工作日</span>
+              <span v-else-if="row.isFuture" class="dash">—</span>
+              <el-button
+                v-else-if="row.unsubmittedCount > 0"
+                link type="danger"
+                @click="openDetail(row.reportDate, 'unsubmitted')"
+              >{{ row.unsubmittedCount }} 人</el-button>
+              <span v-else class="all-submitted">全部已填</span>
             </template>
           </el-table-column>
         </el-table>
-      </template>
-      <el-empty v-if="!loading && displayedWeeks.length === 0" description="暂无数据" />
+      </div>
+      <el-empty v-if="!loading && displayedWeeks.length === 0" description="暂无数据" class="grid-empty" />
     </div>
 
     <!-- 人员明细弹框 -->
-    <el-dialog
-      v-model="detailVisible"
-      :title="detailTitle"
-      width="600px"
-      append-to-body
-    >
-      <el-table :data="detailList" v-loading="detailLoading" border>
-        <el-table-column label="姓名" prop="nickName" min-width="100" />
-        <el-table-column label="部门" prop="deptName" min-width="150" />
+    <el-dialog v-model="detailVisible" :title="detailTitle" width="660px" append-to-body>
+      <el-table :data="detailList" v-loading="detailLoading" border size="small">
+        <el-table-column label="姓名" prop="nickName" min-width="90" />
+        <el-table-column label="部门" prop="deptName" min-width="130" />
         <template v-if="detailType === 'submitted'">
-          <el-table-column label="工时(小时)" prop="totalWorkHours" width="100" />
+          <el-table-column label="工时(h)" prop="totalWorkHours" width="82" align="center">
+            <template #default="{ row }">
+              <span :class="hoursClass(row.totalWorkHours)">{{ row.totalWorkHours }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="工作内容摘要" prop="workContentSummary" min-width="200" show-overflow-tooltip />
         </template>
       </el-table>
@@ -126,8 +130,9 @@ interface DailySubmissionStat {
   reportDate: string
   dayOfWeek: string
   isWorkday: boolean
-  submittedCount: number
-  unsubmittedCount: number
+  isFuture: boolean
+  submittedCount: number | null
+  unsubmittedCount: number | null
 }
 
 interface WeekOption {
@@ -141,6 +146,7 @@ interface WeekGroup {
   weekNum: number
   startDate: string
   endDate: string
+  isCurrent: boolean
   days: DailySubmissionStat[]
 }
 
@@ -153,7 +159,6 @@ const queryParams = reactive({
   deptId: null as number | null
 })
 
-// 周次选项
 const selectedWeek = ref<number | null>(null)
 const weekOptions = ref<WeekOption[]>([])
 
@@ -180,23 +185,23 @@ function computeWeekOptions(yearMonth: string): WeekOption[] {
   return weeks
 }
 
-// 将后端数组按周分组
 function groupByWeeks(stats: DailySubmissionStat[], options: WeekOption[]): WeekGroup[] {
+  const today = dayjs()
   return options.map(opt => ({
     weekNum: opt.value,
     startDate: opt.startDate,
     endDate: opt.endDate,
+    isCurrent: !today.isBefore(dayjs(opt.startDate)) && !today.isAfter(dayjs(opt.endDate)),
     days: stats.filter(s => s.reportDate >= opt.startDate && s.reportDate <= opt.endDate)
   }))
 }
 
-const allWeeks = computed<WeekGroup[]>(() =>
-  groupByWeeks(statList.value, weekOptions.value)
-)
+const allWeeks = computed<WeekGroup[]>(() => groupByWeeks(statList.value, weekOptions.value))
 
+// 倒序展示（最新周在前）；按周筛选时保持正序
 const displayedWeeks = computed<WeekGroup[]>(() => {
-  if (!selectedWeek.value) return allWeeks.value
-  return allWeeks.value.filter(w => w.weekNum === selectedWeek.value)
+  if (selectedWeek.value) return allWeeks.value.filter(w => w.weekNum === selectedWeek.value)
+  return [...allWeeks.value].reverse()
 })
 
 async function loadStats() {
@@ -215,13 +220,9 @@ function handleMonthChange() {
   loadStats()
 }
 
-function handleWeekChange() {
-  // 纯前端过滤，无需重新请求
-}
+function handleWeekChange() { /* 纯前端过滤 */ }
 
-function handleQuery() {
-  loadStats()
-}
+function handleQuery() { loadStats() }
 
 function resetQuery() {
   queryParams.yearMonth = dayjs().format('YYYY-MM')
@@ -229,6 +230,15 @@ function resetQuery() {
   selectedWeek.value = null
   weekOptions.value = computeWeekOptions(queryParams.yearMonth)
   loadStats()
+}
+
+// 工时颜色：< 8h 红色警告，> 8h 橙色提示
+function hoursClass(hours: number | null): string {
+  if (hours == null) return ''
+  const h = Number(hours)
+  if (h < 8) return 'hours-low'
+  if (h > 8) return 'hours-high'
+  return ''
 }
 
 // 明细弹框
@@ -245,11 +255,7 @@ async function openDetail(date: string, type: 'submitted' | 'unsubmitted') {
   detailLoading.value = true
   detailList.value = []
   try {
-    const res = await getWeeklyStatsDetail({
-      reportDate: date,
-      type,
-      deptId: queryParams.deptId
-    })
+    const res = await getWeeklyStatsDetail({ reportDate: date, type, deptId: queryParams.deptId })
     detailList.value = res.data || []
   } finally {
     detailLoading.value = false
@@ -281,21 +287,62 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.week-header {
+/* 双列网格 */
+.week-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.grid-empty {
+  grid-column: 1 / -1;
+}
+
+/* 周卡片 */
+.week-card {
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.current-week {
+  border-color: #e6a23c;
+  box-shadow: 0 0 0 2px rgba(230, 162, 60, 0.15);
+}
+
+/* 卡片标题 */
+.week-card-header {
+  background: #f5f7fa;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.current-week .week-card-header {
+  background: #fdf6ec;
+}
+.week-title {
   font-weight: 600;
-  font-size: 14px;
-  padding: 6px 0 4px;
-  color: #333;
+  font-size: 13px;
+  color: #303133;
 }
-.non-workday-label {
-  color: #aaa;
+.current-week .week-title {
+  color: #e6a23c;
+}
+.week-range {
+  font-weight: 400;
   font-size: 12px;
+  color: #909399;
+  margin-left: 6px;
 }
-.text-muted {
-  color: #ccc;
-}
-:deep(.el-table tr.non-workday td) {
-  background: #f5f5f5;
-  color: #aaa;
-}
+
+.week-table { width: 100%; }
+
+/* 状态文字 */
+.non-workday { color: #c0c4cc; font-size: 12px; }
+.dash        { color: #c0c4cc; font-size: 14px; }
+.text-muted  { color: #c0c4cc; }
+.all-submitted { color: #67c23a; font-size: 12px; }
+
+/* 工时颜色 */
+.hours-low  { color: #f56c6c; font-weight: 600; }
+.hours-high { color: #e6a23c; font-weight: 600; }
 </style>
