@@ -146,21 +146,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where c.contract_id = #{contractId}
     </select>
 
-    <!-- 合计统计：以 pm_project 为主表，与项目管理口径一致（排除子项目，每个项目只算一次） -->
+    <!-- 合计统计：以 pm_project 为主表，与项目管理口径一致（排除子项目，每个项目只算一次）
+         修复：合同金额聚合移到子查询（group by project_id 去重），避免项目关联多合同时工作量被重复计算；
+               实际人天公式改为先SUM再ROUND，与项目管理 selectProjectSummary 保持一致。 -->
     <select id="selectContractSummary" parameterType="Contract" resultType="map">
         select
-            IFNULL(SUM(c.contract_amount), 0)                                                    as contractAmountSum,
-            IFNULL(SUM(c.amount_no_tax), 0)                                                      as amountNoTaxSum,
+            IFNULL(SUM(pc.contract_amount_sum), 0)                                               as contractAmountSum,
+            IFNULL(SUM(pc.amount_no_tax_sum), 0)                                                 as amountNoTaxSum,
             IFNULL(SUM(p.project_budget), 0)                                                     as projectBudgetSum,
             IFNULL(SUM(p.estimated_workload), 0)                                                 as estimatedWorkloadSum,
-            IFNULL(SUM(ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0)), 0)     as actualWorkloadSum,
+            ROUND(SUM(p.actual_workload) / 8, 3) + COALESCE(SUM(p.adjust_workload), 0)          as actualWorkloadSum,
             IFNULL(SUM(p.confirm_amount), 0)                                                     as revenueConfirmAmountSum
         from pm_project p
-        left join pm_project_contract_rel rel on p.project_id = rel.project_id and rel.del_flag = '0'
-        left join pm_contract c on rel.contract_id = c.contract_id and c.del_flag = '0'
-        <where>
-            p.del_flag = '0'
-            and (p.project_level is null or p.project_level = 0)
+        left join (
+            select rel.project_id,
+                   SUM(c.contract_amount) as contract_amount_sum,
+                   SUM(c.amount_no_tax)   as amount_no_tax_sum
+            from pm_project_contract_rel rel
+            inner join pm_contract c on rel.contract_id = c.contract_id and c.del_flag = '0'
+            where rel.del_flag = '0'
             <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
             <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="customerId != null "> and c.customer_id = #{customerId}</if>
@@ -171,6 +175,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
             <if test="confirmYear != null  and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            group by rel.project_id
+        ) pc on p.project_id = pc.project_id
+        <where>
+            p.del_flag = '0'
+            and (p.project_level is null or p.project_level = 0)
+            <!-- 若有合同条件过滤，只保留命中合同的项目（pc 子查询已过滤，未命中的 pc 为 NULL） -->
+            <if test="contractCode != null  and contractCode != ''"> and pc.project_id is not null</if>
+            <if test="contractName != null  and contractName != ''"> and pc.project_id is not null</if>
+            <if test="customerId != null "> and pc.project_id is not null</if>
+            <if test="deptId != null "> and pc.project_id is not null</if>
+            <if test="contractType != null  and contractType != ''"> and pc.project_id is not null</if>
+            <if test="contractStatus != null  and contractStatus != ''"> and pc.project_id is not null</if>
+            <if test="confirmYear != null  and confirmYear != ''"> and pc.project_id is not null</if>
         </where>
     </select>
 

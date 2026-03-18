@@ -1,6 +1,16 @@
 <template>
   <div class="app-container daily-report-page">
-    <el-row :gutter="16">
+    <!-- 白名单用户提示 -->
+    <el-alert
+      v-if="isWhitelisted"
+      title="您已被设置为无需填写日报"
+      description="如有疑问，请联系系统管理员。"
+      type="info"
+      show-icon
+      :closable="false"
+      style="margin-bottom: 16px;"
+    />
+    <el-row v-if="!isWhitelisted" :gutter="16">
       <!-- 左侧日历 -->
       <el-col :span="7">
         <el-card shadow="hover">
@@ -227,6 +237,7 @@ import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, InfoFilled } from '@element-plus/icons-vue'
 import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport } from '@/api/project/dailyReport'
+import { checkSelfInWhitelist } from '@/api/project/whitelist'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
 import useUserStore from '@/store/modules/user'
@@ -245,6 +256,7 @@ function formatDateStr(date) {
 }
 
 const selectedDate = ref(formatDateStr(new Date()))
+const isWhitelisted = ref(false)
 const currentYearMonth = ref((() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -616,6 +628,10 @@ async function handleDelete() {
 
 
 onMounted(async () => {
+  // 检查当前用户是否在日报白名单中
+  const whitelistRes = await checkSelfInWhitelist().catch(() => ({ data: false }))
+  isWhitelisted.value = whitelistRes.data === true
+  if (isWhitelisted.value) return  // 白名单用户无需加载日报相关数据
   await loadWorkCalendar()
   await loadProjects()
   await loadDayReport(selectedDate.value)

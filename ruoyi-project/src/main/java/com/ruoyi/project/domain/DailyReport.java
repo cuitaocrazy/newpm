@@ -220,6 +220,24 @@ public class DailyReport extends BaseEntity
         return projectName;
     }
 
+    /** 统计查询：起始日期字符串（yyyy-MM-dd，由 Service 层设置） */
+    private String startDate;
+
+    /** 统计查询：结束日期字符串（yyyy-MM-dd，由 Service 层设置） */
+    private String endDate;
+
+    /** 统计查询：明细类型（submitted=已提交 / unsubmitted=未提交） */
+    private String type;
+
+    public void setStartDate(String startDate) { this.startDate = startDate; }
+    public String getStartDate() { return startDate; }
+
+    public void setEndDate(String endDate) { this.endDate = endDate; }
+    public String getEndDate() { return endDate; }
+
+    public void setType(String type) { this.type = type; }
+    public String getType() { return type; }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)

@@ -267,6 +267,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         left join sys_dept d on u.dept_id = d.dept_id
         <where>
             u.del_flag = '0' and u.status = '0'
+            and u.user_id not in (select user_id from pm_daily_report_whitelist where del_flag = '0')
             <if test="projectId != null">
                 and (
                     u.user_id in (
@@ -287,6 +288,99 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
         </where>
         order by d.dept_name, u.nick_name
+    </select>
+
+    <!-- 按日期统计已提交人数（日报统计报表用） -->
+    <select id="selectSubmittedCountByDate" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT r.report_date AS reportDate,
+               COUNT(DISTINCT r.user_id) AS submittedCount
+        FROM pm_daily_report r
+        INNER JOIN sys_user u ON r.user_id = u.user_id
+        LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+        <where>
+            r.del_flag = '0'
+            AND u.del_flag = '0' AND u.status = '0'
+            AND r.report_date BETWEEN #{startDate} AND #{endDate}
+            <if test="deptId != null">
+                AND (u.dept_id = #{deptId}
+                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
+                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+            ${params.dataScope}
+        </where>
+        GROUP BY r.report_date
+    </select>
+
+    <!-- 查询数据权限范围内活跃用户总数（排除白名单） -->
+    <select id="selectTotalUserCount" parameterType="DailyReport" resultType="int">
+        SELECT COUNT(*)
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+        <where>
+            u.del_flag = '0' AND u.status = '0'
+            AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
+            <if test="deptId != null">
+                AND (u.dept_id = #{deptId}
+                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
+                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+            ${params.dataScope}
+        </where>
+    </select>
+
+    <!-- 某天已提交人员明细（含工时和工作内容摘要） -->
+    <select id="selectSubmittedUsersOnDate" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT u.user_id AS userId,
+               u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
+               d.dept_name AS deptName,
+               r.total_work_hours AS totalWorkHours,
+               LEFT(GROUP_CONCAT(
+                   dd.work_content ORDER BY dd.detail_id SEPARATOR '；'
+               ), 50) AS workContentSummary
+        FROM pm_daily_report r
+        INNER JOIN sys_user u ON r.user_id = u.user_id
+        LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+        LEFT JOIN pm_daily_report_detail dd
+               ON dd.report_id = r.report_id
+              AND dd.entry_type = 'work'
+              AND dd.del_flag = '0'
+        <where>
+            r.del_flag = '0'
+            AND u.del_flag = '0' AND u.status = '0'
+            AND r.report_date = #{reportDate}
+            <if test="deptId != null">
+                AND (u.dept_id = #{deptId}
+                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
+                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+            ${params.dataScope}
+        </where>
+        GROUP BY r.report_id, u.user_id, u.nick_name, d.dept_name, r.total_work_hours
+        ORDER BY d.dept_name, u.nick_name COLLATE utf8mb4_unicode_ci
+    </select>
+
+    <!-- 某天未提交人员明细（排除白名单） -->
+    <select id="selectUnsubmittedUsersOnDate" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT u.user_id AS userId,
+               u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
+               d.dept_name AS deptName
+        FROM sys_user u
+        LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+        <where>
+            u.del_flag = '0' AND u.status = '0'
+            AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
+            AND u.user_id NOT IN (
+                SELECT r.user_id FROM pm_daily_report r
+                WHERE r.report_date = #{reportDate} AND r.del_flag = '0'
+            )
+            <if test="deptId != null">
+                AND (u.dept_id = #{deptId}
+                     OR u.dept_id IN (SELECT dept_id FROM sys_dept
+                                      WHERE find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+            ${params.dataScope}
+        </where>
+        ORDER BY d.dept_name, u.nick_name COLLATE utf8mb4_unicode_ci
     </select>
 
 </mapper>

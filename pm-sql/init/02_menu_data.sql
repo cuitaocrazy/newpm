@@ -414,3 +414,28 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 SELECT '项目分解任务', menu_id, 1, 'decompose', 'project/subproject/decompose',
        1, 0, 'C', '0', '0', 'project:task:add', 'list', 'admin', NOW(), '', NULL, '项目分解任务'
 FROM sys_menu WHERE menu_name='任务管理' AND parent_id=0;
+
+-- ----------------------------
+-- 日报白名单菜单（挂在系统管理下）
+-- ----------------------------
+SET @sysManageMenuId = (SELECT menu_id FROM sys_menu WHERE menu_name = '系统管理' AND parent_id = 0 LIMIT 1);
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('日报白名单', @sysManageMenuId, 99, 'whitelist', 'system/whitelist/index', 1, 0, 'C', '0', '0', 'project:whitelist:list', 'peoples', 'admin', sysdate(), '', NULL, '日报填写白名单管理', 'DailyReportWhitelist');
+SET @whitelistMenuId = LAST_INSERT_ID();
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('查询', @whitelistMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:whitelist:list', '#', 'admin', sysdate(), '', NULL, '');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('添加', @whitelistMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:whitelist:add', '#', 'admin', sysdate(), '', NULL, '');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('移除', @whitelistMenuId, 3, '#', '', 1, 0, 'F', '0', '0', 'project:whitelist:remove', '#', 'admin', sysdate(), '', NULL, '');
+
+-- ---- 日报统计报表 ----
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
+VALUES ('日报统计报表', @dailyReportRootId, 6, 'weeklyStats', 'project/dailyReport/weeklyStats', 1, 0, 'C', '0', '0', 'project:dailyReport:weeklyStats', 'bar-chart', 'admin', sysdate(), '', NULL, '日报统计报表菜单', 'DailyReportWeeklyStats');
+SELECT @weeklyStatsMenuId := LAST_INSERT_ID();
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('查询', @weeklyStatsMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:dailyReport:weeklyStats', '#', 'admin', sysdate(), '', NULL, '');
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('导出', @weeklyStatsMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:dailyReport:weeklyStatsExport', '#', 'admin', sysdate(), '', NULL, '');

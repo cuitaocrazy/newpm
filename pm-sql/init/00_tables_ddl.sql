@@ -1195,3 +1195,21 @@ CREATE TABLE IF NOT EXISTS `pm_task` (
   KEY `idx_schedule_status` (`schedule_status`),
   KEY `idx_create_time`     (`create_time`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='任务管理表';
+
+-- ----------------------------
+-- 日报填写白名单
+-- ----------------------------
+CREATE TABLE `pm_daily_report_whitelist` (
+  `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `user_id`     BIGINT       NOT NULL                COMMENT '白名单用户ID（FK: sys_user.user_id）',
+  `reason`      VARCHAR(500) NOT NULL                COMMENT '加入原因（必填）',
+  `del_flag`    CHAR(1)      NOT NULL DEFAULT '0'    COMMENT '删除标志（0正常 1删除）',
+  `create_by`   VARCHAR(64)  DEFAULT NULL            COMMENT '创建者',
+  `create_time` DATETIME     DEFAULT NULL            COMMENT '创建时间',
+  `update_by`   VARCHAR(64)  DEFAULT NULL            COMMENT '更新者',
+  `update_time` DATETIME     DEFAULT NULL            COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id`  (`user_id`),
+  KEY `idx_del_flag` (`del_flag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='日报填写白名单（免填日报人员名单）';

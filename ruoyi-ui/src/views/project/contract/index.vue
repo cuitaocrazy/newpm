@@ -478,7 +478,7 @@ const tableDataWithSummary = computed(() => {
     contractAmount: Number(summaryData.value.contractAmountSum || 0).toFixed(2),
     amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2),
     projectBudgetTotal: Number(summaryData.value.projectBudgetSum || 0).toFixed(2),
-    estimatedWorkloadTotal: Number(summaryData.value.estimatedWorkloadSum || 0).toFixed(3),
+    estimatedWorkloadTotal: Math.round(Number(summaryData.value.estimatedWorkloadSum || 0)),
     actualWorkloadTotal: Number(summaryData.value.actualWorkloadSum || 0).toFixed(3),
     revenueConfirmAmountTotal: Number(summaryData.value.revenueConfirmAmountSum || 0).toFixed(2),
   }
