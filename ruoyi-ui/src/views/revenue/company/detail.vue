@@ -31,7 +31,7 @@
             <el-descriptions-item label="合同状态"><dict-tag :options="sys_htzt" :value="form.contractStatus"/></el-descriptions-item>
             <el-descriptions-item label="合同名称"><span style="white-space: pre-line;">{{ form.contractName || '-' }}</span></el-descriptions-item>
             <el-descriptions-item label="收入确认状态"><dict-tag :options="sys_qrzt" :value="form.revenueConfirmStatus"/></el-descriptions-item>
-            <el-descriptions-item label="收入确认年度">{{ form.revenueConfirmYear || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="收入确认年度">{{ getDictLabel(sys_ndgl, form.revenueConfirmYear) }}</el-descriptions-item>
             <el-descriptions-item label="确认金额（含税）">{{ formatAmount(form.confirmAmount) }} 元</el-descriptions-item>
             <el-descriptions-item label="税率">{{ form.taxRate != null ? form.taxRate + '%' : '-' }}</el-descriptions-item>
             <el-descriptions-item label="税后金额" :span="2">{{ formatAmount(form.afterTaxAmount) }} 元</el-descriptions-item>
@@ -116,7 +116,7 @@
             <!-- 确认年度 -->
             <div class="info-row">
               <div class="info-label"><el-icon><Calendar /></el-icon> 确认年度</div>
-              <div class="info-value">{{ form.revenueConfirmYear || '-' }}</div>
+              <div class="info-value">{{ getDictLabel(sys_ndgl, form.revenueConfirmYear) }}</div>
             </div>
 
             <!-- 确认日期 -->
