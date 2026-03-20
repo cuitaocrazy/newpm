@@ -18,7 +18,7 @@
           clearable
           style="width: 240px"
           value-key="projectName"
-          :trigger-on-focus="false"
+          :trigger-on-focus="true"
           @select="handleProjectSelect"
           @clear="handleProjectClear"
         />
@@ -41,10 +41,10 @@
     <!-- 图例说明 -->
     <div class="legend-bar">
       <span class="legend-item">
-        <span class="legend-dot contract-dot"></span>绿色行 = 项目有关联合同（可能带来收入）
+        <span class="legend-dot contract-dot"></span><span class="contract-label" style="display:inline">项目名称为绿色</span> = 项目有关联合同（可能带来收入）
       </span>
       <span class="legend-item">
-        <span class="legend-dot warn-dot"></span>红色 ⚠ = 实际人天已超预算的 50%
+        <span class="legend-dot warn-dot"></span><span class="warn-text" style="display:inline">实际人天为红色</span> = 实际人天已超预算的 50%
       </span>
     </div>
 
@@ -58,7 +58,6 @@
           border
           style="width: 100%"
           :span-method="spanMethod"
-          :row-class-name="rowClassName"
           :row-style="{ height: 'auto' }"
         >
           <!-- 固定列：项目名称（固定宽度，支持换行） -->
@@ -102,12 +101,8 @@
             <template #default="{ row }">
               <template v-if="row.memberIndex === 0">
                 <span
-                  v-if="row.estimatedWorkload > 0 && row.projectActualDays > row.estimatedWorkload * 0.5"
-                  class="warn-text"
-                >
-                  <el-icon><Warning /></el-icon>{{ formatDays(row.projectActualDays) }}
-                </span>
-                <span v-else>{{ formatDays(row.projectActualDays) }}</span>
+                  :class="row.estimatedWorkload > 0 && row.projectActualDays > row.estimatedWorkload * 0.5 ? 'warn-text' : ''"
+                >{{ formatDays(row.projectActualDays) }}</span>
               </template>
             </template>
           </el-table-column>
@@ -128,7 +123,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { CircleCheck, Warning } from '@element-plus/icons-vue'
+import { CircleCheck } from '@element-plus/icons-vue'
 import { getTeamMonthly, getTeamProjectOptions } from '@/api/project/dailyReport'
 import dayjs from 'dayjs'
 
@@ -216,11 +211,6 @@ function spanMethod({ row, columnIndex }: any) {
   }
 }
 
-// --- 行样式 ---
-function rowClassName({ row }: any) {
-  return row.hasContract ? 'contract-row' : ''
-}
-
 // --- 格式化人天 ---
 function formatDays(val: any) {
   if (val == null) return '—'
@@ -255,7 +245,6 @@ function handleDeptChange() {
 // --- 项目 autocomplete ---
 let debounceTimer: any = null
 function fetchProjectSuggestions(query: string, cb: Function) {
-  if (!query) { cb([]); return }
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(async () => {
     try {
@@ -322,9 +311,6 @@ onMounted(() => {
 .contract-dot { background: #95d475; }
 .warn-dot     { background: #f56c6c; }
 
-.contract-row {
-  background-color: #f0f9eb !important;
-}
 .contract-label,
 .project-label {
   display: block;
@@ -343,8 +329,6 @@ onMounted(() => {
 }
 .warn-text {
   color: #f56c6c;
-  display: flex;
-  align-items: center;
-  gap: 2px;
+  font-weight: 500;
 }
 </style>
