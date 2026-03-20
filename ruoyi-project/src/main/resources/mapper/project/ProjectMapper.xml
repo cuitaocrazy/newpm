@@ -127,10 +127,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                u1.nick_name AS project_manager_name,
                tc.team_confirm_depts,
                tc.team_confirm_amount,
-               p.parent_id, p.project_level, p.task_code,
-               pp.project_name as parent_project_name
         FROM pm_project p
-        LEFT JOIN pm_project pp ON p.parent_id = pp.project_id
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
             SELECT pcr.project_id,
@@ -159,7 +156,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
-            AND (p.project_level IS NULL OR p.project_level = 0)
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
             <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
@@ -256,7 +252,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
-            AND (p.project_level IS NULL OR p.project_level = 0)
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
             <if test="regionId != null "> and p.region_id = #{regionId}</if>
@@ -309,7 +304,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         <where>
             p.del_flag = '0'
-            AND (p.project_level IS NULL OR p.project_level = 0)
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
             <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
@@ -709,7 +703,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 团队收入确认平铺列表（以 pm_project 为主表，与公司收入条数对齐） -->
     <sql id="teamRevenueFlatWhere">
         p.del_flag = '0'
-        AND (p.project_level IS NULL OR p.project_level = 0)
         <if test="projectName != null and projectName != ''"> AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
         <if test="projectDept != null and projectDept != ''">
             AND (p.project_dept = #{projectDept}
@@ -945,7 +938,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u3 ON p.market_manager_id = u3.user_id
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         WHERE p.del_flag = '0'
-        AND (p.project_level IS NULL OR p.project_level = 0)
         <if test="approvalStatus != null and approvalStatus != ''">
             AND p.approval_status = #{approvalStatus}
         </if>
@@ -999,7 +991,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
         LEFT JOIN sys_user u1 ON p.create_by COLLATE utf8mb4_unicode_ci = u1.user_name
         WHERE p.del_flag = '0'
-        AND (p.project_level IS NULL OR p.project_level = 0)
         <if test="approvalStatus != null and approvalStatus != ''">
             AND p.approval_status = #{approvalStatus}
         </if>
@@ -1040,7 +1031,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         FROM pm_project p
         LEFT JOIN sys_dept d ON p.project_dept = d.dept_id
         WHERE p.del_flag = '0'
-          AND (p.project_level IS NULL OR p.project_level = 0)
           AND (
               p.project_dept = #{deptId}
               OR p.project_dept IN (
@@ -1146,7 +1136,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         WHERE p.del_flag = '0'
-        AND (p.project_level IS NULL OR p.project_level = 0)
         <if test="projectDept != null and projectDept != ''">
             AND (p.project_dept = #{projectDept}
                  OR p.project_dept IN (SELECT dept_id FROM sys_dept WHERE FIND_IN_SET(#{projectDept}, ancestors) > 0))
@@ -1176,7 +1165,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             and dict.dict_type = 'sys_xmjd'
         left join sys_user u on p.project_manager_id = u.user_id and u.del_flag = '0'
         where p.del_flag = '0'
-          and (p.project_level is null or p.project_level = 0)
           and p.approval_status = '1'
           and p.project_status = '0'
           and (p.project_stage is null or p.project_stage != '11')
