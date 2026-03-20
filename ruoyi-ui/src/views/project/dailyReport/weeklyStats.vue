@@ -322,7 +322,8 @@ async function openDetail(date: string, type: 'submitted' | 'unsubmitted') {
     const params: any = {
       reportDate: date,
       type,
-      deptId: queryParams.deptId || undefined
+      deptId: queryParams.deptId || undefined,
+      projectName: queryParams.projectName || undefined
     }
     const res = await getWeeklyStatsDetail(params)
     detailList.value = res.data || []
