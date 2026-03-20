@@ -163,9 +163,8 @@ const flatRows = computed(() => {
   const rows: any[] = []
   for (const project of tableData.value) {
     const members = project.members || []
-    // 汇总项目组所有成员工时 → 项目实际人天
-    const totalProjectHours = members.reduce((sum: number, m: any) => sum + Number(m.totalHours || 0), 0)
-    const projectActualDays = totalProjectHours / 8
+    // 使用后端返回的实际人天（已含调整人天）
+    const projectActualDays = Number(project.actualPersonDays || 0)
     const estimatedWorkload = Number(project.estimatedWorkload || 0)
 
     members.forEach((member: any, idx: number) => {
