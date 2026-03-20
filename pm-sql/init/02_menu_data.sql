@@ -282,9 +282,12 @@ VALUES ('工作日报动态', @dailyReportRootId, 2, 'activity', 'project/dailyR
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
 VALUES ('工作日历', @dailyReportRootId, 4, 'workCalendar', 'project/workCalendar/index', 1, 0, 'C', '0', '0', 'project:workCalendar:list', 'date-range', 'admin', sysdate(), '', NULL, '工作日历菜单', 'WorkCalendar');
 
--- ---- 团队日报（无按钮）----
+-- ---- 团队日报 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)
-VALUES ('团队日报', @dailyReportRootId, 5, 'teamReport', 'project/dailyReport/teamReport', 1, 0, 'C', '0', '0', 'project:dailyReport:activity', 'peoples', 'admin', sysdate(), '', NULL, '团队日报菜单', 'TeamDailyReport');
+VALUES ('团队日报', @dailyReportRootId, 5, 'teamReport', 'project/dailyReport/teamReport', 1, 0, 'C', '0', '0', 'project:dailyReport:teamList', 'date', 'admin', sysdate(), '', NULL, '团队日报菜单', 'TeamDailyReport');
+SELECT @teamReportMenuId := LAST_INSERT_ID();
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
+VALUES ('查询', @teamReportMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:dailyReport:teamList', '#', 'admin', sysdate(), '', NULL, '');
 
 -- ---- 项目人天统计 ----
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark, route_name)

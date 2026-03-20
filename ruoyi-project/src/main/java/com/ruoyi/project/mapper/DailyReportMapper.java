@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.DailyReport;
+import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 
 /**
  * 工作日报Mapper接口
@@ -121,4 +122,15 @@ public interface DailyReportMapper
      * 查询日报统计报表专用部门树（三级及以下，三级节点 parentId=0 作为根节点）
      */
     List<Map<String, Object>> selectStatsDeptTree(DailyReport query);
+
+    /**
+     * 团队日报 - 按部门+月份查询原始平铺行（项目×成员×日期）
+     * Java 层再按 projectId → userId 聚合
+     */
+    List<Map<String, Object>> selectTeamMonthlyRaw(DailyReport query);
+
+    /**
+     * 团队日报 - 项目名称 autocomplete（按部门范围模糊搜索，最多20条）
+     */
+    List<Map<String, Object>> selectTeamProjectOptions(DailyReport query);
 }

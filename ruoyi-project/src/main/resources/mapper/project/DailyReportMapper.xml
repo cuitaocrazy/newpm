@@ -320,17 +320,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
             AND r.report_date BETWEEN #{startDate} AND #{endDate}
-            <if test="projectName != null and projectName != ''">
-                AND EXISTS (
-                    SELECT 1 FROM pm_daily_report_detail dd_pn
-                    INNER JOIN pm_project p_pn ON dd_pn.project_id = p_pn.project_id
-                    WHERE dd_pn.report_id = r.report_id
-                      AND dd_pn.del_flag = '0'
-                      AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
-                )
-            </if>
-            <include refid="deptFilter" />
-            ${params.dataScope}
+            <choose>
+                <when test="projectName != null and projectName != ''">
+                    AND r.user_id IN (
+                        SELECT DISTINCT pm.user_id FROM pm_project_member pm
+                        INNER JOIN pm_project p_pn ON pm.project_id = p_pn.project_id
+                        WHERE pm.is_active = '1' AND pm.del_flag = '0'
+                          AND p_pn.del_flag = '0'
+                          AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
+                    )
+                </when>
+                <otherwise>
+                    <include refid="deptFilter" />
+                    ${params.dataScope}
+                </otherwise>
+            </choose>
         </where>
         GROUP BY r.report_date
     </select>
@@ -344,17 +348,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             u.del_flag = '0' AND u.status = '0'
             AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
-            <if test="projectName != null and projectName != ''">
-                AND u.user_id IN (
-                    SELECT DISTINCT pm.user_id FROM pm_project_member pm
-                    INNER JOIN pm_project p_pn ON pm.project_id = p_pn.project_id
-                    WHERE pm.is_active = '1' AND pm.del_flag = '0'
-                      AND p_pn.del_flag = '0'
-                      AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
-                )
-            </if>
-            <include refid="deptFilter" />
-            ${params.dataScope}
+            <choose>
+                <when test="projectName != null and projectName != ''">
+                    AND u.user_id IN (
+                        SELECT DISTINCT pm.user_id FROM pm_project_member pm
+                        INNER JOIN pm_project p_pn ON pm.project_id = p_pn.project_id
+                        WHERE pm.is_active = '1' AND pm.del_flag = '0'
+                          AND p_pn.del_flag = '0'
+                          AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
+                    )
+                </when>
+                <otherwise>
+                    <include refid="deptFilter" />
+                    ${params.dataScope}
+                </otherwise>
+            </choose>
         </where>
     </select>
 
@@ -380,8 +388,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             r.del_flag = '0'
             AND u.del_flag = '0' AND u.status = '0'
             AND r.report_date = #{reportDate}
-            <include refid="deptFilter" />
-            ${params.dataScope}
+            <choose>
+                <when test="projectName != null and projectName != ''">
+                    AND r.user_id IN (
+                        SELECT DISTINCT pm.user_id FROM pm_project_member pm
+                        INNER JOIN pm_project p_pn ON pm.project_id = p_pn.project_id
+                        WHERE pm.is_active = '1' AND pm.del_flag = '0'
+                          AND p_pn.del_flag = '0'
+                          AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
+                    )
+                </when>
+                <otherwise>
+                    <include refid="deptFilter" />
+                    ${params.dataScope}
+                </otherwise>
+            </choose>
         </where>
         GROUP BY r.report_id, u.user_id, u.nick_name, d.dept_name, r.total_work_hours
         ORDER BY d.dept_name, u.nick_name COLLATE utf8mb4_unicode_ci
@@ -402,10 +423,92 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 SELECT r.user_id FROM pm_daily_report r
                 WHERE r.report_date = #{reportDate} AND r.del_flag = '0'
             )
-            <include refid="deptFilter" />
-            ${params.dataScope}
+            <choose>
+                <when test="projectName != null and projectName != ''">
+                    AND u.user_id IN (
+                        SELECT DISTINCT pm.user_id FROM pm_project_member pm
+                        INNER JOIN pm_project p_pn ON pm.project_id = p_pn.project_id
+                        WHERE pm.is_active = '1' AND pm.del_flag = '0'
+                          AND p_pn.del_flag = '0'
+                          AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
+                    )
+                </when>
+                <otherwise>
+                    <include refid="deptFilter" />
+                    ${params.dataScope}
+                </otherwise>
+            </choose>
         </where>
         ORDER BY d.dept_name, u.nick_name COLLATE utf8mb4_unicode_ci
+    </select>
+
+    <!-- 团队日报 - 项目 autocomplete（按部门范围模糊搜索，最多20条） -->
+    <select id="selectTeamProjectOptions" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT DISTINCT
+            p.project_id AS projectId,
+            p.project_name AS projectName
+        FROM pm_project p
+        INNER JOIN pm_project_member m ON m.project_id = p.project_id
+            AND m.is_active = '1' AND m.del_flag = '0'
+        INNER JOIN sys_user u ON u.user_id = m.user_id
+        INNER JOIN sys_dept d ON d.dept_id = u.dept_id
+        <where>
+            p.del_flag = '0'
+            <if test="deptId != null">
+                AND (p.project_dept = #{deptId}
+                     OR p.project_dept IN (
+                         SELECT dept_id FROM sys_dept
+                         WHERE FIND_IN_SET(#{deptId}, ancestors) > 0
+                     ))
+            </if>
+            <if test="projectName != null and projectName != ''">
+                AND p.project_name LIKE CONCAT('%', #{projectName}, '%')
+            </if>
+            ${params.dataScope}
+        </where>
+        ORDER BY p.project_name COLLATE utf8mb4_unicode_ci
+        LIMIT 20
+    </select>
+
+    <!-- 团队日报 - 原始平铺行（项目×成员×日期），Java 层聚合 -->
+    <select id="selectTeamMonthlyRaw" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT
+            p.project_id AS projectId,
+            p.project_name AS projectName,
+            p.estimated_workload AS estimatedWorkload,
+            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actualPersonDays,
+            EXISTS(
+                SELECT 1 FROM pm_project_contract_rel pcr
+                WHERE pcr.project_id = p.project_id AND pcr.del_flag = '0'
+            ) AS hasContract,
+            u.user_id AS userId,
+            u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
+            d.dept_name COLLATE utf8mb4_unicode_ci AS deptName,
+            r.report_date AS reportDate,
+            r.total_work_hours AS totalWorkHours
+        FROM pm_project p
+        INNER JOIN pm_project_member m ON m.project_id = p.project_id
+            AND m.is_active = '1' AND m.del_flag = '0'
+        INNER JOIN sys_user u ON u.user_id = m.user_id
+        INNER JOIN sys_dept d ON d.dept_id = u.dept_id
+        LEFT JOIN pm_daily_report r ON r.user_id = m.user_id
+            AND DATE_FORMAT(r.report_date, '%Y-%m') = #{yearMonth}
+            AND r.del_flag = '0'
+        <where>
+            p.del_flag = '0'
+            <if test="deptId != null">
+                AND (p.project_dept = #{deptId}
+                     OR p.project_dept IN (
+                         SELECT dept_id FROM sys_dept
+                         WHERE FIND_IN_SET(#{deptId}, ancestors) > 0
+                     ))
+            </if>
+            <if test="projectId != null">
+                AND p.project_id = #{projectId}
+            </if>
+            ${params.dataScope}
+        </where>
+        ORDER BY p.project_id, u.user_id, r.report_date
     </select>
 
     <!-- 日报统计报表部门树：仅返回三级及以下，三级节点 parentId 设为 0 作为根节点 -->

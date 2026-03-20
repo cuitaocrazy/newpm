@@ -5,6 +5,7 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.project.domain.DailyReport;
 import com.ruoyi.project.domain.vo.DailySubmissionStat;
+import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 /**
  * 工作日报Service接口
  *
@@ -108,4 +109,14 @@ public interface IDailyReportService
      * 导出日报统计报表为 Excel（双 Sheet）
      */
     void exportWeeklyStats(HttpServletResponse response, List<DailySubmissionStat> statList, DailyReport query);
+
+    /**
+     * 团队日报 - 按部门+月份查询（返回按项目→成员聚合的 VO 列表）
+     */
+    List<TeamDailyReportVO> selectTeamMonthly(DailyReport query);
+
+    /**
+     * 团队日报 - 项目名称 autocomplete（按部门范围模糊搜索）
+     */
+    List<Map<String, Object>> selectTeamProjectOptions(DailyReport query);
 }

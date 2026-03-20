@@ -9,10 +9,13 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import com.ruoyi.project.domain.vo.TeamDailyReportVO;
+import com.ruoyi.project.domain.vo.TeamMemberDailyVO;
 import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
@@ -492,4 +495,95 @@ public class DailyReportServiceImpl implements IDailyReportService
     }
 
     private String str(Object o) { return o != null ? o.toString() : ""; }
+
+    /**
+     * 团队日报 - 项目 autocomplete
+     */
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public List<Map<String, Object>> selectTeamProjectOptions(DailyReport query)
+    {
+        return dailyReportMapper.selectTeamProjectOptions(query);
+    }
+
+    /**
+     * 团队日报 - 按项目→成员聚合
+     * 原始行：项目×成员×日期（LEFT JOIN，无日报则 reportDate=null）
+     * Java 层两层聚合：projectId → userId → date→hours
+     */
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u")
+    public List<TeamDailyReportVO> selectTeamMonthly(DailyReport query)
+    {
+        List<Map<String, Object>> rows = dailyReportMapper.selectTeamMonthlyRaw(query);
+
+        // projectId → TeamDailyReportVO（保序用 LinkedHashMap）
+        LinkedHashMap<Long, TeamDailyReportVO> projectMap = new LinkedHashMap<>();
+        // (projectId, userId) → TeamMemberDailyVO
+        LinkedHashMap<String, TeamMemberDailyVO> memberMap = new LinkedHashMap<>();
+
+        for (Map<String, Object> row : rows)
+        {
+            Long projectId = toLong(row.get("projectId"));
+            Long userId    = toLong(row.get("userId"));
+
+            // 聚合项目层
+            TeamDailyReportVO project = projectMap.computeIfAbsent(projectId, id -> {
+                TeamDailyReportVO vo = new TeamDailyReportVO();
+                vo.setProjectId(id);
+                vo.setProjectName(str(row.get("projectName")));
+                vo.setHasContract(toBoolean(row.get("hasContract")));
+                vo.setEstimatedWorkload(toBigDecimal(row.get("estimatedWorkload")));
+                vo.setActualPersonDays(toBigDecimal(row.get("actualPersonDays")));
+                vo.setMembers(new ArrayList<>());
+                return vo;
+            });
+
+            // 聚合成员层
+            String memberKey = projectId + "_" + userId;
+            TeamMemberDailyVO member = memberMap.computeIfAbsent(memberKey, k -> {
+                TeamMemberDailyVO vo = new TeamMemberDailyVO();
+                vo.setUserId(userId);
+                vo.setNickName(str(row.get("nickName")));
+                vo.setDeptName(str(row.get("deptName")));
+                project.getMembers().add(vo);
+                return vo;
+            });
+
+            // 填充日期工时
+            Object reportDate = row.get("reportDate");
+            Object totalWorkHours = row.get("totalWorkHours");
+            if (reportDate != null && totalWorkHours != null)
+            {
+                String dateStr = reportDate.toString().substring(0, 10); // yyyy-MM-dd
+                BigDecimal hours = toBigDecimal(totalWorkHours);
+                member.getDailyHours().merge(dateStr, hours, BigDecimal::add);
+                member.setTotalHours(member.getTotalHours().add(hours));
+            }
+        }
+
+        return new ArrayList<>(projectMap.values());
+    }
+
+    private Long toLong(Object val)
+    {
+        if (val == null) return null;
+        if (val instanceof Long) return (Long) val;
+        return Long.valueOf(val.toString());
+    }
+
+    private BigDecimal toBigDecimal(Object val)
+    {
+        if (val == null) return null;
+        if (val instanceof BigDecimal) return (BigDecimal) val;
+        return new BigDecimal(val.toString());
+    }
+
+    private Boolean toBoolean(Object val)
+    {
+        if (val == null) return false;
+        if (val instanceof Boolean) return (Boolean) val;
+        // MySQL BIT/TINYINT: 1 → true
+        return "1".equals(val.toString()) || "true".equalsIgnoreCase(val.toString());
+    }
 }

@@ -130,3 +130,21 @@ export function exportWeeklyStats(query) {
     responseType: 'blob'
   })
 }
+
+// 团队日报 - 按部门+月份查询团队成员日报（按项目+成员聚合）
+export function getTeamMonthly(query) {
+  return request({
+    url: '/project/dailyReport/teamMonthly',
+    method: 'get',
+    params: query
+  })
+}
+
+// 团队日报 - 项目名称 autocomplete（按部门范围模糊搜索）
+export function getTeamProjectOptions(query) {
+  return request({
+    url: '/project/dailyReport/teamProjectOptions',
+    method: 'get',
+    params: query
+  })
+}

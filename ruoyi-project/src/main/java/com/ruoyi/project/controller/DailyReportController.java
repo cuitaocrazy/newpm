@@ -19,6 +19,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.project.domain.DailyReport;
 import com.ruoyi.project.domain.vo.DailySubmissionStat;
+import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 import com.ruoyi.project.service.IDailyReportService;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -173,5 +174,27 @@ public class DailyReportController extends BaseController
     {
         List<DailySubmissionStat> statList = dailyReportService.selectWeeklyStats(dailyReport);
         dailyReportService.exportWeeklyStats(response, statList, dailyReport);
+    }
+
+    /**
+     * 团队日报 - 按部门+月份查询团队成员日报
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:teamList')")
+    @GetMapping("/teamMonthly")
+    public AjaxResult teamMonthly(DailyReport dailyReport)
+    {
+        List<TeamDailyReportVO> list = dailyReportService.selectTeamMonthly(dailyReport);
+        return success(list);
+    }
+
+    /**
+     * 团队日报 - 项目名称 autocomplete
+     */
+    @PreAuthorize("@ss.hasPermi('project:dailyReport:teamList')")
+    @GetMapping("/teamProjectOptions")
+    public AjaxResult teamProjectOptions(DailyReport dailyReport)
+    {
+        List<Map<String, Object>> list = dailyReportService.selectTeamProjectOptions(dailyReport);
+        return success(list);
     }
 }
