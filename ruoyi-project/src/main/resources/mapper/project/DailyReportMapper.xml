@@ -173,8 +173,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 select 1 from pm_daily_report_detail dd_pid
                 where dd_pid.report_id = r.report_id
                   and dd_pid.del_flag = '0'
-                  and (dd_pid.project_id = #{projectId}
-                       or dd_pid.project_id in (select project_id from pm_project where parent_id = #{projectId} and del_flag = '0'))
+                  and dd_pid.project_id = #{projectId}
             )
         </if>
         <if test="projectId == null">${params.dataScope}</if>
