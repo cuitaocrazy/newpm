@@ -509,6 +509,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">#{reservedField4},</if>
             <if test="reservedField5 != null">#{reservedField5},</if>
             <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
