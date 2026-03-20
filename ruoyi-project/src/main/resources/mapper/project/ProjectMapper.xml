@@ -89,29 +89,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="createByName"    column="create_by_name"    />
         <result property="teamConfirmDepts" column="team_confirm_depts" />
         <result property="teamConfirmAmount" column="team_confirm_amount" />
-        <result property="parentId"           column="parent_id" />
-        <result property="projectLevel"       column="project_level" />
-        <result property="taskCode"           column="task_code" />
-        <result property="batchId"            column="batch_id" />
-        <result property="productionYear"     column="production_year" />
-        <result property="bankDemandNo"       column="bank_demand_no" />
-        <result property="softwareDemandNo"   column="software_demand_no" />
-        <result property="product"            column="product" />
-        <result property="internalClosureDate"   column="internal_closure_date" />
-        <result property="functionalTestDate"    column="functional_test_date" />
-        <result property="productionVersionDate" column="production_version_date" />
-        <result property="scheduleStatus"        column="schedule_status" />
-        <result property="functionDescription"   column="function_description" />
-        <result property="implementationPlan"    column="implementation_plan" />
-        <result property="actualProductionDate"  column="actual_production_date" />
-        <result property="taskCreateBy"       column="task_create_by" />
-        <result property="taskCreateTime"     column="task_create_time" />
-        <result property="taskUpdateBy"       column="task_update_by" />
-        <result property="taskUpdateTime"     column="task_update_time" />
-        <result property="taskCreateByName"   column="task_create_by_name" />
-        <result property="taskUpdateByName"   column="task_update_by_name" />
-        <result property="batchNo"            column="batch_no" />
-        <result property="planProductionDate" column="plan_production_date" />
         <result property="parentProjectName"  column="parent_project_name" />
     </resultMap>
 
