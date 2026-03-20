@@ -35,6 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.project.mapper.DailyReportMapper;
 import com.ruoyi.project.domain.DailyReport;
+import com.ruoyi.project.domain.request.BatchLeaveRequest;
 import com.ruoyi.project.service.IDailyReportService;
 import com.ruoyi.project.service.IDailyReportWhitelistService;
 
@@ -585,5 +586,116 @@ public class DailyReportServiceImpl implements IDailyReportService
         if (val instanceof Boolean) return (Boolean) val;
         // MySQL BIT/TINYINT: 1 → true
         return "1".equals(val.toString()) || "true".equalsIgnoreCase(val.toString());
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Integer> batchSaveLeave(BatchLeaveRequest request)
+    {
+        // 校验入参
+        if ("work".equals(request.getEntryType())) {
+            throw new ServiceException("假期类型不合法：work 不能作为假期类型");
+        }
+        LocalDate start = LocalDate.parse(request.getStartDate());
+        LocalDate end   = LocalDate.parse(request.getEndDate());
+        if (start.isAfter(end)) {
+            throw new ServiceException("日期范围不合法：startDate 不能晚于 endDate");
+        }
+
+        // 查询范围内工作日历，构建节假日/调班集合
+        Set<String> holidaySet       = new HashSet<>();
+        Set<String> forcedWorkdaySet = new HashSet<>();
+        for (int year = start.getYear(); year <= end.getYear(); year++) {
+            List<WorkCalendar> calendars = workCalendarMapper.selectByYear(year);
+            for (WorkCalendar wc : calendars) {
+                String dateStr = new SimpleDateFormat("yyyy-MM-dd").format(wc.getCalendarDate());
+                if ("holiday".equals(wc.getDayType())) {
+                    holidaySet.add(dateStr);
+                } else if ("workday".equals(wc.getDayType())) {
+                    forcedWorkdaySet.add(dateStr);
+                }
+            }
+        }
+
+        int totalWorkdays = 0, created = 0, skipped = 0, overwritten = 0;
+        LocalDate current = start;
+
+        while (!current.isAfter(end)) {
+            String dateStr = current.toString(); // yyyy-MM-dd
+            DayOfWeek dow  = current.getDayOfWeek();
+            boolean isWeekend = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY);
+
+            // 跳过周末（除非工作日历标记为调班工作日），跳过节假日
+            if ((isWeekend && !forcedWorkdaySet.contains(dateStr)) || holidaySet.contains(dateStr)) {
+                current = current.plusDays(1);
+                continue;
+            }
+            totalWorkdays++;
+
+            // 查询该日已有日报 ID
+            Long userId = SecurityUtils.getUserId();
+            Long existingReportId = dailyReportMapper.selectReportIdByUserAndDate(userId, dateStr);
+
+            // 查询已有 detail 列表
+            List<DailyReportDetail> existingDetails = new ArrayList<>();
+            if (existingReportId != null) {
+                existingDetails = detailMapper.selectByReportId(existingReportId);
+            }
+
+            // 检查同类型假期冲突
+            boolean hasSameTypeLeave = existingDetails.stream()
+                    .anyMatch(d -> request.getEntryType().equals(d.getEntryType()));
+
+            if (hasSameTypeLeave) {
+                if ("skip".equals(request.getConflictStrategy())) {
+                    skipped++;
+                    current = current.plusDays(1);
+                    continue;
+                } else {
+                    // overwrite：过滤掉同类型旧条目
+                    existingDetails = existingDetails.stream()
+                            .filter(d -> !request.getEntryType().equals(d.getEntryType()))
+                            .collect(Collectors.toList());
+                    overwritten++;
+                }
+            } else {
+                created++;
+            }
+
+            // 构建新假期条目
+            DailyReportDetail leaveDetail = new DailyReportDetail();
+            leaveDetail.setEntryType(request.getEntryType());
+            leaveDetail.setLeaveHours(request.getLeaveHoursPerDay());
+            leaveDetail.setWorkHours(request.getLeaveHoursPerDay());
+            leaveDetail.setWorkContent("");
+            leaveDetail.setRemark("");
+
+            // 合并：保留现有 work 条目 + 新假期条目
+            List<DailyReportDetail> mergedDetails = new ArrayList<>(existingDetails);
+            mergedDetails.add(leaveDetail);
+
+            // 构造 DailyReport 并调用现有保存逻辑
+            DailyReport report = new DailyReport();
+            try {
+                report.setReportDate(new SimpleDateFormat("yyyy-MM-dd").parse(dateStr));
+            } catch (Exception e) {
+                throw new ServiceException("日期解析失败：" + dateStr);
+            }
+            report.setDetailList(mergedDetails);
+            saveDailyReport(report);
+
+            current = current.plusDays(1);
+        }
+
+        if (totalWorkdays == 0) {
+            throw new ServiceException("所选范围内无工作日，未生成任何记录");
+        }
+
+        Map<String, Integer> result = new HashMap<>();
+        result.put("totalWorkdays", totalWorkdays);
+        result.put("created", created);
+        result.put("skipped", skipped);
+        result.put("overwritten", overwritten);
+        return result;
     }
 }

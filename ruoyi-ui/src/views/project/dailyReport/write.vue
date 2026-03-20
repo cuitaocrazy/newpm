@@ -28,7 +28,7 @@
                 </span>
                 <span v-for="le in getDateLeaveEntries(dateStr)" :key="le.type"
                   class="cal-leave-badge"
-                  :style="{ color: LEAVE_TYPE_COLOR[le.type] }">
+                  :style="{ color: leaveColorMap[le.type] }">
                   {{ getDictLabel(sys_rbtype, le.type) }}{{ le.hours }}h
                 </span>
               </div>
@@ -53,9 +53,9 @@
                 </el-tag>
               </div>
               <div style="display: flex; gap: 8px; align-items: center;">
-                <el-button type="primary" @click="handleSave" :disabled="saving || !isEditable">保存日报</el-button>
+                <el-button type="primary" @click="handleSave" :disabled="saving || (!isEditable && leaveList.length === 0 && !currentReportId)">保存日报</el-button>
                 <el-button type="danger" plain @click="handleDelete" :disabled="!currentReportId">删除日报</el-button>
-                <span v-if="!isEditable" style="font-size: 12px; color: #f56c6c;">仅限本周（周一至周日）可录入</span>
+                <span v-if="!isEditable" style="font-size: 12px; color: #f56c6c;">非本周日期仅支持修改假期记录</span>
               </div>
             </div>
           </template>
@@ -77,21 +77,25 @@
                 <span class="leave-title">假期记录</span>
                 <el-button
                   type="primary" size="small" plain
-                  :disabled="!isEditable"
+                  :disabled="!isLeaveEditable"
                   @click="leaveList.push({ entryType: 'leave', leaveHours: 1, remark: '' })"
                 >+ 添加假期</el-button>
+                <el-button
+                  type="warning" size="small" plain
+                  @click="batchLeaveVisible = true"
+                >批量填假期</el-button>
               </div>
               <div v-if="leaveList.length === 0" class="leave-empty">暂无假期记录</div>
               <div v-for="(item, idx) in leaveList" :key="idx" class="leave-item">
-                <span class="leave-color-dot" :style="{ background: LEAVE_TYPE_COLOR[item.entryType] || '#ccc' }"></span>
-                <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isEditable">
+                <span class="leave-color-dot" :style="{ background: leaveColorMap[item.entryType] || '#ccc' }"></span>
+                <el-select v-model="item.entryType" size="small" style="width: 90px;" :disabled="!isLeaveEditable">
                   <el-option v-for="d in sys_rbtype.filter(d => d.value !== 'work')" :key="d.value" :label="d.label" :value="d.value" />
                 </el-select>
                 <el-input-number
                   v-model="item.leaveHours"
                   :min="0.5" :max="24" :step="0.5" :precision="1"
                   size="small" style="width: 120px;"
-                  :disabled="!isEditable"
+                  :disabled="!isLeaveEditable"
                 />
                 <span style="color: #909399; font-size: 13px;">小时</span>
                 <el-input
@@ -99,9 +103,9 @@
                   placeholder="备注(选填)"
                   size="small"
                   style="flex: 1;"
-                  :disabled="!isEditable"
+                  :disabled="!isLeaveEditable"
                 />
-                <el-button link type="danger" icon="Delete" :disabled="!isEditable"
+                <el-button link type="danger" icon="Delete" :disabled="!isLeaveEditable"
                   @click="leaveList.splice(idx, 1)" />
               </div>
             </div>
@@ -230,13 +234,56 @@
       </el-col>
     </el-row>
   </div>
+
+  <!-- 批量填假期弹窗 -->
+  <el-dialog v-model="batchLeaveVisible" title="批量填假期" width="460px" :close-on-click-modal="false">
+    <el-form label-width="90px">
+      <el-form-item label="假期类型">
+        <el-select v-model="batchLeaveForm.entryType" style="width: 160px;">
+          <el-option
+            v-for="d in sys_rbtype.filter(d => d.value !== 'work')"
+            :key="d.value" :label="d.label" :value="d.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="日期范围">
+        <el-date-picker
+          v-model="batchLeaveForm.dateRange"
+          type="daterange"
+          value-format="YYYY-MM-DD"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          style="width: 280px;"
+        />
+      </el-form-item>
+      <el-form-item label="每日时长">
+        <el-input-number
+          v-model="batchLeaveForm.leaveHoursPerDay"
+          :min="0.5" :max="24" :step="0.5" :precision="1"
+          style="width: 120px;"
+        />
+        <span style="margin-left: 8px; color: #909399; font-size: 13px;">小时/天</span>
+      </el-form-item>
+      <el-form-item label="冲突处理">
+        <el-radio-group v-model="batchLeaveForm.conflictStrategy">
+          <el-radio value="skip">跳过已有记录</el-radio>
+          <el-radio value="overwrite">覆盖已有记录</el-radio>
+        </el-radio-group>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="batchLeaveVisible = false">取消</el-button>
+      <el-button type="primary" :loading="batchLeaving" @click="handleBatchLeave">确认填写</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, InfoFilled } from '@element-plus/icons-vue'
-import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport } from '@/api/project/dailyReport'
+import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport, batchSaveLeave } from '@/api/project/dailyReport'
 import { checkSelfInWhitelist } from '@/api/project/whitelist'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
 import MonthCalendar from '@/components/MonthCalendar/index.vue'
@@ -277,8 +324,52 @@ function yearTagStyle(year) {
     : {}
 }
 
-// 假期类型颜色（不与现有绿/橙冲突）
-const LEAVE_TYPE_COLOR = { leave: '#f56c6c', comp: '#b37feb', annual: '#36cfc9' }
+// 假期类型颜色：由字典 list_class 动态驱动，不硬编码
+const ELEMENT_PLUS_COLORS = {
+  primary: '#409eff', success: '#67c23a',
+  warning: '#e6a23c', danger: '#f56c6c', info: '#909399'
+}
+const leaveColorMap = computed(() => {
+  return Object.fromEntries(
+    (sys_rbtype.value || [])
+      .filter(d => d.value !== 'work')
+      .map(d => [d.value, ELEMENT_PLUS_COLORS[d.elTagType] || '#909399'])
+  )
+})
+
+// 批量填假期弹窗状态
+const batchLeaveVisible = ref(false)
+const batchLeaving = ref(false)
+const batchLeaveForm = ref({
+  entryType: 'leave',
+  dateRange: [],
+  leaveHoursPerDay: 8,
+  conflictStrategy: 'skip'
+})
+
+async function handleBatchLeave() {
+  const [startDate, endDate] = batchLeaveForm.value.dateRange || []
+  if (!startDate || !endDate) {
+    ElMessage.warning('请选择日期范围')
+    return
+  }
+  batchLeaving.value = true
+  try {
+    const res = await batchSaveLeave({
+      entryType: batchLeaveForm.value.entryType,
+      startDate,
+      endDate,
+      leaveHoursPerDay: batchLeaveForm.value.leaveHoursPerDay,
+      conflictStrategy: batchLeaveForm.value.conflictStrategy
+    })
+    const { created, skipped, totalWorkdays } = res.data
+    ElMessage.success(`批量填写完成：共 ${totalWorkdays} 个工作日，新建 ${created} 条，跳过 ${skipped} 条`)
+    batchLeaveVisible.value = false
+    loadMonthOverview()
+  } finally {
+    batchLeaving.value = false
+  }
+}
 
 // 假期记录列表（当天）
 const leaveList = ref([])
@@ -307,6 +398,9 @@ const weekBounds = (() => {
 const isEditable = computed(() => {
   return selectedDate.value >= weekBounds.start && selectedDate.value <= weekBounds.end
 })
+
+// 假期记录不受本周限制，任意日期均可修改（婚假/年假等可提前填写未来日期）
+const isLeaveEditable = computed(() => true)
 
 function formatDate(dateStr) {
   const d = new Date(dateStr)

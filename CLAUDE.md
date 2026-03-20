@@ -526,6 +526,8 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 - MySQL 8.x (`ry-vue`)，涉及表：`pm_daily_report`、`pm_daily_report_detail`、`sys_user`、`sys_dept`、`pm_work_calendar`、`pm_daily_report_whitelist` (001-daily-report-stats)
 - Java 17 / TypeScript 5.6 + Spring Boot 3.5.8 + MyBatis / Vue 3.5 + Element Plus 2.13 (003-team-daily-report)
 - MySQL 8.x（只读查询，无新表） (003-team-daily-report)
+- Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Vue 3.5, Element Plus 2.13 (004-daily-report-leave-types)
+- MySQL 8.x (`ry-vue`)，涉及表：`sys_dict_data`、`pm_daily_report`、`pm_daily_report_detail`、`pm_work_calendar` (004-daily-report-leave-types)
 
 ## Recent Changes
 - 001-daily-report-stats: Added Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Apache POI (Excel), Vue 3.5, Element Plus 2.13, dayjs

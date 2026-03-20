@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import com.ruoyi.project.domain.DailyReport;
+import com.ruoyi.project.domain.request.BatchLeaveRequest;
 import com.ruoyi.project.domain.vo.DailySubmissionStat;
 import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 /**
@@ -119,4 +120,12 @@ public interface IDailyReportService
      * 团队日报 - 项目名称 autocomplete（按部门范围模糊搜索）
      */
     List<Map<String, Object>> selectTeamProjectOptions(DailyReport query);
+
+    /**
+     * 批量填写假期（按日期范围，自动跳过周末/节假日）
+     *
+     * @param request 批量请求（类型、日期范围、每日时长、冲突策略）
+     * @return 操作摘要 {totalWorkdays, created, skipped, overwritten}
+     */
+    Map<String, Integer> batchSaveLeave(BatchLeaveRequest request);
 }

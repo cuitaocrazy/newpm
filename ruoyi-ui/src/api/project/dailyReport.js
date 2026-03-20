@@ -148,3 +148,13 @@ export function getTeamProjectOptions(query) {
     params: query
   })
 }
+
+// 批量填写假期（按日期范围，自动跳过周末/节假日）
+export function batchSaveLeave(data) {
+  return request({
+    url: '/project/dailyReport/batchLeave',
+    method: 'post',
+    data,
+    headers: { repeatSubmit: false }
+  })
+}

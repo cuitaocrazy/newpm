@@ -18,9 +18,11 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.project.domain.DailyReport;
+import com.ruoyi.project.domain.request.BatchLeaveRequest;
 import com.ruoyi.project.domain.vo.DailySubmissionStat;
 import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 import com.ruoyi.project.service.IDailyReportService;
+import org.springframework.validation.annotation.Validated;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
@@ -196,5 +198,16 @@ public class DailyReportController extends BaseController
     {
         List<Map<String, Object>> list = dailyReportService.selectTeamProjectOptions(dailyReport);
         return success(list);
+    }
+
+    /**
+     * 批量填写假期（按日期范围，自动跳过周末/节假日）
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:dailyReport:add,project:dailyReport:edit')")
+    @Log(title = "日报管理", businessType = BusinessType.INSERT)
+    @PostMapping("/batchLeave")
+    public AjaxResult batchLeave(@Validated @RequestBody BatchLeaveRequest request)
+    {
+        return success(dailyReportService.batchSaveLeave(request));
     }
 }
