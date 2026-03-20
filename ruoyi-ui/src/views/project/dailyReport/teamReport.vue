@@ -49,11 +49,12 @@
           style="width: 100%"
           :span-method="spanMethod"
           :row-class-name="rowClassName"
+          :row-style="{ height: 'auto' }"
         >
-          <!-- 固定列：项目名称 -->
-          <el-table-column label="项目" prop="projectName" fixed width="160" show-overflow-tooltip>
+          <!-- 固定列：项目名称（固定宽度，支持换行） -->
+          <el-table-column label="项目" prop="projectName" fixed width="180">
             <template #default="{ row }">
-              <span :class="row.hasContract ? 'contract-label' : ''">
+              <span :class="row.hasContract ? 'contract-label' : 'project-label'">
                 <el-icon v-if="row.hasContract" color="#67c23a"><CircleCheck /></el-icon>
                 {{ row.projectName }}
               </span>
@@ -182,9 +183,10 @@ const flatRows = computed(() => {
 })
 
 // --- 合并项目列 ---
+// 列索引：0=项目名, 1=人员, 2..N+1=日期, N+2=实际人天, N+3=预算人天
 function spanMethod({ row, columnIndex }: any) {
-  if (columnIndex === 0) {
-    // 项目名称列：合并同项目的所有成员行
+  const budgetColIndex = 2 + dayColumns.value.length + 1
+  if (columnIndex === 0 || columnIndex === budgetColIndex) {
     if (row.memberIndex === 0) {
       return { rowspan: Math.max(row.memberCount, 1), colspan: 1 }
     } else {
@@ -276,12 +278,16 @@ onMounted(() => {
 .contract-row {
   background-color: #f0f9eb !important;
 }
+.contract-label,
+.project-label {
+  display: block;
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.4;
+}
 .contract-label {
   color: #67c23a;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
 .hours-badge {
   display: inline-block;

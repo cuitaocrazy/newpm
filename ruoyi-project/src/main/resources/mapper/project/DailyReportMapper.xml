@@ -484,16 +484,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             u.user_id AS userId,
             u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
             d.dept_name COLLATE utf8mb4_unicode_ci AS deptName,
-            r.report_date AS reportDate,
-            r.total_work_hours AS totalWorkHours
+            daily_hrs.report_date AS reportDate,
+            daily_hrs.projectWorkHours AS totalWorkHours
         FROM pm_project p
         INNER JOIN pm_project_member m ON m.project_id = p.project_id
             AND m.is_active = '1' AND m.del_flag = '0'
         INNER JOIN sys_user u ON u.user_id = m.user_id
         INNER JOIN sys_dept d ON d.dept_id = u.dept_id
-        LEFT JOIN pm_daily_report r ON r.user_id = m.user_id
-            AND DATE_FORMAT(r.report_date, '%Y-%m') = #{yearMonth}
-            AND r.del_flag = '0'
+        LEFT JOIN (
+            SELECT r.user_id, r.report_date, rd.project_id,
+                   SUM(rd.work_hours) AS projectWorkHours
+            FROM pm_daily_report r
+            JOIN pm_daily_report_detail rd ON rd.report_id = r.report_id
+                AND rd.entry_type = 'work' AND rd.del_flag = '0'
+            WHERE r.del_flag = '0'
+              AND r.report_date >= STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d')
+              AND r.report_date  &lt; DATE_ADD(STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
+            GROUP BY r.user_id, r.report_date, rd.project_id
+        ) daily_hrs ON daily_hrs.user_id = m.user_id AND daily_hrs.project_id = p.project_id
         <where>
             p.del_flag = '0'
             <if test="deptId != null">
@@ -508,7 +516,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             ${params.dataScope}
         </where>
-        ORDER BY p.project_id, u.user_id, r.report_date
+        ORDER BY p.project_id, u.user_id, daily_hrs.report_date
     </select>
 
     <!-- 日报统计报表部门树：仅返回三级及以下，三级节点 parentId 设为 0 作为根节点 -->
