@@ -33,8 +33,8 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">查询</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        <el-button type="primary" icon="Search" :loading="loading" @click="handleQuery">查询</el-button>
+        <el-button icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
@@ -49,10 +49,10 @@
     </div>
 
     <!-- 主体表格 -->
-    <div v-loading="loading">
+    <div v-loading="loading" :style="loading && tableData.length === 0 ? 'min-height: 200px' : ''">
       <el-empty v-if="!loading && tableData.length === 0" description="暂无日报数据" />
 
-      <template v-else>
+      <template v-else-if="tableData.length > 0">
         <el-table
           :data="flatRows"
           border

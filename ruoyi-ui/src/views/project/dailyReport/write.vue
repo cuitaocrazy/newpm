@@ -55,7 +55,7 @@
               <div style="display: flex; gap: 8px; align-items: center;">
                 <el-button type="primary" @click="handleSave" :disabled="saving || (!isEditable && leaveList.length === 0 && !currentReportId)">保存日报</el-button>
                 <el-button type="danger" plain @click="handleDelete" :disabled="!currentReportId">删除日报</el-button>
-                <span v-if="!isEditable" style="font-size: 12px; color: #f56c6c;">非本周日期仅支持修改假期记录</span>
+                <span v-if="!isEditable" style="font-size: 12px; color: #f56c6c;">仅限本周（周一至周日）可录入日报；非本周日期仅支持修改假期记录</span>
               </div>
             </div>
           </template>

@@ -31,7 +31,14 @@
       <el-table-column type="index" label="序号" width="55" align="center" />
       <el-table-column label="项目名称" align="left" header-align="center" prop="projectName" width="220">
         <template #default="scope">
-          <div class="project-name-cell">{{ scope.row.projectName }}</div>
+          <div class="project-name-cell">
+            <a
+              :href="projectHref(scope.row.projectId)"
+              class="el-link el-link--primary"
+              style="text-decoration: none; white-space: normal; word-break: break-all; line-height: 1.5;"
+              @click.prevent="router.push(`/project/list/detail/${scope.row.projectId}`)"
+            >{{ scope.row.projectName }}</a>
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="项目经理" prop="projectManagerName" align="center" />
@@ -113,9 +120,15 @@
 
 <script setup name="ProjectStats">
 import { ref, nextTick, onMounted, onUnmounted, getCurrentInstance } from 'vue'
+import { useRouter } from 'vue-router'
 import { getProjectStats, getProjectNameSuggestions, correctAdjustWorkload, getCorrectLogs } from '@/api/project/dailyReport'
 
 const { proxy } = getCurrentInstance()
+const router = useRouter()
+
+function projectHref(projectId) {
+  return projectId ? router.resolve(`/project/list/detail/${projectId}`).href : undefined
+}
 
 const loading = ref(false)
 const tableRows = ref([])
