@@ -58,6 +58,7 @@
           border
           style="width: 100%"
           :span-method="spanMethod"
+          :row-class-name="({ row }: any) => row.stripe === 0 ? 'stripe-even' : 'stripe-odd'"
           :row-style="{ height: 'auto' }"
         >
           <!-- 固定列：项目名称（固定宽度，支持换行） -->
@@ -161,9 +162,11 @@ const flatRows = computed(() => {
     // 使用后端返回的实际人天（已含调整人天）
     const projectActualDays = Number(project.actualPersonDays || 0)
     const estimatedWorkload = Number(project.estimatedWorkload || 0)
+    const stripe = tableData.value.indexOf(project) % 2
 
     members.forEach((member: any, idx: number) => {
       rows.push({
+        stripe,
         projectId: project.projectId,
         projectName: project.projectName,
         hasContract: project.hasContract,
@@ -181,6 +184,7 @@ const flatRows = computed(() => {
     // 若项目无成员也显示占位行
     if (members.length === 0) {
       rows.push({
+        stripe,
         projectId: project.projectId,
         projectName: project.projectName,
         hasContract: project.hasContract,
@@ -322,6 +326,11 @@ onMounted(() => {
   color: #67c23a;
   font-weight: 500;
 }
+:deep(.stripe-even > td) { background-color: #ffffff !important; }
+:deep(.stripe-odd  > td) { background-color: #f5f7fa !important; }
+:deep(.stripe-even:hover > td) { background-color: #eef1f6 !important; }
+:deep(.stripe-odd:hover  > td) { background-color: #e8ecf2 !important; }
+
 .hours-badge {
   display: inline-block;
   font-size: 12px;
