@@ -371,7 +371,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT u.user_id AS userId,
                u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
                d.dept_name AS deptName,
-               GROUP_CONCAT(DISTINCT p.project_name ORDER BY p.project_name SEPARATOR '、') AS projectNames,
+               GROUP_CONCAT(DISTINCT p.project_name ORDER BY p.project_name SEPARATOR '&#10;') AS projectNames,
                r.total_work_hours AS totalWorkHours,
                GROUP_CONCAT(
                    dd.work_content ORDER BY dd.detail_id SEPARATOR '；'

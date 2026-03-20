@@ -126,7 +126,7 @@
         <template v-if="detailType === 'submitted'">
           <el-table-column label="项目名称" prop="projectNames" min-width="160">
             <template #default="{ row }">
-              <div v-for="(name, i) in (row.projectNames || '').split('、').filter(Boolean)" :key="i" class="multiline-item">{{ name }}</div>
+              <div v-for="(name, i) in (row.projectNames || '').split('\n').filter(Boolean)" :key="i" class="multiline-item">{{ name }}</div>
             </template>
           </el-table-column>
           <el-table-column label="工时(h)" prop="totalWorkHours" width="82" align="center">
