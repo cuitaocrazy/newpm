@@ -119,18 +119,26 @@
     </div>
 
     <!-- 人员明细弹框 -->
-    <el-dialog v-model="detailVisible" :title="detailTitle" width="660px" append-to-body>
+    <el-dialog v-model="detailVisible" :title="detailTitle" width="900px" append-to-body>
       <el-table :data="detailList" v-loading="detailLoading" border size="small">
         <el-table-column label="姓名" prop="nickName" min-width="90" />
         <el-table-column label="部门" prop="deptName" min-width="130" />
         <template v-if="detailType === 'submitted'">
-          <el-table-column label="项目名称" prop="projectNames" min-width="160" show-overflow-tooltip />
+          <el-table-column label="项目名称" prop="projectNames" min-width="160">
+            <template #default="{ row }">
+              <div v-for="(name, i) in (row.projectNames || '').split('、').filter(Boolean)" :key="i" class="multiline-item">{{ name }}</div>
+            </template>
+          </el-table-column>
           <el-table-column label="工时(h)" prop="totalWorkHours" width="82" align="center">
             <template #default="{ row }">
               <span :class="hoursClass(row.totalWorkHours)">{{ row.totalWorkHours }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="工作内容摘要" prop="workContentSummary" min-width="200" show-overflow-tooltip />
+          <el-table-column label="工作内容摘要" prop="workContentSummary" min-width="200">
+            <template #default="{ row }">
+              <div v-for="(line, i) in (row.workContentSummary || '').split('；').filter(Boolean)" :key="i" class="multiline-item">{{ line }}</div>
+            </template>
+          </el-table-column>
         </template>
       </el-table>
       <template #footer>
@@ -363,6 +371,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.multiline-item {
+  line-height: 1.5;
+  padding: 1px 0;
+  word-break: break-all;
+}
+.multiline-item + .multiline-item {
+  border-top: 1px dashed #e4e7ed;
+  margin-top: 3px;
+  padding-top: 3px;
+}
 /* 总人数统计行 */
 .stats-summary {
   margin-bottom: 10px;

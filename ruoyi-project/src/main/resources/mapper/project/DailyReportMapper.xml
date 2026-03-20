@@ -373,9 +373,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                d.dept_name AS deptName,
                GROUP_CONCAT(DISTINCT p.project_name ORDER BY p.project_name SEPARATOR '、') AS projectNames,
                r.total_work_hours AS totalWorkHours,
-               LEFT(GROUP_CONCAT(
+               GROUP_CONCAT(
                    dd.work_content ORDER BY dd.detail_id SEPARATOR '；'
-               ), 50) AS workContentSummary
+               ) AS workContentSummary
         FROM pm_daily_report r
         INNER JOIN sys_user u ON r.user_id = u.user_id
         LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
