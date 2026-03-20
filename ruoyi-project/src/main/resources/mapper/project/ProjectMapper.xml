@@ -365,27 +365,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                ca.contract_status AS contract_status,
                ca.contract_name AS contract_name,
                ca.contract_id AS contract_id,
-               ca.contract_code AS contract_code,
-               p.parent_id, p.project_level, p.task_code,
-               p.batch_id, p.production_year,
-               p.bank_demand_no, p.software_demand_no, p.product,
-               p.internal_closure_date, p.functional_test_date, p.production_version_date,
-               p.schedule_status, p.function_description, p.implementation_plan, p.actual_production_date,
-               p.task_create_by, p.task_create_time, p.task_update_by, p.task_update_time,
-               u_tc.nick_name AS task_create_by_name,
-               u_tu.nick_name AS task_update_by_name,
-               pb.batch_no, pb.plan_production_date,
-               pp2.project_name as parent_project_name
+               ca.contract_code AS contract_code
         FROM pm_project p
-        LEFT JOIN pm_project pp2 ON p.parent_id = pp2.project_id
         LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN sys_user u1 ON p.project_manager_id = u1.user_id
         LEFT JOIN sys_user u2 ON p.market_manager_id = u2.user_id
         LEFT JOIN sys_user u3 ON p.sales_manager_id = u3.user_id
-        LEFT JOIN sys_user u_tc ON p.task_create_by COLLATE utf8mb4_unicode_ci = u_tc.user_name
-        LEFT JOIN sys_user u_tu ON p.task_update_by COLLATE utf8mb4_unicode_ci = u_tu.user_name
-        LEFT JOIN pm_production_batch pb ON p.batch_id = pb.batch_id
         LEFT JOIN pm_customer cust ON p.customer_id = cust.customer_id
         LEFT JOIN pm_customer_contact cc ON p.customer_contact_id = cc.contact_id
         LEFT JOIN (
