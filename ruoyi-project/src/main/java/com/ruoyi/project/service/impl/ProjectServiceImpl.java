@@ -118,36 +118,16 @@ public class ProjectServiceImpl implements IProjectService
     {
         project.setCreateTime(DateUtils.getNowDate());
         project.setUpdateTime(DateUtils.getNowDate());
-        // 子项目：设置任务专属审计字段
-        if (project.getProjectLevel() != null && project.getProjectLevel() == 1) {
-            String currentUser = SecurityUtils.getUsername();
-            java.util.Date now = DateUtils.getNowDate();
-            project.setTaskCreateBy(currentUser);
-            project.setTaskCreateTime(now);
-            project.setTaskUpdateBy(currentUser);
-            project.setTaskUpdateTime(now);
-            project.setApprovalStatus("1");
-            // 生成 project_code：父项目编号 + 7位递增序号（如 IT-HB-XX-2025-0000001）
-            if (project.getParentId() != null) {
-                Project parent = projectMapper.selectProjectByProjectId(project.getParentId());
-                if (parent != null && parent.getProjectCode() != null) {
-                    String code = String.format("%s-%07d", parent.getProjectCode(), 1);
-                    project.setProjectCode(code);
-                }
-            }
-        }
         // 校验 project_code 长度
         if (project.getProjectCode() != null && project.getProjectCode().length() > 500) {
             throw new com.ruoyi.common.exception.ServiceException("项目编号过长（超过500字符），请缩短项目简称");
         }
-        // 主项目立项时自动初始化收入确认年度和收入确认状态
-        if (project.getProjectLevel() == null || project.getProjectLevel() == 0) {
-            if (project.getRevenueConfirmYear() == null) {
-                project.setRevenueConfirmYear("dd");   // sys_ndgl 待定
-            }
-            if (project.getRevenueConfirmStatus() == null) {
-                project.setRevenueConfirmStatus("0");  // sys_qrzt 待定
-            }
+        // 立项时自动初始化收入确认年度和收入确认状态
+        if (project.getRevenueConfirmYear() == null) {
+            project.setRevenueConfirmYear("dd");   // sys_ndgl 待定
+        }
+        if (project.getRevenueConfirmStatus() == null) {
+            project.setRevenueConfirmStatus("0");  // sys_qrzt 待定
         }
         int rows = projectMapper.insertProject(project);
         syncProjectMembers(project);
@@ -165,18 +145,6 @@ public class ProjectServiceImpl implements IProjectService
     public int updateProject(Project project)
     {
         project.setUpdateTime(DateUtils.getNowDate());
-        // 子项目：更新任务更新人/时间
-        if (project.getProjectLevel() != null && project.getProjectLevel() == 1) {
-            project.setTaskUpdateBy(SecurityUtils.getUsername());
-            project.setTaskUpdateTime(DateUtils.getNowDate());
-        } else if (project.getProjectId() != null) {
-            // 通过 projectId 判断是否为子任务（projectLevel 可能前端未传）
-            Project existing = projectMapper.selectProjectByProjectId(project.getProjectId());
-            if (existing != null && existing.getProjectLevel() != null && existing.getProjectLevel() == 1) {
-                project.setTaskUpdateBy(SecurityUtils.getUsername());
-                project.setTaskUpdateTime(DateUtils.getNowDate());
-            }
-        }
         // 校验 project_code 长度
         if (project.getProjectCode() != null && project.getProjectCode().length() > 500) {
             throw new com.ruoyi.common.exception.ServiceException("项目编号过长（超过500字符），请缩短项目简称");
@@ -555,11 +523,6 @@ public class ProjectServiceImpl implements IProjectService
      */
     private void syncProjectMembers(Project project)
     {
-        // project_level NOT NULL DEFAULT 0，子任务（level=1）成员继承父项目，不独立维护 pm_project_member
-        if (Integer.valueOf(1).equals(project.getProjectLevel())) {
-            return;
-        }
-
         Long projectId = project.getProjectId();
         if (projectId == null)
         {
