@@ -444,23 +444,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">reserved_field4,</if>
             <if test="reservedField5 != null">reserved_field5,</if>
             <if test="delFlag != null">del_flag,</if>
-            <if test="parentId != null">parent_id,</if>
-            <if test="projectLevel != null">project_level,</if>
-            <if test="taskCode != null">task_code,</if>
-            <if test="batchId != null">batch_id,</if>
-            <if test="productionYear != null">production_year,</if>
-            <if test="bankDemandNo != null">bank_demand_no,</if>
-            <if test="softwareDemandNo != null">software_demand_no,</if>
-            <if test="product != null">product,</if>
-            <if test="productionVersionDate != null">production_version_date,</if>
-            <if test="scheduleStatus != null">schedule_status,</if>
-            <if test="functionDescription != null">function_description,</if>
-            <if test="implementationPlan != null">implementation_plan,</if>
-            <if test="actualProductionDate != null">actual_production_date,</if>
-            <if test="taskCreateBy != null">task_create_by,</if>
-            <if test="taskCreateTime != null">task_create_time,</if>
-            <if test="taskUpdateBy != null">task_update_by,</if>
-            <if test="taskUpdateTime != null">task_update_time,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -526,23 +509,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">#{reservedField4},</if>
             <if test="reservedField5 != null">#{reservedField5},</if>
             <if test="delFlag != null">#{delFlag},</if>
-            <if test="parentId != null">#{parentId},</if>
-            <if test="projectLevel != null">#{projectLevel},</if>
-            <if test="taskCode != null">#{taskCode},</if>
-            <if test="batchId != null">#{batchId},</if>
-            <if test="productionYear != null">#{productionYear},</if>
-            <if test="bankDemandNo != null">#{bankDemandNo},</if>
-            <if test="softwareDemandNo != null">#{softwareDemandNo},</if>
-            <if test="product != null">#{product},</if>
-            <if test="productionVersionDate != null">#{productionVersionDate},</if>
-            <if test="scheduleStatus != null">#{scheduleStatus},</if>
-            <if test="functionDescription != null">#{functionDescription},</if>
-            <if test="implementationPlan != null">#{implementationPlan},</if>
-            <if test="actualProductionDate != null">#{actualProductionDate},</if>
-            <if test="taskCreateBy != null">#{taskCreateBy},</if>
-            <if test="taskCreateTime != null">#{taskCreateTime},</if>
-            <if test="taskUpdateBy != null">#{taskUpdateBy},</if>
-            <if test="taskUpdateTime != null">#{taskUpdateTime},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
@@ -623,23 +589,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="reservedField4 != null">reserved_field4 = #{reservedField4},</if>
             <if test="reservedField5 != null">reserved_field5 = #{reservedField5},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
-            <if test="taskCode != null">task_code = #{taskCode},</if>
-            <if test="batchId != null">batch_id = #{batchId},</if>
-            <if test="productionYear != null">production_year = #{productionYear},</if>
-            <if test="bankDemandNo != null">bank_demand_no = #{bankDemandNo},</if>
-            <if test="softwareDemandNo != null">software_demand_no = #{softwareDemandNo},</if>
-            <if test="product != null">product = #{product},</if>
-            <if test="internalClosureDate != null">internal_closure_date = #{internalClosureDate},</if>
-            <if test="functionalTestDate != null">functional_test_date = #{functionalTestDate},</if>
-            <if test="productionVersionDate != null">production_version_date = #{productionVersionDate},</if>
-            <if test="scheduleStatus != null">schedule_status = #{scheduleStatus},</if>
-            <if test="functionDescription != null">function_description = #{functionDescription},</if>
-            <if test="implementationPlan != null">implementation_plan = #{implementationPlan},</if>
-            <if test="actualProductionDate != null">actual_production_date = #{actualProductionDate},</if>
-            <if test="taskCreateBy != null">task_create_by = #{taskCreateBy},</if>
-            <if test="taskCreateTime != null">task_create_time = #{taskCreateTime},</if>
-            <if test="taskUpdateBy != null">task_update_by = #{taskUpdateBy},</if>
-            <if test="taskUpdateTime != null">task_update_time = #{taskUpdateTime},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
