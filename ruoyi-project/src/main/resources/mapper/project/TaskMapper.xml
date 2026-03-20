@@ -126,7 +126,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 可复用的 WHERE 片段（含 dataScope） -->
     <sql id="taskWhereConditions">
         and p.del_flag = '0'
-        and (p.project_level IS NULL OR p.project_level = 0)
         ${params.dataScope}
         <choose>
             <when test="projectId != null">and p.project_id = #{projectId}</when>

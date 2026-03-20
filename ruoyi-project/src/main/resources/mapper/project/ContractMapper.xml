@@ -179,7 +179,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ) pc on p.project_id = pc.project_id
         <where>
             p.del_flag = '0'
-            and (p.project_level is null or p.project_level = 0)
             <!-- 若有合同条件过滤，只保留命中合同的项目（pc 子查询已过滤，未命中的 pc 为 NULL） -->
             <if test="contractCode != null  and contractCode != ''"> and pc.project_id is not null</if>
             <if test="contractName != null  and contractName != ''"> and pc.project_id is not null</if>

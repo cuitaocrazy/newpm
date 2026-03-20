@@ -96,7 +96,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_user u ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
         <where>
             p.del_flag = '0'
-            AND (p.project_level IS NULL OR p.project_level = 0)
             <if test="projectId != null">AND p.project_id = #{projectId}</if>
             <if test="projectName != null and projectName != ''">AND p.project_name LIKE CONCAT('%', #{projectName}, '%')</if>
             <if test="projectDept != null and projectDept != ''">
