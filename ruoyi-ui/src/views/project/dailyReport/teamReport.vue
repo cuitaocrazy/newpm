@@ -38,6 +38,16 @@
       </el-form-item>
     </el-form>
 
+    <!-- 图例说明 -->
+    <div class="legend-bar">
+      <span class="legend-item">
+        <span class="legend-dot contract-dot"></span>绿色行 = 项目有关联合同（可能带来收入）
+      </span>
+      <span class="legend-item">
+        <span class="legend-dot warn-dot"></span>红色 ⚠ = 实际人天已超预算的 50%
+      </span>
+    </div>
+
     <!-- 主体表格 -->
     <div v-loading="loading">
       <el-empty v-if="!loading && tableData.length === 0" description="暂无日报数据" />
@@ -79,25 +89,34 @@
             </template>
           </el-table-column>
 
-          <!-- 固定右列：实际人天 / 预算人天 -->
+          <!-- 个人实际人天（不合并） -->
+          <el-table-column label="个人人天" fixed="right" width="80" align="center">
+            <template #default="{ row }">
+              <span v-if="row.totalHours">{{ formatDays(Number(row.totalHours) / 8) }}</span>
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
+
+          <!-- 固定右列：实际人天（项目汇总） / 预算人天 —— 两列均按项目合并 -->
           <el-table-column label="实际人天" fixed="right" width="90" align="center">
             <template #default="{ row }">
-              <span
-                v-if="row.estimatedWorkload != null && row.estimatedWorkload > 0 && row.memberActualDays != null && row.memberActualDays > row.estimatedWorkload * 0.5"
-                class="warn-text"
-              >
-                <el-icon><Warning /></el-icon>{{ formatDays(row.memberActualDays) }}
-              </span>
-              <span v-else-if="row.memberActualDays != null">{{ formatDays(row.memberActualDays) }}</span>
-              <span v-else>—</span>
+              <template v-if="row.memberIndex === 0">
+                <span
+                  v-if="row.estimatedWorkload > 0 && row.projectActualDays > row.estimatedWorkload * 0.5"
+                  class="warn-text"
+                >
+                  <el-icon><Warning /></el-icon>{{ formatDays(row.projectActualDays) }}
+                </span>
+                <span v-else>{{ formatDays(row.projectActualDays) }}</span>
+              </template>
             </template>
           </el-table-column>
           <el-table-column label="预算人天" fixed="right" width="90" align="center">
             <template #default="{ row }">
-              <span v-if="row.estimatedWorkload != null && row.estimatedWorkload > 0">
-                {{ formatDays(row.estimatedWorkload) }}
-              </span>
-              <span v-else>—</span>
+              <template v-if="row.memberIndex === 0">
+                <span v-if="row.estimatedWorkload > 0">{{ formatDays(row.estimatedWorkload) }}</span>
+                <span v-else>—</span>
+              </template>
             </template>
           </el-table-column>
         </el-table>
@@ -144,23 +163,25 @@ const flatRows = computed(() => {
   const rows: any[] = []
   for (const project of tableData.value) {
     const members = project.members || []
+    // 汇总项目组所有成员工时 → 项目实际人天
+    const totalProjectHours = members.reduce((sum: number, m: any) => sum + Number(m.totalHours || 0), 0)
+    const projectActualDays = totalProjectHours / 8
+    const estimatedWorkload = Number(project.estimatedWorkload || 0)
+
     members.forEach((member: any, idx: number) => {
       rows.push({
         projectId: project.projectId,
         projectName: project.projectName,
         hasContract: project.hasContract,
-        estimatedWorkload: project.estimatedWorkload,
+        estimatedWorkload,
+        projectActualDays,
         memberCount: members.length,
         memberIndex: idx,
         userId: member.userId,
         nickName: member.nickName,
         deptName: member.deptName,
         dailyHours: member.dailyHours || {},
-        totalHours: member.totalHours,
-        // 实际人天按成员工时折算
-        memberActualDays: member.totalHours != null
-          ? (Number(member.totalHours) / 8)
-          : null
+        totalHours: member.totalHours
       })
     })
     // 若项目无成员也显示占位行
@@ -169,13 +190,13 @@ const flatRows = computed(() => {
         projectId: project.projectId,
         projectName: project.projectName,
         hasContract: project.hasContract,
-        estimatedWorkload: project.estimatedWorkload,
+        estimatedWorkload,
+        projectActualDays: 0,
         memberCount: 0,
         memberIndex: 0,
         nickName: '—',
         dailyHours: {},
-        totalHours: null,
-        memberActualDays: null
+        totalHours: null
       })
     }
   }
@@ -183,10 +204,11 @@ const flatRows = computed(() => {
 })
 
 // --- 合并项目列 ---
-// 列索引：0=项目名, 1=人员, 2..N+1=日期, N+2=实际人天, N+3=预算人天
+// 列索引：0=项目名, 1=人员, 2..N+1=日期, N+2=个人人天, N+3=实际人天(汇总), N+4=预算人天
 function spanMethod({ row, columnIndex }: any) {
-  const budgetColIndex = 2 + dayColumns.value.length + 1
-  if (columnIndex === 0 || columnIndex === budgetColIndex) {
+  const actualColIndex = 2 + dayColumns.value.length + 1
+  const budgetColIndex = actualColIndex + 1
+  if (columnIndex === 0 || columnIndex === actualColIndex || columnIndex === budgetColIndex) {
     if (row.memberIndex === 0) {
       return { rowspan: Math.max(row.memberCount, 1), colspan: 1 }
     } else {
@@ -275,6 +297,32 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.legend-bar {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #606266;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.contract-dot { background: #95d475; }
+.warn-dot     { background: #f56c6c; }
+
 .contract-row {
   background-color: #f0f9eb !important;
 }
