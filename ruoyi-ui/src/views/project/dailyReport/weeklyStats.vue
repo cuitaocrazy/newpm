@@ -207,7 +207,6 @@ const weekOptions = ref<WeekOption[]>([])
 function computeWeekOptions(yearMonth: string): WeekOption[] {
   const firstDay = dayjs(yearMonth + '-01')
   const lastDay = firstDay.endOf('month')
-  const today = dayjs()
   const weeks: WeekOption[] = []
   let current = firstDay
   let weekNum = 1
@@ -216,15 +215,12 @@ function computeWeekOptions(yearMonth: string): WeekOption[] {
     const weekEnd = current.endOf('isoWeek')
     const clampedStart = weekStart.isBefore(firstDay) ? firstDay : weekStart
     const clampedEnd = weekEnd.isAfter(lastDay) ? lastDay : weekEnd
-    // 只加入已开始的周
-    if (!today.isBefore(dayjs(clampedStart.format('YYYY-MM-DD')))) {
-      weeks.push({
-        value: weekNum,
-        label: `第${weekNum}周（${clampedStart.format('MM-DD')}～${clampedEnd.format('MM-DD')}）`,
-        startDate: clampedStart.format('YYYY-MM-DD'),
-        endDate: clampedEnd.format('YYYY-MM-DD')
-      })
-    }
+    weeks.push({
+      value: weekNum,
+      label: `第${weekNum}周（${clampedStart.format('MM-DD')}～${clampedEnd.format('MM-DD')}）`,
+      startDate: clampedStart.format('YYYY-MM-DD'),
+      endDate: clampedEnd.format('YYYY-MM-DD')
+    })
     current = weekEnd.add(1, 'day')
     weekNum++
   }
