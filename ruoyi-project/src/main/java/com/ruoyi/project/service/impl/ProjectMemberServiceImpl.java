@@ -3,8 +3,10 @@ package com.ruoyi.project.service.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -58,17 +60,39 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
     @Transactional
     public int updateProjectMembers(Long projectId, Long[] userIds)
     {
-        // 1. 删除旧成员
-        projectMemberMapper.deleteByProjectId(projectId);
+        // 1. 增量同步成员，保留已有成员的 join_date
+        Set<Long> targetUserIds = new LinkedHashSet<>();
+        if (userIds != null)
+        {
+            for (Long uid : userIds)
+            {
+                targetUserIds.add(uid);
+            }
+        }
 
-        // 2. 批量插入新成员
-        if (userIds != null && userIds.length > 0)
+        List<ProjectMember> existingMembers = projectMemberMapper.selectAllMembersByProjectId(projectId);
+        Set<Long> existingUserIds = existingMembers.stream()
+                .map(ProjectMember::getUserId)
+                .collect(Collectors.toSet());
+
+        Set<Long> toRemove = new LinkedHashSet<>(existingUserIds);
+        toRemove.removeAll(targetUserIds);
+
+        Set<Long> toAdd = new LinkedHashSet<>(targetUserIds);
+        toAdd.removeAll(existingUserIds);
+
+        if (!toRemove.isEmpty())
+        {
+            projectMemberMapper.deleteByProjectIdAndUserIds(projectId, toRemove);
+        }
+
+        if (!toAdd.isEmpty())
         {
             List<ProjectMember> members = new ArrayList<>();
             Date now = new Date();
             String createBy = SecurityUtils.getUsername();
 
-            for (Long userId : userIds)
+            for (Long userId : toAdd)
             {
                 ProjectMember member = new ProjectMember();
                 member.setProjectId(projectId);

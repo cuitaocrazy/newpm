@@ -2,6 +2,8 @@ package com.ruoyi.project.mapper;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.project.domain.ProjectMember;
 
 /**
@@ -19,6 +21,14 @@ public interface ProjectMemberMapper
      * @return 项目成员集合
      */
     public List<ProjectMember> selectMembersByProjectId(Long projectId);
+
+    /**
+     * 查询项目全量成员（不过滤，sync专用）
+     *
+     * @param projectId 项目ID
+     * @return 项目成员集合
+     */
+    public List<ProjectMember> selectAllMembersByProjectId(Long projectId);
 
     /**
      * 查询用户参与的项目ID列表
@@ -43,6 +53,15 @@ public interface ProjectMemberMapper
      * @return 结果
      */
     public int deleteByProjectId(Long projectId);
+
+    /**
+     * 根据项目ID和用户ID列表删除项目成员
+     *
+     * @param projectId 项目ID
+     * @param userIds 用户ID集合
+     * @return 结果
+     */
+    public int deleteByProjectIdAndUserIds(@Param("projectId") Long projectId, @Param("userIds") Set<Long> userIds);
 
     /**
      * 批量新增项目成员

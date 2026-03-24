@@ -78,8 +78,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </trim>
     </insert>
 
+    <select id="selectAllMembersByProjectId" parameterType="Long" resultMap="ProjectMemberResult">
+        select m.member_id, m.project_id, m.user_id, m.join_date, m.leave_date,
+               m.is_active, m.del_flag, m.create_by, m.create_time,
+               m.update_by, m.update_time, m.remark
+        from pm_project_member m
+        where m.project_id = #{projectId}
+    </select>
+
     <delete id="deleteByProjectId" parameterType="Long">
         delete from pm_project_member where project_id = #{projectId}
+    </delete>
+
+    <delete id="deleteByProjectIdAndUserIds">
+        delete from pm_project_member where project_id = #{projectId}
+        and user_id in
+        <foreach item="userId" collection="userIds" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
     </delete>
 
     <insert id="batchInsert" parameterType="java.util.List">

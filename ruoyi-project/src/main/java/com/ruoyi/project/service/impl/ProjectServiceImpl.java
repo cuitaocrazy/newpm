@@ -529,10 +529,7 @@ public class ProjectServiceImpl implements IProjectService
             return;
         }
 
-        // 1. 删除该项目的旧成员记录
-        projectMemberMapper.deleteByProjectId(projectId);
-
-        // 2. 收集所有关联的用户ID（使用LinkedHashSet去重并保持顺序）
+        // 1. 收集所有关联的用户ID（使用LinkedHashSet去重并保持顺序）
         Set<Long> userIds = new LinkedHashSet<>();
 
         if (project.getProjectManagerId() != null)
@@ -574,14 +571,30 @@ public class ProjectServiceImpl implements IProjectService
             }
         }
 
-        // 3. 构建成员列表并批量插入
-        if (!userIds.isEmpty())
+        // 2. 查出当前已有成员
+        List<ProjectMember> existingMembers = projectMemberMapper.selectAllMembersByProjectId(projectId);
+        Set<Long> existingUserIds = existingMembers.stream()
+                .map(ProjectMember::getUserId)
+                .collect(Collectors.toSet());
+
+        // 3. 增量同步：只新增/删除差异部分，保留已有成员的 join_date
+        Set<Long> toAdd = new LinkedHashSet<>(userIds);
+        toAdd.removeAll(existingUserIds);
+
+        Set<Long> toRemove = new LinkedHashSet<>(existingUserIds);
+        toRemove.removeAll(userIds);
+
+        if (!toRemove.isEmpty())
+        {
+            projectMemberMapper.deleteByProjectIdAndUserIds(projectId, toRemove);
+        }
+
+        if (!toAdd.isEmpty())
         {
             List<ProjectMember> members = new ArrayList<>();
             Date now = new Date();
             String createBy = SecurityUtils.getUsername();
-
-            for (Long userId : userIds)
+            for (Long userId : toAdd)
             {
                 ProjectMember member = new ProjectMember();
                 member.setProjectId(projectId);
@@ -591,7 +604,6 @@ public class ProjectServiceImpl implements IProjectService
                 member.setCreateBy(createBy);
                 members.add(member);
             }
-
             projectMemberMapper.batchInsert(members);
         }
     }
