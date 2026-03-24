@@ -524,12 +524,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </insert>
 
     <!-- 仅更新审核字段，不触碰 update_by / update_time -->
+    <!-- 显式 update_time = update_time 以抑制 MySQL ON UPDATE CURRENT_TIMESTAMP -->
     <update id="updateProjectApprovalFields">
         UPDATE pm_project
         SET approval_status = #{approvalStatus},
             approval_reason = #{approvalReason},
             approval_time   = #{approvalTime},
-            approver_id     = #{approverId}
+            approver_id     = #{approverId},
+            update_time     = update_time
+        WHERE project_id = #{projectId}
+    </update>
+
+    <!-- 仅更新参与人字段，不触碰 update_by / update_time -->
+    <!-- 显式 update_time = update_time 以抑制 MySQL ON UPDATE CURRENT_TIMESTAMP -->
+    <update id="updateProjectParticipants">
+        UPDATE pm_project
+        SET participants = #{participants}, update_time = update_time
         WHERE project_id = #{projectId}
     </update>
 

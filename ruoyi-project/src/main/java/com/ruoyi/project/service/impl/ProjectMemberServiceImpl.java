@@ -54,13 +54,12 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
     }
 
     /**
-     * 更新项目成员（删旧插新 + 同步 pm_project.participants）
+     * 更新项目成员（同步 pm_project_member + pm_project.participants）
      */
     @Override
     @Transactional
     public int updateProjectMembers(Long projectId, Long[] userIds)
     {
-        // 1. 增量同步成员，保留已有成员的 join_date
         Set<Long> targetUserIds = new LinkedHashSet<>();
         if (userIds != null)
         {
@@ -70,6 +69,22 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
             }
         }
 
+        // 1. 增量同步成员表
+        syncMembers(projectId, targetUserIds);
+
+        // 2. 同步更新 pm_project.participants 字段（不触碰 update_by / update_time）
+        String participants = targetUserIds.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+        return projectMapper.updateProjectParticipants(projectId, participants);
+    }
+
+    /**
+     * 增量同步 pm_project_member（只做成员表的增删，不触碰 pm_project）
+     */
+    @Override
+    public void syncMembers(Long projectId, Set<Long> targetUserIds)
+    {
         List<ProjectMember> existingMembers = projectMemberMapper.selectAllMembersByProjectId(projectId);
         Set<Long> existingUserIds = existingMembers.stream()
                 .map(ProjectMember::getUserId)
@@ -91,7 +106,6 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
             List<ProjectMember> members = new ArrayList<>();
             Date now = new Date();
             String createBy = SecurityUtils.getUsername();
-
             for (Long userId : toAdd)
             {
                 ProjectMember member = new ProjectMember();
@@ -105,21 +119,5 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
             }
             projectMemberMapper.batchInsert(members);
         }
-
-        // 3. 同步更新 pm_project.participants 字段
-        String participants = "";
-        if (userIds != null && userIds.length > 0)
-        {
-            participants = Arrays.stream(userIds)
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-        }
-
-        Project project = new Project();
-        project.setProjectId(projectId);
-        project.setParticipants(participants);
-        project.setUpdateBy(SecurityUtils.getUsername());
-        project.setUpdateTime(new Date());
-        return projectMapper.updateProject(project);
     }
 }

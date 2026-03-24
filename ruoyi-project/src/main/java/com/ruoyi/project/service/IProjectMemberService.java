@@ -2,6 +2,7 @@ package com.ruoyi.project.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import com.ruoyi.project.domain.ProjectMember;
 
 /**
@@ -36,4 +37,12 @@ public interface IProjectMemberService
      * @return 结果
      */
     public int updateProjectMembers(Long projectId, Long[] userIds);
+
+    /**
+     * 增量同步 pm_project_member（只做成员表的增删，不触碰 pm_project）
+     *
+     * @param projectId 项目ID
+     * @param targetUserIds 目标用户ID集合
+     */
+    public void syncMembers(Long projectId, Set<Long> targetUserIds);
 }

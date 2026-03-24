@@ -61,6 +61,12 @@ public interface ProjectMapper
                                            @Param("approverId") String approverId);
 
     /**
+     * 仅更新项目参与人字段（不触碰 update_by / update_time）
+     */
+    public int updateProjectParticipants(@Param("projectId") Long projectId,
+                                         @Param("participants") String participants);
+
+    /**
      * 修改项目管理
      *
      * @param project 项目管理

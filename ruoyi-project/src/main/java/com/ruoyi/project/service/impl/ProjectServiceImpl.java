@@ -19,13 +19,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.project.mapper.ProjectMapper;
-import com.ruoyi.project.mapper.ProjectMemberMapper;
 import com.ruoyi.project.mapper.ContractMapper;
 import com.ruoyi.project.mapper.ProjectContractRelMapper;
 import com.ruoyi.project.domain.Project;
-import com.ruoyi.project.domain.ProjectMember;
 import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.domain.ProjectContractRel;
+import com.ruoyi.project.service.IProjectMemberService;
 import com.ruoyi.project.service.IProjectService;
 
 /**
@@ -44,10 +43,10 @@ public class ProjectServiceImpl implements IProjectService
     private ContractMapper contractMapper;
 
     @Autowired
-    private ProjectMemberMapper projectMemberMapper;
+    private ProjectContractRelMapper projectContractRelMapper;
 
     @Autowired
-    private ProjectContractRelMapper projectContractRelMapper;
+    private IProjectMemberService projectMemberService;
 
     /**
      * 查询项目管理
@@ -529,7 +528,7 @@ public class ProjectServiceImpl implements IProjectService
             return;
         }
 
-        // 1. 收集所有关联的用户ID（使用LinkedHashSet去重并保持顺序）
+        // 收集所有关联的用户ID（项目经理 + 市场经理 + 销售经理 + 团队负责人 + 参与人）
         Set<Long> userIds = new LinkedHashSet<>();
 
         if (project.getProjectManagerId() != null)
@@ -549,7 +548,6 @@ public class ProjectServiceImpl implements IProjectService
             userIds.add(project.getTeamLeaderId());
         }
 
-        // 解析参与人（逗号分隔的用户ID字符串，如 "1,2,3"）
         String participants = project.getParticipants();
         if (StringUtils.isNotEmpty(participants))
         {
@@ -563,49 +561,13 @@ public class ProjectServiceImpl implements IProjectService
                     {
                         userIds.add(Long.parseLong(trimmed));
                     }
-                    catch (NumberFormatException ignored)
-                    {
-                        // 跳过非法的用户ID
-                    }
+                    catch (NumberFormatException ignored) {}
                 }
             }
         }
 
-        // 2. 查出当前已有成员
-        List<ProjectMember> existingMembers = projectMemberMapper.selectAllMembersByProjectId(projectId);
-        Set<Long> existingUserIds = existingMembers.stream()
-                .map(ProjectMember::getUserId)
-                .collect(Collectors.toSet());
-
-        // 3. 增量同步：只新增/删除差异部分，保留已有成员的 join_date
-        Set<Long> toAdd = new LinkedHashSet<>(userIds);
-        toAdd.removeAll(existingUserIds);
-
-        Set<Long> toRemove = new LinkedHashSet<>(existingUserIds);
-        toRemove.removeAll(userIds);
-
-        if (!toRemove.isEmpty())
-        {
-            projectMemberMapper.deleteByProjectIdAndUserIds(projectId, toRemove);
-        }
-
-        if (!toAdd.isEmpty())
-        {
-            List<ProjectMember> members = new ArrayList<>();
-            Date now = new Date();
-            String createBy = SecurityUtils.getUsername();
-            for (Long userId : toAdd)
-            {
-                ProjectMember member = new ProjectMember();
-                member.setProjectId(projectId);
-                member.setUserId(userId);
-                member.setJoinDate(now);
-                member.setIsActive("1");
-                member.setCreateBy(createBy);
-                members.add(member);
-            }
-            projectMemberMapper.batchInsert(members);
-        }
+        // 委托给 ProjectMemberService 做增量同步
+        projectMemberService.syncMembers(projectId, userIds);
     }
 
     @Override

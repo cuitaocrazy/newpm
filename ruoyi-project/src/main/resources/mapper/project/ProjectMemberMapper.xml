@@ -99,11 +99,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <insert id="batchInsert" parameterType="java.util.List">
-        insert into pm_project_member (project_id, user_id, join_date, leave_date, is_active, del_flag, create_by, create_time, remark)
+        insert into pm_project_member (project_id, user_id, join_date, leave_date, is_active, del_flag, create_by, create_time, update_by, update_time, remark)
         values
         <foreach item="item" collection="list" separator=",">
             (#{item.projectId}, #{item.userId}, #{item.joinDate}, #{item.leaveDate},
-             #{item.isActive}, '0', #{item.createBy}, #{item.createTime}, #{item.remark})
+             #{item.isActive}, '0', #{item.createBy}, #{item.createTime}, #{item.createBy}, #{item.createTime}, #{item.remark})
         </foreach>
     </insert>
 
