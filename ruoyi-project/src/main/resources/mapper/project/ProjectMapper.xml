@@ -126,7 +126,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                u_upd.nick_name AS update_by_name,
                u1.nick_name AS project_manager_name,
                tc.team_confirm_depts,
-               tc.team_confirm_amount,
+               tc.team_confirm_amount
         FROM pm_project p
         LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
         LEFT JOIN (
