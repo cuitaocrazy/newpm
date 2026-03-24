@@ -83,6 +83,36 @@ columns:
     htmlType: textarea
     dictType: ""
 
+  old_project_status:
+    columnComment: 变更前项目状态（字典 sys_xmzt，持久化到 pm_project_stage_change）
+    columnType: varchar(50)
+    javaType: String
+    javaField: oldProjectStatus
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_xmzt
+    notes: "变更时记录，null 表示本次变更不涉及项目状态变更"
+
+  new_project_status:
+    columnComment: 变更后项目状态（字典 sys_xmzt，持久化到 pm_project_stage_change；null 则不更新）
+    columnType: varchar(50)
+    javaType: String
+    javaField: newProjectStatus
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_xmzt
+    notes: "null 时 Service 跳过 pm_project.project_status 的更新"
+
   del_flag:
     columnComment: 删除标志（0=正常, 1=删除）；DDL DEFAULT '0'，Service 层也显式写入 '0'
     columnType: char(1)
@@ -191,6 +221,45 @@ domainExtensions:
     source: "pm_project.project_stage（当前权威阶段）"
     dictType: sys_xmjd
     excel: "当前阶段"
+
+  - field: region
+    javaType: String
+    source: "pm_project.region（一级区域，dict: sys_yjqy）"
+    notes: "查询/回显用，不在列表列中直接展示"
+
+  - field: regionId
+    javaType: Long
+    source: "pm_project.region_id（二级区域 FK → pm_secondary_region）"
+
+  - field: regionName
+    javaType: String
+    source: "pm_secondary_region.region_name（LEFT JOIN by regionId）"
+    notes: "二级区域名称，不在主列表列展示，用于查询/导出"
+
+  - field: projectBudget
+    javaType: BigDecimal
+    source: "pm_project.project_budget"
+    notes: "预算金额，用于导出或详情展示"
+
+  - field: estimatedWorkload
+    javaType: BigDecimal
+    source: "pm_project.estimated_workload"
+    notes: "预估工作量（人天），用于导出"
+
+  - field: actualWorkloadDays
+    javaType: BigDecimal
+    source: "ROUND(pm_project.actual_workload/8,3) + COALESCE(pm_project.adjust_workload,0)"
+    notes: "实际人天（计算字段），用于导出"
+
+  - field: acceptanceStatus
+    javaType: String
+    source: "pm_project.acceptance_status（dict: sys_yszt）"
+    notes: "验收状态，用于导出"
+
+  - field: currentProjectStatus
+    javaType: String
+    source: "pm_project.project_status（回显用，非持久化）"
+    notes: "列表显示当前项目状态，dict: sys_xmzt；区别于 oldProjectStatus/newProjectStatus（DB 列，持久化）"
 
   # 来自 pm_contract（一项目取最小 contract_id 的合同）
   - field: contractStatus

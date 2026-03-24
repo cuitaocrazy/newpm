@@ -1,0 +1,408 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_attachment
+  tableComment: 业务附件管理（项目/合同/款项的附件存储）
+  className: Attachment
+  functionAuthor: ruoyi
+  remark: |
+    通用附件模块，支持多个业务对象挂载附件。
+    通过 businessType + businessId 双字段定位附件归属。
+    同时维护 pm_attachment_log 审计日志（上传/删除/下载操作）。
+    存储路径：{业务类型}/{ID}_{名称}/{yyyyMMdd}/{UUID}.{ext}（挂载在 /app/uploadPath/）
+    允许类型：doc, docx, xls, xlsx, pdf, csv, png, jpg, gif, txt, 7z, zip, gz
+    最大文件大小：30 MB
+    Controller：AttachmentController → /project/attachment/**
+
+# ============================
+# Tab 2: pm_attachment 字段信息
+# ============================
+columns:
+  attachment_id:
+    columnComment: 附件主键ID
+    columnType: bigint
+    javaType: Long
+    javaField: attachmentId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  business_type:
+    columnComment: 业务类型（project=项目 / contract=合同 / payment=款项）
+    columnType: varchar(50)
+    javaType: String
+    javaField: businessType
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 业务类型
+    notes: "枚举值: project / contract / payment；前端作为 @RequestParam 传入，非 JSON body"
+
+  business_id:
+    columnComment: 业务ID（项目ID / 合同ID / 款项ID）
+    columnType: bigint
+    javaType: Long
+    javaField: businessId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 业务ID
+
+  document_type:
+    columnComment: 文档类型（字典 sys_wdlx）
+    columnType: varchar(50)
+    javaType: String
+    javaField: documentType
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: sys_wdlx
+    excelConfig:
+      export: true
+      name: 文档类型
+
+  file_name:
+    columnComment: 文件名（含扩展名）
+    columnType: varchar(255)
+    javaType: String
+    javaField: fileName
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 文件名
+
+  file_path:
+    columnComment: 文件存储路径（相对于 uploadPath 根目录）
+    columnType: varchar(500)
+    javaType: String
+    javaField: filePath
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 文件路径
+
+  file_size:
+    columnComment: 文件大小（字节）
+    columnType: bigint
+    javaType: Long
+    javaField: fileSize
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 文件大小
+
+  file_type:
+    columnComment: 文件扩展名（小写，如 pdf / docx）
+    columnType: varchar(50)
+    javaType: String
+    javaField: fileType
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 文件类型
+
+  file_description:
+    columnComment: 文件描述（可选）
+    columnType: varchar(500)
+    javaType: String
+    javaField: fileDescription
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志（0=正常, 1=删除）
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 上传人（用户名）
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 上传时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+# ============================
+# 扩展字段（JOIN 查询结果，非持久化）
+# ============================
+extendedFields:
+  documentTypeName:
+    columnComment: 文档类型名称（JOIN sys_dict_data）
+    javaType: String
+    javaField: documentTypeName
+    source: "sys_dict_data.dict_label WHERE dict_type='sys_wdlx' AND dict_value=documentType"
+    description: 列表展示文档类型中文名称
+
+  createByName:
+    columnComment: 上传人姓名（JOIN sys_user）
+    javaType: String
+    javaField: createByName
+    source: "sys_user.nick_name WHERE user_name=create_by"
+    description: 列表展示上传人昵称（非用户名）
+
+# ============================
+# pm_attachment_log 表（审计日志，与 Attachment 共用 Controller）
+# ============================
+attachmentLog:
+  tableName: pm_attachment_log
+  className: AttachmentLog
+  description: |
+    附件操作审计日志，每次上传/删除/下载操作自动写入一条记录。
+    通过 GET /project/attachment/log?businessType=xxx&businessId=xxx 查询。
+
+  columns:
+    log_id:
+      columnComment: 日志主键ID
+      javaType: Long
+      javaField: logId
+
+    attachment_id:
+      columnComment: 附件ID（可为 NULL，删除后附件记录消失）
+      javaType: Long
+      javaField: attachmentId
+      excelConfig: { export: true, name: "附件ID" }
+
+    business_type:
+      columnComment: 业务类型（project/contract/payment）
+      javaType: String
+      javaField: businessType
+      excelConfig: { export: true, name: "业务类型" }
+
+    business_id:
+      columnComment: 业务ID
+      javaType: Long
+      javaField: businessId
+      excelConfig: { export: true, name: "业务ID" }
+
+    operation_type:
+      columnComment: 操作类型（upload=上传 / delete=删除 / download=下载）
+      javaType: String
+      javaField: operationType
+      excelConfig: { export: true, name: "操作类型" }
+
+    operation_desc:
+      columnComment: 操作描述（如：【上传文件】：测试文件.pdf）
+      javaType: String
+      javaField: operationDesc
+      excelConfig: { export: true, name: "操作描述" }
+
+    document_type:
+      columnComment: 文档类型（字典 sys_wdlx）
+      javaType: String
+      javaField: documentType
+      excelConfig: { export: true, name: "文档类型" }
+
+    file_name:
+      columnComment: 文件名
+      javaType: String
+      javaField: fileName
+      excelConfig: { export: true, name: "文件名" }
+
+    operator_id:
+      columnComment: 操作人ID
+      javaType: Long
+      javaField: operatorId
+      excelConfig: { export: true, name: "操作人ID" }
+
+    operator_name:
+      columnComment: 操作人姓名（写入时快照，不关联查询）
+      javaType: String
+      javaField: operatorName
+      excelConfig: { export: true, name: "操作人姓名" }
+
+    create_time:
+      columnComment: 操作时间
+      javaType: Date
+      javaField: createTime
+
+  extendedFields:
+    documentTypeName:
+      javaType: String
+      javaField: documentTypeName
+      source: "sys_dict_data.dict_label（dict_type=sys_wdlx）"
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: attachment
+  functionName: 附件管理
+
+# ============================
+# API 汇总
+# ============================
+apiSummary:
+  - "GET    /project/attachment/list                      → 附件列表（@RequestParam businessType + businessId，返回 AjaxResult 非分页）"
+  - "GET    /project/attachment/{attachmentId}            → 附件详情"
+  - "POST   /project/attachment                           → 上传附件（multipart/form-data: businessType + businessId + documentType + file + fileDescription?）"
+  - "GET    /project/attachment/download/{attachmentId}   → 下载附件（直接写入 HttpServletResponse）"
+  - "DELETE /project/attachment/{attachmentId}            → 删除附件（软删除 del_flag='1'，同时写 log）"
+  - "GET    /project/attachment/log                       → 操作日志（@RequestParam businessType + businessId，返回 AjaxResult）"
+
+# ============================
+# 权限说明
+# ============================
+permissionNotes: |
+  所有接口使用 hasAnyPermi，支持多个权限码：
+  上传/删除：project:attachment:add/remove 或 具体业务权限（project:project:attachment / contract:attachment / payment:attachment）
+  查询/下载：project:attachment:list/query/download 或 具体业务 query/list/attachment 权限
+  日志查询：project:attachment:log 或 对应业务权限
+  设计原则：各业务模块的用户无需 attachment 专用权限，通过业务模块自身权限即可使用附件功能
+
+# ============================
+# 定制说明
+# ============================
+customizations:
+  upload_implementation:
+    intent: "上传附件的 Service 实现"
+    spec: |
+      uploadAttachment(businessType, businessId, documentType, file, fileDescription)：
+        1. 校验文件类型（允许的扩展名列表）和大小（≤ 30MB）
+        2. 构造存储路径：{businessType}/{businessId}_{businessName}/{yyyyMMdd}/{UUID}.{ext}
+        3. 写入磁盘（/app/uploadPath/ 下的 PVC 挂载路径）
+        4. INSERT INTO pm_attachment（所有字段）
+        5. INSERT INTO pm_attachment_log（operationType='upload'）
+        6. 返回 AjaxResult.success(attachment)
+
+  download_implementation:
+    intent: "下载附件的 Service 实现"
+    spec: |
+      downloadAttachment(attachmentId, response)：
+        1. 查询 pm_attachment 获取 filePath
+        2. 读取文件流，写入 HttpServletResponse
+        3. 设置 Content-Disposition: attachment; filename=xxx
+        4. INSERT INTO pm_attachment_log（operationType='download'）
+
+  delete_implementation:
+    intent: "删除附件的 Service 实现"
+    spec: |
+      deleteAttachment(attachmentId)：
+        1. 查询附件信息
+        2. UPDATE pm_attachment SET del_flag='1'（软删除，文件本体保留在磁盘）
+        3. INSERT INTO pm_attachment_log（operationType='delete'）
+
+  checkAttachments_endpoint:
+    intent: "PaymentController 中检查附件是否存在的专用接口"
+    spec: |
+      GET /project/payment/checkAttachments/{paymentId}
+      由 PaymentController 提供（非 AttachmentController），返回该 payment 是否有附件
+      在付款列表页判断是否显示"查看附件"按钮时使用

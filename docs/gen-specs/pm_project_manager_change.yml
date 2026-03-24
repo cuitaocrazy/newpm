@@ -25,6 +25,9 @@ columns:
     isRequired: false
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 变更主键ID
 
   project_id:
     columnComment: 项目ID
@@ -39,6 +42,9 @@ columns:
     isRequired: true
     htmlType: select
     dictType: ""
+    excelConfig:
+      export: true
+      name: 项目ID
 
   old_manager_id:
     columnComment: 原项目经理ID
@@ -53,6 +59,9 @@ columns:
     isRequired: false
     htmlType: select
     dictType: ""
+    excelConfig:
+      export: true
+      name: 原项目经理ID
 
   new_manager_id:
     columnComment: 新项目经理ID
@@ -67,6 +76,9 @@ columns:
     isRequired: true
     htmlType: select
     dictType: ""
+    excelConfig:
+      export: true
+      name: 新项目经理ID
 
   change_reason:
     columnComment: 变更原因
@@ -78,6 +90,9 @@ columns:
     isList: true     # 列表展示最新变更原因（来自 VO），show-overflow-tooltip，无值显示"-"
     isQuery: false
     queryType: EQ
+    excelConfig:
+      export: true
+      name: 变更原因
     isRequired: false
     htmlType: textarea
     dictType: ""
@@ -165,6 +180,38 @@ columns:
     isRequired: false
     htmlType: textarea
     dictType: ""
+
+# ============================
+# 扩展字段（JOIN 查询结果，非持久化）
+# ============================
+extendedFields:
+  projectName:
+    columnComment: 项目名称（关联查询）
+    javaType: String
+    javaField: projectName
+    source: pm_project.project_name
+    description: VO 列表页显示项目名称
+
+  projectCode:
+    columnComment: 项目编号（关联查询）
+    javaType: String
+    javaField: projectCode
+    source: pm_project.project_code
+    description: VO 列表页显示项目编号
+
+  oldManagerName:
+    columnComment: 原项目经理姓名（关联查询）
+    javaType: String
+    javaField: oldManagerName
+    source: "sys_user.nick_name（JOIN by oldManagerId）"
+    description: VO 列表页显示"原项目经理"列
+
+  newManagerName:
+    columnComment: 新项目经理姓名（关联查询）
+    javaType: String
+    javaField: newManagerName
+    source: "sys_user.nick_name（JOIN by newManagerId）"
+    description: VO 列表页显示"现任项目经理"列
 
 # ============================
 # Tab 3: 生成信息

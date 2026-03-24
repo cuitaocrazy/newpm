@@ -53,6 +53,10 @@ columns:
     isRequired: false
     htmlType: select
     dictType: "sys_spzt"
+    notes: |
+      前端使用 sys_spzt 字典渲染（dict-tag/dict-select）。
+      Java @Excel 使用 readConverterExp="0=待审核,1=审核通过,2=审核拒绝,3=退回待审核"（不声明 dictType），
+      导出时直接翻译，不依赖运行时字典表。两者效果一致，但实现路径不同。
 
   approval_reason:
     columnComment: 审核意见/拒绝原因/退回原因

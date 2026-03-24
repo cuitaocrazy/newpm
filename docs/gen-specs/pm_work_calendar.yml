@@ -1,0 +1,214 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_work_calendar
+  tableComment: 工作日历（节假日与调休工作日配置）
+  className: WorkCalendar
+  functionAuthor: ruoyi
+  remark: |
+    用于日报模块判断当天是否为工作日，以及当周是否有调休。
+    dayType=holiday 表示节假日（不用填日报），dayType=workday 表示调休上班日（需填日报）。
+    Controller：WorkCalendarController → /project/workCalendar/**
+
+# ============================
+# Tab 2: 字段信息
+# ============================
+# 注意：无 del_flag 但有软删除逻辑（deleteWorkCalendarByIds 使用物理删除或软删除，需确认）
+columns:
+  id:
+    columnComment: 主键ID
+    columnType: bigint
+    javaType: Long
+    javaField: id
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  calendar_date:
+    columnComment: 日历日期（唯一）
+    columnType: date
+    javaType: Date
+    javaField: calendarDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: BETWEEN
+    isRequired: true
+    htmlType: datetime
+    dictType: ""
+    notes: "@JsonFormat(pattern='yyyy-MM-dd')"
+
+  day_type:
+    columnComment: 日期类型（holiday=节假日 / workday=调休上班日）
+    columnType: varchar(20)
+    javaType: String
+    javaField: dayType
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+    notes: "枚举值: holiday / workday，无对应 sys_dict，前端硬编码下拉"
+
+  day_name:
+    columnComment: 日期名称（如 春节、元旦调休）
+    columnType: varchar(100)
+    javaType: String
+    javaField: dayName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  year:
+    columnComment: 年份（冗余字段，用于按年快速查询）
+    columnType: int
+    javaType: Integer
+    javaField: year
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+
+  del_flag:
+    columnComment: 删除标志（0=正常, 1=删除）
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+# ============================
+# 查询参数字段（非持久化）
+# ============================
+queryParams:
+  calendarDateStr:
+    columnComment: 日期字符串查询参数（非持久化）
+    javaType: String
+    javaField: calendarDateStr
+    source: 前端传入
+    description: 用于精确日期字符串匹配查询（替代 Date 类型参数）
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: workCalendar
+  functionName: 工作日历
+  parentMenuId: 1  # 系统管理或项目管理下
+
+# ============================
+# API 汇总
+# ============================
+apiSummary:
+  - "GET    /project/workCalendar/list         → 分页列表（list 权限）"
+  - "GET    /project/workCalendar/year/{year}  → 按年份查询全部（不分页，权限：workCalendar:list 或 dailyReport:list 或 dailyReport:activity）"
+  - "GET    /project/workCalendar/{id}         → 详情（query 权限）"
+  - "POST   /project/workCalendar              → 新增（add 权限）"
+  - "PUT    /project/workCalendar              → 修改（edit 权限）"
+  - "DELETE /project/workCalendar/{ids}        → 删除（remove 权限）"
+  - "POST   /project/workCalendar/batchSave    → 批量保存（edit 权限，@RequestBody List<WorkCalendar>，按 year 先删后插）"
+
+# ============================
+# 定制说明
+# ============================
+customizations:
+  year_endpoint:
+    intent: "/year/{year} 接口的特殊用途"
+    spec: |
+      日报 write.vue 的 MonthCalendar 组件调用此接口获取当年节假日/调休数据，
+      用于判断某日是否需要填报日报（workday 类型需填，holiday 类型豁免）。
+      权限使用 hasAnyPermi，因为该接口同时被管理员（workCalendar:list）
+      和普通员工（dailyReport:list）使用。
+
+  batch_save:
+    intent: "batchSave 的实现逻辑"
+    spec: |
+      Service.batchSave(list, year)：
+        若 year 不为 null，先 DELETE FROM pm_work_calendar WHERE year = #{year}（物理删除）
+        再批量插入 list 中的所有记录
+      适用于一次性导入/覆盖某年的全部节假日配置

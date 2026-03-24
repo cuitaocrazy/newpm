@@ -542,6 +542,100 @@ extendedFields:
     source: pm_payment
     description: 用于主子表模式，一个合同包含多个付款里程碑
 
+  # ─── 聚合统计字段（用于 listWithContracts 接口合同+付款汇总展示）───
+  projectBudgetTotal:
+    columnComment: 项目预算合计（合同维度聚合）
+    javaType: BigDecimal
+    javaField: projectBudgetTotal
+    source: 聚合计算
+    description: GET /project/payment/listWithContracts 接口用，展示合同关联项目的预算合计
+
+  estimatedWorkloadTotal:
+    columnComment: 预估工作量合计
+    javaType: BigDecimal
+    javaField: estimatedWorkloadTotal
+    source: 聚合计算
+    description: 同上接口，展示合同关联项目的预估工作量合计
+
+  actualWorkloadTotal:
+    columnComment: 实际人天合计
+    javaType: BigDecimal
+    javaField: actualWorkloadTotal
+    source: 聚合计算
+    description: 同上接口，展示合同关联项目的实际人天合计
+
+  revenueConfirmAmountTotal:
+    columnComment: 收入确认金额合计
+    javaType: BigDecimal
+    javaField: revenueConfirmAmountTotal
+    source: 聚合计算
+    description: 同上接口，展示合同关联项目的确认金额合计
+
+  # ─── 多行展示辅助字段（合同列表多付款行合并展示用）───
+  currentProject:
+    columnComment: 当前行关联的项目对象
+    javaType: Project
+    javaField: currentProject
+    source: 内存构造
+    description: listWithContracts 接口按合同分组时，多项目合同每行挂载对应 Project 对象
+
+  currentPayment:
+    columnComment: 当前行关联的付款里程碑对象
+    javaType: Payment
+    javaField: currentPayment
+    source: 内存构造
+    description: listWithContracts 接口按合同分组时，多付款行每行挂载对应 Payment 对象
+
+  isFirstRow:
+    columnComment: 是否为该合同的第一行（用于合并单元格）
+    javaType: Boolean
+    javaField: isFirstRow
+    source: 内存构造
+    description: 前端 rowspan 合并单元格判断
+
+  rowSpan:
+    columnComment: 该合同占用的行数（用于合并单元格）
+    javaType: Integer
+    javaField: rowSpan
+    source: 内存构造
+    description: 前端 rowspan 合并单元格值
+
+  # ─── 多值查询过滤字段（List 类型，不持久化，前端传入）───
+  deptIds:
+    columnComment: 部门ID多选过滤（非持久化）
+    javaType: List<Long>
+    javaField: deptIds
+    source: 前端传入
+    description: GET /project/payment/listWithContracts 查询参数，允许多部门过滤
+
+  paymentStatuses:
+    columnComment: 付款状态多选过滤（非持久化）
+    javaType: List<String>
+    javaField: paymentStatuses
+    source: 前端传入
+    description: 同上接口，允许多付款状态过滤（sys_fkzt）
+
+  expectedQuarters:
+    columnComment: 预计回款季度多选过滤（非持久化）
+    javaType: List<String>
+    javaField: expectedQuarters
+    source: 前端传入
+    description: 同上接口，允许多季度过滤（sys_jdgl）
+
+  actualQuarters:
+    columnComment: 实际回款季度多选过滤（非持久化）
+    javaType: List<String>
+    javaField: actualQuarters
+    source: 前端传入
+    description: 同上接口
+
+  expectedQuarter:
+    columnComment: 预计回款季度（单值，查询条件，非持久化）
+    javaType: String
+    javaField: expectedQuarter
+    source: 前端传入
+    description: 用于基础列表查询，单季度精确匹配（sys_jdgl）
+
 # ============================
 # Tab 3: 生成信息
 # ============================
@@ -688,9 +782,9 @@ customizations:
         renderAfterExpand: false
     bindTo: dept_id
     service:
-      endpoint: "GET /system/dept/treeselect"
-      source: "复用 SysDeptService，RuoYi 自带"
-      returns: "部门树结构数据"
+      endpoint: "GET /project/project/deptTree"
+      source: "ProjectController 代理接口（避免 PM 用户调用 /system 报 403）"
+      returns: "扁平部门列表（res.data），前端调用 handleTree() 转为树形"
       newApi: false
     notes: |
       查询表单使用部门树选择

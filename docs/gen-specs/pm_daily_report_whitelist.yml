@@ -1,0 +1,251 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_daily_report_whitelist
+  tableComment: 日报填写白名单（豁免日报强制填写要求的用户）
+  className: DailyReportWhitelist
+  functionAuthor: ruoyi
+  remark: |
+    业务含义：系统默认要求所有用户每周填写日报。
+    加入白名单的用户豁免此要求，不会被日报统计纳入"未填写"名单。
+    前端路由：/system/whitelist（挂在系统管理下）
+    Controller：DailyReportWhitelistController → /project/whitelist/**
+
+# ============================
+# Tab 2: 字段信息（物理表字段）
+# ============================
+columns:
+  id:
+    columnComment: 主键ID（AUTO_INCREMENT）
+    columnType: bigint
+    javaType: Long
+    javaField: id
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  user_id:
+    columnComment: 用户ID（FK → sys_user.user_id，唯一约束）
+    columnType: bigint
+    javaType: Long
+    javaField: userId
+    isInsert: true
+    isEdit: false
+    isList: false  # 列表展示 nickName（扩展字段），不直接显示 userId
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: select
+    dictType: ""
+    notes: "@NotNull 校验；前端通过 el-popover + el-tree 选择用户，提交 userId"
+
+  reason:
+    columnComment: 加入原因（最长 500 字）
+    columnType: varchar(500)
+    javaType: String
+    javaField: reason
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: textarea
+    dictType: ""
+    notes: "@NotBlank 校验；列表显示 show-overflow-tooltip"
+
+  del_flag:
+    columnComment: 删除标志（0=正常, 1=删除，软删除）
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: "Mapper deleteWhitelistById 执行 UPDATE SET del_flag='1'（软删除）"
+
+  create_by:
+    columnComment: 添加人（操作人用户名）
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 添加时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新人
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+# ============================
+# 扩展字段（JOIN 查询结果，非持久化）
+# ============================
+extendedFields:
+  nickName:
+    columnComment: 用户昵称（关联查询）
+    javaType: String
+    javaField: nickName
+    source: "sys_user.nick_name (INNER JOIN by userId)"
+    excelConfig:
+      export: true
+      name: 姓名
+
+  deptName:
+    columnComment: 用户所在部门名称（关联查询）
+    javaType: String
+    javaField: deptName
+    source: "sys_dept.dept_name (LEFT JOIN via sys_user.dept_id)"
+    excelConfig:
+      export: true
+      name: 部门
+
+  # ── 查询参数（非持久化，前端传入）──
+  keyword:
+    columnComment: 模糊搜索关键词（非持久化）
+    javaType: String
+    javaField: keyword
+    source: 前端传入
+    description: |
+      Mapper WHERE 条件：
+      AND (u.nick_name LIKE '%{keyword}%' OR d.dept_name LIKE '%{keyword}%')
+      同时匹配姓名和部门名称
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: whitelist
+  functionName: 日报白名单
+  parentMenuId: 1   # 系统管理菜单下
+
+# ============================
+# API 汇总
+# ============================
+apiSummary:
+  - "GET    /project/whitelist/list       → 白名单分页列表（list 权限）"
+  - "POST   /project/whitelist            → 添加白名单（add 权限，@Validated，软删除恢复）"
+  - "DELETE /project/whitelist/{id}       → 移除白名单（remove 权限，软删除 del_flag='1'）"
+  - "GET    /project/whitelist/checkSelf  → 检查当前登录用户是否在白名单（无权限注解，任意登录用户可调）"
+
+# ============================
+# 定制说明
+# ============================
+customizations:
+
+  backend_logic:
+    intent: "Service 层核心逻辑"
+    spec: |
+      addToWhitelist(whitelist)：
+        1. 检查 userId 是否已在白名单（countByUserId > 0）→ 重复则抛 ServiceException
+        2. 设置 createBy = SecurityUtils.getUsername()，createTime = DateUtils.getNowDate()
+        3. insertWhitelist 写入数据库
+
+      removeFromWhitelist(id)：
+        UPDATE pm_daily_report_whitelist SET del_flag='1', update_time=NOW() WHERE id=#{id}
+
+      isInWhitelist(userId)：
+        SELECT COUNT(*) FROM pm_daily_report_whitelist WHERE user_id=#{userId} AND del_flag='0'
+        返回 boolean（count > 0）
+        被 DailyReportService 调用以决定是否豁免日报校验
+
+  list_design:
+    intent: "列表页布局"
+    spec: |
+      查询条件：关键词（el-input，姓名或部门模糊匹配，style="width:200px"）
+
+      工具栏：添加按钮（v-hasPermi project:whitelist:add）
+
+      列顺序（无序号列，无多选列）：
+        姓名(nickName, min-width=120) | 部门(deptName, min-width=150)
+        | 加入原因(reason, min-width=200, show-overflow-tooltip)
+        | 添加时间(createTime, width=160) | 操作人(createBy, width=120)
+        | 操作(fixed=right, width=100)
+
+      操作列：
+        移除（link, type=danger, icon=Delete, v-hasPermi project:whitelist:remove）→ handleRemove(row)
+        移除前 el-messageBox 确认，成功后刷新列表
+
+  add_dialog:
+    intent: "添加白名单弹框"
+    spec: |
+      el-dialog：title="添加白名单人员"，width=480px，append-to-body
+
+      人员选择（prop="userId"，必填）：
+        自定义 el-popover 触发 + el-tree 选人（非标准 el-select）
+        el-popover: placement=bottom-start, width=320, trigger=click
+        内部：el-input（搜索姓名过滤树节点）+ el-scrollbar + el-tree
+        tree 数据结构：按部门分组，叶节点为用户（nodeId=userId, label=nickName, isLeaf=true）
+        数据来源：GET /project/project/users（res.data，全量用户列表）
+        选中后：form.userId = node.userId, form.userName = node.label
+        filterUserNode：filter-node-method，按 label 包含 userFilterText 过滤
+
+      加入原因（prop="reason"，必填）：
+        el-input，type=textarea，rows=3，maxlength=500，show-word-limit
+
+      提交：POST /project/whitelist，@RequestBody { userId, reason }
+      成功后关闭弹框、刷新列表
+
+  no_edit_no_export:
+    intent: "有意缺失的功能"
+    spec: |
+      无编辑功能（白名单条目不可修改，只能先移除再重新添加）
+      无导出功能
+      无批量删除（每条单独移除）

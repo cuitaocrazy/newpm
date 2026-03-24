@@ -1,0 +1,449 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_daily_report
+  tableComment: 工作日报主表（主从结构：pm_daily_report → pm_daily_report_detail）
+  className: DailyReport
+  functionAuthor: ruoyi
+  remark: |
+    三个前端视图：
+      write.vue   → 日报填写（/project/dailyReport/write）
+      activity.vue → 团队日报活动（/project/dailyReport/activity）
+      stats.vue   → 日报统计（/project/dailyReport/stats）
+    Controller：DailyReportController → /project/dailyReport/**
+              + ProjectStatsController → /project/dailyReport/projectStats/**（共享前缀）
+    硬删除：pm_daily_report 和 pm_daily_report_detail 均使用 DELETE（无 del_flag 语义删除）
+
+# ============================
+# Tab 2: pm_daily_report 字段信息（主表）
+# ============================
+columns:
+  report_id:
+    columnComment: 日报主键ID（AUTO_INCREMENT）
+    columnType: bigint
+    javaType: Long
+    javaField: reportId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  report_date:
+    columnComment: 日报日期（yyyy-MM-dd，唯一键 user_id + report_date）
+    columnType: date
+    javaType: Date
+    javaField: reportDate
+    isInsert: true
+    isEdit: false
+    isList: true
+    isQuery: true
+    queryType: BETWEEN
+    isRequired: true
+    htmlType: datetime
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 日报日期
+      dateFormat: yyyy-MM-dd
+    notes: "@JsonFormat(pattern='yyyy-MM-dd')"
+
+  user_id:
+    columnComment: 用户ID（FK → sys_user.user_id）
+    columnType: bigint
+    javaType: Long
+    javaField: userId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    notes: "登录用户自动填充，不由前端显式提交"
+
+  dept_id:
+    columnComment: 部门ID（冗余，写入时从 sys_user 取，用于部门维度统计）
+    columnType: bigint
+    javaType: Long
+    javaField: deptId
+    isInsert: true
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  total_work_hours:
+    columnComment: 总工时（小时，所有 detailList 工时之和）
+    columnType: decimal(5,2)
+    javaType: BigDecimal
+    javaField: totalWorkHours
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 总工时(小时)
+    notes: "月览 MonthCalendar badge 数据来源：≥8h 绿色，<8h 橙色，无记录灰色"
+
+  del_flag:
+    columnComment: 删除标志（0=正常, 1=删除，实际为硬删除）
+    columnType: char(1)
+    javaType: String
+    javaField: delFlag
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+# ============================
+# pm_daily_report 扩展字段
+# ============================
+extendedFields:
+  detailList:
+    columnComment: 日报明细列表（主从结构）
+    javaType: List<DailyReportDetail>
+    javaField: detailList
+    source: pm_daily_report_detail
+    description: 保存/加载日报时级联处理
+
+  userName:
+    columnComment: 用户名（非昵称，扩展字段）
+    javaType: String
+    javaField: userName
+    source: sys_user.user_name
+
+  nickName:
+    columnComment: 用户昵称（扩展字段，导出用）
+    javaType: String
+    javaField: nickName
+    source: sys_user.nick_name
+    excelConfig:
+      export: true
+      name: 姓名
+
+  deptName:
+    columnComment: 部门名称（扩展字段，导出用）
+    javaType: String
+    javaField: deptName
+    source: sys_dept.dept_name
+    excelConfig:
+      export: true
+      name: 部门名称
+
+  leaveSummary:
+    columnComment: 假期摘要（虚拟字段，月览接口返回）
+    javaType: String
+    javaField: leaveSummary
+    source: "子查询聚合 pm_daily_report_detail（entry_type != 'work'）为 'leave:2.00,comp:1.00' 格式"
+    description: 前端 write.vue MonthCalendar 用于显示假期角标
+
+  # ── 查询参数（非持久化）──
+  reportDateStart:
+    columnComment: 日期范围查询起始（非持久化）
+    javaType: Date
+    javaField: reportDateStart
+    source: 前端传入
+
+  reportDateEnd:
+    columnComment: 日期范围查询结束（非持久化）
+    javaType: Date
+    javaField: reportDateEnd
+    source: 前端传入
+
+  yearMonth:
+    columnComment: 年月查询参数（如 2026-02，非持久化）
+    javaType: String
+    javaField: yearMonth
+    source: 前端传入
+    description: 月览接口（GET /monthly）专用参数
+
+  projectName:
+    columnComment: 项目名称查询参数（模糊，非持久化）
+    javaType: String
+    javaField: projectName
+    source: 前端传入
+
+  projectId:
+    columnComment: 项目ID查询参数（按项目成员筛选，非持久化）
+    javaType: Long
+    javaField: projectId
+    source: 前端传入
+
+# ============================
+# pm_daily_report_detail 子表字段
+# ============================
+detailTable:
+  tableName: pm_daily_report_detail
+  className: DailyReportDetail
+  description: 日报明细（每个项目/假期条目一行）
+
+  columns:
+    detail_id:
+      columnComment: 明细主键ID
+      javaType: Long
+      javaField: detailId
+
+    report_id:
+      columnComment: 日报ID（FK → pm_daily_report.report_id）
+      javaType: Long
+      javaField: reportId
+      isRequired: true
+
+    project_id:
+      columnComment: |
+        项目ID（存储逻辑：
+          entryType=work + 无子任务 → pm_project.project_id
+          entryType=work + 有子任务 → pm_task.task_id（注意：存的是 task_id！）
+          entryType=leave/comp/annual → NULL）
+      javaType: Long
+      javaField: projectId
+
+    project_stage:
+      columnComment: 项目阶段（字典 sys_xmjd）
+      javaType: String
+      javaField: projectStage
+      dictType: sys_xmjd
+      excelConfig: { export: true, name: "项目阶段", dictType: sys_xmjd }
+
+    work_hours:
+      columnComment: 工时（小时，entryType=work 时使用）
+      javaType: BigDecimal
+      javaField: workHours
+      excelConfig: { export: true, name: "工时(小时)" }
+
+    work_content:
+      columnComment: 工作内容（文字描述）
+      javaType: String
+      javaField: workContent
+      excelConfig: { export: true, name: "工作内容" }
+
+    entry_type:
+      columnComment: 条目类型（work=项目工时 / leave=请假 / comp=倒休 / annual=年假）
+      javaType: String
+      javaField: entryType
+      notes: "非 work 时使用 leaveHours 而非 workHours"
+
+    leave_hours:
+      columnComment: 假期时长（小时，entryType 非 work 时使用）
+      javaType: BigDecimal
+      javaField: leaveHours
+
+    sub_project_id:
+      columnComment: |
+        子任务ID（FK → pm_task.task_id，列名保持 sub_project_id 向后兼容）
+        NULL 表示直接填写的普通项目条目（无子任务），非 NULL 表示对应 pm_task.task_id
+      javaType: Long
+      javaField: subProjectId
+
+    work_category:
+      columnComment: 工作任务类别（字典 sys_gzlb，子任务条目专用）
+      javaType: String
+      javaField: workCategory
+      dictType: sys_gzlb
+      notes: "仅 hasSubProject=true 的项目条目填写；普通项目/假期条目为 NULL"
+
+    del_flag:
+      columnComment: 删除标志（实际为硬删除）
+      javaType: String
+      javaField: delFlag
+
+  detailExtendedFields:
+    projectName:
+      columnComment: 项目名称（扩展字段）
+      javaType: String
+      javaField: projectName
+      source: pm_project.project_name
+      excelConfig: { export: true, name: "项目名称" }
+
+    projectCode:
+      columnComment: 项目编号（扩展字段）
+      javaType: String
+      javaField: projectCode
+      source: pm_project.project_code
+      excelConfig: { export: true, name: "项目编号" }
+
+    projectStageName:
+      columnComment: 项目阶段名称（前端翻译，非 DB）
+      javaType: String
+      javaField: projectStageName
+
+    estimatedWorkload:
+      columnComment: 预计人天（来自 pm_project.estimated_workload）
+      javaType: BigDecimal
+      javaField: estimatedWorkload
+      source: pm_project.estimated_workload
+
+    actualWorkload:
+      columnComment: 已花人天（= actual_workload/8 + adjust_workload）
+      javaType: BigDecimal
+      javaField: actualWorkload
+      source: 计算字段
+
+    revenueConfirmYear:
+      columnComment: 收入确认年度（来自 pm_project）
+      javaType: String
+      javaField: revenueConfirmYear
+      source: pm_project.revenue_confirm_year
+
+    subProjectName:
+      columnComment: 子任务名称（来自 pm_task.task_name）
+      javaType: String
+      javaField: subProjectName
+      source: pm_task.task_name
+
+    subProjectStage:
+      columnComment: 子任务阶段（来自 pm_task.task_stage）
+      javaType: String
+      javaField: subProjectStage
+      source: pm_task.task_stage
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: sub
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: dailyReport
+  functionName: 工作日报
+  subTableName: pm_daily_report_detail
+  subTableFkName: report_id
+
+# ============================
+# API 汇总
+# ============================
+apiSummary:
+  # DailyReportController
+  - "POST   /project/dailyReport                          → 保存日报（新增或覆盖当日，级联处理 detailList）"
+  - "GET    /project/dailyReport/my/{reportDate}          → 加载指定日期的日报详情（当前用户）"
+  - "GET    /project/dailyReport/list                     → 分页日报列表（管理视角，支持 yearMonth/userId/deptId 等）"
+  - "GET    /project/dailyReport/monthly                  → 月览数据（当前用户，yearMonth 参数，返回每日摘要含 leaveSummary）"
+  - "GET    /project/dailyReport/myProjects               → 当前用户的项目列表（含 hasSubProject 标志）"
+  - "GET    /project/dailyReport/activityUsers            → 已填写/未填写人员统计（支持 deptId/date 参数）"
+  - "DELETE /project/dailyReport/{reportDate}             → 删除指定日期日报（硬删除主从记录）"
+  # ProjectStatsController（共享 /project/dailyReport 前缀）
+  - "GET    /project/dailyReport/projectStats             → 项目工时统计（分页，支持多维度过滤）"
+  - "GET    /project/dailyReport/projectNameSuggestions   → 项目名称自动补全"
+  - "POST   /project/dailyReport/projectStats/{id}/correct → 人天补正"
+  - "GET    /project/dailyReport/projectStats/{id}/correctLog → 补正日志"
+
+# ============================
+# 字典依赖
+# ============================
+dictDependencies:
+  - sys_xmjd: "项目阶段（明细条目）"
+  - sys_gzlb: "工作任务类别（子任务条目）"
+
+# ============================
+# 定制说明
+# ============================
+customizations:
+  write_page:
+    intent: "日报填写页（write.vue）核心设计"
+    spec: |
+      左侧 (7/24)：MonthCalendar 组件
+        - 数据来源：GET /project/dailyReport/list?yearMonth=YYYY-MM（返回该月每日工时）
+        - badge 颜色：≥8h 绿，<8h 橙，无记录 灰
+        - 点击日期 → 加载该日详情
+
+      右侧 (17/24)：项目填写区
+        - 项目列表：GET /project/dailyReport/myProjects（返回项目 + hasSubProject 标志）
+        - hasSubProject=true 的项目：展开多行（每行一个子任务 slider+textarea+workCategory 下拉）
+        - 普通项目：单行（slider + textarea）
+        - 假期条目：leave/comp/annual 类型行
+
+      周约束：仅当前自然周（周一~周日）可编辑；过去/未来周只读
+
+      保存：POST /project/dailyReport（JSON body，含 reportDate + detailList）
+      保存后 Service 重新计算：
+        1. sub_project.actual_workload（各子任务汇总）
+        2. parent project.actual_workload（所有子任务 rollup）
+
+  workload_rollup:
+    intent: "人天 rollup 逻辑"
+    spec: |
+      保存日报时 Service 触发：
+        1. 按 pm_task.task_id 聚合 pm_daily_report_detail.work_hours → 更新 pm_task.actual_workload
+        2. 按 pm_project.project_id 聚合所有 task.actual_workload + 直接项目工时 → 更新 pm_project.actual_workload
+
+  hard_delete_note:
+    intent: "硬删除注意事项"
+    spec: |
+      pm_daily_report 和 pm_daily_report_detail 均使用硬删除（DELETE）
+      不能加 del_flag 软删除的唯一约束绕过方案
+      保存时先删除当日全部 detail，再批量插入新 detail（覆盖语义）

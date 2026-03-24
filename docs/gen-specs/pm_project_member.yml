@@ -67,6 +67,10 @@ columns:
     isRequired: false
     htmlType: datetime
     dictType: ""
+    excelConfig:
+      export: true
+      name: 加入日期
+      dateFormat: yyyy-MM-dd
 
   leave_date:
     columnComment: 离开日期
@@ -81,6 +85,10 @@ columns:
     isRequired: false
     htmlType: datetime
     dictType: ""
+    excelConfig:
+      export: true
+      name: 离开日期
+      dateFormat: yyyy-MM-dd
 
   is_active:
     columnComment: 是否在项目中(1是 0否)
@@ -179,6 +187,51 @@ columns:
     isRequired: false
     htmlType: textarea
     dictType: ""
+
+# ============================
+# 扩展字段（JOIN 查询结果，非持久化）
+# ============================
+extendedFields:
+  userName:
+    columnComment: 用户名（关联查询）
+    javaType: String
+    javaField: userName
+    source: sys_user.user_name
+    excelConfig:
+      export: true
+      name: 用户名
+
+  nickName:
+    columnComment: 用户昵称（关联查询）
+    javaType: String
+    javaField: nickName
+    source: sys_user.nick_name
+    excelConfig:
+      export: true
+      name: 用户昵称
+
+  deptName:
+    columnComment: 部门名称（关联查询）
+    javaType: String
+    javaField: deptName
+    source: "sys_dept.dept_name（JOIN via sys_user.dept_id）"
+    excelConfig:
+      export: true
+      name: 部门名称
+
+  projectName:
+    columnComment: 项目名称（关联查询）
+    javaType: String
+    javaField: projectName
+    source: pm_project.project_name
+    description: 成员详情页面显示归属项目
+
+  deptId:
+    columnComment: 用户所在部门ID（关联查询，用于查询条件）
+    javaType: Long
+    javaField: deptId
+    source: sys_user.dept_id
+    description: 不用于展示，供查询过滤
 
 # ============================
 # Tab 3: 生成信息

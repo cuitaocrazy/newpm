@@ -838,7 +838,7 @@ columns:
     dictType: ""
 
   revenue_confirm_status:
-    columnComment: 收入确认状态(字典:sys_srqrzt 未确认、待确认、已确认、无法确认)
+    columnComment: 收入确认状态(字典:sys_qrzt 未确认/1、待确认/2、已确认/3、无法确认/4)
     columnType: varchar(20)
     javaType: String
     javaField: revenueConfirmStatus
@@ -849,7 +849,7 @@ columns:
     queryType: EQ
     isRequired: false
     htmlType: select
-    dictType: "sys_srqrzt"
+    dictType: "sys_qrzt"
 
   revenue_confirm_year:
     columnComment: 收入确认年度
@@ -920,6 +920,567 @@ columns:
     isRequired: false
     htmlType: datetime
     dictType: ""
+
+  revenue_confirm_date:
+    columnComment: 收入确认日期
+    columnType: date
+    javaType: Date
+    javaField: revenueConfirmDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  # ========== 子项目层级字段（当 project_level=1 时为子项目） ==========
+
+  parent_id:
+    columnComment: 父项目ID，NULL 表示顶层主项目
+    columnType: bigint
+    javaType: Long
+    javaField: parentId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_level:
+    columnComment: 项目层级：0=主项目（默认），1=子项目
+    columnType: int
+    javaType: Integer
+    javaField: projectLevel
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  task_code:
+    columnComment: 子项目编号（子项目在父项目内的简短标识，主项目为NULL）
+    columnType: varchar(50)
+    javaType: String
+    javaField: taskCode
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: |
+      历史遗留字段：最初子项目存储于 pm_project（projectLevel=1）。
+      迁移后子项目数据已移至 pm_task 表，但 pm_project 保留此列以维持向后兼容。
+      新功能请使用 TaskController / pm_task.task_code。
+
+  # ========== 任务相关字段（从子项目迁移至 pm_task，pm_project 保留列供历史数据兼容） ==========
+
+  batch_id:
+    columnComment: 投产批次ID（FK → pm_production_batch.batch_id）
+    columnType: bigint
+    javaType: Long
+    javaField: batchId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.batch_id，pm_project 此列为历史兼容"
+
+  production_year:
+    columnComment: 投产年份（字典:sys_ndgl）
+    columnType: varchar(20)
+    javaType: String
+    javaField: productionYear
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_ndgl"
+    notes: "任务专用字段，主字段已迁移至 pm_task.production_year，pm_project 此列为历史兼容"
+
+  bank_demand_no:
+    columnComment: 总行需求号
+    columnType: varchar(100)
+    javaType: String
+    javaField: bankDemandNo
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.bank_demand_no"
+
+  software_demand_no:
+    columnComment: 软件中心需求编号
+    columnType: varchar(100)
+    javaType: String
+    javaField: softwareDemandNo
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.software_demand_no"
+
+  product:
+    columnComment: 二级产品（字典:sys_product）
+    columnType: varchar(50)
+    javaType: String
+    javaField: product
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_product"
+    notes: "任务专用字段，主字段已迁移至 pm_task.product"
+
+  schedule_status:
+    columnComment: 排期状态（字典:sys_pqzt）
+    columnType: varchar(20)
+    javaType: String
+    javaField: scheduleStatus
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: "sys_pqzt"
+    notes: "任务专用字段，主字段已迁移至 pm_task.schedule_status"
+
+  internal_closure_date:
+    columnComment: 内部B包日期（内部闭包日期）
+    columnType: date
+    javaType: Date
+    javaField: internalClosureDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.internal_closure_date"
+
+  functional_test_date:
+    columnComment: 功能测试版本日期
+    columnType: date
+    javaType: Date
+    javaField: functionalTestDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.functional_test_date"
+
+  production_version_date:
+    columnComment: 生产版本日期
+    columnType: date
+    javaType: Date
+    javaField: productionVersionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.production_version_date"
+
+  actual_production_date:
+    columnComment: 实际投产日期
+    columnType: date
+    javaType: Date
+    javaField: actualProductionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.actual_production_date"
+
+  function_description:
+    columnComment: 功能点说明
+    columnType: text
+    javaType: String
+    javaField: functionDescription
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.function_description"
+
+  implementation_plan:
+    columnComment: 实施计划
+    columnType: text
+    javaType: String
+    javaField: implementationPlan
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+    notes: "任务专用字段，主字段已迁移至 pm_task.implementation_plan"
+
+# ============================
+# 扩展字段（非数据库字段，通过关联查询或计算得到）
+# ============================
+extendedFields:
+  # --- 关联查询字段 ---
+  regionName:
+    columnComment: 二级区域名称（关联查询）
+    javaType: String
+    javaField: regionName
+    source: pm_secondary_region.region_name
+    description: selectProjectList LEFT JOIN pm_secondary_region sr ON p.region_id = sr.region_id
+    excelConfig:
+      export: false
+
+  projectManagerName:
+    columnComment: 项目经理名称（关联查询）
+    javaType: String
+    javaField: projectManagerName
+    source: sys_user.nick_name (alias u1)
+    description: selectProjectList LEFT JOIN sys_user u1
+    excelConfig:
+      export: true
+      name: 项目经理
+      sort: 50
+
+  marketManagerName:
+    columnComment: 市场经理名称（关联查询）
+    javaType: String
+    javaField: marketManagerName
+    source: sys_user.nick_name
+    description: 用于详情页显示
+
+  salesManagerName:
+    columnComment: 销售负责人名称（关联查询）
+    javaType: String
+    javaField: salesManagerName
+    source: sys_user.nick_name
+    description: 用于详情页显示
+
+  updateByName:
+    columnComment: 更新人昵称（关联查询）
+    javaType: String
+    javaField: updateByName
+    source: "sys_user.nick_name (LEFT JOIN sys_user u_upd ON p.update_by COLLATE utf8mb4_unicode_ci = u_upd.user_name)"
+    description: 列表页显示更新人
+    excelConfig:
+      export: true
+      name: 更新人
+      sort: 220
+
+  createByName:
+    columnComment: 申请人昵称（关联查询，selectReviewList 专用）
+    javaType: String
+    javaField: createByName
+    source: "sys_user.nick_name (LEFT JOIN sys_user u1 ON p.create_by COLLATE utf8mb4_unicode_ci = u1.user_name)"
+    description: 立项审核列表显示"申请人"列；selectProjectList 不包含
+
+  contractId:
+    columnComment: 关联合同ID（关联查询，非 pm_project DB 列）
+    javaType: Long
+    javaField: contractId
+    source: pm_contract.contract_id (via pm_project_contract_rel)
+    description: |
+      列表页操作列用 v-if="scope.row.contractId" 控制"查看合同"按钮显示；
+      detail.vue 用于加载合同详情。由 selectProjectList JOIN 填充，不持久化在 pm_project。
+
+  contractName:
+    columnComment: 合同名称（关联查询）
+    javaType: String
+    javaField: contractName
+    source: pm_contract.contract_name
+    description: selectProjectList LEFT JOIN pm_project_contract_rel + pm_contract
+
+  contractCode:
+    columnComment: 合同编号（关联查询）
+    javaType: String
+    javaField: contractCode
+    source: pm_contract.contract_code
+    description: 列表页显示
+
+  contractStatus:
+    columnComment: 合同状态（关联查询）
+    javaType: String
+    javaField: contractStatus
+    source: pm_contract.contract_status
+    description: 字典 sys_htzt，列表页显示
+    excelConfig:
+      export: true
+      name: 合同状态
+      dictType: sys_htzt
+      sort: 100
+
+  contractAmount:
+    columnComment: 合同金额（关联查询）
+    javaType: BigDecimal
+    javaField: contractAmount
+    source: pm_contract.contract_amount
+    description: 列表页显示，千分位格式化
+    excelConfig:
+      export: true
+      name: 合同金额(元)
+      sort: 90
+      handler: AmountFormatHandler
+
+  deptName:
+    columnComment: 部门名称（关联查询）
+    javaType: String
+    javaField: deptName
+    source: sys_dept.dept_name
+    description: 用于详情页显示
+
+  customerName:
+    columnComment: 客户名称（关联查询）
+    javaType: String
+    javaField: customerName
+    source: pm_customer.customer_simple_name
+    description: 列表页显示
+
+  customerContactName:
+    columnComment: 客户联系人名称（关联查询）
+    javaType: String
+    javaField: customerContactName
+    source: pm_customer_contact.contact_name
+    description: 用于详情页显示
+
+  customerContactPhone:
+    columnComment: 客户联系方式（关联查询）
+    javaType: String
+    javaField: customerContactPhone
+    source: pm_customer_contact.contact_phone
+    description: 用于详情页显示
+
+  participantsNames:
+    columnComment: 参与人员名称列表（前端从全量用户列表转换）
+    javaType: String
+    javaField: participantsNames
+    source: 前端 getParticipantsNames() 函数，从 allUsersList 查找昵称
+    description: 逗号分隔昵称字符串，导出用
+    excelConfig:
+      export: true
+      name: 参与人员
+      sort: 140
+
+  # --- 导出专用分级部门字段（非DB，enrichForExport 填充） ---
+  deptPathDisplay:
+    columnComment: 项目部门路径（导出用，非数据库字段）
+    javaType: String
+    javaField: deptPathDisplay
+    source: 后端 enrichForExport 从 sys_dept 递归拼接
+    description: 导出时显示完整部门路径
+    excelConfig:
+      export: true
+      name: 项目部门路径
+      sort: 40
+
+  deptOrgLevel2:
+    columnComment: 项目部门 二级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel2
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 二级机构
+      sort: 41
+
+  deptOrgLevel3:
+    columnComment: 项目部门 三级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel3
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 三级机构
+      sort: 42
+
+  deptOrgLevel4:
+    columnComment: 项目部门 四级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel4
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 四级机构
+      sort: 43
+
+  deptOrgLevel5:
+    columnComment: 项目部门 五级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel5
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 五级机构
+      sort: 44
+
+  deptOrgLevel6:
+    columnComment: 项目部门 六级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel6
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 六级机构
+      sort: 45
+
+  updateTimeDisplay:
+    columnComment: 更新时间（导出用，非数据库字段，与 updateTime 同值但带 @Excel 注解）
+    javaType: Date
+    javaField: updateTimeDisplay
+    source: 后端 enrichForExport 复制自 updateTime
+    excelConfig:
+      export: true
+      name: 更新时间
+      sort: 230
+      dateFormat: yyyy-MM-dd HH:mm:ss
+
+  # --- 团队收入确认汇总字段（selectRevenueList 关联 pm_team_revenue_confirmation） ---
+  teamConfirmDepts:
+    columnComment: 确认团队部门名称（多个用顿号分隔）
+    javaType: String
+    javaField: teamConfirmDepts
+    source: pm_team_revenue_confirmation 聚合
+    description: 团队收入确认列表页显示
+
+  teamConfirmAmount:
+    columnComment: 团队确认收入汇总
+    javaType: BigDecimal
+    javaField: teamConfirmAmount
+    source: pm_team_revenue_confirmation SUM(confirm_amount)
+    description: 团队收入确认列表页显示
+
+  teamConfirmList:
+    columnComment: 团队确认明细列表（用于列表分行展示）
+    javaType: "List<Map<String, Object>>"
+    javaField: teamConfirmList
+    source: pm_team_revenue_confirmation 明细
+    description: 非数据库字段，JSON 序列化返回前端
+
+  # --- 查询参数字段（非DB） ---
+  confirmDeptId:
+    columnComment: 查询条件：确认团队部门ID（-1 表示无确认团队）
+    javaType: Long
+    javaField: confirmDeptId
+    source: 查询参数，非数据库字段
+    description: "-1 = 查询没有任何团队确认的项目"
+
+  parentProjectName:
+    columnComment: 父项目名称（展示用，Mapper 关联查询填充）
+    javaType: String
+    javaField: parentProjectName
+    source: pm_project (self-join) p2.project_name
+    description: 子项目列表显示父项目名称
+
+  parentRevenueConfirmYear:
+    columnComment: 父项目收入确认年度（查询条件，非DB字段）
+    javaType: String
+    javaField: parentRevenueConfirmYear
+    source: 查询参数
+    description: TaskController 查询时透传给 TaskMapper 过滤父项目收入确认年度
+
+  batchNo:
+    columnComment: 批次号（关联字段，来自 pm_production_batch）
+    javaType: String
+    javaField: batchNo
+    source: pm_production_batch.batch_no
+    description: 子项目列表显示批次号（非DB）
+
+  planProductionDate:
+    columnComment: 计划投产日期（关联字段，来自 pm_production_batch）
+    javaType: Date
+    javaField: planProductionDate
+    source: pm_production_batch.plan_production_date
+    description: 子项目列表显示计划投产日期（非DB）
+
+  # --- Task 来源的审计字段（TaskMapper 从 pm_task 读取，作为 Project 代理返回） ---
+  taskCreateBy:
+    columnComment: 任务创建人（来自 pm_task.create_by）
+    javaType: String
+    javaField: taskCreateBy
+    source: pm_task.create_by
+    description: TaskMapper selectTaskList 填充
+
+  taskCreateTime:
+    columnComment: 任务创建时间（来自 pm_task.create_time）
+    javaType: Date
+    javaField: taskCreateTime
+    source: pm_task.create_time
+    description: TaskMapper selectTaskList 填充
+
+  taskUpdateBy:
+    columnComment: 任务更新人（来自 pm_task.update_by）
+    javaType: String
+    javaField: taskUpdateBy
+    source: pm_task.update_by
+    description: TaskMapper selectTaskList 填充
+
+  taskUpdateTime:
+    columnComment: 任务更新时间（来自 pm_task.update_time）
+    javaType: Date
+    javaField: taskUpdateTime
+    source: pm_task.update_time
+    description: TaskMapper selectTaskList 填充
+
+  taskCreateByName:
+    columnComment: 任务创建人昵称（关联 sys_user.nick_name）
+    javaType: String
+    javaField: taskCreateByName
+    source: "sys_user.nick_name (JOIN via pm_task.create_by)"
+    description: TaskMapper selectTaskList 填充
+
+  taskUpdateByName:
+    columnComment: 任务更新人昵称（关联 sys_user.nick_name）
+    javaType: String
+    javaField: taskUpdateByName
+    source: "sys_user.nick_name (JOIN via pm_task.update_by)"
+    description: TaskMapper selectTaskList 填充
 
 # ============================
 # Tab 3: 生成信息
@@ -1091,28 +1652,24 @@ customizations:
       编辑页面：只读显示，不可修改
 
   project_name_autocomplete:
-    intent: "项目名称查询条件支持选择和模糊查询"
+    intent: "项目名称查询条件支持输入和建议选择"
     component:
-      type: "el-select"
+      type: "el-autocomplete"
       props:
-        filterable: true
-        remote: true
-        reserve-keyword: true
         clearable: true
-        ":remote-method": "remoteQueryProjectNames"
-        ":loading": "projectSearchLoading"
-        "@visible-change": "(v) => v && remoteQueryProjectNames('')"
-        placeholder: "请选择或输入项目名称"
+        ":fetch-suggestions": "remoteQueryProjectNames"
+        "@keyup.enter": "handleQuery"
+        placeholder: "输入关键字搜索，或直接选择下拉数据"
         style: "width: 240px"
-    bindTo: "projectName"
+    bindTo: "queryParams.projectName"
     service:
       endpoint: "GET /project/project/search?projectName={query}"
       returns: "项目列表: projectId, projectName, projectCode（res.data，max 20条）"
     spec: |
-      - 下拉框展开时立即加载所有项目（@visible-change 触发空串查询）
-      - 远程搜索：用户输入关键字触发 remoteQueryProjectNames(query)
-      - 选项显示：主显 projectName，右侧灰色显示 projectCode
-      - 值绑定：queryParams.projectName（文本值，LIKE 查询）或 queryParams.projectId（ID 精确查询，按需选择）
+      - 使用 el-autocomplete 而非 el-select，绑定 fetch-suggestions
+      - remoteQueryProjectNames(query, callback)：调用 searchProjects(query||'')，返回 [{value: projectName}] 数组
+      - 输入关键字即触发搜索，选中或 enter 触发 handleQuery
+      - 值绑定：queryParams.projectName（文本值，LIKE 查询）
       - import: { searchProjects } from "@/api/project/project"
 
   region_id_dynamic_loading:
@@ -1288,24 +1845,44 @@ customizations:
   # 列表页定制
   # ==================
   query_form_layout:
-    intent: "查询表单布局"
+    intent: "查询表单布局及查询条件列表（项目管理列表页）"
     spec: |
       Label 宽度：120px
       组件宽度：240px（所有查询组件统一）
-      包括：el-autocomplete、el-select、el-tree-select
+
+      查询条件（按实际代码顺序，共 14 个）：
+      1. 项目名称      — el-autocomplete，fetch-suggestions=remoteQueryProjectNames，LIKE
+      2. 项目部门      — el-tree-select（deptTree，三级及以下），EQ
+      3. 收入确认年度  — dict-select sys_ndgl，EQ
+      4. 项目分类      — dict-select sys_xmfl，EQ
+      5. 一级区域      — dict-select sys_yjqy，EQ
+      6. 二级区域      — secondary-region-select，与一级区域联动，EQ (regionId)
+      7. 项目经理      — user-select post-code=pm，EQ (projectManagerId)
+      8. 市场经理      — user-select post-code=scjl，EQ (marketManagerId)
+      9. 立项年度      — dict-select sys_ndgl，EQ
+      10. 审核状态     — dict-select sys_spzt，EQ
+      11. 验收状态     — dict-select sys_yszt，EQ
+      12. 合同状态     — dict-select sys_htzt，EQ (contractStatus 非DB字段)
+      13. 项目阶段     — dict-select sys_xmjd，EQ
+      14. 收入确认状态 — dict-select sys_qrzt，EQ
+
+      注意：合同状态（contractStatus）是关联查询字段，通过 pm_contract JOIN 得到，
+      后端需在 selectProjectList WHERE 条件中支持该字段过滤。
 
   list_column_order:
-    intent: "列表列顺序（从左到右）"
+    intent: "列表列顺序（从左到右，以实际 index.vue columns ref 为准）"
     spec: |
-      序号 → 项目名称 → 项目阶段 → 项目部门 → 项目经理 → 项目分类 → 二级区域
-      → 项目预算(元) → 预估工作量 → 实际人天 → 合同名称
+      序号(fixed left) → 项目名称(fixed left) → 项目阶段 → 项目部门 → 项目经理
+      → 项目分类 → 二级区域 → 项目预算(元) → 预估工作量 → 实际人天
+      → 合同编号 → 合同名称
       → 合同金额(元) → 收入确认年度 → 收入确认状态 → 合同状态
       → 确认金额(元) → 参与人员 → 启动日期 → 结束日期 → 验收日期
-      → 审核状态 → 验收状态 → 更新人 → 更新时间 → 操作
+      → 审核状态 → 验收状态 → 更新人 → 更新时间 → 操作(fixed right)
 
       注意：
       - 收入确认状态在合同状态之前
       - 项目阶段紧随项目名称之后（第2列）
+      - 合同编号（contractCode）在实际人天之后、合同名称之前（columns ref key: contractCode）
 
   list_display_fields:
     intent: "列表字段显示处理"
@@ -1317,7 +1894,7 @@ customizations:
          - 验收状态 (acceptanceStatus): sys_yszt
          - 审核状态 (approvalStatus): sys_spzt
          - 合同状态 (contractStatus): sys_htzt
-         - 收入确认状态 (revenueConfirmStatus): sys_srqrzt
+         - 收入确认状态 (revenueConfirmStatus): sys_qrzt
 
       2. 关联表字段（函数转换）：
          - 项目部门 → getDeptName(deptId)，从第三级开始的完整路径（用'-'连接）
@@ -1379,22 +1956,33 @@ customizations:
   list_operations:
     intent: "列表操作按钮"
     spec: |
-      操作列按钮（固定右侧，宽度 350px）：
-      1. 详情 → handleDetail(row)，router.push(/project/list/detail/:id)，v-hasPermi project:project:query
-      2. 编辑 → handleUpdate(row)，router.push(/project/list/edit/:id)，v-hasPermi project:project:edit
-      3. 添加合同/查看合同 → 根据 scope.row.contractId 动态显示：
-         - contractId 存在：按钮"查看合同"(Document)，router.push(/htkx/contract/detail/:contractId)
-         - contractId 不存在：按钮"添加合同"(Plus)，router.push(/htkx/contract/add?projectId=xxx)
-      4. 收入确认/收入查看 → 根据 revenueConfirmStatus 动态显示：
-         - '0' 或 null：按钮"收入确认"(Money, success)，v-hasPermi revenue:company:edit
-         - '1'：按钮"收入查看"(View)，v-hasPermi revenue:company:view
-      5. 附件管理 → router.push(/project/list/attachment/:projectId)，v-hasPermi project:project:query
-      6. 删除 → 确认弹框后物理删除（DELETE），v-hasPermi project:project:remove
+      操作列按钮（固定右侧，宽度 380px）：
+      1. 详情       → handleDetail(row)，router.push(/project/list/detail/:id)
+                      v-hasPermi project:project:query
+      2. 编辑       → handleUpdate(row)，router.push(/project/list/edit/:id)
+                      v-if="scope.row.approvalStatus !== '1'"（已审核通过的项目隐藏编辑按钮）
+                      v-hasPermi project:project:edit
+      3. 查看合同   → handleViewContract(row)，router.push(/htkx/contract/detail/:contractId)
+                      v-if="scope.row.contractId"（有关联合同时显示）
+                      v-hasPermi project:contract:query
+      4. 关联合同   → handleBindContract(row)，router.push(/project/list/bind-contract/:projectId)
+                      始终显示（不区分是否已有合同）
+                      v-hasPermi project:contract:add
+      5. 收入确认   → handleRevenue(row)，router.push(/revenue/company/detail/:id?mode=edit)
+                      始终显示"收入确认"（不区分确认状态）
+                      v-hasPermi revenue:company:edit
+      6. 附件管理   → handleAttachment(row)，router.push(/project/list/attachment/:projectId)
+                      v-hasPermi project:project:attachment
+      7. 打印       → handlePrint(row)，弹出 el-dialog 预览立项申请书，用户确认后打印
+                      v-hasPermi project:project:print
+      8. 删除       → 确认弹框后物理删除（DELETE）
+                      v-hasPermi project:project:remove
 
       注意：
       - 无批量删除功能（已移除工具栏删除按钮和 checkbox 选择列）
       - 无"新增"按钮，新增通过"立项申请"菜单进入独立页面
       - 删除为物理删除，不可恢复，弹框确认提示需体现
+      - 编辑按钮对已通过(approvalStatus='1')项目隐藏，防止绕过审核修改
 
   list_query_cache:
     intent: "查询条件和分页状态导航返回后保留"
@@ -1431,8 +2019,7 @@ customizations:
         项目编号(12, disabled) | 项目分类(12)
         项目部门(12) | 项目状态(12, 必填, sys_xmzt)
         项目阶段(12, 必填) | 验收状态(12)
-        预估工作量(12) | 项目预算(12)
-        实际工作量(12)
+        项目预算(12) | 预估工作量(12)
         项目地址(24)
         项目计划(24, textarea)
         项目描述(24, textarea)
@@ -1481,36 +2068,68 @@ customizations:
         审核状态(12, dict-tag只读) | 审核意见(12, 只读)
 
   detail_page_layout:
-    intent: "项目详情页面布局（多卡片 el-descriptions 只读展示）"
+    intent: "项目详情页面布局（两列 + 全宽卡片，el-descriptions 只读展示）"
     spec: |
-      页面顶部：返回按钮、编辑按钮、打印按钮
+      顶部：页面标题卡片（仅 h2 + tips 文字，无操作按钮）
+      底部：返回按钮（单独行，居左）
 
-      卡片 1：项目基本信息 (el-descriptions, 3列)
-        行业 | 一级区域 | 二级区域
-        简称 | 立项年份 | 项目编号(span=2)
+      ─ 两列行 (el-row gutter=16) ─
+      左列 (span=15)：项目基本信息 (el-descriptions, 3列)
+        行业(dict-tag) | 一级区域(dict-tag) | 二级区域(regionName)
+        简称 | 立项年份(dict-tag, sys_ndgl) | 项目ID(projectCode)
         项目名称(span=3)
-        项目分类 | 项目部门 | 项目状态(dict-tag, sys_xmzt)
-        预估工作量 | 项目预算 | 实际工作量
-        项目阶段(dict-tag) | 验收状态(dict-tag) | 审核状态(dict-tag)
-        项目地址(span=3) | 项目计划(span=3)
-        项目描述(span=3) | 审核意见(span=3)
+        项目分类(dict-tag) | 项目部门(getDeptName) | 预估工作量
+        项目状态(dict-tag) | 验收状态(dict-tag) | 实际人天
+        审核状态(dict-tag) | 项目预算 | 合同状态(dict-tag)
+        合同名称(span=2) | 合同编号
+        合同金额 | 收入确认年度(dict-tag, sys_ndgl) | 收入确认状态(dict-tag, sys_qrzt)
+        收入确认金额 | 项目阶段(span=2, dict-tag)
+        确认日期
+        项目地址(span=3)
+        项目计划(span=3)
+        项目描述(span=3)
+        审核意见(span=3)
 
-      卡片 2：人员配置
-        项目经理(昵称) | 市场经理(昵称) | 销售负责人(昵称)
-        销售联系方式(span=3)
-        参与人员(span=3, el-tag 标签展示)
+      右列 (span=9)：3个卡片堆叠
+        卡片 A：人员配置 (el-descriptions, 2列)
+          项目经理(昵称) | 市场经理(昵称)
+          销售负责人(昵称) | 销售联系方式
+          参与人员(span=2, el-tag 标签, 含实际人天)
 
-      卡片 3：客户信息
-      卡片 4：时间规划
-      卡片 5：成本预算（金额千分位格式化）
-      卡片 6：关联合同信息（el-table，显示合同编号、名称、金额、状态等）
-      卡片 7：付款里程碑信息（el-table，首行合计行）
-        - 数据源：listPayment API
-        - 显示条件：项目关联了合同时才显示
-      卡片 8：项目附件列表（el-table）
-        - 数据源：listAttachment API, businessType='project'
-        - 文件名可点击下载
-      卡片 9：其他信息
+        卡片 B：客户信息 (el-descriptions, 2列)
+          客户名称(span=2)
+          客户联系人 | 客户联系方式
+          商户联系人 | 商户联系方式
+
+        卡片 C：时间规划 (el-descriptions, 2列)
+          启动日期 | 结束日期
+          投产日期 | 验收日期
+
+      ─ 全宽卡片（顺序）─
+      卡片 5：成本预算 (el-descriptions, 5列)
+        项目预算 | 费用预算 | 成本预算 | 人力费用 | 采购成本（均千分位格式化）
+
+      卡片 6：项目关联任务列表 (el-table)
+        列：序号 | 投产批次(batchNo) | 任务编号(taskCode) | 产品(dict-tag, sys_product)
+            任务名称(el-link, 跳转 /task/subproject/detail/:taskId) | 排期状态(dict-tag, sys_pqzt)
+            预估工作量 | 实际工作量(actualWorkload/8) | 功能测试版本日期
+            计划投产日期 | 任务负责人(taskManagerName)
+
+      卡片 7：合同信息 (el-descriptions, 3列 或 el-empty)
+        数据源：contractInfo 对象（项目关联的合同详情）
+        有合同时显示：合同名称(span=3) | 合同状态(dict-tag) | 合同类型(dict-tag)
+          合同签订日期 | 合同周期(月) | 免维期(月) | 税率
+          合同金额 | 不含税金额 | 创建人 | 创建时间 | 更新人 | 最后更新时间
+          操作(查看详情按钮, v-hasPermi project:contract:query)
+        无合同时：el-empty
+
+      卡片 8：付款里程碑信息 (el-table)
+        isSummary 行显示合计（付款金额蓝色加粗，扣款金额红色加粗）
+        列：序号/合计 | 里程碑名称(el-link, 跳转 /htkx/payment/detail/:paymentId)
+            付款金额 | 付款状态(dict-tag) | 预计回款季度(dict-tag) | 实际回款季度
+            实际回款日期 | 确认年份(dict-tag, sys_ndgl) | 是否违约扣款 | 扣款金额 | 备注
+
+      卡片 9：项目附件列表 (el-table)
         备注(span=3) | 创建时间 | 创建人(昵称) | 更新时间 | 更新人(昵称)
 
       名称回显：

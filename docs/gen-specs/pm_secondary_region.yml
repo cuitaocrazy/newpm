@@ -37,6 +37,9 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 二级区域代码
 
   region_name:
     columnComment: 二级区域名称
@@ -50,6 +53,9 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 区域名称
 
   region_type:
     columnComment: 二级区域类型（0=省/1=直辖市/2=自治区/3=特别行政区/4=计划单列市）
@@ -63,6 +69,13 @@ columns:
     isRequired: false
     htmlType: select
     dictType: "sflx"
+    notes: |
+      Java @Excel(name = "区域类型", readConverterExp = "行=政区划代码前2位")（代码中有拼写错误，应为"行政"）
+      dictType: "sflx" 用于前端下拉显示；导出时 Java 使用 readConverterExp 而非 dictType，
+      可能导致导出 Excel 不自动翻译字典标签。
+    excelConfig:
+      export: true
+      name: 区域类型
 
   region_dict_value:
     columnComment: 一级区域字典值
@@ -76,6 +89,9 @@ columns:
     isRequired: true
     htmlType: select
     dictType: "sys_yjqy"
+    excelConfig:
+      export: true
+      name: 字典值
 
   sort_order:
     columnComment: 排序
@@ -89,6 +105,9 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 排序
 
   status:
     columnComment: 状态（0正常 1停用）
@@ -102,6 +121,9 @@ columns:
     isRequired: false
     htmlType: radio
     dictType: "sys_normal_disable"
+    excelConfig:
+      export: true
+      name: 状态
 
   del_flag:
     columnComment: 删除标志（0存在 1删除）

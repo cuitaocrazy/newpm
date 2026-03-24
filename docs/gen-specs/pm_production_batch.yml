@@ -33,6 +33,9 @@ columns:
     isRequired: true
     htmlType: select
     dictType: ""
+    excelConfig:
+      export: true
+      name: 批次号
 
   sort_order:
     columnComment: 排序
@@ -47,6 +50,9 @@ columns:
     isRequired: true
     htmlType: input
     dictType: ""
+    excelConfig:
+      export: true
+      name: 排序
 
   production_year:
     columnComment: 投产年份
@@ -61,6 +67,10 @@ columns:
     isRequired: true
     htmlType: select
     dictType: sys_ndgl
+    excelConfig:
+      export: true
+      name: 投产年份
+      notes: "Java @Excel(name='投产年份')，无 dictType 注解；导出时原始字典值（不含 readConverterExp）"
 
   plan_production_date:
     columnComment: 计划投产日期
@@ -75,6 +85,10 @@ columns:
     isRequired: true
     htmlType: datetime
     dictType: ""
+    excelConfig:
+      export: true
+      name: 计划投产日期
+      dateFormat: yyyy-MM-dd
 
   remark:
     columnComment: 备注

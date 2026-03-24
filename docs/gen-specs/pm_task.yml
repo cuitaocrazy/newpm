@@ -1,0 +1,766 @@
+# ============================
+# Tab 1: 基本信息
+# ============================
+basicInfo:
+  tableName: pm_task
+  tableComment: 任务管理表（原"子项目"，迁移自 pm_project.project_level=1 行，迁移已完成）
+  className: Task
+  functionAuthor: ruoyi
+  remark: |
+    前端路由：/project/subproject（菜单隐藏，level-2 子路由）
+    Controller：TaskController → /project/task/**
+    pm_daily_report_detail.project_id 存储 pm_task.task_id（task-based entries）
+
+# ============================
+# Tab 2: 字段信息（物理表字段）
+# ============================
+# 注意：pm_task 使用硬删除（DELETE FROM pm_task），无 del_flag 列
+columns:
+  task_id:
+    columnComment: 任务ID（主键）
+    columnType: bigint
+    javaType: Long
+    javaField: taskId
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  project_id:
+    columnComment: 所属主项目ID（FK → pm_project.project_id）
+    columnType: bigint
+    javaType: Long
+    javaField: projectId
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: EQ
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    notes: "TaskMapper.selectTaskList 查询 pm_project LEFT JOIN pm_task，projectId 等同 parentId"
+
+  task_code:
+    columnComment: 任务编号（唯一标识，人工维护）
+    columnType: varchar(100)
+    javaType: String
+    javaField: taskCode
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 任务编号
+
+  task_name:
+    columnComment: 任务名称
+    columnType: varchar(500)
+    javaType: String
+    javaField: taskName
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: LIKE
+    isRequired: true
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 任务名称
+
+  task_stage:
+    columnComment: 任务阶段（字典 sys_xmjd）
+    columnType: varchar(50)
+    javaType: String
+    javaField: taskStage
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_xmjd
+    excelConfig:
+      export: true
+      name: 任务阶段
+      dictType: sys_xmjd
+
+  task_manager_id:
+    columnComment: 任务负责人ID（FK → sys_user.user_id）
+    columnType: bigint
+    javaType: Long
+    javaField: taskManagerId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+    notes: "前端用 user-select 组件；列表展示 taskManagerName（扩展字段）"
+
+  product:
+    columnComment: 产品（字典 sys_product）
+    columnType: varchar(50)
+    javaType: String
+    javaField: product
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_product
+
+  bank_demand_no:
+    columnComment: 总行需求号
+    columnType: varchar(200)
+    javaType: String
+    javaField: bankDemandNo
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  software_demand_no:
+    columnComment: 软件中心需求编号
+    columnType: varchar(200)
+    javaType: String
+    javaField: softwareDemandNo
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: true
+    queryType: LIKE
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  task_budget:
+    columnComment: 任务预算（元）
+    columnType: decimal(15,2)
+    javaType: BigDecimal
+    javaField: taskBudget
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 任务预算(元)
+
+  estimated_workload:
+    columnComment: 预估工作量（人天）
+    columnType: decimal(10,2)
+    javaType: BigDecimal
+    javaField: estimatedWorkload
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 预估工作量(人天)
+      handler: AmountFormatHandler
+
+  actual_workload:
+    columnComment: 实际工作量（小时，日报汇总，只读）
+    columnType: decimal(10,2)
+    javaType: BigDecimal
+    javaField: actualWorkload
+    isInsert: false
+    isEdit: false
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 实际工作量(小时)
+    notes: "前端列表展示时换算为人天: actualWorkload/8，后端存储为小时"
+
+  production_year:
+    columnComment: 投产年度（字典 sys_ndgl）
+    columnType: varchar(10)
+    javaType: String
+    javaField: productionYear
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_ndgl
+
+  batch_id:
+    columnComment: 投产批次ID（FK → pm_production_batch.batch_id）
+    columnType: bigint
+    javaType: Long
+    javaField: batchId
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: ""
+    notes: "前端用 el-select 显示 batchNo；列表展示 batchNo（扩展字段）"
+
+  schedule_status:
+    columnComment: 排期状态（字典 sys_pqzt）
+    columnType: varchar(50)
+    javaType: String
+    javaField: scheduleStatus
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: true
+    queryType: EQ
+    isRequired: false
+    htmlType: select
+    dictType: sys_pqzt
+    excelConfig:
+      export: true
+      name: 排期状态
+      dictType: sys_pqzt
+
+  task_plan:
+    columnComment: 任务计划
+    columnType: text
+    javaType: String
+    javaField: taskPlan
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  task_description:
+    columnComment: 任务描述
+    columnType: text
+    javaType: String
+    javaField: taskDescription
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  start_date:
+    columnComment: 启动日期
+    columnType: date
+    javaType: Date
+    javaField: startDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 启动日期
+      dateFormat: yyyy-MM-dd
+
+  end_date:
+    columnComment: 结束日期
+    columnType: date
+    javaType: Date
+    javaField: endDate
+    isInsert: true
+    isEdit: true
+    isList: true
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    excelConfig:
+      export: true
+      name: 结束日期
+      dateFormat: yyyy-MM-dd
+
+  production_date:
+    columnComment: 投产时间（计划）
+    columnType: date
+    javaType: Date
+    javaField: productionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  production_version_date:
+    columnComment: 生产版本日期
+    columnType: date
+    javaType: Date
+    javaField: productionVersionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  actual_production_date:
+    columnComment: 实际投产日期
+    columnType: date
+    javaType: Date
+    javaField: actualProductionDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  internal_closure_date:
+    columnComment: 内部B包日期
+    columnType: date
+    javaType: Date
+    javaField: internalClosureDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  functional_test_date:
+    columnComment: 功能测试版本日期
+    columnType: date
+    javaType: Date
+    javaField: functionalTestDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  function_description:
+    columnComment: 功能点说明
+    columnType: text
+    javaType: String
+    javaField: functionDescription
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  implementation_plan:
+    columnComment: 实施计划
+    columnType: text
+    javaType: String
+    javaField: implementationPlan
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+  create_by:
+    columnComment: 创建者
+    columnType: varchar(64)
+    javaType: String
+    javaField: createBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  create_time:
+    columnComment: 创建时间
+    columnType: datetime
+    javaType: Date
+    javaField: createTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  update_by:
+    columnComment: 更新者
+    columnType: varchar(64)
+    javaType: String
+    javaField: updateBy
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: input
+    dictType: ""
+
+  update_time:
+    columnComment: 更新时间
+    columnType: datetime
+    javaType: Date
+    javaField: updateTime
+    isInsert: false
+    isEdit: false
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+
+  remark:
+    columnComment: 备注
+    columnType: varchar(500)
+    javaType: String
+    javaField: remark
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: EQ
+    isRequired: false
+    htmlType: textarea
+    dictType: ""
+
+# ============================
+# 扩展字段（JOIN / 聚合，非持久化）
+# ============================
+extendedFields:
+  # ── 来自 sys_user ──
+  taskManagerName:
+    columnComment: 任务负责人姓名
+    javaType: String
+    javaField: taskManagerName
+    source: "sys_user.nick_name (JOIN by taskManagerId)"
+    description: 列表页展示负责人名称
+
+  createByName:
+    columnComment: 创建人昵称
+    javaType: String
+    javaField: createByName
+    source: "sys_user.nick_name (JOIN by create_by)"
+
+  updateByName:
+    columnComment: 更新人昵称
+    javaType: String
+    javaField: updateByName
+    source: "sys_user.nick_name (JOIN by update_by)"
+
+  projectManagerName:
+    columnComment: 项目经理昵称（来自父项目）
+    javaType: String
+    javaField: projectManagerName
+    source: "sys_user.nick_name (JOIN by pm_project.project_manager_id)"
+
+  marketManagerName:
+    columnComment: 市场经理昵称
+    javaType: String
+    javaField: marketManagerName
+    source: "sys_user.nick_name (JOIN by pm_project.market_manager_id)"
+
+  salesManagerName:
+    columnComment: 销售负责人昵称
+    javaType: String
+    javaField: salesManagerName
+    source: "sys_user.nick_name (JOIN by pm_project.sales_manager_id)"
+
+  # ── 来自 pm_project（父项目）──
+  parentProjectName:
+    columnComment: 所属主项目名称
+    javaType: String
+    javaField: parentProjectName
+    source: pm_project.project_name
+    description: 列表页"主项目名称"列，TaskMapper 查询 pm_project LEFT JOIN pm_task
+
+  projectStatus:
+    columnComment: 父项目状态（字典 sys_xmzt）
+    javaType: String
+    javaField: projectStatus
+    source: pm_project.project_status
+
+  projectCode:
+    columnComment: 项目编号
+    javaType: String
+    javaField: projectCode
+    source: pm_project.project_code
+
+  projectStage:
+    columnComment: 父项目阶段（字典 sys_xmjd）
+    javaType: String
+    javaField: projectStage
+    source: pm_project.project_stage
+
+  projectCategory:
+    columnComment: 项目分类（字典 sys_xmfl）
+    javaType: String
+    javaField: projectCategory
+    source: pm_project.project_category
+
+  industry:
+    columnComment: 行业（字典 industry）
+    javaType: String
+    javaField: industry
+    source: pm_project.industry
+
+  region:
+    columnComment: 一级区域（字典 sys_yjqy）
+    javaType: String
+    javaField: region
+    source: pm_project.region
+
+  regionName:
+    columnComment: 二级区域名称
+    javaType: String
+    javaField: regionName
+    source: pm_project.region_name（join 结果）
+
+  establishedYear:
+    columnComment: 立项年度（字典 sys_ndgl）
+    javaType: String
+    javaField: establishedYear
+    source: pm_project.established_year
+
+  projectStartDate:
+    columnComment: 父项目启动日期
+    javaType: Date
+    javaField: projectStartDate
+    source: pm_project.start_date
+
+  projectEndDate:
+    columnComment: 父项目结束日期
+    javaType: Date
+    javaField: projectEndDate
+    source: pm_project.end_date
+
+  acceptanceStatus:
+    columnComment: 验收状态（字典 sys_yszt）
+    javaType: String
+    javaField: acceptanceStatus
+    source: pm_project.acceptance_status
+
+  acceptanceDate:
+    columnComment: 验收日期
+    javaType: Date
+    javaField: acceptanceDate
+    source: pm_project.acceptance_date
+
+  parentProjectBudget:
+    columnComment: 父项目预算
+    javaType: BigDecimal
+    javaField: parentProjectBudget
+    source: pm_project.project_budget
+
+  parentEstimatedWorkload:
+    columnComment: 父项目预估工作量
+    javaType: BigDecimal
+    javaField: parentEstimatedWorkload
+    source: pm_project.estimated_workload
+
+  parentActualWorkload:
+    columnComment: 父项目实际工作量（小时）
+    javaType: BigDecimal
+    javaField: parentActualWorkload
+    source: pm_project.actual_workload
+
+  parentAdjustWorkload:
+    columnComment: 父项目工时补正（人天）
+    javaType: BigDecimal
+    javaField: parentAdjustWorkload
+    source: pm_project.adjust_workload
+
+  projectDeptName:
+    columnComment: 父项目所属部门名称
+    javaType: String
+    javaField: projectDeptName
+    source: "sys_dept.dept_name (JOIN via pm_project.project_dept)"
+
+  customerName:
+    columnComment: 客户名称
+    javaType: String
+    javaField: customerName
+    source: pm_customer.customer_simple_name
+
+  # ── 来自 pm_production_batch ──
+  batchNo:
+    columnComment: 投产批次号
+    javaType: String
+    javaField: batchNo
+    source: pm_production_batch.batch_no (JOIN by batchId)
+    description: 列表页展示批次号
+
+  # ── 查询参数字段（非DB，前端传入）──
+  parentId:
+    columnComment: 父项目ID查询参数（等同 projectId）
+    javaType: Long
+    javaField: parentId
+    source: 前端传入
+    description: GET /project/task/list?parentId=xxx，TaskMapper 中与 projectId 等价
+
+  parentRevenueConfirmYear:
+    columnComment: 父项目确认年度查询参数
+    javaType: String
+    javaField: parentRevenueConfirmYear
+    source: 前端传入
+    description: 按父项目确认年度过滤（字典 sys_ndgl）
+
+  projectDept:
+    columnComment: 部门层级过滤查询参数
+    javaType: String
+    javaField: projectDept
+    source: 前端传入
+    description: 按部门及下级子部门过滤（ancestors 子查询）
+
+# ============================
+# Tab 3: 生成信息
+# ============================
+genInfo:
+  tplCategory: crud
+  tplWebType: element-plus
+  packageName: com.ruoyi.project
+  moduleName: project
+  businessName: task
+  functionName: 任务管理
+  parentMenuId: 2059  # 项目管理一级菜单
+
+# ============================
+# 菜单配置
+# ============================
+menuConfig:
+  icon: List
+  buttons:
+    - name: 任务管理查询
+      perms: project:task:list
+    - name: 任务管理详情
+      perms: project:task:query
+    - name: 任务管理新增
+      perms: project:task:add
+    - name: 任务管理修改
+      perms: project:task:edit
+    - name: 任务管理删除
+      perms: project:task:remove
+    - name: 任务管理导出
+      perms: project:task:export
+  notes: |
+    路由隐藏（hidden: true），level-2 子路由挂在 项目管理 下（/project/subproject）。
+    前端 views: ruoyi-ui/src/views/project/subproject/（index / add / edit / detail）
+
+# ============================
+# API 汇总
+# ============================
+apiSummary:
+  - "GET    /project/task/list                    → 分页任务列表（pm_project LEFT JOIN pm_task）"
+  - "GET    /project/task/summary                 → 合计行（预算/工作量/金额汇总）"
+  - "GET    /project/task/{taskId}                → 任务详情"
+  - "POST   /project/task                         → 新增任务"
+  - "PUT    /project/task                         → 修改任务"
+  - "DELETE /project/task/{taskIds}               → 硬删除（无 del_flag）"
+  - "POST   /project/task/export                  → 导出 Excel"
+  - "GET    /project/task/options?projectId=xxx   → 轻量下拉选项（日报选择子项目）"
+  - "GET    /project/task/projectsHasTasks        → 批量检查哪些项目有任务"
+  - "GET    /project/task/searchTaskCode          → 任务编号自动补全"
+  - "GET    /project/task/searchTaskName          → 任务名称自动补全"
+  - "GET    /project/task/searchSoftwareDemandNo  → 需求编号自动补全"
+
+# ============================
+# 字典依赖
+# ============================
+dictDependencies:
+  - sys_xmjd:    "任务阶段"
+  - sys_pqzt:    "排期状态"
+  - sys_ndgl:    "投产年度"
+  - sys_product: "产品"
+  - sys_xmzt:    "父项目状态"
+  - sys_xmfl:    "父项目分类"
+  - sys_yjqy:    "一级区域"
+  - sys_yszt:    "验收状态"
+
+# ============================
+# 定制说明
+# ============================
+customizations:
+  mapper_design:
+    intent: "TaskMapper 核心查询逻辑"
+    spec: |
+      selectTaskList 以 pm_project 为主表（LEFT JOIN pm_task），意味着：
+      - 有任务的项目：pm_task 字段有值，pm_project 字段提供父项目上下文
+      - 无任务的项目：pm_task 字段全为 NULL（不会出现在列表，因为 WHERE pm_task.task_id IS NOT NULL 或类似过滤）
+      TaskMapper 读取 pm_project 字段时，展示在 Task 的 parentProjectName / projectCode 等扩展字段中
+
+      排序：ORDER BY pm_project.update_time DESC, pm_task.task_id ASC
+
+  daily_report_integration:
+    intent: "任务与日报的集成关系"
+    spec: |
+      pm_daily_report_detail.project_id 存储 pm_task.task_id（task-based entries）
+      pm_daily_report_detail.sub_project_id 也存储 pm_task.task_id（兼容旧列名，不修改）
+      GET /project/task/options?projectId=xxx 为日报填写页提供轻量任务下拉（含 taskId, taskName）
+
+  hard_delete_note:
+    intent: "硬删除注意事项"
+    spec: |
+      pm_task 无 del_flag 列，使用 DELETE FROM pm_task WHERE task_id IN (...)
+      级联影响：pm_daily_report_detail 中引用 task_id 的记录变为悬空引用，需业务层确认

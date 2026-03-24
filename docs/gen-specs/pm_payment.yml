@@ -56,7 +56,7 @@ columns:
     excelConfig:
       export: true
       name: 付款里程碑名称
-      sort: 2
+      sort: 14   # 导出顺序：扩展字段(1-13)在前，core字段(14-23)在后
 
   payment_amount:
     columnComment: 付款总金额
@@ -74,7 +74,8 @@ columns:
     excelConfig:
       export: true
       name: 付款金额（元）
-      sort: 4
+      sort: 15
+      handler: AmountFormatHandler
 
   has_penalty:
     columnComment: 是否涉及违约扣款(1是 0否)
@@ -92,7 +93,7 @@ columns:
     excelConfig:
       export: true
       name: 是否涉及违约扣款
-      sort: 5
+      sort: 17
       readConverterExp: "0=否,1=是"
 
   penalty_amount:
@@ -111,7 +112,8 @@ columns:
     excelConfig:
       export: true
       name: 扣款金额（元）
-      sort: 6
+      sort: 18
+      handler: AmountFormatHandler
 
   payment_status:
     columnComment: 付款状态
@@ -129,7 +131,7 @@ columns:
     excelConfig:
       export: true
       name: 付款状态
-      sort: 3
+      sort: 16
       dictType: sys_fkzt
 
   expected_quarter:
@@ -148,7 +150,7 @@ columns:
     excelConfig:
       export: true
       name: 预计回款季度
-      sort: 7
+      sort: 19
       dictType: sys_jdgl
 
   actual_quarter:
@@ -167,7 +169,7 @@ columns:
     excelConfig:
       export: true
       name: 实际回款季度
-      sort: 8
+      sort: 20
       dictType: sys_jdgl
 
   submit_acceptance_date:
@@ -187,8 +189,8 @@ columns:
     uiNote: 数据库字段语义为"提交验收材料日期"，在列表列、新增/编辑表单、已付款里程碑子表中均展示为"开票日期"
     excelConfig:
       export: true
-      name: 提交验收材料日期
-      sort: 11
+      name: 开票日期
+      sort: 23
       width: 30
       dateFormat: yyyy-MM-dd
 
@@ -208,23 +210,9 @@ columns:
     excelConfig:
       export: true
       name: 实际回款日期
-      sort: 9
+      sort: 21
       width: 30
       dateFormat: yyyy-MM-dd
-
-  flow_status:
-    columnComment: 流程状态
-    columnType: varchar(50)
-    javaType: String
-    javaField: flowStatus
-    isInsert: false
-    isEdit: false
-    isList: false
-    isQuery: false
-    queryType: EQ
-    isRequired: false
-    htmlType: input
-    dictType: ""
 
   confirm_year:
     columnComment: 款项确认年份
@@ -242,7 +230,7 @@ columns:
     excelConfig:
       export: true
       name: 里程碑确认年份
-      sort: 10
+      sort: 22
       dictType: sys_ndgl
 
   del_flag:
@@ -350,6 +338,10 @@ extendedFields:
     javaField: contractCode
     source: pm_contract.contract_code
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 合同编号
+      sort: 2
 
   contractStatus:
     columnComment: 合同状态（关联查询）
@@ -357,6 +349,11 @@ extendedFields:
     javaField: contractStatus
     source: pm_contract.contract_status
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 合同状态
+      sort: 3
+      dictType: sys_htzt
 
   customerName:
     columnComment: 客户名称（关联查询）
@@ -364,6 +361,10 @@ extendedFields:
     javaField: customerName
     source: pm_customer.customer_simple_name
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 客户名称
+      sort: 4
 
   contractAmount:
     columnComment: 合同金额（关联查询）
@@ -371,6 +372,11 @@ extendedFields:
     javaField: contractAmount
     source: pm_contract.contract_amount
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 合同金额（元）
+      sort: 5
+      handler: AmountFormatHandler
 
   contractSignDate:
     columnComment: 合同签订日期（关联查询）
@@ -378,6 +384,12 @@ extendedFields:
     javaField: contractSignDate
     source: pm_contract.contract_sign_date
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 合同签订日期
+      sort: 6
+      width: 30
+      dateFormat: yyyy-MM-dd
 
   freeMaintenancePeriod:
     columnComment: 免维期（关联查询）
@@ -385,6 +397,11 @@ extendedFields:
     javaField: freeMaintenancePeriod
     source: pm_contract.free_maintenance_period
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 免维期（月）
+      sort: 7
+      cellType: NUMERIC
 
   deptId:
     columnComment: 部门ID（关联查询）
@@ -399,6 +416,60 @@ extendedFields:
     javaField: deptName
     source: sys_dept.dept_name
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 合同所属团队
+      sort: 8
+
+  deptOrgLevel2:
+    columnComment: 合同所属团队 二级机构（导出用，enrichForExport 填充）
+    javaType: String
+    javaField: deptOrgLevel2
+    source: 后端 enrichForExport 从 sys_dept ancestors 拆分
+    excelConfig:
+      export: true
+      name: 二级机构
+      sort: 9
+
+  deptOrgLevel3:
+    columnComment: 合同所属团队 三级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel3
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 三级机构
+      sort: 10
+
+  deptOrgLevel4:
+    columnComment: 合同所属团队 四级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel4
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 四级机构
+      sort: 11
+
+  deptOrgLevel5:
+    columnComment: 合同所属团队 五级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel5
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 五级机构
+      sort: 12
+
+  deptOrgLevel6:
+    columnComment: 合同所属团队 六级机构（导出用）
+    javaType: String
+    javaField: deptOrgLevel6
+    source: 后端 enrichForExport
+    excelConfig:
+      export: true
+      name: 六级机构
+      sort: 13
 
   createByName:
     columnComment: 创建人姓名（关联查询）
@@ -413,6 +484,36 @@ extendedFields:
     javaField: updateByName
     source: sys_user.nick_name
     description: 用于列表页显示
+    excelConfig:
+      export: true
+      name: 更新人
+      sort: 26
+
+  # --- 多选过滤字段（不存库，POST body 传入） ---
+  deptIds:
+    columnComment: 部门ID多选过滤（不存库）
+    javaType: "List<Long>"
+    javaField: deptIds
+    source: 查询参数，非数据库字段
+    description: 支持多部门筛选，传数组
+
+  paymentStatuses:
+    columnComment: 付款状态多选过滤（不存库）
+    javaType: "List<String>"
+    javaField: paymentStatuses
+    source: 查询参数，非数据库字段
+
+  expectedQuarters:
+    columnComment: 预计回款季度多选过滤（不存库）
+    javaType: "List<String>"
+    javaField: expectedQuarters
+    source: 查询参数，非数据库字段
+
+  actualQuarters:
+    columnComment: 实际回款季度多选过滤（不存库）
+    javaType: "List<String>"
+    javaField: actualQuarters
+    source: 查询参数，非数据库字段
 
 # ============================
 # Tab 3: 生成信息

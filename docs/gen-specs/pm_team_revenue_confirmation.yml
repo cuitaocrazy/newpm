@@ -186,6 +186,30 @@ columns:
     dictType: ""
 
 # ============================
+# 扩展字段（非数据库字段，通过关联查询填充）
+# ============================
+extendedFields:
+  deptName:
+    columnComment: 部门名称（关联查询）
+    javaType: String
+    javaField: deptName
+    source: "sys_dept.dept_name (LEFT JOIN via deptId)"
+    description: 列表页/导出显示部门名称
+    excelConfig:
+      export: true
+      name: 部门名称
+
+  confirmUserName:
+    columnComment: 确认人姓名（关联查询）
+    javaType: String
+    javaField: confirmUserName
+    source: "sys_user.nick_name (LEFT JOIN via confirmUserId)"
+    description: 列表页/导出显示确认人姓名
+    excelConfig:
+      export: true
+      name: 确认人姓名
+
+# ============================
 # Tab 3: 生成信息
 # ============================
 genInfo:
