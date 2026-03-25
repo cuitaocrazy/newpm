@@ -70,6 +70,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             psc.change_id,
             psc.old_stage,
             psc.new_stage,
+            psc.old_project_status,
+            psc.new_project_status,
             psc.change_reason,
             COALESCE(u.nick_name, psc.create_by) AS change_by,
             psc.create_time AS change_time
@@ -85,9 +87,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON CAST(p.project_dept AS CHAR) COLLATE utf8mb4_unicode_ci = CAST(d.dept_id AS CHAR)
         LEFT JOIN sys_user u_create ON p.create_by COLLATE utf8mb4_unicode_ci = u_create.user_name
         LEFT JOIN (
-            SELECT change_id, project_id, old_stage, new_stage, change_reason, create_by, create_time
+            SELECT change_id, project_id, old_stage, new_stage, old_project_status, new_project_status, change_reason, create_by, create_time
             FROM (
-                SELECT change_id, project_id, old_stage, new_stage, change_reason, create_by, create_time,
+                SELECT change_id, project_id, old_stage, new_stage, old_project_status, new_project_status, change_reason, create_by, create_time,
                        ROW_NUMBER() OVER (PARTITION BY project_id ORDER BY create_time DESC, change_id DESC) AS rn
                 FROM pm_project_stage_change
                 WHERE del_flag = '0'
@@ -113,7 +115,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- ==================== 查询某项目的全部变更历史（用于变更记录弹窗）==================== -->
     <select id="selectHistoryByProjectId" parameterType="Long" resultMap="ProjectStageChangeResult">
-        SELECT psc.change_id, psc.project_id, psc.old_stage, psc.new_stage, psc.change_reason,
+        SELECT psc.change_id, psc.project_id, psc.old_stage, psc.new_stage,
+               psc.old_project_status, psc.new_project_status, psc.change_reason,
                COALESCE(u.nick_name, psc.create_by) AS create_by, psc.create_time
         FROM pm_project_stage_change psc
         LEFT JOIN sys_user u ON psc.create_by COLLATE utf8mb4_unicode_ci = u.user_name COLLATE utf8mb4_unicode_ci
@@ -124,7 +127,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- ==================== 查询单条变更记录详情 ==================== -->
     <select id="selectProjectStageChangeByChangeId" parameterType="Long" resultMap="ProjectStageChangeResult">
-        SELECT change_id, project_id, old_stage, new_stage, change_reason, del_flag,
+        SELECT change_id, project_id, old_stage, new_stage, old_project_status, new_project_status, change_reason, del_flag,
                create_by, create_time, update_by, update_time
         FROM pm_project_stage_change
         WHERE change_id = #{changeId}

@@ -191,6 +191,18 @@
             <dict-tag :options="sys_xmjd" :value="scope.row.newStage" />
           </template>
         </el-table-column>
+        <el-table-column label="原项目状态" align="center" prop="oldProjectStatus" width="130">
+          <template #default="scope">
+            <dict-tag v-if="scope.row.oldProjectStatus" :options="sys_xmzt" :value="scope.row.oldProjectStatus" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="新项目状态" align="center" prop="newProjectStatus" width="130">
+          <template #default="scope">
+            <dict-tag v-if="scope.row.newProjectStatus" :options="sys_xmzt" :value="scope.row.newProjectStatus" />
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="变更原因" align="center" prop="changeReason" min-width="150" show-overflow-tooltip />
         <el-table-column label="变更人" align="center" prop="createBy" width="100" />
         <el-table-column label="变更时间" align="center" prop="createTime" width="180" />
