@@ -1146,9 +1146,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <!-- 更新主项目实际工作量(小时)——由日报保存时汇总子任务后调用 -->
+    <!-- 显式 update_time = update_time 以抑制 MySQL ON UPDATE CURRENT_TIMESTAMP -->
     <update id="updateActualWorkload">
         update pm_project
-        set actual_workload = #{actualWorkload}
+        set actual_workload = #{actualWorkload}, update_time = update_time
         where project_id = #{projectId}
     </update>
 
