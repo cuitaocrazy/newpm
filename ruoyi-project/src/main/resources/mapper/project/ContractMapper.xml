@@ -117,7 +117,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
             <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
-            <if test="confirmYear != null  and confirmYear != ''"> and c.confirm_year = #{confirmYear}</if>
+            <if test="confirmYear != null  and confirmYear != ''">
+                and c.contract_id in (
+                    select rel2.contract_id from pm_project_contract_rel rel2
+                    inner join pm_project p2 on rel2.project_id = p2.project_id and p2.del_flag = '0'
+                    where rel2.del_flag = '0' and p2.revenue_confirm_year = #{confirmYear}
+                )
+            </if>
             ${params.dataScope}
         </where>
         order by c.update_time desc

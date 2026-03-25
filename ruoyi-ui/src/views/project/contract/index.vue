@@ -133,14 +133,15 @@
       v-loading="loading"
       :data="tableDataWithSummary"
       :height="tableHeight"
+      :span-method="spanMethod"
       @sort-change="handleSortChange"
       border
       stripe
       style="width: 100%">
-      <el-table-column label="序号" width="60" align="center" fixed="left" v-if="columns.index.visible">
+      <el-table-column label="序号" width="60" align="center" fixed="left" prop="index" v-if="columns.index.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold;">合计</span>
-          <span v-else>{{ (queryParams.pageNum - 1) * queryParams.pageSize + scope.$index }}</span>
+          <span v-else-if="scope.row._isFirstRow">{{ scope.row._contractSeq }}</span>
         </template>
       </el-table-column>
       <el-table-column label="合同名称" align="left" header-align="center" prop="contractName" min-width="260" fixed="left" v-if="columns.contractName.visible">
@@ -206,116 +207,70 @@
       <el-table-column label="关联项目" align="left" prop="projectList" min-width="160" v-if="columns.projectList.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
-            <template v-if="scope.row.projectList && scope.row.projectList.length > 0">
-              <div v-for="(project, index) in scope.row.projectList" :key="project.projectId">
-                {{ index + 1 }}、{{ project.projectName }}
-              </div>
-            </template>
-            <span v-else>-</span>
+            {{ scope.row._project ? scope.row._project.projectName : '-' }}
           </span>
         </template>
       </el-table-column>
       <el-table-column label="项目所属部门" align="center" prop="projectDept" min-width="120" show-overflow-tooltip v-if="columns.projectDept.visible">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ project.deptName || '-' }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-if="!scope.row.isSummary">{{ scope.row._project?.deptName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="项目阶段" align="center" prop="projectStage" min-width="120" v-if="columns.projectStage.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              <dict-tag :options="sys_xmjd" :value="project.projectStage" />
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+            <dict-tag v-if="scope.row._project?.projectStage" :options="sys_xmjd" :value="scope.row._project.projectStage" />
+            <span v-else>-</span>
           </span>
         </template>
       </el-table-column>
       <el-table-column label="项目经理" align="center" prop="projectManager" min-width="100" v-if="columns.projectManager.visible">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ project.projectManagerName || '-' }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-if="!scope.row.isSummary">{{ scope.row._project?.projectManagerName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="二级区域" align="center" prop="secondaryRegion" min-width="100" v-if="columns.secondaryRegion.visible">
         <template #default="scope">
-          <span v-if="!scope.row.isSummary">
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ project.regionName || '-' }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-if="!scope.row.isSummary">{{ scope.row._project?.regionName || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="项目预算(元)" align="right" prop="projectBudget" min-width="130" sortable="custom" v-if="columns.projectBudget.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ formatAmount(scope.row.projectBudgetTotal) }}</span>
-          <span v-else>
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ formatAmount(project.projectBudget) }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-else>{{ scope.row._project ? formatAmount(scope.row._project.projectBudget) : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="预估工作量(人天)" align="right" prop="estimatedWorkload" min-width="140" sortable="custom" v-if="columns.estimatedWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ scope.row.estimatedWorkloadTotal }}</span>
-          <span v-else>
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ project.estimatedWorkload != null ? project.estimatedWorkload : '-' }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-else>{{ scope.row._project?.estimatedWorkload != null ? scope.row._project.estimatedWorkload : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="实际人天" align="right" prop="actualWorkload" min-width="110" sortable="custom" v-if="columns.actualWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ scope.row.actualWorkloadTotal }}</span>
-          <span v-else>
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ project.actualWorkload != null ? Number(project.actualWorkload).toFixed(3) : '-' }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-else>{{ scope.row._project?.actualWorkload != null ? Number(scope.row._project.actualWorkload).toFixed(3) : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="公司收入确认年度" align="center" prop="revenueConfirmYear" min-width="140" v-if="columns.revenueConfirmYear.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              <dict-tag :options="sys_ndgl" :value="project.revenueConfirmYear" />
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+            <dict-tag v-if="scope.row._project?.revenueConfirmYear" :options="sys_ndgl" :value="scope.row._project.revenueConfirmYear" />
+            <span v-else>-</span>
           </span>
         </template>
       </el-table-column>
       <el-table-column label="公司收入确认金额(元)" align="right" prop="revenueConfirmAmount" min-width="170" sortable="custom" v-if="columns.revenueConfirmAmount.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ formatAmount(scope.row.revenueConfirmAmountTotal) }}</span>
-          <span v-else>
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              {{ formatAmount(project.confirmAmount) }}
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
-          </span>
+          <span v-else>{{ scope.row._project ? formatAmount(scope.row._project.confirmAmount) : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="收入确认状态" align="center" prop="revenueConfirmStatus" min-width="120" v-if="columns.revenueConfirmStatus.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">
-            <div v-for="project in scope.row.projectList" :key="project.projectId">
-              <dict-tag :options="sys_qrzt" :value="project.revenueConfirmStatus" />
-            </div>
-            <span v-if="!scope.row.projectList || scope.row.projectList.length === 0">-</span>
+            <dict-tag v-if="scope.row._project?.revenueConfirmStatus" :options="sys_qrzt" :value="scope.row._project.revenueConfirmStatus" />
+            <span v-else>-</span>
           </span>
         </template>
       </el-table-column>
@@ -467,6 +422,14 @@ const route = useRoute()
 
 const contractList = ref([])
 const summaryData = ref({})
+
+// 项目级字段列表（需要按项目拆行的列 prop）
+const projectLevelProps = new Set([
+  'projectList', 'projectDept', 'projectStage', 'projectManager',
+  'secondaryRegion', 'projectBudget', 'estimatedWorkload', 'actualWorkload',
+  'revenueConfirmYear', 'revenueConfirmAmount', 'revenueConfirmStatus'
+])
+
 const tableDataWithSummary = computed(() => {
   if (contractList.value.length === 0) {
     return []
@@ -475,6 +438,8 @@ const tableDataWithSummary = computed(() => {
   // 使用后端返回的总计数据
   const summary = {
     isSummary: true,
+    _isFirstRow: true,
+    _rowSpan: 1,
     contractAmount: Number(summaryData.value.contractAmountSum || 0).toFixed(2),
     amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2),
     projectBudgetTotal: Number(summaryData.value.projectBudgetSum || 0).toFixed(2),
@@ -483,9 +448,47 @@ const tableDataWithSummary = computed(() => {
     revenueConfirmAmountTotal: Number(summaryData.value.revenueConfirmAmountSum || 0).toFixed(2),
   }
 
-  // 将合计行放在第一行
-  return [summary, ...contractList.value]
+  // 将合同按 projectList 展开为多行
+  const rows = []
+  contractList.value.forEach((contract, contractIdx) => {
+    const projects = contract.projectList && contract.projectList.length > 0
+      ? contract.projectList
+      : [null] // 无项目时也保留一行
+    const seq = (queryParams.value.pageNum - 1) * queryParams.value.pageSize + contractIdx + 1
+    projects.forEach((project, idx) => {
+      rows.push({
+        ...contract,
+        _project: project,
+        _isFirstRow: idx === 0,
+        _rowSpan: idx === 0 ? projects.length : 0,
+        _projectIndex: idx,
+        _contractSeq: seq
+      })
+    })
+  })
+
+  return [summary, ...rows]
 })
+
+// 表格合并方法：合同级列做 rowSpan 合并
+const mergeColumns = [
+  'index', 'contractName', 'contractCode', 'deptId', 'contractType', 'contractStatus',
+  'contractSignDate', 'contractPeriod', 'contractAmount', 'amountNoTax',
+  'freeMaintenancePeriod', 'customerId', 'remark', 'createTime', 'createByName',
+  'updateTime', 'updateByName'
+]
+function spanMethod({ row, column }) {
+  if (row.isSummary) {
+    return { rowspan: 1, colspan: 1 }
+  }
+  if (mergeColumns.includes(column.property)) {
+    if (row._isFirstRow) {
+      return { rowspan: row._rowSpan, colspan: 1 }
+    } else {
+      return { rowspan: 0, colspan: 0 }
+    }
+  }
+}
 
 const attachmentOpen = ref(false)
 const logOpen = ref(false)
