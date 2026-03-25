@@ -109,6 +109,12 @@ public interface DailyReportMapper
     int selectTotalUserCount(DailyReport query);
 
     /**
+     * 按天统计需提交日报的用户数（基于项目成员 join_date/leave_date）
+     * 返回 List&lt;Map&gt;，每项包含 reportDate 和 totalCount
+     */
+    List<Map<String, Object>> selectTotalUserCountByDate(DailyReport query);
+
+    /**
      * 查询某天已提交人员明细（含工时和工作内容摘要）
      */
     List<Map<String, Object>> selectSubmittedUsersOnDate(DailyReport query);

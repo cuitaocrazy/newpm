@@ -331,8 +331,17 @@ public class DailyReportServiceImpl implements IDailyReportService
             submittedMap.put(date, count);
         }
 
-        // 查询总用户数
+        // 查询总用户数（固定值，用于前端顶部显示）
         int total = dailyReportMapper.selectTotalUserCount(query);
+
+        // 按天查询需提交日报的用户数（基于用户创建时间）
+        List<Map<String, Object>> totalByDateRows = dailyReportMapper.selectTotalUserCountByDate(query);
+        Map<String, Integer> totalByDateMap = new HashMap<>();
+        for (Map<String, Object> row : totalByDateRows) {
+            String date = row.get("reportDate").toString();
+            int count = ((Number) row.get("totalCount")).intValue();
+            totalByDateMap.put(date, count);
+        }
 
         // 查询工作日历（按年）
         Map<String, String> calendarMap = new HashMap<>();
@@ -374,8 +383,9 @@ public class DailyReportServiceImpl implements IDailyReportService
             stat.setIsWorkday(workday);
             stat.setIsFuture(future);
             // 未来日期不统计人数
+            int dailyTotal = totalByDateMap.getOrDefault(dateStr, total);
             stat.setSubmittedCount(future ? null : submittedMap.getOrDefault(dateStr, 0));
-            stat.setUnsubmittedCount(future ? null : (workday ? Math.max(0, total - submittedMap.getOrDefault(dateStr, 0)) : 0));
+            stat.setUnsubmittedCount(future ? null : (workday ? Math.max(0, dailyTotal - submittedMap.getOrDefault(dateStr, 0)) : 0));
             result.add(stat);
         }
         return result;

@@ -365,6 +365,45 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
 
+    <!-- 按天统计需提交日报的用户数（基于用户创建时间，排除白名单） -->
+    <select id="selectTotalUserCountByDate" parameterType="DailyReport" resultType="java.util.Map">
+        SELECT dates.d AS reportDate, COUNT(DISTINCT u.user_id) AS totalCount
+        FROM (
+            SELECT DATE_ADD(#{startDate}, INTERVAL t.n DAY) AS d
+            FROM (
+                SELECT a.N + b.N * 10 AS n
+                FROM (SELECT 0 AS N UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
+                      UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) a,
+                     (SELECT 0 AS N UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) b
+            ) t
+            WHERE DATE_ADD(#{startDate}, INTERVAL t.n DAY) &lt;= #{endDate}
+        ) dates
+        INNER JOIN sys_user u
+            ON u.del_flag = '0' AND u.status = '0'
+            AND u.user_id != 1
+            AND DATE(u.create_time) &lt;= dates.d
+            AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
+        LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
+        <where>
+            <choose>
+                <when test="projectName != null and projectName != ''">
+                    AND u.user_id IN (
+                        SELECT DISTINCT pm.user_id FROM pm_project_member pm
+                        INNER JOIN pm_project p_pn ON pm.project_id = p_pn.project_id
+                        WHERE pm.is_active = '1' AND pm.del_flag = '0'
+                          AND p_pn.del_flag = '0'
+                          AND p_pn.project_name LIKE CONCAT('%', #{projectName}, '%')
+                    )
+                </when>
+                <otherwise>
+                    <include refid="deptFilter" />
+                    ${params.dataScope}
+                </otherwise>
+            </choose>
+        </where>
+        GROUP BY dates.d
+    </select>
+
     <!-- 某天已提交人员明细（含工时、工作内容摘要、项目名称） -->
     <select id="selectSubmittedUsersOnDate" parameterType="DailyReport" resultType="java.util.Map">
         SELECT u.user_id AS userId,
@@ -407,7 +446,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY d.dept_name, u.nick_name COLLATE utf8mb4_unicode_ci
     </select>
 
-    <!-- 某天未提交人员明细（排除白名单） -->
+    <!-- 某天未提交人员明细（排除白名单，排除该日期之后创建的用户） -->
     <select id="selectUnsubmittedUsersOnDate" parameterType="DailyReport" resultType="java.util.Map">
         SELECT u.user_id AS userId,
                u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
@@ -418,6 +457,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             u.del_flag = '0' AND u.status = '0'
             AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
+            AND DATE(u.create_time) &lt;= #{reportDate}
             AND u.user_id NOT IN (
                 SELECT r.user_id FROM pm_daily_report r
                 WHERE r.report_date = #{reportDate} AND r.del_flag = '0'
