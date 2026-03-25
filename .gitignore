@@ -39,3 +39,6 @@ uploadPath/
 # Local fix/migration SQLs (not for VCS)
 pm-sql/fix_*.sql
 pm-sql/*.sql.bak
+
+# asdf version manager (local dev tool config)
+.tool-versions
