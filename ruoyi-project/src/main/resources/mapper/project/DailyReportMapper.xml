@@ -282,7 +282,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from sys_user u
         left join sys_dept d on u.dept_id = d.dept_id
         <where>
-            u.del_flag = '0' and u.status = '0'
+            u.del_flag = '0'
             and u.user_id not in (select user_id from pm_daily_report_whitelist where del_flag = '0')
             <if test="projectId != null">
                 and (
@@ -306,7 +306,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by d.dept_name, u.nick_name
     </select>
 
-    <!-- 按日期统计已提交人数（日报统计报表用，排除白名单） -->
+    <!-- 按日期统计已提交人数（日报统计报表用，排除白名单，包含停用用户的历史记录） -->
     <select id="selectSubmittedCountByDate" parameterType="DailyReport" resultType="java.util.Map">
         SELECT r.report_date AS reportDate,
                COUNT(DISTINCT r.user_id) AS submittedCount
@@ -315,7 +315,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN sys_dept d ON u.dept_id = d.dept_id
         <where>
             r.del_flag = '0'
-            AND u.del_flag = '0' AND u.status = '0'
+            AND u.del_flag = '0'
             AND u.user_id != 1
             AND u.user_id NOT IN (SELECT user_id FROM pm_daily_report_whitelist WHERE del_flag = '0')
             AND r.report_date BETWEEN #{startDate} AND #{endDate}
@@ -404,7 +404,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         GROUP BY dates.d
     </select>
 
-    <!-- 某天已提交人员明细（含工时、工作内容摘要、项目名称） -->
+    <!-- 某天已提交人员明细（含工时、工作内容摘要、项目名称，包含停用用户的历史记录） -->
     <select id="selectSubmittedUsersOnDate" parameterType="DailyReport" resultType="java.util.Map">
         SELECT u.user_id AS userId,
                u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
@@ -424,7 +424,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN pm_project p ON dd.project_id = p.project_id AND p.del_flag = '0'
         <where>
             r.del_flag = '0'
-            AND u.del_flag = '0' AND u.status = '0'
+            AND u.del_flag = '0'
             AND r.report_date = #{reportDate}
             <choose>
                 <when test="projectName != null and projectName != ''">
