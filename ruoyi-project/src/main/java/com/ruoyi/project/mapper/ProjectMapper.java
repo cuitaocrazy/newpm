@@ -84,6 +84,11 @@ public interface ProjectMapper
     public int updateActualWorkload(@Param("projectId") Long projectId, @Param("actualWorkload") BigDecimal actualWorkload);
 
     /**
+     * 仅更新项目经理（不触碰 update_by / update_time）
+     */
+    public int updateProjectManagerId(@Param("projectId") Long projectId, @Param("projectManagerId") Long projectManagerId);
+
+    /**
      * 删除项目管理
      *
      * @param projectId 项目管理主键

@@ -142,13 +142,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- ==================== 更新项目当前阶段 ==================== -->
     <update id="updateProjectStageByProjectId">
-        UPDATE pm_project SET project_stage = #{projectStage}
+        UPDATE pm_project SET project_stage = #{projectStage}, update_time = update_time
         WHERE project_id = #{projectId}
     </update>
 
     <!-- ==================== 更新项目状态 ==================== -->
     <update id="updateProjectStatusByProjectId">
-        UPDATE pm_project SET project_status = #{projectStatus}
+        UPDATE pm_project SET project_status = #{projectStatus}, update_time = update_time
         WHERE project_id = #{projectId}
     </update>
 

@@ -149,9 +149,8 @@ public class ProjectManagerChangeServiceImpl implements IProjectManagerChangeSer
 
         Long oldManagerId = project.getProjectManagerId();
 
-        // 更新项目表的项目经理
-        project.setProjectManagerId(newManagerId);
-        int rows = projectMapper.updateProject(project);
+        // 更新项目表的项目经理（不触碰 update_by / update_time）
+        int rows = projectMapper.updateProjectManagerId(projectId, newManagerId);
 
         // 记录变更
         ProjectManagerChange change = new ProjectManagerChange();
