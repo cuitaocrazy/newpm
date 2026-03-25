@@ -325,7 +325,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup name="DailyReportActivity">
 import { ref, computed, watch, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
 import { User } from '@element-plus/icons-vue'

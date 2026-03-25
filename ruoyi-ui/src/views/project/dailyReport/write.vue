@@ -233,53 +233,53 @@
         </el-card>
       </el-col>
     </el-row>
-  </div>
 
-  <!-- 批量填假期弹窗 -->
-  <el-dialog v-model="batchLeaveVisible" title="批量填假期" width="460px" :close-on-click-modal="false">
-    <el-form label-width="90px">
-      <el-form-item label="假期类型">
-        <el-select v-model="batchLeaveForm.entryType" style="width: 160px;">
-          <el-option
-            v-for="d in sys_rbtype.filter(d => d.value !== 'work')"
-            :key="d.value" :label="d.label" :value="d.value"
+    <!-- 批量填假期弹窗 -->
+    <el-dialog v-model="batchLeaveVisible" title="批量填假期" width="460px" :close-on-click-modal="false">
+      <el-form label-width="90px">
+        <el-form-item label="假期类型">
+          <el-select v-model="batchLeaveForm.entryType" style="width: 160px;">
+            <el-option
+              v-for="d in sys_rbtype.filter(d => d.value !== 'work')"
+              :key="d.value" :label="d.label" :value="d.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="日期范围">
+          <el-date-picker
+            v-model="batchLeaveForm.dateRange"
+            type="daterange"
+            value-format="YYYY-MM-DD"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            style="width: 280px;"
           />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="日期范围">
-        <el-date-picker
-          v-model="batchLeaveForm.dateRange"
-          type="daterange"
-          value-format="YYYY-MM-DD"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          style="width: 280px;"
-        />
-      </el-form-item>
-      <el-form-item label="每日时长">
-        <el-input-number
-          v-model="batchLeaveForm.leaveHoursPerDay"
-          :min="0.5" :max="24" :step="0.5" :precision="1"
-          style="width: 120px;"
-        />
-        <span style="margin-left: 8px; color: #909399; font-size: 13px;">小时/天</span>
-      </el-form-item>
-      <el-form-item label="冲突处理">
-        <el-radio-group v-model="batchLeaveForm.conflictStrategy">
-          <el-radio value="skip">跳过已有记录</el-radio>
-          <el-radio value="overwrite">覆盖已有记录</el-radio>
-        </el-radio-group>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="batchLeaveVisible = false">取消</el-button>
-      <el-button type="primary" :loading="batchLeaving" @click="handleBatchLeave">确认填写</el-button>
-    </template>
-  </el-dialog>
+        </el-form-item>
+        <el-form-item label="每日时长">
+          <el-input-number
+            v-model="batchLeaveForm.leaveHoursPerDay"
+            :min="0.5" :max="24" :step="0.5" :precision="1"
+            style="width: 120px;"
+          />
+          <span style="margin-left: 8px; color: #909399; font-size: 13px;">小时/天</span>
+        </el-form-item>
+        <el-form-item label="冲突处理">
+          <el-radio-group v-model="batchLeaveForm.conflictStrategy">
+            <el-radio value="skip">跳过已有记录</el-radio>
+            <el-radio value="overwrite">覆盖已有记录</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchLeaveVisible = false">取消</el-button>
+        <el-button type="primary" :loading="batchLeaving" @click="handleBatchLeave">确认填写</el-button>
+      </template>
+    </el-dialog>
+  </div>
 </template>
 
-<script setup>
+<script setup name="DailyReportWrite">
 import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, InfoFilled } from '@element-plus/icons-vue'

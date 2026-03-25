@@ -148,7 +148,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="DailyReportWeeklyStats">
 import { ref, reactive, computed, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import isoWeek from 'dayjs/plugin/isoWeek'

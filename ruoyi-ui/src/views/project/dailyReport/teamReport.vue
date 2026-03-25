@@ -121,7 +121,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="TeamDailyReport">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck } from '@element-plus/icons-vue'
