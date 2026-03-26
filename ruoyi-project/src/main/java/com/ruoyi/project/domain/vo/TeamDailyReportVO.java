@@ -24,6 +24,24 @@ public class TeamDailyReportVO
     /** 实际人天 = ROUND(actual_workload/8, 3) + COALESCE(adjust_workload, 0) */
     private BigDecimal actualPersonDays;
 
+    /** 项目阶段（字典 sys_xmjd） */
+    private String projectStage;
+
+    /** 公司收入确认年度（字典 sys_ndgl） */
+    private String revenueConfirmYear;
+
+    /** 确认金额（元） */
+    private BigDecimal confirmAmount;
+
+    /** 收入确认状态（字典 sys_qrzt） */
+    private String revenueConfirmStatus;
+
+    /** 项目预算（元） */
+    private BigDecimal projectBudget;
+
+    /** 合同金额合计（元，SUM of associated contracts） */
+    private BigDecimal contractAmount;
+
     /** 成员日报列表 */
     private List<TeamMemberDailyVO> members;
 
@@ -41,6 +59,24 @@ public class TeamDailyReportVO
 
     public BigDecimal getActualPersonDays() { return actualPersonDays; }
     public void setActualPersonDays(BigDecimal actualPersonDays) { this.actualPersonDays = actualPersonDays; }
+
+    public String getProjectStage() { return projectStage; }
+    public void setProjectStage(String projectStage) { this.projectStage = projectStage; }
+
+    public String getRevenueConfirmYear() { return revenueConfirmYear; }
+    public void setRevenueConfirmYear(String revenueConfirmYear) { this.revenueConfirmYear = revenueConfirmYear; }
+
+    public BigDecimal getConfirmAmount() { return confirmAmount; }
+    public void setConfirmAmount(BigDecimal confirmAmount) { this.confirmAmount = confirmAmount; }
+
+    public String getRevenueConfirmStatus() { return revenueConfirmStatus; }
+    public void setRevenueConfirmStatus(String revenueConfirmStatus) { this.revenueConfirmStatus = revenueConfirmStatus; }
+
+    public BigDecimal getProjectBudget() { return projectBudget; }
+    public void setProjectBudget(BigDecimal projectBudget) { this.projectBudget = projectBudget; }
+
+    public BigDecimal getContractAmount() { return contractAmount; }
+    public void setContractAmount(BigDecimal contractAmount) { this.contractAmount = contractAmount; }
 
     public List<TeamMemberDailyVO> getMembers() { return members; }
     public void setMembers(List<TeamMemberDailyVO> members) { this.members = members; }

@@ -61,13 +61,27 @@
           :row-class-name="({ row }: any) => row.stripe === 0 ? 'stripe-even' : 'stripe-odd'"
           :row-style="{ height: 'auto' }"
         >
-          <!-- 固定列：项目名称（固定宽度，支持换行） -->
-          <el-table-column label="项目" prop="projectName" fixed width="180">
+          <!-- 固定列：项目信息（多行展示） -->
+          <el-table-column label="项目" prop="projectName" fixed width="280">
             <template #default="{ row }">
-              <span :class="row.hasContract ? 'contract-label' : 'project-label'">
-                <el-icon v-if="row.hasContract" color="#67c23a"><CircleCheck /></el-icon>
-                {{ row.projectName }}
-              </span>
+              <div class="project-cell">
+                <div :class="row.hasContract ? 'contract-label' : 'project-label'">
+                  <el-icon v-if="row.hasContract" color="#67c23a"><CircleCheck /></el-icon>
+                  {{ row.projectName }}
+                </div>
+                <div class="project-meta">
+                  <dict-tag :options="sys_xmjd" :value="row.projectStage" />
+                  <span v-if="row.revenueConfirmYear" class="meta-sep">·</span>
+                  <dict-tag v-if="row.revenueConfirmYear" :options="sys_ndgl" :value="row.revenueConfirmYear" />
+                  <span v-if="row.revenueConfirmStatus" class="meta-sep">·</span>
+                  <dict-tag v-if="row.revenueConfirmStatus" :options="sys_qrzt" :value="row.revenueConfirmStatus" />
+                </div>
+                <div class="project-amounts">
+                  <span v-if="row.projectBudget" class="amount-line">预算 {{ formatAmount(row.projectBudget) }}</span>
+                  <span v-if="row.contractAmount" class="amount-line">合同 {{ formatAmount(row.contractAmount) }}</span>
+                  <span v-if="row.confirmAmount" class="amount-line">确认 {{ formatAmount(row.confirmAmount) }}</span>
+                </div>
+              </div>
             </template>
           </el-table-column>
           <!-- 固定列：人员 -->
@@ -122,11 +136,21 @@
 </template>
 
 <script setup lang="ts" name="TeamDailyReport">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { ElMessage } from 'element-plus'
 import { CircleCheck } from '@element-plus/icons-vue'
 import { getTeamMonthly, getTeamProjectOptions } from '@/api/project/dailyReport'
 import dayjs from 'dayjs'
+
+const { proxy } = getCurrentInstance() as any
+
+// --- 字典数据 ---
+const { sys_xmjd, sys_ndgl, sys_qrzt } = proxy.useDict('sys_xmjd', 'sys_ndgl', 'sys_qrzt')
+
+function formatAmount(val: any): string {
+  if (val == null || val === '' || Number(val) === 0) return '—'
+  return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 // --- 查询参数 ---
 const queryRef = ref()
@@ -164,6 +188,15 @@ const flatRows = computed(() => {
     const estimatedWorkload = Number(project.estimatedWorkload || 0)
     const stripe = tableData.value.indexOf(project) % 2
 
+    const projectExtra = {
+      projectStage: project.projectStage,
+      revenueConfirmYear: project.revenueConfirmYear,
+      confirmAmount: project.confirmAmount,
+      revenueConfirmStatus: project.revenueConfirmStatus,
+      projectBudget: project.projectBudget,
+      contractAmount: project.contractAmount
+    }
+
     members.forEach((member: any, idx: number) => {
       rows.push({
         stripe,
@@ -172,6 +205,7 @@ const flatRows = computed(() => {
         hasContract: project.hasContract,
         estimatedWorkload,
         projectActualDays,
+        ...projectExtra,
         memberCount: members.length,
         memberIndex: idx,
         userId: member.userId,
@@ -190,6 +224,7 @@ const flatRows = computed(() => {
         hasContract: project.hasContract,
         estimatedWorkload,
         projectActualDays: 0,
+        ...projectExtra,
         memberCount: 0,
         memberIndex: 0,
         nickName: '—',
@@ -339,5 +374,33 @@ onMounted(() => {
 .warn-text {
   color: #f56c6c;
   font-weight: 500;
+}
+
+.project-cell {
+  line-height: 1.5;
+  padding: 2px 0;
+}
+.project-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.meta-sep {
+  color: #c0c4cc;
+  margin: 0 2px;
+}
+.project-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #909399;
+}
+.amount-line {
+  white-space: nowrap;
 }
 </style>

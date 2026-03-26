@@ -546,6 +546,12 @@ public class DailyReportServiceImpl implements IDailyReportService
                 vo.setHasContract(toBoolean(row.get("hasContract")));
                 vo.setEstimatedWorkload(toBigDecimal(row.get("estimatedWorkload")));
                 vo.setActualPersonDays(toBigDecimal(row.get("actualPersonDays")));
+                vo.setProjectStage(str(row.get("projectStage")));
+                vo.setRevenueConfirmYear(str(row.get("revenueConfirmYear")));
+                vo.setConfirmAmount(toBigDecimal(row.get("confirmAmount")));
+                vo.setRevenueConfirmStatus(str(row.get("revenueConfirmStatus")));
+                vo.setProjectBudget(toBigDecimal(row.get("projectBudget")));
+                vo.setContractAmount(toBigDecimal(row.get("contractAmount")));
                 vo.setMembers(new ArrayList<>());
                 return vo;
             });
