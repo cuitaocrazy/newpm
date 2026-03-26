@@ -48,7 +48,7 @@
           {{ project.projectBudget || 0 }} 元
         </el-descriptions-item>
         <el-descriptions-item label="实际工作量">
-          {{ project.actualWorkload || 0 }} 人天
+          {{ toPersonDays(project.actualWorkload, project.adjustWorkload) }} 人天
         </el-descriptions-item>
         <el-descriptions-item label="项目阶段">
           <dict-tag :options="sys_xmjd" :value="project.projectStage" />
@@ -321,6 +321,7 @@ import { ref, reactive, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getProject, getUsersByPost } from '@/api/project/project'
 import { listContactByCustomer } from '@/api/project/contact'
+import { toPersonDays } from '@/utils/workload'
 import {
   listAttachment,
   uploadAttachment,

@@ -48,7 +48,7 @@
           <dict-tag :options="sys_yszt" :value="projectInfo?.acceptanceStatus" />
         </el-descriptions-item>
         <el-descriptions-item label="实际人天">
-          {{ projectInfo?.actualWorkload != null ? parseFloat(projectInfo.actualWorkload).toFixed(3) : '0.000' }} 人天
+          {{ toPersonDays(projectInfo?.actualWorkload, projectInfo?.adjustWorkload) }} 人天
         </el-descriptions-item>
         <el-descriptions-item label="审核状态">
           <dict-tag :options="sys_spzt" :value="projectInfo?.approvalStatus" />
@@ -246,6 +246,7 @@ import { getProject, getDeptTree, bindContractToProject, getContractByProjectId,
 import { listContractsByDept, getContract } from '@/api/project/contract'
 import { listPayment } from '@/api/project/payment'
 import { handleTree } from '@/utils/ruoyi'
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const route = useRoute()

@@ -267,9 +267,9 @@
         <el-table-column label="任务实际人天" prop="actualWorkload" width="115" align="right"
           sortable="custom" v-if="columns.actualWorkload.visible">
           <template #default="scope">
-            <strong v-if="scope.row.isSummaryRow">{{ parseFloat((scope.row.totalActualWorkload / 8).toFixed(3)) }}</strong>
+            <strong v-if="scope.row.isSummaryRow">{{ toPersonDays(scope.row.totalActualWorkload) }}</strong>
             <template v-else>
-              {{ scope.row.actualWorkload != null ? parseFloat((scope.row.actualWorkload / 8).toFixed(3)) : '-' }}
+              {{ scope.row.actualWorkload != null ? toPersonDays(scope.row.actualWorkload) : '-' }}
             </template>
           </template>
         </el-table-column>
@@ -302,6 +302,7 @@ import { getUsersByPost } from '@/api/project/project'
 import { checkPermi } from '@/utils/permission'
 import { parseTime } from '@/utils/ruoyi'
 import request from '@/utils/request'
+import { toPersonDays } from '@/utils/workload'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()

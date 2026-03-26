@@ -60,7 +60,7 @@
             <dict-tag :options="sys_yszt" :value="selectedProject.acceptanceStatus" />
           </el-descriptions-item>
           <el-descriptions-item label="实际人天">
-            {{ selectedProject.actualWorkload != null ? parseFloat(selectedProject.actualWorkload).toFixed(3) : '0.000' }} 人天
+            {{ toPersonDays(selectedProject.actualWorkload, selectedProject.adjustWorkload) }} 人天
           </el-descriptions-item>
           <el-descriptions-item label="审核状态">
             <dict-tag :options="sys_spzt" :value="selectedProject.approvalStatus" />
@@ -174,7 +174,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="实际工作量">
-              <el-input :model-value="form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000'" disabled>
+              <el-input :model-value="toPersonDays(form.actualWorkload)" disabled>
                 <template #append>人天</template>
               </el-input>
             </el-form-item>
@@ -315,6 +315,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { getTask, updateTask } from '@/api/project/task'
 import { getProject } from '@/api/project/project'
 import request from '@/utils/request'
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()

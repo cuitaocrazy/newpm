@@ -54,7 +54,7 @@
               <dict-tag :options="sys_yszt" :value="form.acceptanceStatus" />
             </el-descriptions-item>
             <el-descriptions-item label="实际人天">
-              {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000' }} 人天
+              {{ toPersonDays(form.actualWorkload, form.adjustWorkload) }} 人天
             </el-descriptions-item>
             <el-descriptions-item label="审核状态">
               <dict-tag :options="sys_spzt" :value="form.approvalStatus" />
@@ -129,7 +129,7 @@
               <div v-if="selectedParticipants.length > 0" class="selected-participants">
                 <el-tag v-for="user in selectedParticipants" :key="user.userId"
                   type="info" class="participant-tag">
-                  {{ user.nickName }}<span v-if="user.actualWorkload > 0" style="margin-left:4px;color:#409eff;">{{ user.actualWorkload }}人天</span>
+                  {{ user.nickName }}<span v-if="user.actualWorkload > 0" style="margin-left:4px;color:#409eff;">{{ toPersonDays(user.actualWorkload) }}人天</span>
                 </el-tag>
               </div>
               <span v-else style="color: #909399;">暂无参与人员</span>
@@ -245,7 +245,7 @@
         </el-table-column>
         <el-table-column label="实际工作量" prop="actualWorkload" width="100" align="right">
           <template #default="scope">
-            {{ scope.row.actualWorkload != null ? parseFloat((scope.row.actualWorkload / 8).toFixed(3)) : '-' }}
+            {{ scope.row.actualWorkload != null ? toPersonDays(scope.row.actualWorkload) : '-' }}
           </template>
         </el-table-column>
         <el-table-column label="功能测试版本日期" prop="functionalTestDate" width="150" align="center">
@@ -467,6 +467,7 @@ import { listAttachment, downloadAttachment } from '@/api/project/attachment'
 import { saveAs } from 'file-saver'
 import request from '@/utils/request'
 import { checkPermi } from "@/utils/permission"
+import { toPersonDays } from '@/utils/workload'
 
 const router = useRouter()
 const route = useRoute()

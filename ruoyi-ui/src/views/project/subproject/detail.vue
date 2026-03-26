@@ -46,7 +46,7 @@
               <dict-tag :options="sys_yszt" :value="selectedProject.acceptanceStatus" />
             </el-descriptions-item>
             <el-descriptions-item label="实际人天">
-              {{ selectedProject.actualWorkload != null ? parseFloat(selectedProject.actualWorkload).toFixed(3) : '0.000' }} 人天
+              {{ toPersonDays(selectedProject.actualWorkload, selectedProject.adjustWorkload) }} 人天
             </el-descriptions-item>
             <el-descriptions-item label="审核状态">
               <dict-tag :options="sys_spzt" :value="selectedProject.approvalStatus" />
@@ -136,7 +136,7 @@
             {{ form.estimatedWorkload != null ? form.estimatedWorkload + ' 人天' : '-' }}
           </el-descriptions-item>
           <el-descriptions-item label="实际工作量">
-            <el-input :model-value="form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) + ' 人天' : '-'" disabled />
+            <el-input :model-value="form.actualWorkload != null ? toPersonDays(form.actualWorkload) + ' 人天' : '-'" disabled />
           </el-descriptions-item>
           <el-descriptions-item label="任务预算">
             {{ form.taskBudget != null ? formatAmount(form.taskBudget) + ' 元' : '-' }}
@@ -304,6 +304,7 @@ import { getProject, getContractByProjectId } from '@/api/project/project'
 import { listPayment } from '@/api/project/payment'
 import { checkPermi } from '@/utils/permission'
 import request from '@/utils/request'
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()

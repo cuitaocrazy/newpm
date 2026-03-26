@@ -41,6 +41,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="projectBudgetTotal"          column="project_budget_total"          />
         <result property="estimatedWorkloadTotal"      column="estimated_workload_total"      />
         <result property="actualWorkloadTotal"         column="actual_workload_total"         />
+        <result property="adjustWorkloadTotal"         column="adjust_workload_total"         />
         <result property="revenueConfirmAmountTotal"   column="revenue_confirm_amount_total"  />
     </resultMap>
 
@@ -99,7 +100,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             select rel.contract_id,
                    IFNULL(SUM(p.project_budget), 0)                                                                   AS project_budget_total,
                    IFNULL(SUM(p.estimated_workload), 0)                                                                AS estimated_workload_total,
-                   IFNULL(SUM(ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0)), 0)                    AS actual_workload_total,
+                   IFNULL(SUM(p.actual_workload), 0)                                                                    AS actual_workload_total,
+                   IFNULL(SUM(p.adjust_workload), 0)                                                                  AS adjust_workload_total,
                    IFNULL(SUM(p.confirm_amount), 0)                                                                    AS revenue_confirm_amount_total
             from pm_project p
             inner join pm_project_contract_rel rel on p.project_id = rel.project_id and rel.del_flag = '0'
@@ -161,7 +163,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             IFNULL(SUM(pc.amount_no_tax_sum), 0)                                                 as amountNoTaxSum,
             IFNULL(SUM(p.project_budget), 0)                                                     as projectBudgetSum,
             IFNULL(SUM(p.estimated_workload), 0)                                                 as estimatedWorkloadSum,
-            ROUND(SUM(p.actual_workload) / 8, 3) + COALESCE(SUM(p.adjust_workload), 0)          as actualWorkloadSum,
+            COALESCE(SUM(p.actual_workload), 0)          as actualWorkloadSum,
+            COALESCE(SUM(p.adjust_workload), 0)          as adjustWorkloadSum,
             IFNULL(SUM(p.confirm_amount), 0)                                                     as revenueConfirmAmountSum
         from pm_project p
         left join (

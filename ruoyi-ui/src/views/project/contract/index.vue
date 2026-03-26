@@ -249,7 +249,7 @@
       <el-table-column label="实际人天" align="right" prop="actualWorkload" min-width="110" sortable="custom" v-if="columns.actualWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummary" style="font-weight: bold; color: #409EFF;">{{ scope.row.actualWorkloadTotal }}</span>
-          <span v-else>{{ scope.row._project?.actualWorkload != null ? Number(scope.row._project.actualWorkload).toFixed(3) : '-' }}</span>
+          <span v-else>{{ scope.row._project?.actualWorkload != null ? toPersonDays(scope.row._project.actualWorkload, scope.row._project.adjustWorkload) : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="公司收入确认年度" align="center" prop="revenueConfirmYear" min-width="140" v-if="columns.revenueConfirmYear.visible">
@@ -414,6 +414,7 @@ import { listProject } from "@/api/project/project"
 import { listAttachment, uploadAttachment, downloadAttachment, delAttachment, listAttachmentLog } from "@/api/project/attachment"
 import { getToken } from "@/utils/auth"
 import { checkPermi } from "@/utils/permission"
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const { sys_ndgl, sys_htlx, sys_htzt, sys_wdlx, sys_xmjd, sys_qrzt } = proxy.useDict('sys_ndgl', 'sys_htlx', 'sys_htzt', 'sys_wdlx', 'sys_xmjd', 'sys_qrzt')
@@ -444,7 +445,7 @@ const tableDataWithSummary = computed(() => {
     amountNoTax: Number(summaryData.value.amountNoTaxSum || 0).toFixed(2),
     projectBudgetTotal: Number(summaryData.value.projectBudgetSum || 0).toFixed(2),
     estimatedWorkloadTotal: Math.round(Number(summaryData.value.estimatedWorkloadSum || 0)),
-    actualWorkloadTotal: Number(summaryData.value.actualWorkloadSum || 0).toFixed(3),
+    actualWorkloadTotal: toPersonDays(summaryData.value.actualWorkloadSum, summaryData.value.adjustWorkloadSum),
     revenueConfirmAmountTotal: Number(summaryData.value.revenueConfirmAmountSum || 0).toFixed(2),
   }
 

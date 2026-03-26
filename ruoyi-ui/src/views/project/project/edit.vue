@@ -190,7 +190,7 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="实际人天" prop="actualWorkload">
-                <el-input :value="form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000'" disabled>
+                <el-input :value="toPersonDays(form.actualWorkload, form.adjustWorkload)" disabled>
                   <template #append>人天</template>
                 </el-input>
               </el-form-item>
@@ -461,6 +461,7 @@ import { getProject, updateProject, checkProjectCode } from '@/api/project/proje
 import { ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { useFormValidation } from '@/composables/useFormValidation'
+import { toPersonDays } from '@/utils/workload'
 
 // 竞态防护：保证只有最新一次 generateProjectCode 调用的结果被应用
 let codeGenSeq = 0

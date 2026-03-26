@@ -266,7 +266,7 @@
       </el-table-column>
       <el-table-column v-if="columns[8].visible" label="实际人天" align="center" prop="actualWorkload" min-width="100">
         <template #default="scope">
-          <span :style="scope.row.isSummaryRow ? 'font-weight: bold; color: #409EFF;' : ''">{{ formatWorkload(scope.row.actualWorkload) }}</span>
+          <span :style="scope.row.isSummaryRow ? 'font-weight: bold; color: #409EFF;' : ''">{{ scope.row.isSummaryRow ? scope.row.actualWorkload : (scope.row.actualWorkload != null ? toPersonDays(scope.row.actualWorkload, scope.row.adjustWorkload) : '-') }}</span>
         </template>
       </el-table-column>
       <el-table-column v-if="columns[9].visible" label="合同名称" align="left" header-align="center" prop="contractName" min-width="180" show-overflow-tooltip>
@@ -457,7 +457,7 @@
             <span class="worktime-stats">
               <span class="stat-people">{{ participantCount }} 人</span>
               <span class="stat-hours">总工时 0.0 小时</span>
-              <span>合计 {{ form.actualWorkload != null ? parseFloat(form.actualWorkload).toFixed(3) : '0.000' }} 人天</span>
+              <span>合计 {{ toPersonDays(form.actualWorkload, form.adjustWorkload) }} 人天</span>
             </span>
             <el-icon :class="['worktime-arrow', { expanded: worktimeExpanded }]"><ArrowDown /></el-icon>
           </div>
@@ -541,6 +541,7 @@ import { getDeptTree, searchProjects } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 import useUserStore from '@/store/modules/user'
+import { toPersonDays } from '@/utils/workload'
 
 const router = useRouter()
 const { proxy } = getCurrentInstance()
@@ -710,7 +711,7 @@ function getList() {
         isSummaryRow: true,
         projectBudget: Number(s.projectBudget || 0).toFixed(2),
         estimatedWorkload: Number(s.estimatedWorkload || 0),
-        actualWorkload: Number(s.actualWorkload || 0).toFixed(3),
+        actualWorkload: toPersonDays(s.actualWorkload, s.adjustWorkload),
         contractAmount: Number(s.contractAmount || 0).toFixed(2),
         confirmAmount: Number(s.confirmAmount || 0).toFixed(2),
         teamConfirmAmount: Number(s.teamConfirmAmount || 0).toFixed(2),

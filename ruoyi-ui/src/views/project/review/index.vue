@@ -190,7 +190,7 @@
             <el-descriptions-item label="项目部门">{{ reviewForm.deptName || '-' }}</el-descriptions-item>
             <el-descriptions-item label="预估工作量">{{ reviewForm.estimatedWorkload || 0 }} 人天</el-descriptions-item>
             <el-descriptions-item label="项目预算">{{ reviewForm.projectBudget || 0 }} 元</el-descriptions-item>
-            <el-descriptions-item label="实际人天">{{ reviewForm.actualWorkload != null ? parseFloat(reviewForm.actualWorkload).toFixed(3) : '0.000' }} 人天</el-descriptions-item>
+            <el-descriptions-item label="实际人天">{{ toPersonDays(reviewForm.actualWorkload, reviewForm.adjustWorkload) }} 人天</el-descriptions-item>
             <el-descriptions-item label="项目阶段">
               <dict-tag :options="sys_xmjd" :value="reviewForm.projectStage"/>
             </el-descriptions-item>
@@ -313,6 +313,7 @@ import { listReview, getReviewSummary, getReview, approveProject, rollbackProjec
 import { searchProjects } from "@/api/project/project"
 import { WarningFilled } from '@element-plus/icons-vue'
 import { parseTime } from "@/utils/ruoyi"
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const { sys_xmfl, sys_yjqy, sys_xmjd, sys_spzt, sys_yszt, sys_xmzt, industry } = proxy.useDict('sys_xmfl', 'sys_yjqy', 'sys_xmjd', 'sys_spzt', 'sys_yszt', 'sys_xmzt', 'industry')

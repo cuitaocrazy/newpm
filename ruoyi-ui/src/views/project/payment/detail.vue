@@ -229,7 +229,7 @@
           </el-table-column>
           <el-table-column label="实际工作量(人天)" align="center" prop="actualWorkload" width="140">
             <template #default="scope">
-              {{ scope.row.actualWorkload ? (scope.row.actualWorkload / 8).toFixed(3) : '-' }}
+              {{ scope.row.actualWorkload ? toPersonDays(scope.row.actualWorkload, scope.row.adjustWorkload) : '-' }}
             </template>
           </el-table-column>
           <el-table-column label="功能测试版本日期" align="center" prop="functionalTestDate" width="150">
@@ -265,6 +265,7 @@ import { listAttachment, downloadAttachment } from '@/api/project/attachment'
 import { parseTime } from '@/utils/ruoyi'
 import request from '@/utils/request'
 import { saveAs } from 'file-saver'
+import { toPersonDays } from '@/utils/workload'
 
 const router = useRouter()
 const route = useRoute()

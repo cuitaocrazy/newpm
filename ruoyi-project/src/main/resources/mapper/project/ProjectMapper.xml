@@ -111,7 +111,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectProjectList" parameterType="Project" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
-               p.estimated_workload, ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
+               p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
                p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
@@ -231,7 +231,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT
             COALESCE(SUM(p.project_budget), 0)   AS projectBudget,
             COALESCE(SUM(p.estimated_workload), 0) AS estimatedWorkload,
-            ROUND(SUM(p.actual_workload) / 8, 3) + COALESCE(SUM(p.adjust_workload), 0) AS actualWorkload,
+            COALESCE(SUM(p.actual_workload), 0) AS actualWorkload,
+            COALESCE(SUM(p.adjust_workload), 0) AS adjustWorkload,
             COALESCE(SUM(ca.contract_amount), 0)  AS contractAmount,
             COALESCE(SUM(p.confirm_amount), 0)    AS confirmAmount
         FROM pm_project p
@@ -278,7 +279,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT
             COALESCE(SUM(p.project_budget), 0)    AS projectBudget,
             COALESCE(SUM(p.estimated_workload), 0) AS estimatedWorkload,
-            ROUND(SUM(p.actual_workload) / 8, 3) + COALESCE(SUM(p.adjust_workload), 0) AS actualWorkload,
+            COALESCE(SUM(p.actual_workload), 0) AS actualWorkload,
+            COALESCE(SUM(p.adjust_workload), 0) AS adjustWorkload,
             COALESCE(SUM(ca.contract_amount), 0)  AS contractAmount,
             COALESCE(SUM(p.confirm_amount), 0)    AS confirmAmount,
             COALESCE(SUM(tc.team_confirm_amount), 0) AS teamConfirmAmount
@@ -343,7 +345,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectProjectByProjectId" parameterType="Long" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
-               p.estimated_workload, ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
+               p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
                p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
@@ -559,7 +561,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectStage != null">project_stage = #{projectStage},</if>
             <if test="acceptanceStatus != null">acceptance_status = #{acceptanceStatus},</if>
             <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
-            <if test="actualWorkload != null">actual_workload = #{actualWorkload},</if>
+            <!-- actual_workload 由日报保存回写维护，不在项目编辑时更新（防止查询转换后的人天值覆盖小时值） -->
             <if test="adjustWorkload != null">adjust_workload = #{adjustWorkload},</if>
             <if test="projectAddress != null">project_address = #{projectAddress},</if>
             <if test="projectPlan != null">project_plan = #{projectPlan},</if>
@@ -690,7 +692,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             sr.region_name       AS regionName,
             p.project_budget     AS projectBudget,
             p.estimated_workload AS estimatedWorkload,
-            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actualWorkload,
+            p.actual_workload AS actualWorkload,
+            p.adjust_workload AS adjustWorkload,
             ca.contract_name     AS contractName,
             ca.contract_code     AS contractCode,
             ca.contract_amount   AS contractAmount,
@@ -746,7 +749,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             SUM(COALESCE(tc.team_confirm_amount, 0)) AS teamConfirmAmount,
             SUM(p.project_budget)                    AS projectBudget,
             SUM(p.estimated_workload)                AS estimatedWorkload,
-            ROUND(SUM(p.actual_workload) / 8, 3) + COALESCE(SUM(p.adjust_workload), 0) AS actualWorkload,
+            COALESCE(SUM(p.actual_workload), 0) AS actualWorkload,
+            COALESCE(SUM(p.adjust_workload), 0) AS adjustWorkload,
             SUM(COALESCE(ca.contract_amount, 0))     AS contractAmount,
             SUM(COALESCE(p.confirm_amount, 0))       AS confirmAmount
         FROM pm_project p
@@ -862,7 +866,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectReviewList" parameterType="Project" resultMap="ProjectResult">
         SELECT p.project_id, p.project_code, p.project_name, p.industry, p.region, p.region_id, p.short_name,
                p.established_year, p.project_category, p.project_dept, p.project_status, p.project_stage, p.acceptance_status,
-               p.estimated_workload, ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
+               p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
                p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
@@ -1020,7 +1024,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.project_stage,
             p.acceptance_status,
             p.estimated_workload,
-            ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) AS actual_workload,
+            p.actual_workload,
+            p.adjust_workload,
             p.revenue_confirm_year,
             p.revenue_confirm_date,
             p.confirm_amount,
@@ -1103,7 +1108,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.create_time as createTime,
                dict.dict_label as projectStageName,
                p.estimated_workload as estimatedWorkload,
-               ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as actualWorkload,
+               p.actual_workload as actualWorkload,
+               p.adjust_workload as adjustWorkload,
                p.revenue_confirm_year as revenueConfirmYear,
                u.nick_name as projectManagerName
         from pm_project p
@@ -1177,7 +1183,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <!-- 查询项目参与人员及其日报实际人天 -->
     <select id="selectParticipantsWithWorkload" parameterType="Long" resultType="java.util.Map">
         SELECT u.user_id AS userId, u.nick_name AS nickName,
-               ROUND(COALESCE(SUM(dd.work_hours), 0) / 8, 3) AS actualWorkload
+               COALESCE(SUM(dd.work_hours), 0) AS actualWorkload
         FROM sys_user u
         LEFT JOIN pm_daily_report r ON r.user_id = u.user_id AND r.del_flag = '0'
         LEFT JOIN pm_daily_report_detail dd ON dd.report_id = r.report_id

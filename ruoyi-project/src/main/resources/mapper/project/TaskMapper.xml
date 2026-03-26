@@ -305,7 +305,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                t.task_manager_id  as "taskManagerId",
                u.nick_name        as "taskManagerName",
                t.estimated_workload as "estimatedWorkload",
-               ROUND(t.actual_workload / 8, 3) as "actualWorkload",
+               t.actual_workload as "actualWorkload",
                pb.batch_no        as "batchNo",
                t.schedule_status  as "scheduleStatus"
         from pm_task t

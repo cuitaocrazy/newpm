@@ -287,7 +287,7 @@
         </el-table-column>
         <el-table-column label="实际工作量(人天)" align="center" prop="actualWorkload" width="140">
           <template #default="scope">
-            {{ scope.row.actualWorkload ? (scope.row.actualWorkload / 8).toFixed(3) : '-' }}
+            {{ scope.row.actualWorkload ? toPersonDays(scope.row.actualWorkload, scope.row.adjustWorkload) : '-' }}
           </template>
         </el-table-column>
         <el-table-column label="功能测试版本日期" align="center" prop="functionalTestDate" width="150">
@@ -341,6 +341,7 @@ import { listCustomer } from "@/api/project/customer"
 import { listProject, getDeptTree as fetchDeptTree } from '@/api/project/project'
 import { saveAs } from 'file-saver'
 import request from '@/utils/request'
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const { sys_htlx, sys_htzt, sys_ndgl, sys_fkzt, sys_wdlx, sys_jdgl, sys_product, sys_pqzt, sys_qrzt } = proxy.useDict('sys_htlx', 'sys_htzt', 'sys_ndgl', 'sys_fkzt', 'sys_wdlx', 'sys_jdgl', 'sys_product', 'sys_pqzt', 'sys_qrzt')

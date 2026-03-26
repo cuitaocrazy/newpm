@@ -213,7 +213,7 @@
       <el-table-column label="实际人天" align="center" prop="actualWorkload" min-width="100" v-if="columns.actualWorkload.visible">
         <template #default="scope">
           <span v-if="scope.row.isSummaryRow" style="font-weight: bold;">{{ scope.row.actualWorkload }}</span>
-          <span v-else>{{ scope.row.actualWorkload != null ? parseFloat(scope.row.actualWorkload).toFixed(3) : '-' }}</span>
+          <span v-else>{{ scope.row.actualWorkload != null ? toPersonDays(scope.row.actualWorkload, scope.row.adjustWorkload) : '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="合同编号" align="left" header-align="center" prop="contractCode" width="160" v-if="columns.contractCode.visible">
@@ -500,6 +500,7 @@ import { approveProject, getApprovalHistory } from "@/api/project/review"
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
 import { checkPermi } from "@/utils/permission"
+import { toPersonDays } from '@/utils/workload'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -626,7 +627,7 @@ function getList() {
         isSummaryRow: true,
         projectBudget:     Number(s.projectBudget     || 0).toFixed(2),
         estimatedWorkload: Math.round(Number(s.estimatedWorkload || 0)),
-        actualWorkload:    Number(s.actualWorkload    || 0).toFixed(3),
+        actualWorkload:    toPersonDays(s.actualWorkload, s.adjustWorkload),
         contractAmount:    Number(s.contractAmount    || 0).toFixed(2),
         confirmAmount:     Number(s.confirmAmount     || 0).toFixed(2)
       }

@@ -150,8 +150,11 @@ public class Contract extends BaseEntity
     /** 预估工作量合计（聚合字段，用于列表合计和排序） */
     private BigDecimal estimatedWorkloadTotal;
 
-    /** 实际人天合计（聚合字段，用于列表合计和排序） */
+    /** 实际工时合计-小时（聚合字段，前端转人天） */
     private BigDecimal actualWorkloadTotal;
+
+    /** 调整人天合计（聚合字段） */
+    private BigDecimal adjustWorkloadTotal;
 
     /** 公司收入确认金额合计（聚合字段，用于列表合计和排序） */
     private BigDecimal revenueConfirmAmountTotal;
@@ -530,6 +533,9 @@ public class Contract extends BaseEntity
 
     public BigDecimal getActualWorkloadTotal() { return actualWorkloadTotal; }
     public void setActualWorkloadTotal(BigDecimal actualWorkloadTotal) { this.actualWorkloadTotal = actualWorkloadTotal; }
+
+    public BigDecimal getAdjustWorkloadTotal() { return adjustWorkloadTotal; }
+    public void setAdjustWorkloadTotal(BigDecimal adjustWorkloadTotal) { this.adjustWorkloadTotal = adjustWorkloadTotal; }
 
     public BigDecimal getRevenueConfirmAmountTotal() { return revenueConfirmAmountTotal; }
     public void setRevenueConfirmAmountTotal(BigDecimal revenueConfirmAmountTotal) { this.revenueConfirmAmountTotal = revenueConfirmAmountTotal; }
