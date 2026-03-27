@@ -574,7 +574,7 @@ async function loadDayReport(dateStr) {
 
 // 加载月度概览（日历标注用）
 async function loadMonthOverview() {
-  const res = await listDailyReport({ yearMonth: currentYearMonth.value, userId: userStore.id })
+  const res = await listDailyReport({ yearMonth: currentYearMonth.value, userId: userStore.id, pageNum: 1, pageSize: 31 })
   const map = {}
   if (res.rows) {
     res.rows.forEach(r => {
