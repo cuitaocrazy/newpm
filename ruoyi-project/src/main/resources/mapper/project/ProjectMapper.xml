@@ -1108,8 +1108,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.create_time as createTime,
                dict.dict_label as projectStageName,
                p.estimated_workload as estimatedWorkload,
-               p.actual_workload as actualWorkload,
-               p.adjust_workload as adjustWorkload,
+               ROUND(p.actual_workload / 8, 3) + COALESCE(p.adjust_workload, 0) as actualWorkload,
                p.revenue_confirm_year as revenueConfirmYear,
                u.nick_name as projectManagerName
         from pm_project p
