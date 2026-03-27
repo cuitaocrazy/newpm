@@ -23,6 +23,24 @@
           @clear="handleProjectClear"
         />
       </el-form-item>
+      <el-form-item label="确认年度" prop="revenueConfirmYears">
+        <el-select
+          v-model="queryParams.revenueConfirmYears"
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          clearable
+          placeholder="收入确认年度"
+          style="width: 220px"
+        >
+          <el-option
+            v-for="dict in sys_ndgl"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="年月" prop="yearMonth">
         <el-date-picker
           v-model="queryParams.yearMonth"
@@ -160,6 +178,7 @@ const projectKeyword = ref('')
 const queryParams = ref({
   deptId: undefined as number | undefined,
   projectId: undefined as number | undefined,
+  revenueConfirmYears: [] as string[],
   yearMonth: dayjs().format('YYYY-MM')
 })
 
@@ -268,7 +287,12 @@ async function handleQuery() {
   }
   loading.value = true
   try {
-    const res = await getTeamMonthly(queryParams.value)
+    const params = {
+      ...queryParams.value,
+      revenueConfirmYears: queryParams.value.revenueConfirmYears.length > 0
+        ? queryParams.value.revenueConfirmYears.join(',') : undefined
+    }
+    const res = await getTeamMonthly(params)
     tableData.value = res.data || []
   } finally {
     loading.value = false
@@ -314,6 +338,7 @@ function resetQuery() {
   projectKeyword.value = ''
   queryParams.value.deptId = undefined
   queryParams.value.projectId = undefined
+  queryParams.value.revenueConfirmYears = []
   queryParams.value.yearMonth = dayjs().format('YYYY-MM')
   tableData.value = []
 }

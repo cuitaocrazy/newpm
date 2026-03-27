@@ -564,6 +564,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="projectId != null">
                 AND p.project_id = #{projectId}
             </if>
+            <if test="revenueConfirmYearList != null and revenueConfirmYearList.size() > 0">
+                AND p.revenue_confirm_year IN
+                <foreach collection="revenueConfirmYearList" item="year" open="(" separator="," close=")">
+                    #{year}
+                </foreach>
+            </if>
             ${params.dataScope}
         </where>
         ORDER BY p.project_id, u.user_id, daily_hrs.report_date

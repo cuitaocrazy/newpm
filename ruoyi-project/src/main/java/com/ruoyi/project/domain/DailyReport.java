@@ -240,6 +240,20 @@ public class DailyReport extends BaseEntity
     public void setType(String type) { this.type = type; }
     public String getType() { return type; }
 
+    /** 查询条件：收入确认年度（多选），逗号分隔字符串，如 "2024,2025"（团队日报筛选） */
+    private String revenueConfirmYears;
+
+    public void setRevenueConfirmYears(String revenueConfirmYears) { this.revenueConfirmYears = revenueConfirmYears; }
+    public String getRevenueConfirmYears() { return revenueConfirmYears; }
+
+    /** 将 revenueConfirmYears 字符串解析为 List，供 MyBatis foreach 使用 */
+    public List<String> getRevenueConfirmYearList() {
+        if (revenueConfirmYears == null || revenueConfirmYears.trim().isEmpty()) return null;
+        return Arrays.stream(revenueConfirmYears.split(","))
+                .map(String::trim).filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
+    }
+
     /** 查询条件：多部门ID，逗号分隔字符串，如 "1,2,3"（日报统计报表多选） */
     private String deptIds;
 
