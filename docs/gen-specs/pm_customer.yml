@@ -744,6 +744,7 @@ customizations:
     notes: |
       selectCustomerList 用于列表分页查询，结果集使用 CustomerCustomerContactResult（自动关联联系人）。
       selectCustomerByCustomerId 用于详情/编辑查询，同样使用 CustomerCustomerContactResult。
+      排序：ORDER BY c.update_time DESC
 
   # --------------------------------------------------
   # 10. 数据访问权限控制

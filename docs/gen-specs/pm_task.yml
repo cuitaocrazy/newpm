@@ -750,7 +750,7 @@ customizations:
       - 无任务的项目：pm_task 字段全为 NULL（不会出现在列表，因为 WHERE pm_task.task_id IS NOT NULL 或类似过滤）
       TaskMapper 读取 pm_project 字段时，展示在 Task 的 parentProjectName / projectCode 等扩展字段中
 
-      排序：ORDER BY pm_project.update_time DESC, pm_task.task_id ASC
+      排序：ORDER BY pm_project.project_id ASC, pm_task.task_code ASC
 
   daily_report_integration:
     intent: "任务与日报的集成关系"
