@@ -71,8 +71,12 @@ public class PaymentServiceImpl implements IPaymentService
     @Override
     public int insertPayment(Payment payment)
     {
-        payment.setCreateTime(DateUtils.getNowDate());
-        payment.setCreateBy(com.ruoyi.common.utils.SecurityUtils.getUsername());
+        String username = com.ruoyi.common.utils.SecurityUtils.getUsername();
+        java.util.Date now = DateUtils.getNowDate();
+        payment.setCreateBy(username);
+        payment.setCreateTime(now);
+        payment.setUpdateBy(username);
+        payment.setUpdateTime(now);
         return paymentMapper.insertPayment(payment);
     }
 

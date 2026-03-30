@@ -170,9 +170,13 @@ public class ContractServiceImpl implements IContractService
             contract.setTaxAmount(taxAmount);
         }
 
+        String username = SecurityUtils.getUsername();
+        java.util.Date now = DateUtils.getNowDate();
         contract.setDelFlag("0");
-        contract.setCreateBy(SecurityUtils.getUsername());
-        contract.setCreateTime(DateUtils.getNowDate());
+        contract.setCreateBy(username);
+        contract.setCreateTime(now);
+        contract.setUpdateBy(username);
+        contract.setUpdateTime(now);
         int rows = contractMapper.insertContract(contract);
 
         // 保存关联项目

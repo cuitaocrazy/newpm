@@ -3,6 +3,7 @@ package com.ruoyi.project.service.impl;
 import java.util.List;
 import com.ruoyi.common.annotation.DataScope;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.project.mapper.TeamRevenueConfirmationMapper;
@@ -55,7 +56,12 @@ public class TeamRevenueConfirmationServiceImpl implements ITeamRevenueConfirmat
     @Override
     public int insertTeamRevenueConfirmation(TeamRevenueConfirmation teamRevenueConfirmation)
     {
-        teamRevenueConfirmation.setCreateTime(DateUtils.getNowDate());
+        String username = SecurityUtils.getUsername();
+        java.util.Date now = DateUtils.getNowDate();
+        teamRevenueConfirmation.setCreateBy(username);
+        teamRevenueConfirmation.setCreateTime(now);
+        teamRevenueConfirmation.setUpdateBy(username);
+        teamRevenueConfirmation.setUpdateTime(now);
         return teamRevenueConfirmationMapper.insertTeamRevenueConfirmation(teamRevenueConfirmation);
     }
 
@@ -68,6 +74,7 @@ public class TeamRevenueConfirmationServiceImpl implements ITeamRevenueConfirmat
     @Override
     public int updateTeamRevenueConfirmation(TeamRevenueConfirmation teamRevenueConfirmation)
     {
+        teamRevenueConfirmation.setUpdateBy(SecurityUtils.getUsername());
         teamRevenueConfirmation.setUpdateTime(DateUtils.getNowDate());
         return teamRevenueConfirmationMapper.updateTeamRevenueConfirmation(teamRevenueConfirmation);
     }

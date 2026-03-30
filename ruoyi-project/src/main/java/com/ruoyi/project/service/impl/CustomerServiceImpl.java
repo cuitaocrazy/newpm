@@ -2,6 +2,7 @@ package com.ruoyi.project.service.impl;
 
 import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
@@ -101,7 +102,12 @@ public class CustomerServiceImpl implements ICustomerService
             throw new RuntimeException("客户简称已存在");
         }
 
-        customer.setCreateTime(DateUtils.getNowDate());
+        String username = SecurityUtils.getUsername();
+        java.util.Date now = DateUtils.getNowDate();
+        customer.setCreateBy(username);
+        customer.setCreateTime(now);
+        customer.setUpdateBy(username);
+        customer.setUpdateTime(now);
         int rows = customerMapper.insertCustomer(customer);
         insertCustomerContact(customer);
         return rows;
@@ -123,6 +129,7 @@ public class CustomerServiceImpl implements ICustomerService
             throw new RuntimeException("客户简称已存在");
         }
 
+        customer.setUpdateBy(SecurityUtils.getUsername());
         customer.setUpdateTime(DateUtils.getNowDate());
         customerMapper.deleteCustomerContactByCustomerId(customer.getCustomerId());
         insertCustomerContact(customer);

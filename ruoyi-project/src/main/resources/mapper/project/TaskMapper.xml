@@ -335,7 +335,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <update id="updateActualWorkload">
-        UPDATE pm_task SET actual_workload = #{hours}, update_time = NOW() WHERE task_id = #{taskId}
+        UPDATE pm_task SET actual_workload = #{hours}, update_time = update_time WHERE task_id = #{taskId}
     </update>
 
     <select id="sumActualWorkloadByProjectId" resultType="java.math.BigDecimal">
