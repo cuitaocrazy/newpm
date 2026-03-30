@@ -243,6 +243,22 @@ extendedFields:
     javaField: projectId
     source: 前端传入
 
+  revenueConfirmYears:
+    columnComment: 收入确认年度查询参数（多选，逗号分隔，如 "2024,2025"，团队日报筛选用，非持久化）
+    javaType: String
+    javaField: revenueConfirmYears
+    source: 前端传入
+    description: |
+      getRevenueConfirmYearList() 解析为 List<String> 供 MyBatis foreach IN 查询。
+      前端 el-select multiple 绑定 string[]，调用 API 时 join(',') 传入。
+
+  deptIds:
+    columnComment: 多部门ID查询参数（逗号分隔，日报统计报表多选，非持久化）
+    javaType: String
+    javaField: deptIds
+    source: 前端传入
+    description: getDeptIdList() 解析为 List<Long> 供 MyBatis foreach 使用
+
 # ============================
 # pm_daily_report_detail 子表字段
 # ============================
@@ -401,13 +417,25 @@ apiSummary:
   - "GET    /project/dailyReport/projectNameSuggestions   → 项目名称自动补全"
   - "POST   /project/dailyReport/projectStats/{id}/correct → 人天补正"
   - "GET    /project/dailyReport/projectStats/{id}/correctLog → 补正日志"
+  # 团队日报（teamReport.vue）
+  - "GET    /project/dailyReport/teamMonthly                → 团队日报月度数据（按部门+月份，项目×成员聚合）支持 deptId/projectId/yearMonth/revenueConfirmYears"
+  - "GET    /project/dailyReport/teamProjectOptions          → 团队日报项目名称 autocomplete（部门范围内模糊搜索）"
+  # 日报统计报表（weeklyStats.vue）
+  - "GET    /project/dailyReport/weeklyStats                 → 日报统计报表-按天汇总（按月）"
+  - "GET    /project/dailyReport/weeklyStatsDeptTree          → 日报统计报表-部门树（三级及以下）"
+  - "GET    /project/dailyReport/weeklyStatsDetail            → 日报统计报表-人员明细"
+  - "GET    /project/dailyReport/weeklyStatsExport            → 日报统计报表-Excel导出"
+  # 批量假期
+  - "POST   /project/dailyReport/batchLeave                  → 批量填写假期（按日期范围，自动跳过周末/节假日）"
 
 # ============================
 # 字典依赖
 # ============================
 dictDependencies:
-  - sys_xmjd: "项目阶段（明细条目）"
+  - sys_xmjd: "项目阶段（明细条目、团队日报项目列）"
   - sys_gzlb: "工作任务类别（子任务条目）"
+  - sys_ndgl: "年度管理（团队日报：项目列显示收入确认年度 + 查询条件多选筛选）"
+  - sys_qrzt: "确认状态（团队日报：项目列显示收入确认状态）"
 
 # ============================
 # 定制说明
@@ -440,6 +468,17 @@ customizations:
       保存日报时 Service 触发：
         1. 按 pm_task.task_id 聚合 pm_daily_report_detail.work_hours → 更新 pm_task.actual_workload
         2. 按 pm_project.project_id 聚合所有 task.actual_workload + 直接项目工时 → 更新 pm_project.actual_workload
+
+  team_report_page:
+    intent: "团队日报页（teamReport.vue）核心设计"
+    spec: |
+      查询条件：项目部门（必填）、项目名称（autocomplete）、收入确认年度（字典 sys_ndgl 多选）、年月
+      表格：按项目×成员展开，span-method 合并项目列
+      项目列：项目名称（绿色=有合同）、阶段(sys_xmjd)、确认年度(sys_ndgl)、确认状态(sys_qrzt)、预算/合同/确认金额
+      动态日期列：当月每日工时
+      右侧固定列：个人人天（不合并）、实际人天（项目汇总，超预算50%红色警告）、预算人天
+      VO：TeamDailyReportVO（项目聚合）→ TeamMemberDailyVO（成员明细）
+      SQL：selectTeamMonthlyRaw 查 pm_project LEFT JOIN pm_project_member/sys_user/pm_daily_report_detail
 
   hard_delete_note:
     intent: "硬删除注意事项"
