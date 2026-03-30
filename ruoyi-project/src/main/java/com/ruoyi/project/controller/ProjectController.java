@@ -26,6 +26,7 @@ import com.ruoyi.project.domain.ProjectApproval;
 import com.ruoyi.project.domain.Contract;
 import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.project.service.IProjectApprovalService;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -128,6 +129,9 @@ public class ProjectController extends BaseController
             projectApprovalService.insertProjectApproval(resubmitRecord);
         }
 
+        // 只有编辑保存才更新 update_by / update_time
+        project.setUpdateBy(SecurityUtils.getUsername());
+        project.setUpdateTime(DateUtils.getNowDate());
         return toAjax(projectService.updateProject(project));
     }
 

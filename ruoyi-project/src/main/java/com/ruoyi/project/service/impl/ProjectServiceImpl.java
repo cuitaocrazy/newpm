@@ -115,8 +115,8 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public int insertProject(Project project)
     {
+        project.setCreateBy(SecurityUtils.getUsername());
         project.setCreateTime(DateUtils.getNowDate());
-        project.setUpdateTime(DateUtils.getNowDate());
         // 校验 project_code 长度
         if (project.getProjectCode() != null && project.getProjectCode().length() > 500) {
             throw new com.ruoyi.common.exception.ServiceException("项目编号过长（超过500字符），请缩短项目简称");
@@ -143,7 +143,6 @@ public class ProjectServiceImpl implements IProjectService
     @Override
     public int updateProject(Project project)
     {
-        project.setUpdateTime(DateUtils.getNowDate());
         // 校验 project_code 长度
         if (project.getProjectCode() != null && project.getProjectCode().length() > 500) {
             throw new com.ruoyi.common.exception.ServiceException("项目编号过长（超过500字符），请缩短项目简称");
