@@ -163,7 +163,7 @@
                     type="textarea"
                     :rows="5"
                     :placeholder="'填写 ' + item.projectName + ' 的工作内容...'"
-                    maxlength="2000"
+                    maxlength="5000"
                     show-word-limit
                   />
                 </div>
@@ -224,6 +224,7 @@
                     <el-input v-model="task.workContent" type="textarea" :rows="2"
                       :placeholder="'填写 ' + task.taskName + ' 的工作内容...'"
                       :disabled="!isEditable"
+                      maxlength="5000" show-word-limit
                       style="margin-top:4px;" />
                   </div>
                 </div>
