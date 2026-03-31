@@ -982,16 +982,35 @@ customizations:
          ```
 
       2. Mapper 层（ContractMapper.xml - selectContractSummary）：
-         ```sql
-         select
-             IFNULL(SUM(c.contract_amount), 0) as contractAmountSum,
-             IFNULL(SUM(c.amount_no_tax), 0) as amountNoTaxSum
-         from pm_contract c
-         <where>
-             c.del_flag = '0'
-             -- 与列表查询相同的条件（支持按部门、客户、合同类型等过滤）
-         </where>
+         以 pm_project 为主表，合同金额通过子查询聚合（按 project_id 去重，避免多合同项目工作量重复计算）。
+         合同过滤条件通过 `<include refid="contractFilterConditions"/>` 复用共用 SQL 片段，
+         确认年份（confirmYear）按 pm_project.revenue_confirm_year 过滤（与列表查询口径一致）。
+
+         ```xml
+         <!-- 共用合同过滤条件片段（别名 c），供 selectContractList 和 selectContractSummary 复用 -->
+         <sql id="contractFilterConditions">
+             contractCode / contractName / customerId / deptId（含层级） / contractType / contractStatus
+         </sql>
+
+         <!-- selectContractSummary：以 pm_project 为主表 -->
+         select SUM(pc.contract_amount_sum), SUM(pc.amount_no_tax_sum),
+                SUM(p.project_budget), SUM(p.estimated_workload), ...
+         from pm_project p
+         left join (
+             select rel.project_id, SUM(c.contract_amount), SUM(c.amount_no_tax)
+             from pm_project_contract_rel rel
+             inner join pm_contract c on ...
+             where rel.del_flag = '0'
+             <include refid="contractFilterConditions"/>
+             group by rel.project_id
+         ) pc on p.project_id = pc.project_id
+         where p.del_flag = '0'
+             -- confirmYear 在外层按 pm_project.revenue_confirm_year 过滤
          ```
+
+         **重要**：confirmYear 和 dataScope 不在共用片段中，各查询单独处理：
+         - selectContractList：confirmYear 过滤 contract_id（子查询关联 pm_project.revenue_confirm_year）
+         - selectContractSummary：confirmYear 过滤 project_id（外层 WHERE 关联 pm_project.revenue_confirm_year）
 
       前端实现：
       1. 定义响应式变量存储总计数据：const summaryData = ref({})

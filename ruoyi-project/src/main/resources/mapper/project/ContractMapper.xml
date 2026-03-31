@@ -3,7 +3,20 @@
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.project.mapper.ContractMapper">
-    
+
+    <!-- 合同表共用过滤条件（别名 c），供 selectContractList 和 selectContractSummary 复用 -->
+    <sql id="contractFilterConditions">
+        <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
+        <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
+        <if test="customerId != null "> and c.customer_id = #{customerId}</if>
+        <if test="deptId != null ">
+            and (c.dept_id = #{deptId}
+                 or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+        </if>
+        <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
+        <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+    </sql>
+
     <resultMap type="Contract" id="ContractResult">
         <result property="contractId"    column="contract_id"    />
         <result property="contractCode"    column="contract_code"    />
@@ -110,15 +123,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ) p_agg on c.contract_id = p_agg.contract_id
         <where>
             c.del_flag = '0'
-            <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
-            <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
-            <if test="customerId != null "> and c.customer_id = #{customerId}</if>
-            <if test="deptId != null ">
-                and (c.dept_id = #{deptId}
-                     or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
-            </if>
-            <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
-            <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+            <include refid="contractFilterConditions"/>
             <if test="confirmYear != null  and confirmYear != ''">
                 and c.contract_id in (
                     select rel2.contract_id from pm_project_contract_rel rel2
@@ -174,15 +179,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             from pm_project_contract_rel rel
             inner join pm_contract c on rel.contract_id = c.contract_id and c.del_flag = '0'
             where rel.del_flag = '0'
-            <if test="contractCode != null  and contractCode != ''"> and c.contract_code like concat('%', #{contractCode}, '%')</if>
-            <if test="contractName != null  and contractName != ''"> and c.contract_name like concat('%', #{contractName}, '%')</if>
-            <if test="customerId != null "> and c.customer_id = #{customerId}</if>
-            <if test="deptId != null ">
-                and (c.dept_id = #{deptId}
-                     or c.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
-            </if>
-            <if test="contractType != null  and contractType != ''"> and c.contract_type = #{contractType}</if>
-            <if test="contractStatus != null  and contractStatus != ''"> and c.contract_status = #{contractStatus}</if>
+            <include refid="contractFilterConditions"/>
             group by rel.project_id
         ) pc on p.project_id = pc.project_id
         <where>
