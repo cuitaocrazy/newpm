@@ -334,3 +334,15 @@ customizations:
         paginationHeight: "50px"
         padding: "120px"
     notes: "参考合同管理页面实现，通过flex布局和动态计算表格高度，确保分页组件始终固定在页面底部。"
+
+# ============================
+# 后端 API 汇总
+# ============================
+apiSummary:
+  - "GET    /project/secondaryRegion/list                  → 分页列表（实际 Controller 使用 hasAnyPermi 含11个权限码，覆盖项目/合同/客户/审核等多模块的查询和编辑权限，以便各模块页面均可调用二级区域下拉）"
+  - "GET    /project/secondaryRegion/listByRegion?regionDictValue=xxx → 根据一级区域字典值查询二级区域列表（权限: @ss.hasAnyPermi('project:secondaryRegion:list,project:project:edit,project:project:add')）"
+  - "GET    /project/secondaryRegion/export                → 导出 Excel（export 权限）"
+  - "GET    /project/secondaryRegion/{regionId}             → 单条详情（query 权限）"
+  - "POST   /project/secondaryRegion                       → 新增（add 权限）"
+  - "PUT    /project/secondaryRegion                       → 修改（edit 权限）"
+  - "DELETE /project/secondaryRegion/{regionIds}            → 删除（remove 权限）"

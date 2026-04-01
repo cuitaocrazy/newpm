@@ -259,6 +259,21 @@ extendedFields:
     source: 前端传入
     description: getDeptIdList() 解析为 List<Long> 供 MyBatis foreach 使用
 
+  startDate:
+    javaType: String
+    isPersistent: false
+    notes: "统计查询：起始日期字符串（yyyy-MM-dd），由 Service 层设置，用于 weeklyStats 等统计接口"
+
+  endDate:
+    javaType: String
+    isPersistent: false
+    notes: "统计查询：结束日期字符串（yyyy-MM-dd），由 Service 层设置"
+
+  type:
+    javaType: String
+    isPersistent: false
+    notes: "统计查询：明细类型（submitted=已提交 / unsubmitted=未提交），用于 weeklyStatsDetail"
+
 # ============================
 # pm_daily_report_detail 子表字段
 # ============================
@@ -387,6 +402,34 @@ detailTable:
       javaField: subProjectStage
       source: pm_task.task_stage
 
+    subProjectManagerId:
+      javaType: Long
+      notes: "任务负责人ID（JOIN pm_task.task_manager_id）"
+
+    subProjectManagerName:
+      javaType: String
+      notes: "任务负责人姓名（JOIN sys_user.nick_name）"
+
+    subProjectTaskCode:
+      javaType: String
+      notes: "任务编号（JOIN pm_task.task_code）"
+
+    subProjectBatchNo:
+      javaType: String
+      notes: "投产批次号（JOIN pm_production_batch.batch_no）"
+
+    projectManagerName:
+      javaType: String
+      notes: "项目经理姓名（JOIN sys_user.nick_name via pm_project.project_manager_id）"
+
+    subProjectEstimatedWorkload:
+      javaType: BigDecimal
+      notes: "任务预估工作量人天（JOIN pm_task.estimated_workload）"
+
+    subProjectActualWorkload:
+      javaType: BigDecimal
+      notes: "任务实际工作量人天（ROUND(pm_task.actual_workload/8, 3)）"
+
 # ============================
 # Tab 3: 生成信息
 # ============================
@@ -407,6 +450,7 @@ apiSummary:
   # DailyReportController
   - "POST   /project/dailyReport                          → 保存日报（新增或覆盖当日，级联处理 detailList）"
   - "GET    /project/dailyReport/my/{reportDate}          → 加载指定日期的日报详情（当前用户）"
+  - "GET    /project/dailyReport/{reportId}               → 按主键获取日报详情（含 detailList）"
   - "GET    /project/dailyReport/list                     → 分页日报列表（管理视角，支持 yearMonth/userId/deptId 等）"
   - "GET    /project/dailyReport/monthly                  → 月览数据（当前用户，yearMonth 参数，返回每日摘要含 leaveSummary）"
   - "GET    /project/dailyReport/myProjects               → 当前用户的项目列表（含 hasSubProject 标志）"

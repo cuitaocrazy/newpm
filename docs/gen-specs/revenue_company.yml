@@ -1,11 +1,15 @@
 # ============================
 # 公司收入确认管理配置
 # ============================
+# 注意：这是一个**前端页面规格文件**，不是标准 CRUD 表的 spec。
+# 本页面没有独立的后端 Controller，后端由 ProjectController 的 /project/project/revenue/** 端点提供服务。
+# ProjectReviewController（/project/review/**）用于项目审批/审核，与公司收入确认无关。
+# ============================
 basicInfo:
   pagePath: /revenue/company/index.vue
-  pageComment: 公司收入确认管理页面
+  pageComment: 公司收入确认管理页面（前端页面规格，非标准 CRUD 表 spec）
   functionAuthor: ruoyi
-  remark: ""
+  remark: "后端接口由 ProjectController 提供（/project/project/revenue/**），无独立 Controller"
 
 # ============================
 # Tab 2: 字段信息

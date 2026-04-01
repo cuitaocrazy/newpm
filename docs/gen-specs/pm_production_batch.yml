@@ -128,3 +128,16 @@ customizations:
       returns: "[{ batchNo }]"
       newApi: true
     notes: "仅用于查询条件，新增/编辑中 batch_no 保持 input 输入"
+
+# ============================
+# 后端 API 汇总
+# ============================
+apiSummary:
+  - "GET    /project/productionBatch/list                  → 分页列表（权限: project:productionBatch:list）"
+  - "GET    /project/productionBatch/{batchId}              → 单条详情（权限: project:productionBatch:query）"
+  - "POST   /project/productionBatch                       → 新增（权限: project:productionBatch:add）"
+  - "PUT    /project/productionBatch                       → 修改（权限: project:productionBatch:edit）"
+  - "DELETE /project/productionBatch/{batchIds}             → 删除（权限: project:productionBatch:remove）"
+  - "POST   /project/productionBatch/export                → 导出 Excel（权限: project:productionBatch:export）"
+  - "GET    /project/productionBatch/batchNoOptions         → 获取所有批次号下拉选项（权限: project:productionBatch:list）"
+  - "GET    /project/productionBatch/byYear?productionYear=xxx → 按投产年份查询批次列表（任务管理联动），权限: @ss.hasAnyPermi('project:task:list,project:task:add')"

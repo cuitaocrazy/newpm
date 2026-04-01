@@ -23,7 +23,7 @@ basicInfo:
       待变更=info/蓝, 已变更=primary/深蓝, 合同作废=danger/红）
     - 附件管理：独立路由页面，格式 doc/docx/xls/xlsx/pdf/csv/png/jpg/gif/txt/7z/zip/gz，单个≤30MB
     - 列表合计行：第一行显示所有查询结果的合同金额/不含税金额总计（非当前页小计）
-    - 列表排序：ORDER BY COALESCE(update_time, create_time) DESC
+    - 列表排序：ORDER BY c.update_time DESC（实际 mapper selectContractList 排序）
     - 删除保护：有关联款项或附件时禁止删除，防止孤立数据
     - 列显隐：用户可自定义18列的显示/隐藏，设置保存在浏览器本地存储
     - 操作按钮使用 type="text" link（Element Plus 规范写法）
@@ -887,7 +887,7 @@ customizations:
       - 审计信息列显示在备注列之后、操作列之前
       - 创建日期和最后更新日期显示格式：yyyy-MM-dd HH:mm:ss
       - 创建人和最后更新人显示用户姓名（createByName/updateByName），如果姓名为空则显示用户名（createBy/updateBy）
-      - 列表排序：ORDER BY COALESCE(update_time, create_time) DESC（更新时间优先，无则按创建时间）
+      - 列表排序：ORDER BY c.update_time DESC（实际 mapper 排序）
 
       合同名称列交互优化：
       - 合同名称显示为蓝色链接（el-link 组件）
@@ -2396,7 +2396,7 @@ implementation:
     - 列显隐功能：用户可自定义18个列的显示/隐藏，设置保存在浏览器本地存储
     - 详情页面：7个部分（合同基本信息、时间周期、金额、付款里程碑、附件列表、关联项目、备注审计）
     - 删除业务规则：有关联款项或附件时禁止删除，确保数据完整性
-    - 列表排序：ORDER BY COALESCE(update_time, create_time) DESC
+    - 列表排序：ORDER BY c.update_time DESC（实际 mapper 排序）
 
   technicalStack:
     backend:

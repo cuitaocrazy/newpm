@@ -927,7 +927,7 @@ customizations:
           - paymentConfirmYear: 款项确认年份（EQ）
           - actualPaymentDateStart: 实际回款日期开始（GTE）
           - actualPaymentDateEnd: 实际回款日期结束（LTE）
-      sortOrder: ORDER BY COALESCE(p.update_time, p.create_time) DESC
+      sortOrder: ORDER BY p.update_time DESC（实际 mapper 排序）
 
     dataModel:
       Contract:

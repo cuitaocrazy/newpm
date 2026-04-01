@@ -762,8 +762,8 @@ customizations:
         POST /export（导出）：
         @PreAuthorize("@ss.hasPermi('project:customer:export')")
 
-        GET /{customerId}（详情，供项目编辑页查询客户信息）：
-        @PreAuthorize("@ss.hasAnyPermi('project:customer:query,project:project:query,project:project:edit')")
+        GET /{customerId}（详情，供项目编辑页和任务详情页查询客户信息）：
+        @PreAuthorize("@ss.hasAnyPermi('project:customer:query,project:customer:edit,project:project:query,project:project:edit,project:task:query')")
 
         GET /checkSimpleNameUnique（唯一性检查）：
         @PreAuthorize("@ss.hasPermi('project:customer:list')")
@@ -778,10 +778,10 @@ customizations:
         @PreAuthorize("@ss.hasPermi('project:customer:remove')")
 
         GET /contact/listByCustomer（按客户ID查询联系人列表）：
-        @PreAuthorize("@ss.hasAnyPermi('project:customer:list,project:project:query,project:project:edit,project:project:add')")
+        @PreAuthorize("@ss.hasAnyPermi('project:customer:list,project:project:query,project:project:edit,project:project:add,project:project:attachment,revenue:team:query')")
         - 参数：customerId（Long，必填）
         - 返回：{ data: [CustomerContact] }
-        - 供项目详情/编辑页独立查询联系人使用
+        - 供项目详情/编辑页、项目附件页、团队收入确认页独立查询联系人使用
 
         GET /listAll（查询所有客户，供合同/下拉选择用）：
         @PreAuthorize("@ss.hasAnyPermi('project:customer:list,project:contract:list,project:contract:add,project:contract:edit,project:contract:query,project:payment:list')")

@@ -34,7 +34,7 @@ columns:
     isEdit: false    # 编辑时只读，不可修改
     isList: true
     isQuery: true
-    queryType: LIKE
+    queryType: EQ    # Mapper 使用 = #{projectCode}，非 LIKE
     isRequired: true
     htmlType: input
     dictType: ""
@@ -937,6 +937,7 @@ columns:
 
   # ========== 子项目层级字段（当 project_level=1 时为子项目） ==========
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   parent_id:
     columnComment: 父项目ID，NULL 表示顶层主项目
     columnType: bigint
@@ -951,6 +952,7 @@ columns:
     htmlType: input
     dictType: ""
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   project_level:
     columnComment: 项目层级：0=主项目（默认），1=子项目
     columnType: int
@@ -965,6 +967,7 @@ columns:
     htmlType: input
     dictType: ""
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   task_code:
     columnComment: 子项目编号（子项目在父项目内的简短标识，主项目为NULL）
     columnType: varchar(50)
@@ -985,6 +988,7 @@ columns:
 
   # ========== 任务相关字段（从子项目迁移至 pm_task，pm_project 保留列供历史数据兼容） ==========
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   batch_id:
     columnComment: 投产批次ID（FK → pm_production_batch.batch_id）
     columnType: bigint
@@ -1000,6 +1004,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.batch_id，pm_project 此列为历史兼容"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   production_year:
     columnComment: 投产年份（字典:sys_ndgl）
     columnType: varchar(20)
@@ -1015,6 +1020,7 @@ columns:
     dictType: "sys_ndgl"
     notes: "任务专用字段，主字段已迁移至 pm_task.production_year，pm_project 此列为历史兼容"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   bank_demand_no:
     columnComment: 总行需求号
     columnType: varchar(100)
@@ -1030,6 +1036,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.bank_demand_no"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   software_demand_no:
     columnComment: 软件中心需求编号
     columnType: varchar(100)
@@ -1045,6 +1052,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.software_demand_no"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   product:
     columnComment: 二级产品（字典:sys_product）
     columnType: varchar(50)
@@ -1060,6 +1068,7 @@ columns:
     dictType: "sys_product"
     notes: "任务专用字段，主字段已迁移至 pm_task.product"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   schedule_status:
     columnComment: 排期状态（字典:sys_pqzt）
     columnType: varchar(20)
@@ -1075,6 +1084,7 @@ columns:
     dictType: "sys_pqzt"
     notes: "任务专用字段，主字段已迁移至 pm_task.schedule_status"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   internal_closure_date:
     columnComment: 内部B包日期（内部闭包日期）
     columnType: date
@@ -1090,6 +1100,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.internal_closure_date"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   functional_test_date:
     columnComment: 功能测试版本日期
     columnType: date
@@ -1105,6 +1116,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.functional_test_date"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   production_version_date:
     columnComment: 生产版本日期
     columnType: date
@@ -1120,6 +1132,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.production_version_date"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   actual_production_date:
     columnComment: 实际投产日期
     columnType: date
@@ -1135,6 +1148,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.actual_production_date"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   function_description:
     columnComment: 功能点说明
     columnType: text
@@ -1150,6 +1164,7 @@ columns:
     dictType: ""
     notes: "任务专用字段，主字段已迁移至 pm_task.function_description"
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   implementation_plan:
     columnComment: 实施计划
     columnType: text
@@ -1440,6 +1455,7 @@ extendedFields:
     description: 子项目列表显示计划投产日期（非DB）
 
   # --- Task 来源的审计字段（TaskMapper 从 pm_task 读取，作为 Project 代理返回） ---
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   taskCreateBy:
     columnComment: 任务创建人（来自 pm_task.create_by）
     javaType: String
@@ -1447,6 +1463,7 @@ extendedFields:
     source: pm_task.create_by
     description: TaskMapper selectTaskList 填充
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   taskCreateTime:
     columnComment: 任务创建时间（来自 pm_task.create_time）
     javaType: Date
@@ -1454,6 +1471,7 @@ extendedFields:
     source: pm_task.create_time
     description: TaskMapper selectTaskList 填充
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   taskUpdateBy:
     columnComment: 任务更新人（来自 pm_task.update_by）
     javaType: String
@@ -1461,6 +1479,7 @@ extendedFields:
     source: pm_task.update_by
     description: TaskMapper selectTaskList 填充
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   taskUpdateTime:
     columnComment: 任务更新时间（来自 pm_task.update_time）
     javaType: Date
@@ -1468,6 +1487,7 @@ extendedFields:
     source: pm_task.update_time
     description: TaskMapper selectTaskList 填充
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   taskCreateByName:
     columnComment: 任务创建人昵称（关联 sys_user.nick_name）
     javaType: String
@@ -1475,6 +1495,7 @@ extendedFields:
     source: "sys_user.nick_name (JOIN via pm_task.create_by)"
     description: TaskMapper selectTaskList 填充
 
+  # DEPRECATED: migrated to pm_task, retained in YML for historical reference only
   taskUpdateByName:
     columnComment: 任务更新人昵称（关联 sys_user.nick_name）
     javaType: String
@@ -1493,6 +1514,108 @@ genInfo:
   businessName: project
   functionName: 项目管理
   parentMenuId: 3
+
+# ============================
+# API 端点汇总（ProjectController 提供的全部端点）
+# ============================
+apiSummary:
+  # --- 标准 CRUD ---
+  - method: GET
+    path: /project/project/list
+    description: 项目列表（分页）
+    permission: project:project:list
+  - method: GET
+    path: /project/project/{id}
+    description: 项目详情
+    permission: project:project:query
+  - method: POST
+    path: /project/project
+    description: 新增项目
+    permission: project:project:add
+  - method: PUT
+    path: /project/project
+    description: 修改项目
+    permission: project:project:edit
+  - method: DELETE
+    path: /project/project/{ids}
+    description: 删除项目
+    permission: project:project:remove
+  - method: POST
+    path: /project/project/export
+    description: 导出项目
+    permission: project:project:export
+  - method: GET
+    path: /project/project/summary
+    description: 项目列表合计汇总
+    permission: project:project:list
+  - method: GET
+    path: /project/project/checkCode
+    description: 校验项目编号唯一性
+
+  # --- 收入确认 ---
+  - method: GET
+    path: /project/project/revenue/list
+    description: 公司收入确认列表
+    permission: revenue:company:list
+  - method: GET
+    path: /project/project/revenue/{projectId}
+    description: 收入确认详情
+    permission: revenue:company:query
+  - method: PUT
+    path: /project/project/revenue
+    description: 保存收入确认
+    permission: revenue:company:edit
+  - method: POST
+    path: /project/project/revenue/export
+    description: 导出收入确认
+    permission: revenue:company:export
+
+  # --- 合同关联 ---
+  - method: GET
+    path: /project/project/{id}/contract
+    description: 项目关联合同
+    permission: project:contract:list
+  - method: POST
+    path: /project/project/{id}/bindContract
+    description: 绑定合同
+    permission: project:contract:add
+  - method: DELETE
+    path: /project/project/{id}/unbindContract
+    description: 解绑合同
+    permission: project:contract:unbind
+  - method: GET
+    path: /project/project/{id}/participantsWorkload
+    description: 参与人工时
+    permission: project:project:query
+
+  # --- 代理/辅助端点（供前端下拉、搜索等使用，避免 PM 用户直接调 system/ 端点 403） ---
+  - method: GET
+    path: /project/project/users?postCode=xxx
+    description: 按岗位查用户（代理 system/user）
+  - method: GET
+    path: /project/project/deptTree
+    description: 部门树（含数据权限）
+  - method: GET
+    path: /project/project/deptTreeAll
+    description: 部门树（无数据权限）
+  - method: GET
+    path: /project/project/customers
+    description: 客户列表
+  - method: GET
+    path: /project/project/customerContacts?customerId=xxx
+    description: 客户联系人
+  - method: GET
+    path: /project/project/secondaryRegions?regionDictValue=xxx
+    description: 二级区域
+  - method: GET
+    path: /project/project/search
+    description: 项目搜索（autocomplete 用，max 20条）
+  - method: GET
+    path: /project/project/listByDept
+    description: 按部门查项目
+  - method: GET
+    path: /project/project/listByName
+    description: 按名称查项目
 
 # ============================
 # 定制需求（超出标准模板的组件/交互/接口需求）

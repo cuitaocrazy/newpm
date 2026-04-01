@@ -523,8 +523,9 @@ customizations:
       handleBatchChange()：初始化 batchForm = { newStage: null, changeReason: null }，打开弹窗
 
       submitBatchChange 提交（POST /project/projectStageChange/batchChange，@RequestBody JSON）：
-        { projectIds: selectedRows.map(r => r.projectId), newStage, changeReason }
+        { projectIds: selectedRows.map(r => r.projectId), newStage, changeReason, newProjectStatus }
         调用 batchChangeStage(data)
+        注意：Controller 同时接受 newProjectStatus 参数（字典: sys_xmzt），允许批量变更时同步修改项目状态
 
       Controller：@PreAuthorize("@ss.hasPermi('project:projectStageChange:batchChange')")
         从 @RequestBody ProjectStageChange request 中取 projectIds/newStage/changeReason

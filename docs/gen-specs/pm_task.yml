@@ -205,7 +205,7 @@ columns:
     excelConfig:
       export: true
       name: 实际工作量(小时)
-    notes: "前端列表展示时换算为人天: actualWorkload/8，后端存储为小时"
+    notes: "前端列表展示时换算为人天: actualWorkload/8，后端存储为小时。selectTaskList 返回原始小时数，selectTaskOptions 返回 ROUND(actual_workload/8, 3) 人天值。前端列表需自行换算。"
 
   production_year:
     columnComment: 投产年度（字典 sys_ndgl）
@@ -534,6 +534,8 @@ extendedFields:
     javaType: String
     javaField: parentProjectName
     source: pm_project.project_name
+    isQuery: true
+    queryType: LIKE
     description: 列表页"主项目名称"列，TaskMapper 查询 pm_project LEFT JOIN pm_task
 
   projectStatus:
@@ -718,7 +720,7 @@ apiSummary:
   - "POST   /project/task                         → 新增任务"
   - "PUT    /project/task                         → 修改任务"
   - "DELETE /project/task/{taskIds}               → 硬删除（无 del_flag）"
-  - "POST   /project/task/export                  → 导出 Excel"
+  - "POST   /project/task/export                  → 导出 Excel（未实现 — 源码中 TaskController 无此端点）"
   - "GET    /project/task/options?projectId=xxx   → 轻量下拉选项（日报选择子项目）"
   - "GET    /project/task/projectsHasTasks        → 批量检查哪些项目有任务"
   - "GET    /project/task/searchTaskCode          → 任务编号自动补全"
@@ -747,7 +749,7 @@ customizations:
     spec: |
       selectTaskList 以 pm_project 为主表（LEFT JOIN pm_task），意味着：
       - 有任务的项目：pm_task 字段有值，pm_project 字段提供父项目上下文
-      - 无任务的项目：pm_task 字段全为 NULL（不会出现在列表，因为 WHERE pm_task.task_id IS NOT NULL 或类似过滤）
+      - 无任务的项目：pm_task 字段全为 NULL（仍会出现在列表中，因为使用 LEFT JOIN 而非 INNER JOIN，无额外 WHERE 过滤）
       TaskMapper 读取 pm_project 字段时，展示在 Task 的 parentProjectName / projectCode 等扩展字段中
 
       排序：ORDER BY pm_project.project_id ASC, pm_task.task_code ASC

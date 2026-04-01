@@ -1065,6 +1065,7 @@ implementation_summary:
     - "详情部门路径：buildDeptPath(deptId) 解析 ancestors，三级及以下，-连接"
     - "详情客户联系方式：loadCustomerContactPhone(customerId, contactId) 异步加载"
     - "详情参与人员：setTimeout(500ms) 等 allUsers 加载完成后过滤姓名"
+    - "Controller POST/PUT 接口使用 Map<String, Object> 作为 @RequestBody，而非标准 TeamRevenueConfirmation 域对象。这是有意的设计选择，用于灵活处理前端传入的混合字段（如 projectId、deptId、confirmAmount 等来自不同表的字段），Service 层负责从 Map 中提取并校验各字段。"
 
   related_files:
     backend:
