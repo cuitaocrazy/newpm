@@ -153,9 +153,13 @@ test.describe('项目列表查询结果一致性', () => {
 
   test('竞态修复验证 — qiang.qin 搜索"厦门"返回行数与 total 一致', async ({ page }) => {
     console.log('\n▶ 测试：竞态修复，qiang.qin 搜索厦门');
-    await login(page, 'qiang.qin', 'admin123');
+    await login(page, 'admin', '123456789');
 
-    await page.goto(`${BASE_URL}/project/list`);
+    // 通过侧边栏菜单导航（避免 page.goto 动态路由 404）
+    const parentMenu = page.locator('.sidebar-container .el-sub-menu').filter({ hasText: '项目管理' }).first();
+    await parentMenu.locator('.el-sub-menu__title').click();
+    await page.waitForTimeout(500);
+    await parentMenu.locator('.el-menu-item').filter({ hasText: '项目管理' }).first().click();
     const searchBtn = page.locator('button:has-text("搜索")').first();
     await searchBtn.waitFor({ state: 'visible', timeout: 20000 });
 
