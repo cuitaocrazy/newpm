@@ -115,6 +115,16 @@ public class ProjectApprovalServiceImpl implements IProjectApprovalService
     @Transactional
     public int approveProject(Long projectId, String approvalStatus, String approvalReason)
     {
+        // 校验当前状态：只有"待审核(0)"和"退回待审核(3)"才能审批
+        Project current = projectMapper.selectProjectByProjectId(projectId);
+        if (current == null) {
+            throw new ServiceException("项目不存在");
+        }
+        String currentStatus = current.getApprovalStatus();
+        if (!"0".equals(currentStatus) && !"3".equals(currentStatus)) {
+            throw new ServiceException("当前审核状态不允许此操作");
+        }
+
         Date now = new Date();
         String approverId = String.valueOf(SecurityUtils.getUserId());
         String approverName = SecurityUtils.getUsername();

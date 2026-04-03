@@ -13,6 +13,7 @@ import com.ruoyi.project.mapper.ProjectMapper;
 import com.ruoyi.project.domain.Project;
 import com.ruoyi.project.domain.ProjectManagerChange;
 import com.ruoyi.project.domain.vo.ProjectManagerChangeVO;
+import com.ruoyi.project.service.IProjectService;
 import com.ruoyi.project.service.IProjectManagerChangeService;
 
 /**
@@ -29,6 +30,9 @@ public class ProjectManagerChangeServiceImpl implements IProjectManagerChangeSer
 
     @Autowired
     private ProjectMapper projectMapper;
+
+    @Autowired
+    private IProjectService projectService;
 
     /**
      * 查询项目经理变更
@@ -151,6 +155,10 @@ public class ProjectManagerChangeServiceImpl implements IProjectManagerChangeSer
 
         // 更新项目表的项目经理（不触碰 update_by / update_time）
         int rows = projectMapper.updateProjectManagerId(projectId, newManagerId);
+
+        // 同步项目成员表（确保新经理出现在 pm_project_member 中）
+        Project updatedProject = projectMapper.selectProjectByProjectId(projectId);
+        projectService.syncProjectMembers(updatedProject);
 
         // 记录变更
         ProjectManagerChange change = new ProjectManagerChange();

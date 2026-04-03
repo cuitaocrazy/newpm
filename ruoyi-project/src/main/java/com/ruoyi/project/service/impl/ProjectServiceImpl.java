@@ -48,6 +48,12 @@ public class ProjectServiceImpl implements IProjectService
     @Autowired
     private IProjectMemberService projectMemberService;
 
+    @Autowired
+    private com.ruoyi.project.mapper.TaskMapper taskMapper;
+
+    @Autowired
+    private com.ruoyi.project.mapper.ProjectMemberMapper memberMapper;
+
     /**
      * 查询项目管理
      *
@@ -163,8 +169,23 @@ public class ProjectServiceImpl implements IProjectService
      * @return 结果
      */
     @Override
+    @Transactional
     public int deleteProjectByProjectIds(Long[] projectIds)
     {
+        for (Long projectId : projectIds) {
+            // 检查是否有关联合同
+            Long contractId = contractMapper.selectContractIdByProjectId(projectId);
+            if (contractId != null) {
+                throw new ServiceException("项目已关联合同，请先解除合同关联后再删除");
+            }
+            // 检查是否有子任务
+            int taskCount = taskMapper.countTasksByProjectId(projectId);
+            if (taskCount > 0) {
+                throw new ServiceException("项目下存在子任务，请先删除子任务后再删除项目");
+            }
+            // 级联删除项目成员
+            memberMapper.deleteByProjectId(projectId);
+        }
         return projectMapper.deleteProjectByProjectIds(projectIds);
     }
 
@@ -523,7 +544,8 @@ public class ProjectServiceImpl implements IProjectService
      *
      * @param project 项目对象
      */
-    private void syncProjectMembers(Project project)
+    @Override
+    public void syncProjectMembers(Project project)
     {
         Long projectId = project.getProjectId();
         if (projectId == null)

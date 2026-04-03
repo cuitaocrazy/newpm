@@ -292,10 +292,49 @@ public class DailyReportServiceImpl implements IDailyReportService
     @Transactional
     public int deleteDailyReportByIds(Long[] reportIds)
     {
-        // 先物理删除明细
+        // 删除前收集受影响的项目和子任务ID，用于工时重算
+        Set<Long> affectedProjectIds = new java.util.HashSet<>();
+        Set<Long> affectedSubProjectIds = new java.util.HashSet<>();
+        for (Long reportId : reportIds) {
+            List<DailyReportDetail> details = detailMapper.selectByReportId(reportId);
+            if (details != null) {
+                for (DailyReportDetail d : details) {
+                    if ("work".equals(d.getEntryType()) && d.getProjectId() != null) {
+                        affectedProjectIds.add(d.getProjectId());
+                    }
+                    if ("work".equals(d.getEntryType()) && d.getSubProjectId() != null) {
+                        affectedSubProjectIds.add(d.getSubProjectId());
+                    }
+                }
+            }
+        }
+
+        // 物理删除明细和主记录
         detailMapper.deleteByReportIds(reportIds);
-        // 再物理删除主记录
-        return dailyReportMapper.deleteDailyReportByIds(reportIds);
+        int rows = dailyReportMapper.deleteDailyReportByIds(reportIds);
+
+        // 重算受影响子任务的工时
+        for (Long taskId : affectedSubProjectIds) {
+            BigDecimal taskHours = detailMapper.sumWorkHoursBySubProjectId(taskId);
+            taskMapper.updateActualWorkload(taskId, taskHours);
+        }
+
+        // 重算受影响主项目的工时
+        if (!affectedSubProjectIds.isEmpty()) {
+            List<Long> parentProjectIds = taskMapper.selectProjectIdsByTaskIds(
+                    new java.util.ArrayList<>(affectedSubProjectIds));
+            for (Long parentProjectId : parentProjectIds) {
+                BigDecimal totalTaskHours = taskMapper.sumActualWorkloadByProjectId(parentProjectId);
+                projectMapper.updateActualWorkload(parentProjectId, totalTaskHours);
+                affectedProjectIds.remove(parentProjectId);
+            }
+        }
+        for (Long projectId : affectedProjectIds) {
+            BigDecimal directHours = detailMapper.sumWorkHoursByProjectId(projectId);
+            projectMapper.updateActualWorkload(projectId, directHours);
+        }
+
+        return rows;
     }
 
     /**

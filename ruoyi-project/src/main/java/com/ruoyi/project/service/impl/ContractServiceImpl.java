@@ -161,14 +161,7 @@ public class ContractServiceImpl implements IContractService
             }
         }
 
-        // 计算不含税金额和税金
-        if (contract.getContractAmount() != null && contract.getTaxRate() != null) {
-            BigDecimal taxRate = contract.getTaxRate().divide(new BigDecimal(100));
-            BigDecimal amountNoTax = contract.getContractAmount().divide(BigDecimal.ONE.add(taxRate), 2, RoundingMode.HALF_UP);
-            BigDecimal taxAmount = contract.getContractAmount().subtract(amountNoTax);
-            contract.setAmountNoTax(amountNoTax);
-            contract.setTaxAmount(taxAmount);
-        }
+        calculateTaxAmounts(contract);
 
         String username = SecurityUtils.getUsername();
         java.util.Date now = DateUtils.getNowDate();
@@ -216,14 +209,7 @@ public class ContractServiceImpl implements IContractService
     @Transactional
     public int updateContract(Contract contract)
     {
-        // 计算不含税金额和税金
-        if (contract.getContractAmount() != null && contract.getTaxRate() != null) {
-            BigDecimal taxRate = contract.getTaxRate().divide(new BigDecimal(100));
-            BigDecimal amountNoTax = contract.getContractAmount().divide(BigDecimal.ONE.add(taxRate), 2, RoundingMode.HALF_UP);
-            BigDecimal taxAmount = contract.getContractAmount().subtract(amountNoTax);
-            contract.setAmountNoTax(amountNoTax);
-            contract.setTaxAmount(taxAmount);
-        }
+        calculateTaxAmounts(contract);
 
         contract.setUpdateBy(SecurityUtils.getUsername());
         contract.setUpdateTime(DateUtils.getNowDate());
@@ -410,5 +396,20 @@ public class ContractServiceImpl implements IContractService
     public BigDecimal sumPaymentAmount(Contract contract)
     {
         return contractMapper.sumPaymentAmount(contract);
+    }
+
+    /**
+     * 根据合同金额和税率计算不含税金额和税金
+     * 公式：不含税金额 = 合同金额 / (1 + 税率/100)，税金 = 合同金额 - 不含税金额
+     */
+    void calculateTaxAmounts(Contract contract) {
+        if (contract.getContractAmount() == null || contract.getTaxRate() == null) {
+            return;
+        }
+        BigDecimal taxRate = contract.getTaxRate().divide(new BigDecimal(100), 10, RoundingMode.HALF_UP);
+        BigDecimal amountNoTax = contract.getContractAmount().divide(BigDecimal.ONE.add(taxRate), 2, RoundingMode.HALF_UP);
+        BigDecimal taxAmount = contract.getContractAmount().subtract(amountNoTax);
+        contract.setAmountNoTax(amountNoTax);
+        contract.setTaxAmount(taxAmount);
     }
 }

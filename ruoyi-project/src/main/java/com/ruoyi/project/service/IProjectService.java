@@ -201,4 +201,11 @@ public interface IProjectService
      * 解除项目的合同关联
      */
     public void unbindContractFromProject(Long projectId);
+
+    /**
+     * 同步项目成员表（根据项目的经理字段和参与人重建 pm_project_member）
+     *
+     * @param project 包含 projectId 和各经理/参与人字段的项目对象
+     */
+    public void syncProjectMembers(Project project);
 }

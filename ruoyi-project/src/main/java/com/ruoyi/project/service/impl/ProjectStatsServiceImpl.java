@@ -90,11 +90,19 @@ public class ProjectStatsServiceImpl implements IProjectStatsService
     public void correctAdjustWorkload(Long projectId, Integer direction, BigDecimal delta,
                                       BigDecimal afterAdjust, String reason)
     {
+        if (delta == null) {
+            throw new com.ruoyi.common.exception.ServiceException("补正值不能为空");
+        }
         BigDecimal beforeAdjust = projectStatsMapper.selectCurrentAdjustWorkload(projectId);
         if (beforeAdjust == null) beforeAdjust = BigDecimal.ZERO;
 
+        // 服务端计算 afterAdjust，不信任客户端传值
+        BigDecimal computedAfterAdjust = (direction != null && direction == 1)
+                ? beforeAdjust.add(delta)
+                : beforeAdjust.subtract(delta);
+
         // 更新项目表
-        projectStatsMapper.updateAdjustWorkload(projectId, afterAdjust);
+        projectStatsMapper.updateAdjustWorkload(projectId, computedAfterAdjust);
 
         // 记录补正日志
         WorkloadCorrectLog log = new WorkloadCorrectLog();
@@ -102,7 +110,7 @@ public class ProjectStatsServiceImpl implements IProjectStatsService
         log.setDirection(direction);
         log.setDelta(delta);
         log.setBeforeAdjust(beforeAdjust);
-        log.setAfterAdjust(afterAdjust);
+        log.setAfterAdjust(computedAfterAdjust);
         log.setReason(reason);
         log.setCreateBy(SecurityUtils.getUsername());
         projectStatsMapper.insertCorrectLog(log);
