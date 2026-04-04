@@ -334,6 +334,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT COUNT(*) FROM pm_task WHERE project_id = #{projectId}
     </select>
 
+    <select id="countTasksByBatchId" parameterType="Long" resultType="int">
+        SELECT COUNT(*) FROM pm_task WHERE batch_id = #{batchId}
+    </select>
+
     <update id="updateActualWorkload">
         UPDATE pm_task SET actual_workload = #{hours}, update_time = update_time WHERE task_id = #{taskId}
     </update>

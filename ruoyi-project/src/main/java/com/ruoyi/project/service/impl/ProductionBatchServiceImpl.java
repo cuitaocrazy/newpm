@@ -20,6 +20,9 @@ public class ProductionBatchServiceImpl implements IProductionBatchService
     @Autowired
     private ProductionBatchMapper productionBatchMapper;
 
+    @Autowired
+    private com.ruoyi.project.mapper.TaskMapper taskMapper;
+
     /**
      * 查询投产批次管理
      * 
@@ -79,6 +82,14 @@ public class ProductionBatchServiceImpl implements IProductionBatchService
     @Override
     public int deleteProductionBatchByBatchIds(Long[] batchIds)
     {
+        for (Long batchId : batchIds) {
+            int taskCount = taskMapper.countTasksByBatchId(batchId);
+            if (taskCount > 0) {
+                ProductionBatch batch = productionBatchMapper.selectProductionBatchByBatchId(batchId);
+                String name = batch != null ? batch.getBatchNo() : String.valueOf(batchId);
+                throw new com.ruoyi.common.exception.ServiceException("【" + name + "】已被任务引用，不可删除");
+            }
+        }
         return productionBatchMapper.deleteProductionBatchByBatchIds(batchIds);
     }
 

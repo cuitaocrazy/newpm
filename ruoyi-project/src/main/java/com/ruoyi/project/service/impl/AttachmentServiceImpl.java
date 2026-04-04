@@ -313,7 +313,7 @@ public class AttachmentServiceImpl implements IAttachmentService
             {
                 return null;
             }
-            return "合同" + File.separator + businessId + "_" + contract.getContractName();
+            return "合同" + File.separator + businessId + "_" + sanitizePathName(contract.getContractName());
         }
         else if ("project".equals(businessType))
         {
@@ -322,7 +322,7 @@ public class AttachmentServiceImpl implements IAttachmentService
             {
                 return null;
             }
-            return "项目" + File.separator + businessId + "_" + project.getProjectName();
+            return "项目" + File.separator + businessId + "_" + sanitizePathName(project.getProjectName());
         }
         else if ("payment".equals(businessType))
         {
@@ -331,8 +331,16 @@ public class AttachmentServiceImpl implements IAttachmentService
             {
                 return null;
             }
-            return "款项" + File.separator + businessId + "_" + payment.getPaymentMethodName();
+            return "款项" + File.separator + businessId + "_" + sanitizePathName(payment.getPaymentMethodName());
         }
         return null;
+    }
+
+    /**
+     * 过滤路径敏感字符，防止路径穿越
+     */
+    private String sanitizePathName(String name) {
+        if (name == null) return "";
+        return name.replaceAll("[/\\\\]", "_").replace("..", "_");
     }
 }

@@ -84,4 +84,9 @@ public interface CustomerMapper
      * @return 结果
      */
     public int deleteCustomerContactByCustomerId(Long customerId);
+
+    /**
+     * 统计引用该客户的项目数量
+     */
+    public int countProjectsByCustomerId(Long customerId);
 }

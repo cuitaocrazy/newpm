@@ -99,7 +99,7 @@ public class CustomerServiceImpl implements ICustomerService
         // 验证客户简称唯一性
         if (!checkCustomerSimpleNameUnique(customer.getCustomerSimpleName(), null))
         {
-            throw new RuntimeException("客户简称已存在");
+            throw new com.ruoyi.common.exception.ServiceException("客户简称已存在");
         }
 
         String username = SecurityUtils.getUsername();
@@ -126,7 +126,7 @@ public class CustomerServiceImpl implements ICustomerService
         // 验证客户简称唯一性
         if (!checkCustomerSimpleNameUnique(customer.getCustomerSimpleName(), customer.getCustomerId()))
         {
-            throw new RuntimeException("客户简称已存在");
+            throw new com.ruoyi.common.exception.ServiceException("客户简称已存在");
         }
 
         customer.setUpdateBy(SecurityUtils.getUsername());
@@ -146,6 +146,14 @@ public class CustomerServiceImpl implements ICustomerService
     @Override
     public int deleteCustomerByCustomerIds(Long[] customerIds)
     {
+        for (Long customerId : customerIds) {
+            int projectCount = customerMapper.countProjectsByCustomerId(customerId);
+            if (projectCount > 0) {
+                Customer c = customerMapper.selectCustomerByCustomerId(customerId);
+                String name = c != null ? c.getCustomerSimpleName() : String.valueOf(customerId);
+                throw new com.ruoyi.common.exception.ServiceException("【" + name + "】已关联项目，不可删除");
+            }
+        }
         customerMapper.deleteCustomerContactByCustomerIds(customerIds);
         return customerMapper.deleteCustomerByCustomerIds(customerIds);
     }

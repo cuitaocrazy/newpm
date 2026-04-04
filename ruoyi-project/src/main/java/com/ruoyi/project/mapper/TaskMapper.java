@@ -36,6 +36,9 @@ public interface TaskMapper {
     /** 统计项目的任务数量 */
     int countTasksByProjectId(@Param("projectId") Long projectId);
 
+    /** 统计引用该批次的任务数量 */
+    int countTasksByBatchId(@Param("batchId") Long batchId);
+
     /**
      * 更新任务实际工作量（日报保存时调用）
      * @param taskId 任务ID

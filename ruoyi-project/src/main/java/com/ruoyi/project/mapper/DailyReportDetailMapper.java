@@ -63,4 +63,7 @@ public interface DailyReportDetailMapper
      * @return 结果
      */
     public int deleteByReportIds(Long[] reportIds);
+
+    /** 统计引用指定子任务的日报明细数量 */
+    int countBySubProjectId(@Param("subProjectId") Long subProjectId);
 }

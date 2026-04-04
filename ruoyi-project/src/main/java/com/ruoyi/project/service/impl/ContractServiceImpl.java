@@ -209,6 +209,16 @@ public class ContractServiceImpl implements IContractService
     @Transactional
     public int updateContract(Contract contract)
     {
+        // 检查新绑定的项目是否已关联其他合同（排除自身）
+        if (contract.getProjectIds() != null && !contract.getProjectIds().isEmpty()) {
+            for (Long projectId : contract.getProjectIds()) {
+                Long existingContractId = contractMapper.selectContractIdByProjectId(projectId);
+                if (existingContractId != null && !existingContractId.equals(contract.getContractId())) {
+                    throw new ServiceException("项目已关联其他合同，无法重复添加");
+                }
+            }
+        }
+
         calculateTaxAmounts(contract);
 
         contract.setUpdateBy(SecurityUtils.getUsername());
