@@ -187,4 +187,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ( #{item.contactId}, #{item.customerId}, #{item.contactName}, #{item.contactPhone}, #{item.contactTag}, #{item.delFlag}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark})
         </foreach>
     </insert>
+
+    <select id="countProjectsByCustomerId" parameterType="Long" resultType="int">
+        select count(*) from pm_project where customer_id = #{customerId}
+    </select>
 </mapper>

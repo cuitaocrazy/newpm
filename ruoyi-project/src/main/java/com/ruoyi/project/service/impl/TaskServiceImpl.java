@@ -19,6 +19,9 @@ public class TaskServiceImpl implements ITaskService {
     @Autowired
     private TaskMapper taskMapper;
 
+    @Autowired
+    private com.ruoyi.project.mapper.DailyReportDetailMapper detailMapper;
+
     @Override
     @DataScope(deptAlias = "d", userAlias = "u_create")
     public List<Task> selectTaskList(Task task) {
@@ -52,6 +55,14 @@ public class TaskServiceImpl implements ITaskService {
 
     @Override
     public int deleteTaskByIds(Long[] taskIds) {
+        for (Long taskId : taskIds) {
+            int detailCount = detailMapper.countBySubProjectId(taskId);
+            if (detailCount > 0) {
+                Task task = taskMapper.selectTaskById(taskId);
+                String name = task != null ? task.getTaskName() : String.valueOf(taskId);
+                throw new com.ruoyi.common.exception.ServiceException("【" + name + "】已有日报记录，不可删除");
+            }
+        }
         return taskMapper.deleteTaskByIds(taskIds);
     }
 

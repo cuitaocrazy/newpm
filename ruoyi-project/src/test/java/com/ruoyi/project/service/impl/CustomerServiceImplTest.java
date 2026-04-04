@@ -104,7 +104,7 @@ class CustomerServiceImplTest {
     }
 
     @Test
-    @DisplayName("新增客户：简称重复时抛RuntimeException")
+    @DisplayName("新增客户：简称重复时抛ServiceException")
     void insertCustomer_duplicateName() {
         Customer existing = new Customer();
         existing.setCustomerId(1L);
@@ -113,8 +113,7 @@ class CustomerServiceImplTest {
         Customer customer = new Customer();
         customer.setCustomerSimpleName("已有客户");
 
-        // 注意：当前代码抛 RuntimeException 而非 ServiceException（已知问题 H11）
-        assertThrows(RuntimeException.class, () -> service.insertCustomer(customer));
+        assertThrows(com.ruoyi.common.exception.ServiceException.class, () -> service.insertCustomer(customer));
         verify(customerMapper, never()).insertCustomer(any());
     }
 
