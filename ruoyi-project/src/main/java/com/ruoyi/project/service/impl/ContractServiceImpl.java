@@ -300,6 +300,17 @@ public class ContractServiceImpl implements IContractService
         return contractMapper.searchContracts(keyword);
     }
 
+    /**
+     * 按数据权限搜索合同编号/合同名称（autoComplete）。
+     * 与合同列表一致：按合同部门(d) + 创建人(u1) 注入数据权限。
+     */
+    @Override
+    @DataScope(deptAlias = "d", userAlias = "u1")
+    public List<Map<String, Object>> searchContractsForFilter(Contract contract)
+    {
+        return contractMapper.searchContractsForFilter(contract);
+    }
+
     @Override
     public List<Map<String, Object>> listContractsByDept(Long deptId, String keyword)
     {

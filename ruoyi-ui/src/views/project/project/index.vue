@@ -136,6 +136,26 @@
           style="width: 240px"
         />
       </el-form-item>
+      <el-form-item label="合同编号" prop="contractCode">
+        <el-autocomplete
+          v-model="queryParams.contractCode"
+          :fetch-suggestions="remoteQueryContractCodes"
+          clearable
+          placeholder="输入关键字搜索，或直接选择下拉数据"
+          style="width: 240px"
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="合同名称" prop="contractName">
+        <el-autocomplete
+          v-model="queryParams.contractName"
+          :fetch-suggestions="remoteQueryContractNames"
+          clearable
+          placeholder="输入关键字搜索，或直接选择下拉数据"
+          style="width: 240px"
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -495,7 +515,7 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, getProject } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, searchContractsForFilter, getProject } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/review"
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
@@ -580,6 +600,8 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     projectName: null,
+    contractCode: null,
+    contractName: null,
     projectDept: null,
     revenueConfirmYear: null,
     projectCategory: null,
@@ -738,6 +760,22 @@ function formatAmount(value) {
 function remoteQueryProjectNames(query, callback) {
   searchProjects(query || '').then(res => {
     callback((res.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => callback([]))
+}
+
+/** 合同编号远程搜索（按数据权限过滤，去重） */
+function remoteQueryContractCodes(query, callback) {
+  searchContractsForFilter({ contractCode: query || '' }).then(res => {
+    const codes = [...new Set((res.data || []).map(c => c.contractCode).filter(Boolean))]
+    callback(codes.map(code => ({ value: code })))
+  }).catch(() => callback([]))
+}
+
+/** 合同名称远程搜索（按数据权限过滤，去重） */
+function remoteQueryContractNames(query, callback) {
+  searchContractsForFilter({ contractName: query || '' }).then(res => {
+    const names = [...new Set((res.data || []).map(c => c.contractName).filter(Boolean))]
+    callback(names.map(name => ({ value: name })))
   }).catch(() => callback([]))
 }
 

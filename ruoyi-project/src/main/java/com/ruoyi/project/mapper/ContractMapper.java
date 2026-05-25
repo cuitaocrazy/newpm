@@ -80,6 +80,15 @@ public interface ContractMapper
     public List<Contract> searchContracts(String keyword);
 
     /**
+     * 按数据权限搜索合同编号/合同名称（用于项目管理、公司收入确认页面的查询条件 autoComplete）
+     * 通过 d/u1 别名配合 @DataScope 注入数据权限，仅返回当前用户有权查看的合同
+     *
+     * @param contract 携带 contractCode / contractName 模糊关键词及 params.dataScope
+     * @return 精简字段：contractId, contractCode, contractName
+     */
+    public List<Map<String, Object>> searchContractsForFilter(Contract contract);
+
+    /**
      * 按部门查询合同（轻量，用于关联合同选择器）
      */
     public List<Map<String, Object>> listContractsByDept(@org.apache.ibatis.annotations.Param("deptId") Long deptId,
