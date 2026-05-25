@@ -317,6 +317,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         limit 100
     </select>
 
+    <!-- 按数据权限搜索合同（项目管理 / 公司收入确认 查询条件 autoComplete） -->
+    <select id="searchContractsForFilter" parameterType="Contract" resultType="java.util.Map">
+        select
+            c.contract_id   as contractId,
+            c.contract_code as contractCode,
+            c.contract_name as contractName
+        from pm_contract c
+        left join sys_dept d on c.dept_id = d.dept_id
+        left join sys_user u1 on c.create_by = u1.user_name COLLATE utf8mb4_0900_ai_ci
+        where c.del_flag = '0'
+        <if test="contractCode != null and contractCode != ''">
+            and c.contract_code like concat('%', #{contractCode}, '%')
+        </if>
+        <if test="contractName != null and contractName != ''">
+            and c.contract_name like concat('%', #{contractName}, '%')
+        </if>
+        ${params.dataScope}
+        order by c.create_time desc
+        limit 20
+    </select>
+
     <select id="selectContractWithPaymentsList" parameterType="Contract" resultMap="ContractWithPaymentsResult">
         select
             c.contract_id, c.contract_code, c.contract_name, c.customer_id, c.dept_id,

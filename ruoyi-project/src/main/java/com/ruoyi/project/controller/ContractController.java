@@ -123,6 +123,21 @@ public class ContractController extends BaseController
     }
 
     /**
+     * 按数据权限搜索合同编号/合同名称（项目管理、公司收入确认查询条件 autoComplete）
+     * 仅返回当前用户数据权限范围内的合同；contractCode/contractName 二选一传入
+     */
+    @PreAuthorize("@ss.hasAnyPermi('project:project:list,revenue:company:list,project:contract:list')")
+    @GetMapping("/searchForFilter")
+    public AjaxResult searchForFilter(@RequestParam(required = false) String contractCode,
+                                      @RequestParam(required = false) String contractName)
+    {
+        Contract contract = new Contract();
+        contract.setContractCode(contractCode);
+        contract.setContractName(contractName);
+        return success(contractService.searchContractsForFilter(contract));
+    }
+
+    /**
      * 按部门查询合同（用于项目关联合同选择器）
      */
     @PreAuthorize("@ss.hasAnyPermi('project:contract:query,project:contract:list,project:contract:add,project:project:edit')")

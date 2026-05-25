@@ -136,6 +136,26 @@
           style="width: 240px"
         />
       </el-form-item>
+      <el-form-item label="合同编号" prop="contractCode">
+        <el-autocomplete
+          v-model="queryParams.contractCode"
+          :fetch-suggestions="remoteQueryContractCodes"
+          clearable
+          placeholder="输入关键字搜索，或直接选择下拉数据"
+          style="width: 240px"
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="合同名称" prop="contractName">
+        <el-autocomplete
+          v-model="queryParams.contractName"
+          :fetch-suggestions="remoteQueryContractNames"
+          clearable
+          placeholder="输入关键字搜索，或直接选择下拉数据"
+          style="width: 240px"
+          @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -339,34 +359,40 @@
     >
       <div v-loading="printLoading" style="min-height: 200px;">
         <div v-if="printProject" id="print-content-area" class="print-document">
-          <h2 class="print-title">立项申请书</h2>
+          <h2 class="print-title">项目立项申请书</h2>
           <table class="print-table">
             <colgroup>
-              <col style="width: 14%">
-              <col style="width: 22%">
-              <col style="width: 14%">
+              <col style="width: 16%">
               <col style="width: 22%">
               <col style="width: 12%">
               <col style="width: 16%">
+              <col style="width: 12%">
+              <col style="width: 22%">
             </colgroup>
             <tbody>
               <tr>
                 <td class="cell-label">项目名称</td>
                 <td colspan="2">{{ printProject.projectName }}</td>
-                <td class="cell-label">项目分类</td>
+                <td class="cell-label">项目类型</td>
                 <td colspan="2">{{ getDictLabel(sys_xmfl, printProject.projectCategory) }}</td>
               </tr>
               <tr>
                 <td class="cell-label">项目编号</td>
-                <td colspan="2">{{ printProject.projectCode }}</td>
-                <td class="cell-label">项目负责人</td>
-                <td colspan="2">{{ printProject.projectManagerName || '-' }}</td>
+                <td colspan="5">{{ printProject.projectCode }}</td>
               </tr>
               <tr>
-                <td class="cell-label">项目预算(元)</td>
-                <td colspan="2">{{ formatAmount(printProject.projectBudget) }}</td>
-                <td class="cell-label">工作量评估(人天)</td>
-                <td colspan="2">{{ printProject.estimatedWorkload != null ? printProject.estimatedWorkload : '-' }}</td>
+                <td class="cell-label">任务编号</td>
+                <td colspan="5" class="cell-multi">{{ printTaskCodeText }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">任务名称</td>
+                <td colspan="5" class="cell-multi">{{ printTaskNameText }}</td>
+              </tr>
+              <tr>
+                <td class="cell-label">所属团队</td>
+                <td colspan="2">{{ getDeptName(printProject.projectDept) }}</td>
+                <td class="cell-label">项目经理</td>
+                <td colspan="2">{{ printProject.projectManagerName || '-' }}</td>
               </tr>
               <tr>
                 <td class="cell-label">客户单位</td>
@@ -375,7 +401,7 @@
                 <td colspan="2">{{ printProject.projectAddress || '-' }}</td>
               </tr>
               <tr>
-                <td class="cell-label">客户联系人</td>
+                <td class="cell-label">业务联系人</td>
                 <td colspan="2">{{ printProject.customerContactName || '-' }}</td>
                 <td class="cell-label">联系方式</td>
                 <td colspan="2">{{ printProject.customerContactPhone || '-' }}</td>
@@ -387,11 +413,11 @@
                 <td colspan="2">{{ printProject.salesContact || '-' }}</td>
               </tr>
               <tr>
-                <td class="cell-label">项目参与人员</td>
-                <td colspan="5">{{ getParticipantsNames(printProject.participants) }}</td>
+                <td class="cell-label">预算金额(元)</td>
+                <td colspan="5">{{ formatAmount(printProject.projectBudget) }}</td>
               </tr>
               <tr>
-                <td class="cell-label">项目概述</td>
+                <td class="cell-label">项目概况</td>
                 <td colspan="5" class="cell-content">{{ printProject.projectDescription || '' }}</td>
               </tr>
               <tr>
@@ -417,11 +443,11 @@
                 <td colspan="5"></td>
               </tr>
               <tr class="sig-row">
-                <td class="cell-label">副总经理意见(签字)</td>
+                <td class="cell-label">副总经理室意见(签字)</td>
                 <td colspan="5"></td>
               </tr>
               <tr class="sig-row">
-                <td class="cell-label">总经理意见(签字)</td>
+                <td class="cell-label">总经理室意见(签字)</td>
                 <td colspan="5"></td>
               </tr>
             </tbody>
@@ -495,8 +521,9 @@
 </template>
 
 <script setup name="ProjectList">
-import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, getProject } from "@/api/project/project"
+import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, searchContractsForFilter, getProject } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/review"
+import { listTask } from "@/api/project/task"
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
 import { checkPermi } from "@/utils/permission"
@@ -560,6 +587,15 @@ const approvalHistory = ref([])
 const printDialogVisible = ref(false)
 const printProject = ref(null)
 const printLoading = ref(false)
+// 当前项目下的任务（来自 pm_task），用于立项申请书的任务编号/任务名称
+const printTasks = ref([])
+// 多任务时逐行展示；无任务时留空供手工填写
+const printTaskCodeText = computed(() =>
+  (printTasks.value || []).map(t => t.taskCode).filter(Boolean).join('\n')
+)
+const printTaskNameText = computed(() =>
+  (printTasks.value || []).map(t => t.taskName).filter(Boolean).join('\n')
+)
 
 // 关联合同：跳转到独立页面
 function handleBindContract(row) {
@@ -580,6 +616,8 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     projectName: null,
+    contractCode: null,
+    contractName: null,
     projectDept: null,
     revenueConfirmYear: null,
     projectCategory: null,
@@ -741,6 +779,22 @@ function remoteQueryProjectNames(query, callback) {
   }).catch(() => callback([]))
 }
 
+/** 合同编号远程搜索（按数据权限过滤，去重） */
+function remoteQueryContractCodes(query, callback) {
+  searchContractsForFilter({ contractCode: query || '' }).then(res => {
+    const codes = [...new Set((res.data || []).map(c => c.contractCode).filter(Boolean))]
+    callback(codes.map(code => ({ value: code })))
+  }).catch(() => callback([]))
+}
+
+/** 合同名称远程搜索（按数据权限过滤，去重） */
+function remoteQueryContractNames(query, callback) {
+  searchContractsForFilter({ contractName: query || '' }).then(res => {
+    const names = [...new Set((res.data || []).map(c => c.contractName).filter(Boolean))]
+    callback(names.map(name => ({ value: name })))
+  }).catch(() => callback([]))
+}
+
 /** 搜索按钮操作 */
 function handleQuery() {
   queryParams.value.pageNum = 1
@@ -806,10 +860,16 @@ function handleAttachment(row) {
 function handlePrint(row) {
   proxy.$modal.confirm('是否确认打印该项目的立项申请书？').then(() => {
     printProject.value = null
+    printTasks.value = []
     printLoading.value = true
     printDialogVisible.value = true
-    getProject(row.projectId).then(response => {
-      printProject.value = response.data
+    Promise.all([
+      getProject(row.projectId),
+      // 用任务列表查询取全量任务（含已结项），与"任务管理"列表口径一致
+      listTask({ projectId: row.projectId, pageNum: 1, pageSize: 1000 })
+    ]).then(([projectRes, taskRes]) => {
+      printProject.value = projectRes.data
+      printTasks.value = (taskRes.rows || []).filter(t => t.taskId)
     }).finally(() => {
       printLoading.value = false
     })
@@ -843,6 +903,7 @@ function doActualPrint() {
     td { border: 1px solid #000; padding: 8px 10px; vertical-align: middle; font-size: 11pt; }
     .cell-label { background-color: #f0f0f0; font-weight: bold; white-space: nowrap; text-align: center; }
     .cell-content { min-height: 60px; vertical-align: top; padding: 10px; }
+    .cell-multi { white-space: pre-line; vertical-align: top; }
     .sig-row td { height: 55px; }
   </style>
 </head>
@@ -1049,6 +1110,11 @@ loadDeptTree()
       min-height: 60px;
       vertical-align: top;
       padding: 10px 12px;
+    }
+
+    .cell-multi {
+      white-space: pre-line;
+      vertical-align: top;
     }
 
     .sig-row td {

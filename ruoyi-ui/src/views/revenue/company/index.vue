@@ -50,8 +50,6 @@
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="10">
         <el-col :span="6">
           <el-form-item label="一级区域" prop="region">
             <dict-select
@@ -101,8 +99,6 @@
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="10">
         <el-col :span="6">
           <el-form-item label="立项年度" prop="establishedYear">
             <dict-select
@@ -147,8 +143,30 @@
             />
           </el-form-item>
         </el-col>
-      </el-row>
-      <el-row :gutter="10">
+        <el-col :span="6">
+          <el-form-item label="合同编号" prop="contractCode">
+            <el-autocomplete
+              v-model="queryParams.contractCode"
+              :fetch-suggestions="queryContractCodes"
+              clearable
+              placeholder="输入关键字搜索，或直接选择下拉数据"
+              style="width: 100%"
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="合同名称" prop="contractName">
+            <el-autocomplete
+              v-model="queryParams.contractName"
+              :fetch-suggestions="queryContractNames"
+              clearable
+              placeholder="输入关键字搜索，或直接选择下拉数据"
+              style="width: 100%"
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+        </el-col>
         <el-col :span="6">
           <el-form-item label="合同状态" prop="contractStatus">
             <dict-select
@@ -366,7 +384,7 @@
 <script setup name="RevenueCompany">
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { listRevenue, getRevenueSummary, exportRevenue } from "@/api/revenue/company"
-import { getDeptTree, searchProjects } from "@/api/project/project"
+import { getDeptTree, searchProjects, searchContractsForFilter } from "@/api/project/project"
 import { handleTree } from '@/utils/ruoyi'
 import { useRouter } from 'vue-router'
 import { toPersonDays } from '@/utils/workload'
@@ -428,6 +446,8 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     projectName: null,
+    contractCode: null,
+    contractName: null,
     projectDept: null,
     revenueConfirmYear: null,
     projectCategory: null,
@@ -602,6 +622,22 @@ function getParticipantsNames(participants) {
 function queryProjectNames(queryString, cb) {
   searchProjects(queryString || '').then(response => {
     cb((response.data || []).map(p => ({ value: p.projectName })))
+  }).catch(() => cb([]))
+}
+
+/** 合同编号下拉选项（按数据权限过滤，去重） */
+function queryContractCodes(queryString, cb) {
+  searchContractsForFilter({ contractCode: queryString || '' }).then(response => {
+    const codes = [...new Set((response.data || []).map(c => c.contractCode).filter(Boolean))]
+    cb(codes.map(code => ({ value: code })))
+  }).catch(() => cb([]))
+}
+
+/** 合同名称下拉选项（按数据权限过滤，去重） */
+function queryContractNames(queryString, cb) {
+  searchContractsForFilter({ contractName: queryString || '' }).then(response => {
+    const names = [...new Set((response.data || []).map(c => c.contractName).filter(Boolean))]
+    cb(names.map(name => ({ value: name })))
   }).catch(() => cb([]))
 }
 

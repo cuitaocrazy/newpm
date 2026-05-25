@@ -78,6 +78,14 @@ public interface IContractService
     public List<Contract> searchContracts(String keyword);
 
     /**
+     * 按数据权限搜索合同编号/合同名称（项目管理、公司收入确认查询条件 autoComplete）
+     *
+     * @param contract 携带 contractCode / contractName 模糊关键词
+     * @return 精简字段：contractId, contractCode, contractName（已按数据权限过滤）
+     */
+    public List<Map<String, Object>> searchContractsForFilter(Contract contract);
+
+    /**
      * 按部门查询合同（用于关联合同选择器，不影响现有查询）
      */
     public List<Map<String, Object>> listContractsByDept(Long deptId, String keyword);

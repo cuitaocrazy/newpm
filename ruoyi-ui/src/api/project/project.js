@@ -145,6 +145,16 @@ export function searchProjects(projectName) {
   })
 }
 
+// 按数据权限搜索合同编号/合同名称（项目管理、公司收入确认查询条件 autoComplete）
+// 传 { contractCode } 或 { contractName }，返回当前用户数据权限内的合同
+export function searchContractsForFilter(params) {
+  return request({
+    url: '/project/contract/searchForFilter',
+    method: 'get',
+    params
+  })
+}
+
 // 根据项目ID查询关联的合同信息
 export function getContractByProjectId(projectId) {
   return request({

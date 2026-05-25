@@ -158,6 +158,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <!-- 合同编号/合同名称：在 ca 子查询聚合出的 GROUP_CONCAT 结果上模糊匹配，项目任一关联合同命中即返回 -->
+            <if test="contractCode != null  and contractCode != ''"> and ca.contract_code like concat('%', #{contractCode}, '%')</if>
+            <if test="contractName != null  and contractName != ''"> and ca.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
             <if test="regionId != null "> and p.region_id = #{regionId}</if>
@@ -254,6 +257,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>
             p.del_flag = '0'
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <!-- 合同编号/合同名称：与列表查询保持一致的过滤口径 -->
+            <if test="contractCode != null  and contractCode != ''"> and ca.contract_code like concat('%', #{contractCode}, '%')</if>
+            <if test="contractName != null  and contractName != ''"> and ca.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
             <if test="regionId != null "> and p.region_id = #{regionId}</if>
             <if test="establishedYear != null "> and p.established_year = #{establishedYear}</if>
@@ -289,7 +295,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LEFT JOIN (
             SELECT pcr.project_id,
                    SUM(c.contract_amount) AS contract_amount,
-                   MAX(c.contract_status) AS contract_status
+                   MAX(c.contract_status) AS contract_status,
+                   GROUP_CONCAT(c.contract_name ORDER BY c.contract_id SEPARATOR '\n') AS contract_name,
+                   GROUP_CONCAT(c.contract_code ORDER BY c.contract_id SEPARATOR '\n') AS contract_code
             FROM pm_project_contract_rel pcr
             JOIN pm_contract c ON pcr.contract_id = c.contract_id AND c.del_flag = '0'
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
@@ -308,6 +316,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.del_flag = '0'
             <if test="projectCode != null  and projectCode != ''"> and p.project_code = #{projectCode}</if>
             <if test="projectName != null  and projectName != ''"> and p.project_name like concat('%', #{projectName}, '%')</if>
+            <!-- 合同编号/合同名称：在 ca 子查询聚合出的 GROUP_CONCAT 结果上模糊匹配，项目任一关联合同命中即返回 -->
+            <if test="contractCode != null  and contractCode != ''"> and ca.contract_code like concat('%', #{contractCode}, '%')</if>
+            <if test="contractName != null  and contractName != ''"> and ca.contract_name like concat('%', #{contractName}, '%')</if>
             <if test="industry != null  and industry != ''"> and p.industry = #{industry}</if>
             <if test="region != null  and region != ''"> and p.region = #{region}</if>
             <if test="regionId != null "> and p.region_id = #{regionId}</if>
