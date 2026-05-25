@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import com.ruoyi.common.core.deserializer.TrimStringJsonDeserializer;
 
 /**
  * 程序注解配置
@@ -20,11 +21,14 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 public class ApplicationConfig
 {
     /**
-     * 时区配置
+     * 时区配置 + 全局字符串 trim（去除 @RequestBody 中所有 String 字段的首尾空格，密码类字段除外）
      */
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jacksonObjectMapperCustomization()
     {
-        return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder.timeZone(TimeZone.getDefault());
+        return jacksonObjectMapperBuilder -> {
+            jacksonObjectMapperBuilder.timeZone(TimeZone.getDefault());
+            jacksonObjectMapperBuilder.deserializerByType(String.class, new TrimStringJsonDeserializer());
+        };
     }
 }
