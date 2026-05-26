@@ -70,8 +70,8 @@ RUN sed -i 's|profile: D:/ruoyi/uploadPath|profile: /app/uploadPath|' \
 RUN cat > ruoyi-admin/src/main/java/com/ruoyi/web/controller/common/SpaController.java << 'JAVAEOF'
 package com.ruoyi.web.controller.common;
 
-import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -80,17 +80,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * SPA前端路由回退控制器（ErrorController 实现）
  * Spring MVC 先正常路由，404 时才 fallback 到 index.html，
  * 不干扰任何 API 路径的 GET/POST/PUT/DELETE。
+ *
+ * 缓存关键点：所有 SPA 深链接（如 /project/list）和根路径 / 都没有对应 handler，
+ * 都会 404 回退到这里再 forward 到 index.html。必须在此处禁缓存，否则浏览器会对
+ * 这些 URL 的 HTML 响应做启发式缓存，发版后仍加载旧入口引用的旧哈希 JS，需手动强刷。
  */
 @Controller
 public class SpaController implements ErrorController
 {
     @RequestMapping("/error")
-    public String handleError(HttpServletRequest request)
+    public String handleError(HttpServletRequest request, HttpServletResponse response)
     {
-        Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
-        if (status != null && Integer.parseInt(status.toString()) == 404) {
-            return "forward:/index.html";
-        }
+        // SPA 入口 HTML 禁止缓存：每次回服务器校验，保证发版后立即拿到引用新哈希资源的入口
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
         return "forward:/index.html";
     }
 }
