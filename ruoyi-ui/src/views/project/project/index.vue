@@ -334,7 +334,7 @@
             >收入确认</el-button>
 
             <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:attachment']">附件管理</el-button>
-            <el-button link type="primary" icon="Printer" @click="handlePrint(scope.row)" v-hasPermi="['project:project:print']">打印立项申请</el-button>
+            <el-button link type="primary" icon="Printer" @click="handlePrint(scope.row)" v-hasPermi="['project:project:print']">打印立项申请书</el-button>
             <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
           </template>
         </template>
