@@ -17,6 +17,7 @@ import directive from './directive' // directive
 // 注册指令
 import plugins from './plugins' // plugins
 import { download } from '@/utils/request'
+import { startVersionCheck } from '@/utils/version-check'
 
 // svg图标
 import 'virtual:svg-icons-register'
@@ -107,3 +108,6 @@ app.use(ElementPlus, {
 })
 
 app.mount('#app')
+
+// 运行时版本检测：发版后自动静默刷新（开着不动的标签页也能吃到新版本）
+startVersionCheck()
