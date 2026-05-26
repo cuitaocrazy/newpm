@@ -2,121 +2,130 @@
  * 项目立项申请书打印 —— 数据取数回归测试
  * API-based，无浏览器。
  *
- * 打印功能在「项目管理」列表操作列，前端纯组装：
- *   getProject(projectId)  —— 项目主体（项目名称/编号/客户/所属团队 projectDept 等）
- *   listTask({ projectId }) —— 该项目下"全部"任务，渲染任务编号/任务名称（多任务逐行）
+ * 打印功能在「项目管理」列表操作列（按钮文案「打印立项申请」），前端纯组装：
+ *   getProject(projectId) —— 项目主体，提供打印所需的全部字段
  *
- * 本次修复的核心 bug：最初用 /project/task/options 取任务，该接口是给日报下拉用的，
- * 带 `task_stage != '11'` 过滤，会藏掉已结项任务（如 stage=11），导致打印少显示任务。
- * 改用 /project/task/list（任务管理同款，无阶段过滤）。
+ * 打印版式（2026-05 改造后）：
+ *   - 「立项日期」取 project.applyDate（原取 create_time，已改）；为空前端显示 '-'
+ *   - 「所属部门」取 project.projectDept（标签由「所属团队」改为「所属部门」，取数字段不变）
+ *   - 「项目概况」「项目计划」取 projectDescription / projectPlan，支持换行
+ *   - 已去掉「任务编号」「任务名称」两行 —— 打印不再调用 listTask
  *
- * 测试项：
- *  1. 打印取数：getProject 返回项目主体且含 projectDept（所属团队来源）
- *  2. 打印取数：listTask 返回该项目全部任务，且含 taskCode/taskName 两列
- *  3. 回归：含已结项任务(stage=11)的项目，list 取得到、options 取不到
+ * 本测试锁死：
+ *  1. getProject 自足提供打印主体字段（projectName/projectCode/projectDept），无需 listTask
+ *  2. applyDate 往返：创建时写入 → getProject 读回相等（验证 Mapper insert + resultMap 三处镜像）
+ *  3. applyDate 可更新：编辑改值 → getProject 读回为新值（验证 Mapper update 镜像）
+ *  4. 旧项目 applyDate 为空时字段仍存在（前端 printProject.applyDate 引用，需保证 property 在）
  */
 
 import { test, expect } from '@playwright/test';
 import { setupApi } from './helpers/api-client.js';
 
 let api;
+let createdProjectId = null;
 
-/** 含任务的 projectId（任务 taskId 非空） */
-let projectIdWithTasks = null;
-/** 含已结项任务(stage=11)的项目及该任务（用于回归对比） */
-let projectIdWithClosedTask = null;
-let closedTask = null;
+const APPLY_DATE_INIT = '2026-05-26';
+const APPLY_DATE_UPDATED = '2026-06-01';
 
 test.describe.serial('项目立项申请书打印 - 取数', () => {
 
   test.beforeAll(async () => {
     api = await setupApi();
 
-    // 全量扫一遍任务，定位"含任务的项目"和"含结项任务的项目"
-    const all = await api.get('/project/task/list', { pageNum: 1, pageSize: 1000 });
-    expect(all.code, '任务列表应返回200').toBe(200);
-    const validTasks = (all.rows || []).filter(r => r.taskId != null);
+    // 自建测试项目（带 applyDate），不依赖库中既有数据
+    const stamp = Date.now();
+    const createRes = await api.post('/project/project', {
+      projectName: `E2E打印立项日期测试_${stamp}`,
+      industry: 'ZH',
+      region: 'BJ',
+      regionId: '11',
+      shortName: 'PRINT',
+      establishedYear: '2026',
+      projectCode: `ZH-BJ-11-PRINT-2026-${stamp}`,
+      projectCategory: 'RJKF',
+      projectDept: '216',
+      projectStatus: '1',
+      acceptanceStatus: '0',
+      estimatedWorkload: '10',
+      projectBudget: '100000',
+      projectManagerId: '1',
+      projectDescription: '打印取数测试\n第二行：验证项目概况换行',
+      projectPlan: '计划第一行\n计划第二行',
+      applyDate: APPLY_DATE_INIT
+    });
+    expect(createRes.code, '创建测试项目应返回200').toBe(200);
 
-    // 优先挑"编号和名称都非空"的任务所在项目，让列内容断言更有意义；否则退回任意含任务项目
-    const richTask = validTasks.find(r => r.taskCode && r.taskName);
-    if (richTask) {
-      projectIdWithTasks = richTask.projectId;
-    } else if (validTasks.length > 0) {
-      projectIdWithTasks = validTasks[0].projectId;
-    }
-    closedTask = validTasks.find(r => String(r.taskStage) === '11') || null;
-    if (closedTask) {
-      projectIdWithClosedTask = closedTask.projectId;
-    }
-    console.log(`含任务项目=${projectIdWithTasks}，含结项任务项目=${projectIdWithClosedTask}` +
-      (closedTask ? `（任务 ${closedTask.taskCode} / ${closedTask.taskName}）` : '（无 stage=11 任务）'));
+    // 按编号反查 projectId
+    const listRes = await api.get('/project/project/list', { projectCode: `ZH-BJ-11-PRINT-2026-${stamp}`, pageNum: 1, pageSize: 1 });
+    expect(listRes.total, '应能查到刚创建的项目').toBeGreaterThanOrEqual(1);
+    createdProjectId = listRes.rows[0].projectId;
+    console.log(`测试项目已创建：id=${createdProjectId}, applyDate=${APPLY_DATE_INIT}`);
   });
 
   test.afterAll(async () => {
-    if (api) await api.dispose();
+    if (api) {
+      if (createdProjectId) await api.del(`/project/project/${createdProjectId}`);
+      await api.dispose();
+    }
   });
 
   // ─────────────────────────────────────────────
-  // 1. getProject 返回项目主体且含 projectDept（所属团队来源）
+  // 1. getProject 自足提供打印主体字段（无需 listTask）
   // ─────────────────────────────────────────────
-  test('getProject 返回项目主体，含 projectDept（所属团队）', async () => {
-    test.skip(projectIdWithTasks == null, '当前库中无含任务的项目，跳过');
-
-    const res = await api.get(`/project/project/${projectIdWithTasks}`);
+  test('getProject 自足返回打印主体字段（项目名称/编号/所属部门）', async () => {
+    const res = await api.get(`/project/project/${createdProjectId}`);
     expect(res.code, 'getProject 应返回200').toBe(200);
     expect(res.data, '应返回项目对象').toBeTruthy();
     expect(res.data.projectName, '项目名称应存在').toBeTruthy();
     expect(res.data.projectCode, '项目编号应存在').toBeTruthy();
-    // 所属团队 = 项目部门：前端用 getDeptName(projectDept) 渲染，需保证字段存在
-    expect(res.data, 'projectDept 字段应存在（所属团队来源）').toHaveProperty('projectDept');
-    console.log(`项目主体 OK：${res.data.projectName} / ${res.data.projectCode} / dept=${res.data.projectDept}`);
+    // 所属部门 = 项目部门：前端用 getDeptName(projectDept) 渲染
+    expect(res.data, 'projectDept 字段应存在（所属部门来源）').toHaveProperty('projectDept');
+    // 概况/计划：打印用 white-space:pre-line 渲染换行，字段需带回原始换行
+    expect(res.data.projectDescription, '项目概况应保留换行').toContain('\n');
+    expect(res.data.projectPlan, '项目计划应保留换行').toContain('\n');
+    console.log(`打印主体 OK：${res.data.projectName} / ${res.data.projectCode} / dept=${res.data.projectDept}`);
   });
 
   // ─────────────────────────────────────────────
-  // 2. listTask 返回该项目全部任务，且含 taskCode / taskName
+  // 2. 立项日期取数：applyDate 往返相等（insert + resultMap）
   // ─────────────────────────────────────────────
-  test('listTask 返回该项目全部任务，含 taskCode/taskName 两列', async () => {
-    test.skip(projectIdWithTasks == null, '当前库中无含任务的项目，跳过');
-
-    const res = await api.get('/project/task/list', { projectId: projectIdWithTasks, pageNum: 1, pageSize: 1000 });
-    expect(res.code, 'listTask 应返回200').toBe(200);
-    const tasks = (res.rows || []).filter(r => r.taskId != null);
-    expect(tasks.length, '该项目应至少有1个任务').toBeGreaterThan(0);
-    // 打印的两列：任务编号 / 任务名称 —— 字段必须存在
-    for (const t of tasks) {
-      expect(t, '任务应含 taskCode').toHaveProperty('taskCode');
-      expect(t, '任务应含 taskName').toHaveProperty('taskName');
-    }
-    // 前端 computed 用 .filter(Boolean) 拼接，至少应有一个任务名称非空，否则两列全空无意义
-    const nonEmptyNames = tasks.map(t => t.taskName).filter(Boolean);
-    expect(nonEmptyNames.length, '至少应有1个非空任务名称用于渲染').toBeGreaterThan(0);
-    console.log(`listTask 取到 ${tasks.length} 个任务：${tasks.map(t => t.taskCode || '(无编号)').join(', ')}`);
+  test('立项日期取数：getProject 返回 applyDate 且等于创建时所填值', async () => {
+    const res = await api.get(`/project/project/${createdProjectId}`);
+    expect(res.code).toBe(200);
+    expect(res.data, 'applyDate 字段应存在（打印立项日期来源）').toHaveProperty('applyDate');
+    // @JsonFormat(pattern="yyyy-MM-dd") 序列化，可直接前缀比对
+    expect(String(res.data.applyDate).substring(0, 10),
+      'applyDate 应等于创建时写入的值（验证 Mapper insert/resultMap）').toBe(APPLY_DATE_INIT);
+    console.log(`立项日期取数 OK：applyDate=${res.data.applyDate}`);
   });
 
   // ─────────────────────────────────────────────
-  // 3. 回归：含结项任务(stage=11)的项目，list 取得到、options 取不到
-  //    —— 锁死"打印必须用 listTask 而非 options"的修复
+  // 3. applyDate 可更新（update 镜像）
   // ─────────────────────────────────────────────
-  test('回归：已结项任务(stage=11) list 能取到、options 被过滤', async () => {
-    test.skip(closedTask == null, '当前库中无 stage=11 任务，跳过此回归用例');
+  test('编辑修改 applyDate 后 getProject 读回为新值', async () => {
+    const cur = (await api.get(`/project/project/${createdProjectId}`)).data;
+    const updRes = await api.put('/project/project', { ...cur, applyDate: APPLY_DATE_UPDATED });
+    expect(updRes.code, '编辑应返回200').toBe(200);
 
-    // listTask（打印用）应包含该结项任务
-    const listRes = await api.get('/project/task/list', { projectId: projectIdWithClosedTask, pageNum: 1, pageSize: 1000 });
-    expect(listRes.code).toBe(200);
-    const listTasks = (listRes.rows || []).filter(r => r.taskId != null);
-    const listCodes = listTasks.map(t => t.taskCode);
-    expect(listCodes, `listTask 应包含结项任务 ${closedTask.taskCode}`).toContain(closedTask.taskCode);
+    const after = (await api.get(`/project/project/${createdProjectId}`)).data;
+    expect(String(after.applyDate).substring(0, 10),
+      'applyDate 应更新为新值（验证 Mapper update 镜像）').toBe(APPLY_DATE_UPDATED);
+    console.log(`applyDate 更新 OK：${APPLY_DATE_INIT} -> ${after.applyDate}`);
+  });
 
-    // options（日报下拉用）应过滤掉该结项任务
-    const optRes = await api.get('/project/task/options', { projectId: projectIdWithClosedTask });
-    expect(optRes.code).toBe(200);
-    const optCodes = (optRes.data || []).map(t => t.taskCode);
-    expect(optCodes, `options 不应包含结项任务 ${closedTask.taskCode}`).not.toContain(closedTask.taskCode);
-
-    // 因此 list 的任务数应严格多于 options（至少多出这个结项任务）
-    expect(listTasks.length, 'list 任务数应多于 options（结项任务被 options 滤掉）')
-      .toBeGreaterThan((optRes.data || []).length);
-
-    console.log(`回归通过：结项任务 ${closedTask.taskCode} —— list=${listTasks.length} 个，options=${(optRes.data || []).length} 个`);
+  // ─────────────────────────────────────────────
+  // 4. applyDate 为空的项目，字段仍存在（前端引用需 property 在）
+  // ─────────────────────────────────────────────
+  test('applyDate 为空时字段仍随 getProject 返回（前端引用安全）', async () => {
+    // 库中可能存在改造前的老项目（apply_date 为 NULL），抽样校验字段恒存在
+    const list = await api.get('/project/project/list', { pageNum: 1, pageSize: 50 });
+    expect(list.code).toBe(200);
+    const sample = (list.rows || []).find(r => r.projectId !== createdProjectId) || list.rows[0];
+    if (!sample) test.skip(true, '库中无其它项目可抽样');
+    const res = await api.get(`/project/project/${sample.projectId}`);
+    expect(res.code).toBe(200);
+    // 不论有无值，property 必须存在，否则前端 printProject.applyDate 取到 undefined（仍安全）
+    expect(res.data, 'applyDate property 应恒存在').toHaveProperty('applyDate');
+    console.log(`抽样项目 ${sample.projectId} applyDate=${res.data.applyDate ?? '(空)'}`);
   });
 });
