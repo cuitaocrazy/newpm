@@ -369,8 +369,14 @@
             </el-col>
             <el-col :span="12">
               <el-form-item label="验收日期">
-                <el-date-picker v-model="form.acceptanceDate" type="date" 
+                <el-date-picker v-model="form.acceptanceDate" type="date"
                   placeholder="请选择验收日期" value-format="YYYY-MM-DD" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="立项日期">
+                <el-date-picker v-model="form.applyDate" type="date"
+                  placeholder="请选择立项日期" value-format="YYYY-MM-DD" style="width: 100%" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -527,6 +533,7 @@ const data = reactive({
     endDate: '',
     productionDate: '',
     acceptanceDate: '',
+    applyDate: '',
     implementationYear: '',
     projectCost: '',
     projectBudget: '',

@@ -39,6 +39,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="endDate"    column="end_date"    />
         <result property="productionDate"    column="production_date"    />
         <result property="acceptanceDate"    column="acceptance_date"    />
+        <result property="applyDate"    column="apply_date"    />
         <result property="projectBudget"    column="project_budget"    />
         <result property="projectCost"    column="project_cost"    />
         <result property="expenseBudget"    column="expense_budget"    />
@@ -98,7 +99,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                estimated_workload, actual_workload, adjust_workload, project_address, project_plan, project_description,
                project_manager_id, market_manager_id, participants, sales_manager_id, sales_contact,
                team_leader_id, customer_id, customer_contact_id, merchant_contact, merchant_phone,
-               start_date, end_date, production_date, acceptance_date, project_budget, project_cost,
+               start_date, end_date, production_date, acceptance_date, apply_date, project_budget, project_cost,
                expense_budget, cost_budget, labor_cost, purchase_cost, approval_status, approval_reason,
                approval_time, approver_id, industry_code, region_code, remark, tax_rate, confirm_user_id, confirm_time,
                reserved_field1, reserved_field2, reserved_field3, reserved_field4, reserved_field5,
@@ -114,7 +115,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
-               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
+               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.apply_date, p.project_budget, p.project_cost,
                p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason,
                p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
@@ -193,6 +194,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null "> and p.end_date = #{endDate}</if>
             <if test="productionDate != null "> and p.production_date = #{productionDate}</if>
             <if test="acceptanceDate != null "> and p.acceptance_date = #{acceptanceDate}</if>
+            <if test="applyDate != null "> and p.apply_date = #{applyDate}</if>
             <if test="projectBudget != null "> and p.project_budget = #{projectBudget}</if>
             <if test="projectCost != null "> and p.project_cost = #{projectCost}</if>
             <if test="expenseBudget != null "> and p.expense_budget = #{expenseBudget}</if>
@@ -359,7 +361,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
-               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
+               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.apply_date, p.project_budget, p.project_cost,
                p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason,
                p.approval_time, p.approver_id, p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
@@ -437,6 +439,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null">end_date,</if>
             <if test="productionDate != null">production_date,</if>
             <if test="acceptanceDate != null">acceptance_date,</if>
+            <if test="applyDate != null">apply_date,</if>
             <if test="projectBudget != null">project_budget,</if>
             <if test="projectCost != null">project_cost,</if>
             <if test="expenseBudget != null">expense_budget,</if>
@@ -502,6 +505,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null">#{endDate},</if>
             <if test="productionDate != null">#{productionDate},</if>
             <if test="acceptanceDate != null">#{acceptanceDate},</if>
+            <if test="applyDate != null">#{applyDate},</if>
             <if test="projectBudget != null">#{projectBudget},</if>
             <if test="projectCost != null">#{projectCost},</if>
             <if test="expenseBudget != null">#{expenseBudget},</if>
@@ -591,6 +595,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="endDate != null">end_date = #{endDate},</if>
             <if test="productionDate != null">production_date = #{productionDate},</if>
             <if test="acceptanceDate != null">acceptance_date = #{acceptanceDate},</if>
+            <if test="applyDate != null">apply_date = #{applyDate},</if>
             <if test="projectBudget != null">project_budget = #{projectBudget},</if>
             <if test="projectCost != null">project_cost = #{projectCost},</if>
             <if test="expenseBudget != null">expense_budget = #{expenseBudget},</if>
@@ -717,6 +722,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.start_date         AS startDate,
             p.end_date           AS endDate,
             p.acceptance_date    AS acceptanceDate,
+            p.apply_date         AS applyDate,
             p.approval_status    AS approvalStatus,
             p.project_status     AS projectStatus,
             p.acceptance_status  AS acceptanceStatus,
@@ -880,7 +886,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                p.estimated_workload, p.actual_workload, p.adjust_workload, p.project_address, p.project_plan, p.project_description,
                p.project_manager_id, p.market_manager_id, p.participants, p.sales_manager_id, p.sales_contact,
                p.team_leader_id, p.customer_id, p.customer_contact_id, p.merchant_contact, p.merchant_phone,
-               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.project_budget, p.project_cost,
+               p.start_date, p.end_date, p.production_date, p.acceptance_date, p.apply_date, p.project_budget, p.project_cost,
                p.expense_budget, p.cost_budget, p.labor_cost, p.purchase_cost, p.approval_status, p.approval_reason,
                p.industry_code, p.region_code, p.remark, p.tax_rate, p.confirm_user_id, p.confirm_time,
                p.reserved_field1, p.reserved_field2, p.reserved_field3, p.reserved_field4, p.reserved_field5,
@@ -1057,6 +1063,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.end_date,
             p.production_date,
             p.acceptance_date,
+            p.apply_date,
             p.project_budget,
             p.project_cost,
             p.expense_budget,

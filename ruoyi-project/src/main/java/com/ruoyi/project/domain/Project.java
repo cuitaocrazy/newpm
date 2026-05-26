@@ -166,6 +166,11 @@ public class Project extends BaseEntity
     @Excel(name = "验收日期", width = 30, dateFormat = "yyyy-MM-dd", sort = 170)
     private Date acceptanceDate;
 
+    /** 立项申请日期 */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @Excel(name = "立项申请日期", width = 30, dateFormat = "yyyy-MM-dd", sort = 175)
+    private Date applyDate;
+
     /** 项目预算(元) */
     @Excel(name = "项目预算(元)", sort = 60, handler = AmountFormatHandler.class)
     private BigDecimal projectBudget;
@@ -712,9 +717,19 @@ public class Project extends BaseEntity
         this.acceptanceDate = acceptanceDate;
     }
 
-    public Date getAcceptanceDate() 
+    public Date getAcceptanceDate()
     {
         return acceptanceDate;
+    }
+
+    public void setApplyDate(Date applyDate)
+    {
+        this.applyDate = applyDate;
+    }
+
+    public Date getApplyDate()
+    {
+        return applyDate;
     }
 
     public void setProjectBudget(BigDecimal projectBudget) 
@@ -1159,6 +1174,7 @@ public class Project extends BaseEntity
             .append("endDate", getEndDate())
             .append("productionDate", getProductionDate())
             .append("acceptanceDate", getAcceptanceDate())
+            .append("applyDate", getApplyDate())
             .append("projectBudget", getProjectBudget())
             .append("projectCost", getProjectCost())
             .append("expenseBudget", getExpenseBudget())

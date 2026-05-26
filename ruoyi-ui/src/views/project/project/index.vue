@@ -334,7 +334,7 @@
             >收入确认</el-button>
 
             <el-button link type="warning" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:project:attachment']">附件管理</el-button>
-            <el-button link type="primary" icon="Printer" @click="handlePrint(scope.row)" v-hasPermi="['project:project:print']">打印</el-button>
+            <el-button link type="primary" icon="Printer" @click="handlePrint(scope.row)" v-hasPermi="['project:project:print']">打印立项申请</el-button>
             <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:project:remove']">删除</el-button>
           </template>
         </template>
@@ -381,15 +381,7 @@
                 <td colspan="5">{{ printProject.projectCode }}</td>
               </tr>
               <tr>
-                <td class="cell-label">任务编号</td>
-                <td colspan="5" class="cell-multi">{{ printTaskCodeText }}</td>
-              </tr>
-              <tr>
-                <td class="cell-label">任务名称</td>
-                <td colspan="5" class="cell-multi">{{ printTaskNameText }}</td>
-              </tr>
-              <tr>
-                <td class="cell-label">所属团队</td>
+                <td class="cell-label">所属部门</td>
                 <td colspan="2">{{ getDeptName(printProject.projectDept) }}</td>
                 <td class="cell-label">项目经理</td>
                 <td colspan="2">{{ printProject.projectManagerName || '-' }}</td>
@@ -418,17 +410,17 @@
               </tr>
               <tr>
                 <td class="cell-label">项目概况</td>
-                <td colspan="5" class="cell-content">{{ printProject.projectDescription || '' }}</td>
+                <td colspan="5" class="cell-content cell-multi">{{ printProject.projectDescription || '' }}</td>
               </tr>
               <tr>
                 <td class="cell-label">项目计划</td>
-                <td colspan="5" class="cell-content">{{ printProject.projectPlan || '' }}</td>
+                <td colspan="5" class="cell-content cell-multi">{{ printProject.projectPlan || '' }}</td>
               </tr>
               <tr class="sig-row">
                 <td class="cell-label">申请人(签字)</td>
                 <td colspan="2">{{ printProject.projectManagerName || '' }}</td>
                 <td class="cell-label">立项日期</td>
-                <td colspan="2">{{ printProject.createTime ? printProject.createTime.substring(0, 10) : '-' }}</td>
+                <td colspan="2">{{ printProject.applyDate ? printProject.applyDate.substring(0, 10) : '-' }}</td>
               </tr>
               <tr class="sig-row">
                 <td class="cell-label">部门经理意见(签字)</td>
@@ -523,7 +515,6 @@
 <script setup name="ProjectList">
 import { listProject, delProject, getDeptTree, getUsersByPost, getProjectSummary, searchProjects, searchContractsForFilter, getProject } from "@/api/project/project"
 import { approveProject, getApprovalHistory } from "@/api/project/review"
-import { listTask } from "@/api/project/task"
 import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { handleTree } from '@/utils/ruoyi'
 import { checkPermi } from "@/utils/permission"
@@ -587,15 +578,6 @@ const approvalHistory = ref([])
 const printDialogVisible = ref(false)
 const printProject = ref(null)
 const printLoading = ref(false)
-// 当前项目下的任务（来自 pm_task），用于立项申请书的任务编号/任务名称
-const printTasks = ref([])
-// 多任务时逐行展示；无任务时留空供手工填写
-const printTaskCodeText = computed(() =>
-  (printTasks.value || []).map(t => t.taskCode).filter(Boolean).join('\n')
-)
-const printTaskNameText = computed(() =>
-  (printTasks.value || []).map(t => t.taskName).filter(Boolean).join('\n')
-)
 
 // 关联合同：跳转到独立页面
 function handleBindContract(row) {
@@ -860,16 +842,10 @@ function handleAttachment(row) {
 function handlePrint(row) {
   proxy.$modal.confirm('是否确认打印该项目的立项申请书？').then(() => {
     printProject.value = null
-    printTasks.value = []
     printLoading.value = true
     printDialogVisible.value = true
-    Promise.all([
-      getProject(row.projectId),
-      // 用任务列表查询取全量任务（含已结项），与"任务管理"列表口径一致
-      listTask({ projectId: row.projectId, pageNum: 1, pageSize: 1000 })
-    ]).then(([projectRes, taskRes]) => {
+    getProject(row.projectId).then(projectRes => {
       printProject.value = projectRes.data
-      printTasks.value = (taskRes.rows || []).filter(t => t.taskId)
     }).finally(() => {
       printLoading.value = false
     })

@@ -89,6 +89,9 @@
             <el-descriptions-item label="确认日期">
               {{ form.revenueConfirmDate || '-' }}
             </el-descriptions-item>
+            <el-descriptions-item label="立项日期">
+              {{ form.applyDate || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="项目地址" :span="3">
               {{ form.projectAddress || '-' }}
             </el-descriptions-item>

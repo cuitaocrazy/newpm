@@ -383,6 +383,18 @@
             />
           </el-form-item>
         </el-col>
+        <el-col :span="12">
+          <el-form-item label="立项日期" prop="applyDate" data-prop="applyDate">
+            <el-date-picker
+              v-model="form.applyDate"
+              type="date"
+              placeholder="选择立项日期"
+              value-format="YYYY-MM-DD"
+              style="width: 100%"
+              @blur="validateOnBlur('applyDate')"
+            />
+          </el-form-item>
+        </el-col>
       </el-row>
         </div>
       </el-card>
@@ -565,6 +577,7 @@ const form = ref({
   endDate: null,
   productionDate: null,
   acceptanceDate: null,
+  applyDate: null,
   projectCost: null,
   expenseBudget: null,
   costBudget: null,

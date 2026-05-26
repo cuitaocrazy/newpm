@@ -753,6 +753,7 @@ CREATE TABLE `pm_project` (
   `end_date` date DEFAULT NULL COMMENT '结束日期',
   `production_date` date DEFAULT NULL COMMENT '投产日期',
   `acceptance_date` date DEFAULT NULL COMMENT '验收日期',
+  `apply_date` date DEFAULT NULL COMMENT '立项申请日期',
   `project_budget` decimal(15,2) DEFAULT NULL COMMENT '项目预算(元)',
   `project_cost` decimal(15,2) DEFAULT NULL COMMENT '项目费用(元)',
   `expense_budget` decimal(15,2) DEFAULT NULL COMMENT '费用预算(元)',
