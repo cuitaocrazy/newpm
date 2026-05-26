@@ -428,7 +428,7 @@
                 <td class="cell-label">申请人(签字)</td>
                 <td colspan="2">{{ printProject.projectManagerName || '' }}</td>
                 <td class="cell-label">立项日期</td>
-                <td colspan="2">{{ printProject.startDate || (printProject.createTime ? printProject.createTime.substring(0, 10) : '-') }}</td>
+                <td colspan="2">{{ printProject.createTime ? printProject.createTime.substring(0, 10) : '-' }}</td>
               </tr>
               <tr class="sig-row">
                 <td class="cell-label">部门经理意见(签字)</td>
