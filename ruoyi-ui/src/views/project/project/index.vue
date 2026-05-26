@@ -840,16 +840,15 @@ function handleAttachment(row) {
 
 /** 打印按钮操作 */
 function handlePrint(row) {
-  proxy.$modal.confirm('是否确认打印该项目的立项申请书？').then(() => {
-    printProject.value = null
-    printLoading.value = true
-    printDialogVisible.value = true
-    getProject(row.projectId).then(projectRes => {
-      printProject.value = projectRes.data
-    }).finally(() => {
-      printLoading.value = false
-    })
-  }).catch(() => {})
+  // 直接打开预览对话框，不再弹确认框
+  printProject.value = null
+  printLoading.value = true
+  printDialogVisible.value = true
+  getProject(row.projectId).then(projectRes => {
+    printProject.value = projectRes.data
+  }).finally(() => {
+    printLoading.value = false
+  })
 }
 
 /** 获取字典标签 */
