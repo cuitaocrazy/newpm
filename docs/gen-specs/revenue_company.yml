@@ -331,7 +331,7 @@ customizations:
 
   # ========== 列表页面定制 ==========
   list_query_conditions:
-    intent: "支持14个查询条件的多维度筛选，4列网格布局（el-row/el-col :span=6），每行精确4个"
+    intent: "支持16个查询条件的多维度筛选，4列网格布局（el-row/el-col :span=6），每行精确4个"
     component:
       type: custom
       spec: "查询表单使用 el-row/el-col :span=6 网格布局（非 inline），通用选择器组件"
@@ -347,7 +347,7 @@ customizations:
       每个控件设置 style="width: 100%"；按钮组在独立第5行，label-width="0"
       按钮组：查询（primary）、重置、导出（warning plain），三个按钮同行，导出不再独立于工具栏
 
-      查询条件字段（14个，顺序即表单排列顺序）：
+      查询条件字段（16个，顺序即表单排列顺序）：
       第1行：
       1. 项目名称 - el-autocomplete，fetch-suggestions="queryProjectNames"，clearable
          queryProjectNames(queryString, cb) 调用 listProjectByName({ projectName: queryString || '' })
@@ -368,8 +368,10 @@ customizations:
       11. 验收状态 - dict-select, dict-type="sys_yszt"
       12. 项目阶段 - dict-select, dict-type="sys_xmjd"（移至验收状态之后）
       第4行：
-      13. 合同状态 - dict-select, dict-type="sys_htzt"（新增，queryParams.contractStatus）
-      14. 收入确认状态 - dict-select, dict-type="sys_qrzt"
+      13. 合同编号 - el-autocomplete, fetch-suggestions="queryContractCodes", clearable, @keyup.enter（2026-05-25 新增，queryParams.contractCode，模糊匹配）
+      14. 合同名称 - el-autocomplete, fetch-suggestions="queryContractNames", clearable, @keyup.enter（2026-05-25 新增，queryParams.contractName，模糊匹配）
+      15. 合同状态 - dict-select, dict-type="sys_htzt"（queryParams.contractStatus）
+      16. 收入确认状态 - dict-select, dict-type="sys_qrzt"
       第5行：
       [按钮组：el-col :span=24，label-width="0"]
 

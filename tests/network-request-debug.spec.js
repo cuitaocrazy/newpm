@@ -74,9 +74,9 @@ test.describe('网络请求调试', () => {
     // 1. 登录
     await page.goto(BASE_URL);
     await page.waitForLoadState('networkidle');
-    await page.fill('input[placeholder="用户名"]', TEST_USER.username);
+    await page.fill('input[placeholder="账号"]', TEST_USER.username);
     await page.fill('input[placeholder="密码"]', TEST_USER.password);
-    await page.click('button:has-text("登录")');
+    await page.locator('button.el-button--primary').click();
     await page.waitForURL(`${BASE_URL}/index`);
 
     console.log('✓ 登录成功');

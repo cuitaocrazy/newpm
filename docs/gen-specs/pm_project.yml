@@ -473,6 +473,22 @@ columns:
     htmlType: datetime
     dictType: ""
 
+  apply_date:
+    columnComment: 立项申请日期
+    columnType: date
+    javaType: Date
+    javaField: applyDate
+    isInsert: true
+    isEdit: true
+    isList: false
+    isQuery: false
+    queryType: BETWEEN
+    isRequired: false
+    htmlType: datetime
+    dictType: ""
+    # 时间规划模块「立项日期」，位于验收日期之后；非必填、留空不默认今天
+    # 打印立项申请书「立项日期」取此字段（原取 create_time，为空显示 -）
+
   project_budget:
     columnComment: 项目预算(元)
     columnType: decimal(15,2)
@@ -1006,14 +1022,15 @@ extendedFields:
     javaType: String
     javaField: contractName
     source: pm_contract.contract_name
-    description: selectProjectList LEFT JOIN pm_project_contract_rel + pm_contract
+    description: selectProjectList LEFT JOIN pm_project_contract_rel + pm_contract。
+      列表页显示；亦作查询条件（项目管理/公司收入确认 按合同名称模糊过滤，2026-05-25 新增）
 
   contractCode:
     columnComment: 合同编号（关联查询）
     javaType: String
     javaField: contractCode
     source: pm_contract.contract_code
-    description: 列表页显示
+    description: 列表页显示；亦作查询条件（项目管理/公司收入确认 按合同编号模糊过滤，2026-05-25 新增）
 
   contractStatus:
     columnComment: 合同状态（关联查询）
@@ -1679,7 +1696,7 @@ customizations:
       Label 宽度：120px
       组件宽度：240px（所有查询组件统一）
 
-      查询条件（按实际代码顺序，共 14 个）：
+      查询条件（按实际代码顺序，共 16 个）：
       1. 项目名称      — el-autocomplete，fetch-suggestions=remoteQueryProjectNames，LIKE
       2. 项目部门      — el-tree-select（deptTree，三级及以下），EQ
       3. 收入确认年度  — dict-select sys_ndgl，EQ
@@ -1694,9 +1711,11 @@ customizations:
       12. 合同状态     — dict-select sys_htzt，EQ (contractStatus 非DB字段)
       13. 项目阶段     — dict-select sys_xmjd，EQ
       14. 收入确认状态 — dict-select sys_qrzt，EQ
+      15. 合同编号     — el-autocomplete，fetch-suggestions，LIKE (contractCode 非DB字段，2026-05-25 新增)
+      16. 合同名称     — el-autocomplete，fetch-suggestions，LIKE (contractName 非DB字段，2026-05-25 新增)
 
-      注意：合同状态（contractStatus）是关联查询字段，通过 pm_contract JOIN 得到，
-      后端需在 selectProjectList WHERE 条件中支持该字段过滤。
+      注意：合同状态/合同编号/合同名称（contractStatus/contractCode/contractName）均为关联查询字段，
+      通过 pm_contract JOIN 得到，后端需在 selectProjectList WHERE 条件中支持这些字段过滤。
 
   list_column_order:
     intent: "列表列顺序（从左到右，以实际 index.vue columns ref 为准）"
@@ -1802,8 +1821,14 @@ customizations:
                       v-hasPermi revenue:company:edit
       6. 附件管理   → handleAttachment(row)，router.push(/project/list/attachment/:projectId)
                       v-hasPermi project:project:attachment
-      7. 打印       → handlePrint(row)，弹出 el-dialog 预览立项申请书，用户确认后打印
+      7. 打印立项申请 → handlePrint(row)，弹出 el-dialog 预览立项申请书，用户确认后打印
+                      （按钮文案为"打印立项申请"；前端纯组装，仅调 getProject(projectId)）
                       v-hasPermi project:project:print
+                      版式要点（2026-05 改造后）：
+                        - 「立项日期」取 applyDate（原取 create_time），为空显示 '-'
+                        - 「所属部门」取 projectDept（标签原为"所属团队"，仅改标签不改取数）
+                        - 「项目概况」「项目计划」支持换行显示（white-space: pre-line）
+                        - 已去掉"任务编号""任务名称"两行，不再调用 listTask
       8. 删除       → 确认弹框后物理删除（DELETE）
                       v-hasPermi project:project:remove
 
@@ -1865,6 +1890,7 @@ customizations:
       模块 4：时间规划
         启动日期(12) | 结束日期(12)
         投产日期(12) | 验收日期(12)
+        立项日期(12)              # applyDate，位于验收日期之后；非必填、留空不默认今天
 
       模块 5：成本预算
         项目费用(12) | 费用预算(12) | 成本预算(12)
