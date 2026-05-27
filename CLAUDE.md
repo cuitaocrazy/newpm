@@ -40,15 +40,29 @@ java -jar ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar --sql=<ddl>.sql --config=
 
 Use the `/ruoyi-gen` skill for interactive CRUD generation.
 
+### Unit Testing (backend)
+
+Service-layer **characterization tests** (lock in current behavior to catch regressions during refactors) live in `ruoyi-project/src/test/java/com/ruoyi/project/service/impl/` — ~110 methods across `Contract`/`Customer`/`Project`/`ProjectApproval`/`ProjectStats`/`DailyReport` service tests. They use **JUnit 5 + Mockito** (`@ExtendWith(MockitoExtension.class)`, `@InjectMocks`/`@Mock`) — pure unit tests, so **no MySQL/Redis needed**.
+
+```bash
+mvn test -pl ruoyi-project -am                              # all project-module unit tests
+mvn test -pl ruoyi-project -am -Dtest=ContractServiceImplTest   # single class
+mvn test -pl ruoyi-project -am -Dtest=ContractServiceImplTest#methodName  # single method
+```
+
+Production builds skip tests (`-Dmaven.test.skip=true`); run `mvn test` explicitly to execute them. When changing service behavior, update the corresponding characterization test in the same commit.
+
 ### E2E Testing (from project root)
+
+Playwright config (`playwright.config.js`): chromium only, `baseURL: http://localhost:80`, `retries: 2`, `workers: 1`, zh-CN locale. **Requires both frontend (port 80) and backend running** — tests hit the live app and log in as `admin` / `123456789` via `/dev-api/login`.
 
 ```bash
 npx playwright install && npx playwright test
-npx playwright test contract-add-from-project.spec.ts   # specific file
+npx playwright test e2e-contract-crud.spec.js   # specific file
 npx playwright test --ui && npx playwright show-report
 ```
 
-Test files in `tests/` directory: `project-management.spec.js`, `contract-add-from-project.spec.ts`, `network-request-debug.spec.js`, `query-smoke.spec.js`
+API-driven specs (`e2e-*.spec.js`) share auth via `tests/helpers/api-client.js` (`setupApi()` returns an authed `APIRequestContext`; `await api.dispose()` in `afterAll`). Use this helper rather than re-implementing login per file. Per-module E2E suites: `e2e-{contract,customer,payment,task,daily-report,team-revenue,approval-workflow,manager-stage-change,auxiliary-modules}-*.spec.js`. Feature-specific: `contract-filter.spec.js`, `contract-add-from-project.spec.ts`, `project-create-audit-fields.spec.js`, `query-smoke.spec.js`. Debug/regression: `005-cleanup-verification.spec.js`, `006-code-review-fixes.spec.js`, `network-request-debug.spec.js`.
 
 ### Prerequisites
 
@@ -238,6 +252,7 @@ One-to-many via detail list on master entity. Service cascades insert/delete. My
 - **Async**: `@Async` on service methods (e.g., `ProjectEmailServiceImpl.sendNotificationEmail`)
 - **Excel export enrichment**: `enrichForExport(list)` on service to populate non-DB display fields before `exportExcel()`
 - **Spring Boot 3**: Jakarta EE namespace, `SecurityFilterChain` bean, springdoc-openapi at `/swagger-ui.html`
+- **Global String trim**: All inbound String values are trimmed of leading/trailing whitespace at two entry points — **GET query params** via `StringTrimmerEditor(false)` in `BaseController.@InitBinder`, and **`@RequestBody` JSON** via `TrimStringJsonDeserializer` (a `ContextualDeserializer`) registered globally in `ApplicationConfig` (`deserializerByType(String.class, ...)`). Password-class fields (`password/oldPassword/newPassword/confirmPassword`) are skipped via the deserializer's field-name blacklist. **Do not add per-controller/per-field trim** — it's already global. To exempt a new sensitive field, add it to `TrimStringJsonDeserializer.SKIP_FIELDS`. (Design doc: `docs/plans/2026-05-25-global-string-trim.md`)
 
 ## Frontend Patterns
 
@@ -416,6 +431,7 @@ For master-detail generation: main table `tplCategory: sub`, sub table `tplCateg
 - **`docs/pm/PM需求.md`** — Complete business requirements (Chinese)
 - **`docs/gen-specs/`** — Code generation specs (one YAML per table)
 - **`docs/plans/`** — Implementation plans and design documents
+- **`specs/<NNN-feature-name>/`** — [Spec Kit](https://github.com/github/spec-kit) feature workspaces (`spec.md` → `plan.md` → `tasks.md` + `data-model.md`/`research.md`/`quickstart.md`). Driven by the `/speckit-*` skills (`specify`/`plan`/`tasks`/`implement`/`analyze`/`clarify`). Each numbered dir is one feature increment (e.g. `001-daily-report-stats`); the "Active Technologies" / "Recent Changes" sections below are auto-maintained by these skills.
 
 ## Common Pitfalls
 
@@ -531,3 +547,8 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 
 ## Recent Changes
 - 001-daily-report-stats: Added Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Apache POI (Excel), Vue 3.5, Element Plus 2.13, dayjs
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->

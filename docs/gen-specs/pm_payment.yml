@@ -6,7 +6,13 @@ basicInfo:
   tableComment: 款项表
   className: Payment
   functionAuthor: ruoyi
-  remark: ""
+  remark: |
+    款项（pm_payment）核心功能说明：
+    - 字符串首尾空格自动去除（全局机制，2026-05-25）：查询条件、新增、编辑提交时所有 String 字段
+      自动 trim 首尾空格。GET 查询走 BaseController.@InitBinder 的 StringTrimmerEditor；@RequestBody
+      走 ApplicationConfig 全局注册的 TrimStringJsonDeserializer（密码类字段 password/oldPassword/
+      newPassword/confirmPassword 经字段名黑名单跳过）。非本表特有逻辑，全模块统一生效。
+      详见 docs/plans/2026-05-25-global-string-trim.md
 
 # ============================
 # Tab 2: 字段信息
