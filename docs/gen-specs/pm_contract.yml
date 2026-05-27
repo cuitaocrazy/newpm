@@ -692,6 +692,39 @@ customizations:
       - 查询表单操作按钮：查询（primary）、重置、更多/收起；按钮文字为"查询"而非"搜索"
       - 工具栏新增按钮文字为"新增合同"而非"新增"
 
+  contract_filter_autocomplete_api:
+    intent: "为「项目管理」「公司收入确认」页面的 合同编号/合同名称 查询条件提供按数据权限过滤的 autoComplete 建议接口（2026-05-25 新增）"
+    component:
+      type: backend-api
+    bindTo: null
+    endpoint: "GET /project/contract/searchForFilter?contractCode=&contractName="
+    service: "IContractService#searchContractsForFilter(Contract) → ContractMapper.searchContractsForFilter"
+    notes: |
+      用途：项目管理列表（/project/list）与公司收入确认列表（/revenue/company）的查询表单中，
+      合同编号、合同名称两个 el-autocomplete 的 fetch-suggestions 数据源。
+
+      接口约定：
+      - 入参 contractCode / contractName 二选一（前端按当前输入框分别传），均为模糊关键词；
+        两者皆空时返回数据权限内最近 20 条合同（供"点击直接选择"）。
+      - 返回精简字段列表：[{ contractId, contractCode, contractName }]，limit 20，按 create_time 倒序。
+      - 前端对返回结果按 contractCode / contractName 去重后填充下拉。
+
+      数据权限（关键）：
+      - 标注 @DataScope(deptAlias="d", userAlias="u1")，SQL 内 LEFT JOIN sys_dept d ON c.dept_id
+        与 sys_user u1 ON c.create_by，并注入 ${params.dataScope}，口径与合同列表 selectContractList 完全一致——
+        不同用户只能搜到各自数据权限范围内的合同。
+
+      与既有 searchContracts 的区别（务必区分，勿合并）：
+      - searchContracts（GET /project/contract/search，keyword 单参，limit 100，无 @DataScope）
+        服务于合同管理页、款项管理页的合同下拉选择，行为不可改动。
+      - searchContractsForFilter 是为本次新增的跨页查询条件单独建立的数据权限版本，隔离副作用。
+
+      权限注解：@ss.hasAnyPermi('project:project:list,revenue:company:list,project:contract:list')
+
+      前端 API：ruoyi-ui/src/api/project/project.js → searchContractsForFilter(params)
+      涉及后端：ContractController#searchForFilter、ContractServiceImpl#searchContractsForFilter
+                （@DataScope）、ContractMapper.xml#searchContractsForFilter
+
   list_toolbar_buttons:
     intent: "工具栏只保留查询、重置、新增合同、导出4个按钮"
     component:
