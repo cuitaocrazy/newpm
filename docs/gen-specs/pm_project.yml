@@ -1828,9 +1828,9 @@ customizations:
                       v-hasPermi revenue:company:edit
       6. 附件管理   → handleAttachment(row)，router.push(/project/list/attachment/:projectId)
                       v-hasPermi project:project:attachment
-      7. 打印立项申请 → handlePrint(row)，直接弹出 el-dialog 预览立项申请书（不再二次确认），
+      7. 打印立项申请书 → handlePrint(row)，直接弹出 el-dialog 预览立项申请书（不再二次确认），
                       在预览弹框底部点"打印"按钮 → doActualPrint（window.open 写入 #print-content-area 后打印）
-                      （按钮文案为"打印立项申请"；前端纯组装，仅调 getProject(projectId)，不调 listTask）
+                      （按钮文案为"打印立项申请书"；前端纯组装，仅调 getProject(projectId)，不调 listTask）
                       v-hasPermi project:project:print
                       版式要点（2026-05 改造后，对齐线下《项目立项申请书》Excel 模板）：
                         - 标题：「项目立项申请书」

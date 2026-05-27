@@ -13,6 +13,12 @@ basicInfo:
       走 ApplicationConfig 全局注册的 TrimStringJsonDeserializer（密码类字段 password/oldPassword/
       newPassword/confirmPassword 经字段名黑名单跳过）。非本表特有逻辑，全模块统一生效。
       详见 docs/plans/2026-05-25-global-string-trim.md
+    - 【陷阱】付款状态筛选 0 条（2026-05-26 修复）：sys_fkzt 的 dict_value 及 pm_payment.payment_status
+      不得含首尾空白/Tab/换行。曾因导入混入 Tab（如 'YTJFP\t\t'），不筛选时 dict-tag「带Tab对带Tab」
+      能正常显示，但按状态筛选走 GET 参数被上面的 StringTrimmerEditor trim 掉 Tab 后，
+      SQL `payment_status in ('YTJFP')` 无法匹配表里的 'YTJFP\t\t' → 0 条。
+      修复 = 清洗字典与业务表的空白字符（pm-sql/fix_payment_status_tab_chars_2026-05-26.sql）。
+      回归测试：tests/payment-status-filter-regression.spec.js（数据驱动，任何状态值被空白污染即报红）。
 
 # ============================
 # Tab 2: 字段信息
