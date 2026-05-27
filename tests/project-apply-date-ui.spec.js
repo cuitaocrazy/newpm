@@ -113,22 +113,17 @@ test.describe.serial('立项申请日期 - UI 渲染', () => {
     await page.goto(`${BASE_URL}/project/list`);
 
     // 按项目名称过滤。该 placeholder 被项目名称/合同编号/合同名称三个框共用，按 label 定位
-    // el-autocomplete 填入会弹出建议浮层，按 Escape 关掉再点搜索
     const nameInput = page.getByRole('textbox', { name: '项目名称' });
     await nameInput.fill(projectName);
-    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: '搜索' }).click();
 
     // 显式等待数据行（项目名链接）渲染出来
     await expect(page.getByText(projectName).first()).toBeVisible({ timeout: 10000 });
 
-    // 过滤后唯一数据行，点击「打印立项申请」（页面级，避免固定列分表的行 scope 问题）
+    // 点击「打印立项申请书」（handlePrint 已改为直接打开预览对话框，不再弹确认框）
     await page.getByRole('button', { name: '打印立项申请' }).first().click();
 
-    // 确认弹窗 → 确定
-    await page.locator('.el-message-box__btns .el-button--primary').click();
-
-    // 预览弹窗出现，#print-content-area 内应含「立项日期」行及值
+    // 预览弹窗直接出现，#print-content-area 内应含「立项日期」行及值
     const printArea = page.locator('#print-content-area');
     await expect(printArea).toBeVisible({ timeout: 10000 });
     await expect(printArea).toContainText('立项日期');

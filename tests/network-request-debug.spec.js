@@ -18,7 +18,10 @@ const TEST_USER = {
 
 test.describe('网络请求调试', () => {
 
-  test('监控立项申请保存的网络请求', async ({ page }) => {
+  // 调试辅助 spec：需 UI 填完整立项表单并提交才能监控保存请求，依赖深层部门树（filterable=false，
+  // 第5层）等脆弱交互——正是已弃用的 create-via-UI 反模式。项目创建覆盖见：
+  // project-management.spec.js（API 造数 + UI 验证）、project-apply-date-ui.spec.js（UI 表单字段）。
+  test.skip('监控立项申请保存的网络请求', async ({ page }) => {
     console.log('🎬 开始监控网络请求');
 
     // 收集所有网络请求
