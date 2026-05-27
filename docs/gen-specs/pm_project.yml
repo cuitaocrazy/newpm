@@ -2172,3 +2172,38 @@ customizations:
       - /project/list/attachment/:projectId → ProjectAttachment（附件管理，隐藏）
       - /revenue/company/detail/:projectId → RevenueCompanyDetail（收入确认详情，隐藏）
       所有隐藏路由使用 activeMenu 属性使侧边栏高亮正确的菜单项
+
+  # ==================
+  # 部署/缓存策略（全局，非本表专属。SPA 由 Spring Boot 一体化 jar 直接吐静态资源）
+  # ==================
+  deployment_cache_strategy:
+    intent: "发版后页面自动生效的缓存策略（2026-05-26 落地，解决发版后需手动强刷）"
+    spec: |
+      背景：早期对静态资源完全没设缓存头，浏览器启发式缓存了 index.html，
+      发版后即便重开浏览器仍加载旧入口引用的旧哈希 JS（典型现象：改了按钮文案，
+      用户必须 Ctrl+F5/⌘⇧R 才能看到）。现由三处机制协作根治：
+
+      1. 入口 index.html 禁缓存（核心）
+         - 位置：Dockerfile 构建时生成的 SpaController.handleError（ErrorController）
+         - 所有 SPA 回退响应（根路径 /、深链接如 /project/list、/index.html）统一设：
+           Cache-Control: no-cache, no-store, must-revalidate / Pragma: no-cache / Expires: 0
+         - 注意：ResourcesConfig 里只匹配 "/" 和 "/index.html" 的拦截器盖不到深链接
+           （深链接无 handler → 404 → forward，原始路径不匹配且拦截器不触发），
+           真正对所有入口生效的是 SpaController 这处，勿误以为拦截器已覆盖。
+
+      2. 哈希静态资源强缓存
+         - 位置：ResourcesConfig.addResourceHandlers，/static/** → max-age=365天, public, immutable
+         - 依据：vite 产物文件名带 [hash]（ruoyi-ui/vite.config.ts rollupOptions），
+           内容变文件名必变，可永久强缓存，零浪费请求，发版由新文件名自然失效。
+
+      3. 运行时版本检测（兜底长时间不刷新的会话）
+         - 位置：ruoyi-ui/src/utils/version-check.ts，main.ts 挂载后 startVersionCheck()
+         - 每 5 分钟 + 标签页切回前台时 fetch('/index.html', {cache:'no-store'})，
+           提取其中 /static/js|css 哈希清单作为版本指纹，与启动基线比对，
+           不同即 location.reload() 静默刷新。dev 环境入口不带哈希 → 指纹 null → 自动空转。
+
+      一次性过渡成本（重要、且不可由服务端消除）：
+        浏览器缓存按 URL 分键，服务端无法推删已存进浏览器的旧缓存。从"无缓存头"切到
+        规范缓存头时，发版前已缓存旧入口的浏览器需各自跨坎一次：清站点数据（一键全清，
+        推荐）/ 逐 URL 强刷 / 等启发式缓存自愈（通常几小时~1天）。跨过后 no-store 保证
+        永久最新。落地建议：发一次"请清缓存或强刷一次"的升级通知。此为一次性，之后零操作。
