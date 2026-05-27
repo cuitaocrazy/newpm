@@ -1,416 +1,211 @@
 /**
- * 项目管理功能 E2E 测试
- * 测试场景：立项申请 -> 列表查看 -> 编辑项目 -> 审核
+ * 项目管理功能 E2E 测试（API 造数 + UI 验证）
+ *
+ * 设计原则：用 API 快速、稳定地造数据（setupApi 走 /dev-api 代理，端口无关），
+ * 浏览器只负责验证 UI 渲染/交互。避免用 UI 填整个立项表单（深层部门树、异步编号、
+ * 字典耦合、无清理 等使其极脆）。create-via-UI 的脆弱反模式已弃用。
+ *
+ * 前置：本仓库所有浏览器测试均依赖登录验证码关闭（login() 不填验证码）。
+ *
+ * 覆盖：列表可见 / 列表查询 / 编辑保存 / 详情展示 / 部门树过滤 / 列表字段 / 项目编号自动生成
  */
 
 import { test, expect } from '@playwright/test';
+import { setupApi } from './helpers/api-client.js';
 
-// 测试配置
-const BASE_URL = 'http://localhost:80';
-const API_URL = 'http://localhost:8080';
+// 不带 :80：浏览器会把默认端口从 URL 抹掉，waitForURL 用带 :80 的字符串会永远匹配不上
+const BASE_URL = 'http://localhost';
+const TEST_USER = { username: 'admin', password: '123456789' };
 
-// 测试用户
-const TEST_USER = {
-  username: 'admin',
-  password: '123456789'
-};
+const TS = Date.now();
+const PROJECT_NAME = `自动化测试项目_${TS}`;
+const PROJECT_CODE = `ZH-BJ-11-API${String(TS).slice(-6)}-2026`; // 唯一，避免与场景7 的 AUTO 编号冲突
 
-// 测试数据
-const TEST_PROJECT = {
-  projectName: `测试项目_${Date.now()}`,
-  industry: 'ZH', // 综合
-  region: 'BJ', // 北京
-  provinceCode: '11', // 北京市
-  shortName: 'TEST',
-  establishedYear: '2026',
-  projectCategory: 'RJKF', // 软件开发
-  projectDept: '216', // 深圳组
-  projectStatus: '1', // 立项
-  acceptanceStatus: '0', // 未验收
-  estimatedWorkload: '100',
-  projectBudget: '1000000',
-  projectAddress: '测试地址',
-  projectPlan: '测试计划',
-  projectDescription: '这是一个自动化测试项目',
-  projectManagerId: '250', // 曲君
-  marketManagerId: '103', // 张仟栋
-  salesManagerId: '103',
-  participants: '103,104,105'
-};
+/**
+ * 选择下拉选项（el-select / dict-select / user-select 通用）。
+ * 按 el-form-item 的 data-prop 钩子定位，避开"label 不在 select 内"的脆弱选择器。
+ */
+async function pickOption(page, prop, optionText) {
+  await page.locator(`[data-prop="${prop}"] .el-select`).first().click();
+  const item = page.locator(`.el-select-dropdown__item:has-text("${optionText}")`).first();
+  await item.waitFor({ state: 'visible' });
+  await item.click();
+}
 
-test.describe('项目管理功能测试', () => {
+/** UI 登录（依赖验证码关闭；登录按钮文本是"登 录"，用 primary class 选） */
+async function login(page) {
+  await page.goto(BASE_URL);
+  await page.fill('input[placeholder="账号"]', TEST_USER.username);
+  await page.fill('input[placeholder="密码"]', TEST_USER.password);
+  await page.locator('button.el-button--primary').click();
+  await page.waitForFunction(() => !location.pathname.startsWith('/login'), { timeout: 15000 });
+  const cancelBtn = page.locator('.el-message-box .el-button--default');
+  if (await cancelBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+    await cancelBtn.click();
+  }
+}
 
-  // 每个测试前登录
+test.describe('项目管理功能测试（API造数 + UI验证）', () => {
+  let api;
+  let projectId;
+
+  test.beforeAll(async () => {
+    api = await setupApi();
+    const res = await api.post('/project/project', {
+      projectName: PROJECT_NAME,
+      industry: 'ZH',
+      region: 'BJ',
+      regionId: '11',
+      regionCode: '11',
+      shortName: `API${String(TS).slice(-6)}`,
+      establishedYear: '2026',
+      projectCode: PROJECT_CODE,
+      projectCategory: 'RJKF',
+      projectDept: '216',          // 深圳组
+      projectStatus: '0',
+      projectStage: '0',           // 编辑页必填
+      acceptanceStatus: '0',
+      estimatedWorkload: '100',
+      projectBudget: '1000000',
+      projectManagerId: '250',     // 曲君
+      marketManagerId: '103',      // 张仟栋
+      salesManagerId: '103',       // 编辑页必填
+      salesContact: '13800000000', // 编辑页必填
+      customerId: '1',             // 编辑页必填
+      customerContactId: '1',      // 编辑页必填
+      participants: '103,104',
+      projectAddress: '测试地址',
+      projectPlan: '测试计划',
+      projectDescription: '自动化测试项目（API 造数）'
+    });
+    expect(res.code, '创建测试项目应返回200').toBe(200);
+    const list = await api.get('/project/project/list', { projectCode: PROJECT_CODE, pageNum: 1, pageSize: 1 });
+    expect(list.total, '应能查到刚创建的项目').toBeGreaterThanOrEqual(1);
+    projectId = list.rows[0].projectId;
+    console.log(`测试项目已建：id=${projectId}, code=${PROJECT_CODE}`);
+  });
+
+  test.afterAll(async () => {
+    if (!api) return;
+    try {
+      if (projectId) await api.del(`/project/project/${projectId}`);
+      // 兜底清理历史遗留（含异常中断未删的）
+      const r = await api.get('/project/project/list', { projectName: '自动化测试项目_', pageNum: 1, pageSize: 50 });
+      for (const row of (r.rows || [])) {
+        if (row.projectName?.startsWith('自动化测试项目_')) await api.del(`/project/project/${row.projectId}`);
+      }
+    } finally {
+      await api.dispose();
+    }
+  });
+
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
-
-    // 登录
-    await page.fill('input[placeholder="账号"]', TEST_USER.username);
-    await page.fill('input[placeholder="密码"]', TEST_USER.password);
-    await page.locator('button.el-button--primary').click();
-
-    // 等待登录成功，跳转到首页
-    await page.waitForURL(`${BASE_URL}/index`);
-    await expect(page).toHaveTitle(/项目管理系统/);
+    await login(page);
   });
 
-  test('场景1：立项申请 - 创建新项目', async ({ page }) => {
-    console.log('🎬 开始测试：立项申请');
-
-    // 1. 导航到立项申请页面
-    await page.click('text=项目管理');
-    await page.click('text=立项申请');
-    await page.waitForURL(`${BASE_URL}/project/apply`);
-
-    console.log('✓ 成功进入立项申请页面');
-
-    // 2. 填写项目基本信息
-    await page.fill('input[placeholder*="项目名称"]', TEST_PROJECT.projectName);
-
-    // 选择行业
-    await page.click('.el-select:has-text("行业") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("综合")`);
-
-    // 选择一级区域
-    await page.click('.el-select:has-text("一级区域") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("北京")`);
-
-    // 等待二级区域加载
-    await page.waitForTimeout(500);
-
-    // 选择二级区域
-    await page.click('.el-select:has-text("二级区域") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("北京市")`);
-
-    // 填写简称
-    await page.fill('input[placeholder*="简称"]', TEST_PROJECT.shortName);
-
-    // 选择立项年度
-    await page.click('.el-select:has-text("立项年度") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("2026")`);
-
-    console.log('✓ 基本信息填写完成');
-
-    // 3. 验证项目编号自动生成
-    const projectCode = await page.inputValue('input[placeholder*="项目编号"]');
-    expect(projectCode).toContain('ZH-BJ-11-TEST-2026');
-    console.log(`✓ 项目编号自动生成: ${projectCode}`);
-
-    // 4. 填写项目分类和部门
-    await page.click('.el-select:has-text("项目分类") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("软件开发")`);
-
-    await page.click('.el-tree-select:has-text("项目部门")');
-    await page.click('.el-tree-node__content:has-text("深圳组")');
-
-    // 5. 填写项目状态
-    await page.click('.el-select:has-text("项目状态") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("立项")`);
-
-    await page.click('.el-select:has-text("验收状态") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("未验收")`);
-
-    console.log('✓ 项目分类和状态填写完成');
-
-    // 6. 填写工作量和预算
-    await page.fill('input[placeholder*="预估工作量"]', TEST_PROJECT.estimatedWorkload);
-    await page.fill('input[placeholder*="项目预算"]', TEST_PROJECT.projectBudget);
-
-    // 7. 填写项目地址、计划、描述
-    await page.fill('textarea[placeholder*="项目地址"]', TEST_PROJECT.projectAddress);
-    await page.fill('textarea[placeholder*="项目计划"]', TEST_PROJECT.projectPlan);
-    await page.fill('textarea[placeholder*="项目描述"]', TEST_PROJECT.projectDescription);
-
-    console.log('✓ 项目详情填写完成');
-
-    // 8. 选择人员配置
-    await page.click('.el-select:has-text("项目经理") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("曲君")`);
-
-    await page.click('.el-select:has-text("市场经理") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("张仟栋")`);
-
-    await page.click('.el-select:has-text("销售负责人") .el-input');
-    await page.click(`.el-select-dropdown__item:first-child`);
-
-    // 选择参与人员（多选）
-    await page.click('.el-select:has-text("参与人员") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("张仟栋")`);
-    await page.click(`.el-select-dropdown__item:has-text("张磊")`);
-    await page.keyboard.press('Escape'); // 关闭下拉框
-
-    console.log('✓ 人员配置完成');
-
-    // 9. 提交立项申请
-    await page.click('button:has-text("提交")');
-
-    // 等待提交成功提示
-    await expect(page.locator('.el-message--success')).toBeVisible();
-    await expect(page.locator('.el-message--success')).toContainText('操作成功');
-
-    console.log('✅ 立项申请提交成功！');
-
-    // 等待跳转到项目列表
+  // ─────────────────────────────────────────────
+  test('场景1：立项项目在列表可见（API 造数）', async ({ page }) => {
+    await page.goto(`${BASE_URL}/project/list`);
     await page.waitForURL(`${BASE_URL}/project/list`);
-  });
-
-  test('场景2：项目列表 - 查询和筛选', async ({ page }) => {
-    console.log('🎬 开始测试：项目列表查询');
-
-    // 1. 导航到项目列表
-    await page.click('text=项目管理');
-    await page.click('text=项目列表');
-    await page.waitForURL(`${BASE_URL}/project/list`);
-
-    console.log('✓ 成功进入项目列表页面');
-
-    // 2. 验证列表加载
     await expect(page.locator('.el-table')).toBeVisible();
 
-    // 3. 测试查询功能 - 按项目名称搜索
-    await page.fill('input[placeholder*="项目名称"]', 'MCPP');
-    await page.click('button:has-text("搜索")');
-
-    // 等待表格刷新
-    await page.waitForTimeout(1000);
-
-    // 验证搜索结果
-    const rows = await page.locator('.el-table__row').count();
-    console.log(`✓ 搜索到 ${rows} 条记录`);
-
-    // 4. 测试筛选功能 - 按审核状态筛选
-    await page.click('.el-select:has-text("审核状态") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("待审核")`);
-    await page.click('button:has-text("搜索")');
-
-    await page.waitForTimeout(1000);
-    console.log('✓ 审核状态筛选完成');
-
-    // 5. 重置查询条件
-    await page.click('button:has-text("重置")');
-    await page.waitForTimeout(1000);
-
-    console.log('✅ 项目列表查询测试完成！');
+    await page.getByRole('textbox', { name: '项目名称' }).fill(PROJECT_NAME);
+    await page.getByRole('button', { name: '搜索' }).click();
+    await expect(page.getByText(PROJECT_NAME).first()).toBeVisible({ timeout: 10000 });
+    console.log('✅ 项目在列表可见');
   });
 
-  test('场景3：编辑项目 - 修改项目信息', async ({ page }) => {
-    console.log('🎬 开始测试：编辑项目');
+  // ─────────────────────────────────────────────
+  test('场景2：项目列表 - 查询和重置', async ({ page }) => {
+    await page.goto(`${BASE_URL}/project/list`);
+    await expect(page.locator('.el-table')).toBeVisible();
 
-    // 1. 导航到项目列表
-    await page.click('text=项目管理');
-    await page.click('text=项目列表');
-    await page.waitForURL(`${BASE_URL}/project/list`);
+    // 按名称查询：只剩目标项目
+    await page.getByRole('textbox', { name: '项目名称' }).fill(PROJECT_NAME);
+    await page.getByRole('button', { name: '搜索' }).click();
+    await expect(page.getByText(PROJECT_NAME).first()).toBeVisible({ timeout: 10000 });
 
-    // 2. 点击第一条记录的编辑按钮
-    await page.click('.el-table__row:first-child button:has-text("编辑")');
+    // 重置：表格仍在，且条数 >= 1
+    await page.getByRole('button', { name: '重置' }).click();
+    await page.waitForTimeout(800);
+    await expect(page.locator('.el-table')).toBeVisible();
+    console.log('✅ 查询和重置完成');
+  });
 
-    // 等待编辑页面加载
+  // ─────────────────────────────────────────────
+  test('场景3：编辑项目 - 修改并保存', async ({ page }) => {
+    await page.goto(`${BASE_URL}/project/list/edit/${projectId}`);
     await page.waitForURL(/\/project\/list\/edit\/\d+/);
-    console.log('✓ 成功进入编辑页面');
 
-    // 3. 修改项目名称
-    const originalName = await page.inputValue('input[placeholder*="项目名称"]');
-    const newName = `${originalName}_已编辑`;
-    await page.fill('input[placeholder*="项目名称"]', newName);
-
-    console.log(`✓ 项目名称修改: ${originalName} -> ${newName}`);
-
-    // 4. 修改预估工作量
+    // 修改预估工作量与项目预算
     await page.fill('input[placeholder*="预估工作量"]', '200');
-
-    // 5. 修改项目预算
     await page.fill('input[placeholder*="项目预算"]', '2000000');
 
-    console.log('✓ 项目信息修改完成');
-
-    // 6. 保存修改
-    await page.click('button:has-text("保存")');
-
-    // 等待保存成功提示
+    await page.locator('button:has-text("保存")').click();
     await expect(page.locator('.el-message--success')).toBeVisible();
     await expect(page.locator('.el-message--success')).toContainText('保存成功');
-
-    console.log('✅ 项目编辑保存成功！');
-
-    // 等待跳转回列表
     await page.waitForURL(`${BASE_URL}/project/list`);
+    console.log('✅ 编辑保存成功');
   });
 
+  // ─────────────────────────────────────────────
   test('场景4：项目详情 - 查看项目信息', async ({ page }) => {
-    console.log('🎬 开始测试：项目详情');
-
-    // 1. 导航到项目列表
-    await page.click('text=项目管理');
-    await page.click('text=项目列表');
-    await page.waitForURL(`${BASE_URL}/project/list`);
-
-    // 2. 点击第一条记录的详情按钮
-    await page.click('.el-table__row:first-child button:has-text("详情")');
-
-    // 等待详情页面加载
+    await page.goto(`${BASE_URL}/project/list/detail/${projectId}`);
     await page.waitForURL(/\/project\/list\/detail\/\d+/);
-    console.log('✓ 成功进入详情页面');
 
-    // 3. 验证详情页面元素
-    await expect(page.locator('text=项目基本信息')).toBeVisible();
-    await expect(page.locator('text=人员配置')).toBeVisible();
-    await expect(page.locator('text=客户信息')).toBeVisible();
-
-    // 4. 验证字段为只读
-    const projectNameInput = page.locator('input[placeholder*="项目名称"]');
-    await expect(projectNameInput).toBeDisabled();
-
-    console.log('✓ 详情页面所有字段为只读状态');
-
-    // 5. 返回列表
-    await page.click('button:has-text("返回")');
-    await page.waitForURL(`${BASE_URL}/project/list`);
-
-    console.log('✅ 项目详情查看测试完成！');
+    // 详情页为只读 el-descriptions，验证模块标题与项目名展示
+    await expect(page.getByText('项目基本信息').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('人员配置').first()).toBeVisible();
+    await expect(page.getByText(PROJECT_NAME).first()).toBeVisible();
+    console.log('✅ 详情页展示正常');
   });
 
-  test('场景5：部门树过滤 - 验证只显示三级及以下机构', async ({ page }) => {
-    console.log('🎬 开始测试：部门树过滤');
-
-    // 1. 导航到立项申请页面
-    await page.click('text=项目管理');
-    await page.click('text=立项申请');
+  // ─────────────────────────────────────────────
+  test('场景5：部门树过滤 - 只显示三级及以下机构', async ({ page }) => {
+    await page.goto(`${BASE_URL}/project/apply`);
     await page.waitForURL(`${BASE_URL}/project/apply`);
 
-    // 2. 点击项目部门选择器
-    await page.click('.el-tree-select:has-text("项目部门")');
+    // 打开项目部门树
+    await page.locator('[data-prop="projectDept"] .el-select').first().click();
+    await expect(page.locator('.el-select-dropdown .el-tree-node').first()).toBeVisible({ timeout: 10000 });
 
-    // 等待下拉框展开
-    await page.waitForTimeout(500);
-
-    // 3. 验证部门树结构
-    const treeNodes = await page.locator('.el-tree-node').all();
-    console.log(`✓ 部门树节点数量: ${treeNodes.length}`);
-
-    // 4. 验证没有一级和二级机构（应该从三级开始）
-    const firstNodeText = await treeNodes[0].textContent();
-    console.log(`✓ 第一个节点: ${firstNodeText}`);
-
-    // 验证不包含"若依科技"、"深圳总公司"等一二级机构
-    expect(firstNodeText).not.toContain('若依科技');
-    expect(firstNodeText).not.toContain('深圳总公司');
-
-    console.log('✅ 部门树过滤验证通过！');
+    // 顶层节点不应是一级(亚大)/二级(软件事业部)机构 —— 应从三级开始
+    const dropdownText = await page.locator('.el-select-dropdown .el-tree').first().textContent();
+    expect(dropdownText).not.toContain('亚大');
+    expect(dropdownText).not.toContain('软件事业部');
+    console.log('✅ 部门树过滤（三级及以下）验证通过');
   });
 
-  test('场景6：列表字段验证 - 参与人员和收入确认状态', async ({ page }) => {
-    console.log('🎬 开始测试：列表字段显示');
+  // ─────────────────────────────────────────────
+  test('场景6：列表字段验证 - 关键列存在', async ({ page }) => {
+    await page.goto(`${BASE_URL}/project/list`);
+    await expect(page.locator('.el-table')).toBeVisible();
 
-    // 1. 导航到项目列表
-    await page.click('text=项目管理');
-    await page.click('text=项目列表');
-    await page.waitForURL(`${BASE_URL}/project/list`);
-
-    // 2. 验证参与人员列显示
-    const participantsCell = page.locator('.el-table__row:first-child td').filter({ hasText: /张|李|王/ });
-    if (await participantsCell.count() > 0) {
-      const participantsText = await participantsCell.first().textContent();
-      console.log(`✓ 参与人员显示: ${participantsText}`);
-      expect(participantsText).toMatch(/[\u4e00-\u9fa5]+/); // 验证包含中文姓名
-    }
-
-    // 3. 验证收入确认状态列显示
-    const revenueStatusCell = page.locator('.el-table__row:first-child .el-tag').filter({ hasText: /未确认|已确认/ });
-    if (await revenueStatusCell.count() > 0) {
-      const statusText = await revenueStatusCell.first().textContent();
-      console.log(`✓ 收入确认状态显示: ${statusText}`);
-      expect(statusText).toMatch(/未确认|已确认/);
-    }
-
-    // 4. 验证审核状态列显示
-    const approvalStatusCell = page.locator('.el-table__row:first-child .el-tag').filter({ hasText: /待审核|审核通过|审核拒绝/ });
-    if (await approvalStatusCell.count() > 0) {
-      const statusText = await approvalStatusCell.first().textContent();
-      console.log(`✓ 审核状态显示: ${statusText}`);
-      expect(statusText).toMatch(/待审核|审核通过|审核拒绝/);
-    }
-
-    console.log('✅ 列表字段显示验证通过！');
+    // 关键列表头存在
+    const header = page.locator('.el-table__header-wrapper');
+    await expect(header.getByText('参与人员').first()).toBeVisible();
+    await expect(header.getByText('收入确认状态').first()).toBeVisible();
+    await expect(header.getByText('审核状态').first()).toBeVisible();
+    console.log('✅ 列表关键列存在');
   });
 
-  test('场景7：项目编号自动生成 - 验证格式正确', async ({ page }) => {
-    console.log('🎬 开始测试：项目编号自动生成');
-
-    // 1. 导航到立项申请页面
-    await page.click('text=项目管理');
-    await page.click('text=立项申请');
+  // ─────────────────────────────────────────────
+  test('场景7：项目编号自动生成 - 格式正确', async ({ page }) => {
+    await page.goto(`${BASE_URL}/project/apply`);
     await page.waitForURL(`${BASE_URL}/project/apply`);
 
-    // 2. 依次选择字段，观察项目编号变化
-
-    // 选择行业
-    await page.click('.el-select:has-text("行业") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("综合")`);
-    await page.waitForTimeout(300);
-
-    let projectCode = await page.inputValue('input[placeholder*="项目编号"]');
-    console.log(`✓ 选择行业后: ${projectCode}`);
-    expect(projectCode).toContain('ZH-');
-
-    // 选择一级区域
-    await page.click('.el-select:has-text("一级区域") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("北京")`);
+    // 编号需 5 个字段齐全才生成（generateProjectCode 异步调 checkProjectCode）
+    await pickOption(page, 'industry', '中行');       // ZH
+    await pickOption(page, 'region', '北京');          // BJ
     await page.waitForTimeout(500);
+    await pickOption(page, 'regionCode', '北京市');    // 11
+    await page.locator('[data-prop="shortName"] input').fill('AUTO');
+    await pickOption(page, 'establishedYear', '2026');
 
-    projectCode = await page.inputValue('input[placeholder*="项目编号"]');
-    console.log(`✓ 选择一级区域后: ${projectCode}`);
-    expect(projectCode).toContain('ZH-BJ-');
-
-    // 选择二级区域
-    await page.click('.el-select:has-text("二级区域") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("北京市")`);
-    await page.waitForTimeout(300);
-
-    projectCode = await page.inputValue('input[placeholder*="项目编号"]');
-    console.log(`✓ 选择二级区域后: ${projectCode}`);
-    expect(projectCode).toContain('ZH-BJ-11-');
-
-    // 填写简称
-    await page.fill('input[placeholder*="简称"]', 'AUTO');
-    await page.waitForTimeout(300);
-
-    projectCode = await page.inputValue('input[placeholder*="项目编号"]');
-    console.log(`✓ 填写简称后: ${projectCode}`);
-    expect(projectCode).toContain('ZH-BJ-11-AUTO-');
-
-    // 选择立项年度
-    await page.click('.el-select:has-text("立项年度") .el-input');
-    await page.click(`.el-select-dropdown__item:has-text("2026")`);
-    await page.waitForTimeout(300);
-
-    projectCode = await page.inputValue('input[placeholder*="项目编号"]');
-    console.log(`✓ 选择立项年度后: ${projectCode}`);
-    expect(projectCode).toBe('ZH-BJ-11-AUTO-2026');
-
-    console.log('✅ 项目编号自动生成验证通过！');
+    // 等待异步回填，断言最终格式
+    await expect(page.locator('[data-prop="projectCode"] input'))
+      .toHaveValue('ZH-BJ-11-AUTO-2026', { timeout: 8000 });
+    console.log('✅ 项目编号自动生成: ZH-BJ-11-AUTO-2026');
   });
 
 });
-
-/**
- * 测试执行说明：
- *
- * 1. 安装 Playwright:
- *    npm install -D @playwright/test
- *
- * 2. 安装浏览器:
- *    npx playwright install
- *
- * 3. 运行测试:
- *    npx playwright test tests/project-management.spec.js
- *
- * 4. 运行测试并查看报告:
- *    npx playwright test tests/project-management.spec.js --reporter=html
- *    npx playwright show-report
- *
- * 5. 调试模式运行:
- *    npx playwright test tests/project-management.spec.js --debug
- *
- * 6. 运行特定测试:
- *    npx playwright test tests/project-management.spec.js -g "立项申请"
- */

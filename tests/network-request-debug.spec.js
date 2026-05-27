@@ -6,7 +6,8 @@
 import { test, expect } from '@playwright/test';
 
 // 测试配置
-const BASE_URL = 'http://localhost:80';
+// 不带 :80：浏览器会把默认端口从 URL 抹掉，waitForURL 用带 :80 的字符串会永远匹配不上
+const BASE_URL = 'http://localhost';
 const API_URL = 'http://localhost:8080';
 
 // 测试用户
@@ -86,8 +87,7 @@ test.describe('网络请求调试', () => {
     responses.length = 0;
 
     // 2. 导航到立项申请页面
-    await page.click('text=项目管理');
-    await page.click('text=立项申请');
+    await page.goto(`${BASE_URL}/project/apply`);
     await page.waitForURL(`${BASE_URL}/project/apply`);
 
     console.log('✓ 进入立项申请页面');
