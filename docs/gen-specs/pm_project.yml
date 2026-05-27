@@ -6,6 +6,13 @@ basicInfo:
   tableComment: 项目管理表
   className: Project
   functionAuthor: ruoyi
+  remark: |
+    项目管理（pm_project）核心功能说明：
+    - 字符串首尾空格自动去除（全局机制，2026-05-25）：查询条件、新增（立项申请）、编辑提交时所有
+      String 字段自动 trim 首尾空格。GET 查询走 BaseController.@InitBinder 的 StringTrimmerEditor；
+      @RequestBody 走 ApplicationConfig 全局注册的 TrimStringJsonDeserializer（密码类字段
+      password/oldPassword/newPassword/confirmPassword 经字段名黑名单跳过）。非本表特有逻辑，全模块统一生效。
+      详见 docs/plans/2026-05-25-global-string-trim.md
 
 # ============================
 # Tab 2: 字段信息
@@ -1821,14 +1828,34 @@ customizations:
                       v-hasPermi revenue:company:edit
       6. 附件管理   → handleAttachment(row)，router.push(/project/list/attachment/:projectId)
                       v-hasPermi project:project:attachment
-      7. 打印立项申请 → handlePrint(row)，弹出 el-dialog 预览立项申请书，用户确认后打印
-                      （按钮文案为"打印立项申请"；前端纯组装，仅调 getProject(projectId)）
+      7. 打印立项申请 → handlePrint(row)，直接弹出 el-dialog 预览立项申请书（不再二次确认），
+                      在预览弹框底部点"打印"按钮 → doActualPrint（window.open 写入 #print-content-area 后打印）
+                      （按钮文案为"打印立项申请"；前端纯组装，仅调 getProject(projectId)，不调 listTask）
                       v-hasPermi project:project:print
-                      版式要点（2026-05 改造后）：
+                      版式要点（2026-05 改造后，对齐线下《项目立项申请书》Excel 模板）：
+                        - 标题：「项目立项申请书」
+                        - 预览/打印为带框 6 列表格（colgroup）+ 灰底标签 + 签字区，独立 print CSS，
+                          与列表样式无关；doActualPrint 用 window.open 写入 #print-content-area 内容
+                        - 字段行（自上而下，括号内为取数来源）：
+                            项目名称(projectName) | 项目类型(getDictLabel sys_xmfl, projectCategory)
+                            项目编号(projectCode)                              ← 整行
+                            所属部门(getDeptName(projectDept)) | 项目经理(projectManagerName)
+                            客户单位(customerName) | 地址(projectAddress)
+                            业务联系人(customerContactName) | 联系方式(customerContactPhone)
+                            销售负责人(salesManagerName) | 联系方式(salesContact)
+                            预算金额(元)(formatAmount(projectBudget))          ← 整行
+                            项目概况(projectDescription，换行显示)             ← 整行
+                            项目计划(projectPlan，换行显示)                    ← 整行
+                            申请人(签字)(projectManagerName) | 立项日期(applyDate，为空 '-')
+                            部门经理 / 销售部 / 财务部 / 副总经理室 / 总经理室 意见(签字) ×5 ← 留白手签
                         - 「立项日期」取 applyDate（原取 create_time），为空显示 '-'
-                        - 「所属部门」取 projectDept（标签原为"所属团队"，仅改标签不改取数）
-                        - 「项目概况」「项目计划」支持换行显示（white-space: pre-line）
+                        - 「所属部门」取 projectDept（标签原为"所属团队"，仅改标签不改取数；
+                          显示部门路径，复用列表 getDeptName，与列表"项目部门"列同值）
+                        - 「项目概况」「项目计划」支持换行显示（white-space: pre-line，cell-multi 类）
                         - 已去掉"任务编号""任务名称"两行，不再调用 listTask
+                        - 对齐 Excel 模板时核账结论：模板中「内部项目群名称、项目特性、是否采购、
+                          产品名称1-3、工作量评估1-3、预算人天单价」现系统无对应数据源，不予显示；
+                          原产品名称/工作量评估区改以「所属部门」单字段呈现
       8. 删除       → 确认弹框后物理删除（DELETE）
                       v-hasPermi project:project:remove
 
