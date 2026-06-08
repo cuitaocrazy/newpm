@@ -405,7 +405,7 @@
                 <td colspan="2">{{ printProject.salesContact || '-' }}</td>
               </tr>
               <tr>
-                <td class="cell-label">预算金额(元)</td>
+                <td class="cell-label">订单金额(元)</td>
                 <td colspan="5">{{ formatAmount(printProject.projectBudget) }}</td>
               </tr>
               <tr>
