@@ -32,8 +32,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="提交人员" prop="commName">
-              <user-select v-model="form.commName" placeholder="默认当前用户" filterable />
+            <el-form-item label="提交人员">
+              <el-input :value="userStore.nickName" readonly placeholder="当前登录用户" />
             </el-form-item>
           </el-col>
         </el-row>

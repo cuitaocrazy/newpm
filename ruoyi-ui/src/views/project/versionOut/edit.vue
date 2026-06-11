@@ -32,8 +32,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="提交人员" prop="commName">
-              <user-select v-model="form.commName" placeholder="提交人员" filterable />
+            <el-form-item label="提交人员">
+              <el-input v-model="form.userName" readonly placeholder="提交人员" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -311,7 +311,6 @@ onMounted(async () => {
     const res = await getVersionOut(id)
     const d = res.data || {}
     if (!d.taskList) d.taskList = []
-    if (d.commName) d.commName = Number(d.commName)  // user-select 需数字 userId 才能解析姓名
     form.value = d
     original.value = { sysName: d.sysName, versionType: d.versionType, subVersionCode: d.subVersionCode }
     // 重建级联下拉选项
