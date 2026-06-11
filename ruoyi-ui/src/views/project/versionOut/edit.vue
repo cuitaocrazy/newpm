@@ -32,11 +32,6 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="子产品" prop="subVersionCode">
-              <dict-select v-model="form.subVersionCode" dict-type="sys_product" placeholder="请选择子产品" @change="tryGenerate" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
             <el-form-item label="提交人员" prop="commName">
               <user-select v-model="form.commName" placeholder="提交人员" filterable />
             </el-form-item>
@@ -66,14 +61,16 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8" v-if="isUpgrade">
+        <el-row :gutter="20" v-if="isUpgrade">
+          <el-col :span="8">
             <el-form-item label="升级包初级版本号" prop="outVersion">
               <el-select v-model="form.outVersion" placeholder="请选择初级版本号" filterable clearable style="width:100%" @change="tryGenerate">
                 <el-option v-for="o in outVersionOptions" :key="o" :label="o" :value="o" />
               </el-select>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="出入库版本号">
               <el-input v-model="form.outLibVersion" readonly placeholder="自动生成">
@@ -86,13 +83,13 @@
               <dict-select v-model="form.packageMode" dict-type="sys_package_mode" placeholder="请选择组包方式" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="版本状态" prop="versionStatus">
               <dict-select v-model="form.versionStatus" dict-type="sys_version_status" placeholder="可选（待生产数据）" clearable />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="涉及TWS改造" prop="isInvolved">
               <el-radio-group v-model="form.isInvolved"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
@@ -103,14 +100,14 @@
               <el-radio-group v-model="form.dbUpdate"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="接口是否修改" prop="usbUpdate">
               <el-radio-group v-model="form.usbUpdate"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="16">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
             <el-form-item label="版本简介" prop="versionBrief">
               <el-input v-model="form.versionBrief" placeholder="请输入版本简介" maxlength="512" />
             </el-form-item>
@@ -194,7 +191,6 @@ const rules = ref({
   productionYear: [{ required: true, message: '投产年份不能为空', trigger: 'change' }],
   batchId:        [{ required: true, message: '投产批次不能为空', trigger: 'change' }],
   product:        [{ required: true, message: '产品不能为空', trigger: 'change' }],
-  subVersionCode: [{ required: true, message: '子产品不能为空', trigger: 'change' }],
   sysName:        [{ required: true, message: '子系统不能为空', trigger: 'change' }],
   versionType:    [{ required: true, message: '版本类型不能为空', trigger: 'change' }],
   packageMode:    [{ required: true, message: '组包方式不能为空', trigger: 'change' }],
@@ -227,6 +223,7 @@ function onBatchChange(batchId) {
 }
 
 async function onProductChange(product) {
+  form.value.subVersionCode = product  // 产品即 subVersionCode，两列同值
   form.value.sysName = null; form.value.baseVersionCode = null
   sysNameOptions.value = []
   resetTaskRows()

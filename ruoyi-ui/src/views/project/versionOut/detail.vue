@@ -14,7 +14,6 @@
         <el-descriptions-item label="投产批次号">{{ form.proBatchNo }}</el-descriptions-item>
         <el-descriptions-item label="版本投产日期">{{ form.versionPDate }}</el-descriptions-item>
         <el-descriptions-item label="产品">{{ form.product }}</el-descriptions-item>
-        <el-descriptions-item label="子产品">{{ form.subVersionCode }}</el-descriptions-item>
         <el-descriptions-item label="子系统">{{ form.sysName }}</el-descriptions-item>
         <el-descriptions-item label="基准版本号">{{ form.baseVersionCode }}</el-descriptions-item>
         <el-descriptions-item label="升级包初级版本号">{{ form.outVersion }}</el-descriptions-item>
