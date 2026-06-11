@@ -135,10 +135,10 @@ description: "Task list for 批次版本管理 implementation"
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T037 [P] 创建 E2E `e2e-version-out-crud.spec.js`：新增→生成版本号→查询→编辑→删除→导出主流程（跑前临时关验证码）
-- [ ] T038 [P] 创建 `docs/gen-specs/pm_version_out.yml`（代码生成规格，便于后续维护）
-- [ ] T039 [P] 更新 `docs/plans/2026-06-10-yadapm-migration-requirements.md`：标记"批次版本管理"已实现，记录与老系统的差异点（并发唯一键、软删除、子系统配置表）
-- [ ] T040 运行 `mvn test -pl ruoyi-project -am -Dtest=VersionNumberGeneratorTest,VersionOutServiceImplTest` 全绿 + 按 quickstart.md 跑验收对照
+- [x] T037 [P] 创建 E2E `e2e-version-out-crud.spec.js`：新增→生成版本号→查询→编辑→删除→导出主流程（跑前临时关验证码）
+- [x] T038 [P] 创建 `docs/gen-specs/pm_version_out.yml`（代码生成规格，便于后续维护）
+- [x] T039 [P] 更新 `docs/plans/2026-06-10-yadapm-migration-requirements.md`：标记"批次版本管理"已实现，记录与老系统的差异点（并发唯一键、软删除、子系统配置表）
+- [x] T040 运行 `mvn test -pl ruoyi-project -am -Dtest=VersionNumberGeneratorTest,VersionOutServiceImplTest` 全绿 + 按 quickstart.md 跑验收对照
 
 ---
 
