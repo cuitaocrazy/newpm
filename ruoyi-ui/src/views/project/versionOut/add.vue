@@ -159,7 +159,7 @@
 <script setup name="VersionOutAdd">
 import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/store/modules/user'
+import useUserStore from '@/store/modules/user'
 import {
   addVersionOut, generateOutLibVersion, getBatchByYear, getSysNameByProduct,
   getOutVersionOptions, getVersionPDate, getTaskInfo

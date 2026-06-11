@@ -88,12 +88,12 @@ description: "Task list for 批次版本管理 implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] 在 `VersionOutServiceImpl` 实现 `selectVersionOutList`（多条件 + manual_input='0'）与 `selectVersionOutById`（含 taskList）
-- [ ] T024 [US2] 在 `VersionOutController` 实现 `GET /list`（首行 `startPage()`，`@PreAuthorize('project:versionOut:list')`）与 `GET /{id}`
-- [ ] T025 [US2] 创建 `ruoyi-ui/src/views/project/versionOut/index.vue`：查询表单（年份/批次/产品/任务号/版本类型/提交人员/基准版本号/组包方式/版本状态）+ el-table（服务端排序 sortable=custom）+ 分页 + 详情跳转 + 搜索状态缓存（sessionStorage，参考 subproject/index.vue）
-- [ ] T026 [US2] 创建 `ruoyi-ui/src/views/project/versionOut/detail.vue`（展示全字段 + 关联任务列表）
-- [ ] T027 [US2] 在 `versionOut.ts` 补全 `listVersionOut`/`getVersionOut`
-- [ ] T028 [P] [US2] 创建 `service/impl/VersionOutServiceImplTest.java`：覆盖 list/getById 含 taskList 装配（Mockito）
+- [x] T023 [US2] 在 `VersionOutServiceImpl` 实现 `selectVersionOutList`（多条件 + manual_input='0'）与 `selectVersionOutById`（含 taskList）
+- [x] T024 [US2] 在 `VersionOutController` 实现 `GET /list`（首行 `startPage()`，`@PreAuthorize('project:versionOut:list')`）与 `GET /{id}`
+- [x] T025 [US2] 创建 `ruoyi-ui/src/views/project/versionOut/index.vue`：查询表单（年份/批次/产品/任务号/版本类型/提交人员/基准版本号/组包方式/版本状态）+ el-table（服务端排序 sortable=custom）+ 分页 + 详情跳转 + 搜索状态缓存（sessionStorage，参考 subproject/index.vue）
+- [x] T026 [US2] 创建 `ruoyi-ui/src/views/project/versionOut/detail.vue`（展示全字段 + 关联任务列表）
+- [x] T027 [US2] 在 `versionOut.ts` 补全 `listVersionOut`/`getVersionOut`
+- [x] T028 [P] [US2] 创建 `service/impl/VersionOutServiceImplTest.java`：覆盖 list/getById 含 taskList 装配（Mockito）
 
 **Checkpoint**: 查询/详情独立可用
 
