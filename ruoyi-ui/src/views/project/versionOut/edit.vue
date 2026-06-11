@@ -61,29 +61,27 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20" v-if="isUpgrade">
-          <el-col :span="8">
+        <el-row :gutter="20">
+          <el-col :span="6" v-if="isUpgrade">
             <el-form-item label="升级包初级版本号" prop="outVersion">
               <el-select v-model="form.outVersion" placeholder="请选择初级版本号" filterable clearable style="width:100%" @change="tryGenerate">
                 <el-option v-for="o in outVersionOptions" :key="o" :label="o" :value="o" />
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="isUpgrade ? 6 : 8">
             <el-form-item label="出入库版本号">
               <el-input v-model="form.outLibVersion" readonly placeholder="自动生成">
                 <template #append><el-tag type="success" size="small">自动</el-tag></template>
               </el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="isUpgrade ? 6 : 8">
             <el-form-item label="组包方式" prop="packageMode">
               <dict-select v-model="form.packageMode" dict-type="sys_package_mode" placeholder="请选择组包方式" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="isUpgrade ? 6 : 8">
             <el-form-item label="版本状态" prop="versionStatus">
               <dict-select v-model="form.versionStatus" dict-type="sys_version_status" placeholder="可选（待生产数据）" clearable />
             </el-form-item>
@@ -141,7 +139,8 @@
           <el-table-column label="软件中心任务号" min-width="200">
             <template #default="{ row }">
               <el-select v-model="row.taskId" placeholder="请选择任务号" filterable style="width:100%" @change="onTaskSelect(row)">
-                <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskNo" :value="t.taskId" />
+                <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskNo" :value="t.taskId"
+                  :disabled="isTaskUsed(t.taskId, row)" />
               </el-select>
             </template>
           </el-table-column>
@@ -289,6 +288,11 @@ function onTaskSelect(row) {
     row.taskNo = opt.taskNo; row.taskName = opt.taskName
     row.prjName = opt.prjName; row.demandName = opt.demandName
   }
+}
+
+// 禁止重复选中：某任务在其它行已选时，本行下拉里禁用（对齐老系统 taskNoFun）
+function isTaskUsed(taskId, currentRow) {
+  return form.value.taskList.some(r => r !== currentRow && r.taskId === taskId)
 }
 
 function submitForm() {
