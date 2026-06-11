@@ -287,6 +287,7 @@ onMounted(async () => {
     const res = await getVersionOut(id)
     const d = res.data || {}
     if (!d.taskList) d.taskList = []
+    if (d.commName) d.commName = Number(d.commName)  // user-select 需数字 userId 才能解析姓名
     form.value = d
     original.value = { sysName: d.sysName, versionType: d.versionType, subVersionCode: d.subVersionCode }
     // 重建级联下拉选项

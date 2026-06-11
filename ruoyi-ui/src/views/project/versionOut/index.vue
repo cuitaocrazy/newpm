@@ -31,6 +31,9 @@
       <el-col :span="1.5">
         <el-button type="primary" plain icon="Plus" @click="handleAdd" v-hasPermi="['project:versionOut:add']">新增</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['project:versionOut:export']">导出</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
     </el-row>
 
@@ -125,6 +128,10 @@ function handleSortChange({ prop, order }) {
 
 function handleAdd() {
   router.push('/project/versionOut/add')
+}
+
+function handleExport() {
+  proxy.download('/project/versionOut/export', { ...queryParams.value }, `批次版本_${new Date().getTime()}.xlsx`)
 }
 
 function handleDetail(row) {

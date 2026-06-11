@@ -46,7 +46,7 @@ public class VersionOut extends BaseEntity
 
     /** 版本类型1-6(字典 sys_version_type) */
     @NotBlank(message = "版本类型不能为空")
-    @Excel(name = "版本类型")
+    @Excel(name = "版本类型", dictType = "sys_version_type")
     private String versionType;
 
     /** 子系统名称 */
@@ -68,11 +68,11 @@ public class VersionOut extends BaseEntity
     /** 升级包初级版本号(类型5/6) */
     private String outVersion;
 
-    /** 提交人员(sys_user.user_name) */
-    @Excel(name = "提交人员")
+    /** 提交人员(sys_user.user_id) */
     private String commName;
 
     /** 提交人员姓名(显示,JOIN) */
+    @Excel(name = "提交人员")
     private String userName;
 
     /** 版本投产日期(只读,批次带出) */
@@ -93,11 +93,11 @@ public class VersionOut extends BaseEntity
 
     /** 组包方式1-6(字典 sys_package_mode) */
     @NotBlank(message = "组包方式不能为空")
-    @Excel(name = "组包方式")
+    @Excel(name = "组包方式", dictType = "sys_package_mode")
     private String packageMode;
 
     /** 版本状态(字典 sys_version_status,本期可选) */
-    @Excel(name = "版本状态")
+    @Excel(name = "版本状态", dictType = "sys_version_status")
     private String versionStatus;
 
     /** 版本说明 */

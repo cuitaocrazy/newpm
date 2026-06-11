@@ -2,6 +2,7 @@ package com.ruoyi.project.controller;
 
 import java.util.List;
 import java.util.Map;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +20,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.project.domain.SysName;
 import com.ruoyi.project.domain.VersionOut;
 import com.ruoyi.project.domain.VersionOutTask;
@@ -83,6 +85,17 @@ public class VersionOutController extends BaseController
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(versionOutService.deleteVersionOutByIds(ids));
+    }
+
+    /** 导出批次版本 Excel */
+    @PreAuthorize("@ss.hasPermi('project:versionOut:export')")
+    @Log(title = "批次版本管理", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public void export(HttpServletResponse response, VersionOut versionOut)
+    {
+        List<VersionOut> list = versionOutService.selectVersionOutList(versionOut);
+        ExcelUtil<VersionOut> util = new ExcelUtil<VersionOut>(VersionOut.class);
+        util.exportExcel(response, list, "批次版本数据");
     }
 
     /** 实时生成出入库版本号（前端回填只读框） */

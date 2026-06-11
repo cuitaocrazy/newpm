@@ -126,8 +126,8 @@ description: "Task list for 批次版本管理 implementation"
 
 ### Implementation for User Story 4
 
-- [ ] T035 [US4] 在 `VersionOutServiceImpl` 增加 `enrichForExport`（填充字典/任务等显示字段），在 `VersionOutController` 实现 `POST /export`（`@Log(导出)` + POI `util.exportExcel`，依赖 T005 的 `@Excel` 注解）
-- [ ] T036 [US4] 在 `index.vue` 增加导出按钮 + `versionOut.ts` 增加 `exportVersionOut`
+- [x] T035 [US4] 在 `VersionOutServiceImpl` 增加 `enrichForExport`（填充字典/任务等显示字段），在 `VersionOutController` 实现 `POST /export`（`@Log(导出)` + POI `util.exportExcel`，依赖 T005 的 `@Excel` 注解）
+- [x] T036 [US4] 在 `index.vue` 增加导出按钮 + `versionOut.ts` 增加 `exportVersionOut`
 
 **Checkpoint**: 导出可用
 
