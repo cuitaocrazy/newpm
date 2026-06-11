@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -63,6 +65,24 @@ public class VersionOutController extends BaseController
     public AjaxResult add(@Validated @RequestBody VersionOut versionOut)
     {
         return toAjax(versionOutService.insertVersionOut(versionOut));
+    }
+
+    /** 修改批次版本（关键字段变更则重算版本号） */
+    @PreAuthorize("@ss.hasPermi('project:versionOut:edit')")
+    @Log(title = "批次版本管理", businessType = BusinessType.UPDATE)
+    @PutMapping
+    public AjaxResult edit(@Validated @RequestBody VersionOut versionOut)
+    {
+        return toAjax(versionOutService.updateVersionOut(versionOut));
+    }
+
+    /** 删除批次版本（软删除） */
+    @PreAuthorize("@ss.hasPermi('project:versionOut:remove')")
+    @Log(title = "批次版本管理", businessType = BusinessType.DELETE)
+    @DeleteMapping("/{ids}")
+    public AjaxResult remove(@PathVariable Long[] ids)
+    {
+        return toAjax(versionOutService.deleteVersionOutByIds(ids));
     }
 
     /** 实时生成出入库版本号（前端回填只读框） */

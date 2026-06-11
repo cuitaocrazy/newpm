@@ -84,6 +84,55 @@ public class VersionOutServiceImplTest
     }
 
     @Test
+    public void update_keyChanged_regeneratesNumber()
+    {
+        VersionOut old = new VersionOut();
+        old.setId(5L);
+        old.setSysName("OLD"); old.setVersionType("1"); old.setSubVersionCode("S1");
+        old.setOutLibVersion("OLD_SP01"); old.setVersionCode("01");
+        when(versionOutMapper.selectVersionOutById(5L)).thenReturn(old);
+
+        VersionOut upd = new VersionOut();
+        upd.setId(5L);
+        upd.setSysName("NEW"); upd.setVersionType("1"); upd.setSubVersionCode("S1");
+        when(versionNumberGenerator.generate(eq("NEW"), any(), eq("1"), any(), eq("2"), eq(5L), any(), any()))
+                .thenReturn(new String[] { "NEW_SP03", "03" });
+        when(versionOutMapper.updateVersionOut(upd)).thenReturn(1);
+
+        try (MockedStatic<SecurityUtils> ms = mockStatic(SecurityUtils.class))
+        {
+            ms.when(SecurityUtils::getUsername).thenReturn("tester");
+            service.updateVersionOut(upd);
+        }
+        assertEquals("NEW_SP03", upd.getOutLibVersion());
+        verify(versionOutMapper).deleteVersionOutTaskByVersionId(5L);
+    }
+
+    @Test
+    public void update_keyUnchanged_keepsOldNumber()
+    {
+        VersionOut old = new VersionOut();
+        old.setId(6L);
+        old.setSysName("SYS"); old.setVersionType("1"); old.setSubVersionCode("S1");
+        old.setOutLibVersion("SYS_SP09"); old.setVersionCode("09");
+        when(versionOutMapper.selectVersionOutById(6L)).thenReturn(old);
+
+        VersionOut upd = new VersionOut();
+        upd.setId(6L);
+        upd.setSysName("SYS"); upd.setVersionType("1"); upd.setSubVersionCode("S1");
+        when(versionOutMapper.updateVersionOut(upd)).thenReturn(1);
+
+        try (MockedStatic<SecurityUtils> ms = mockStatic(SecurityUtils.class))
+        {
+            ms.when(SecurityUtils::getUsername).thenReturn("tester");
+            service.updateVersionOut(upd);
+        }
+        // 关键字段未变 → 沿用原号，不调用生成器
+        assertEquals("SYS_SP09", upd.getOutLibVersion());
+        Mockito.verifyNoInteractions(versionNumberGenerator);
+    }
+
+    @Test
     public void delete_removesTasksThenMain()
     {
         Long[] ids = new Long[] { 1L, 2L };

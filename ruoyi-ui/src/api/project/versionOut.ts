@@ -15,6 +15,16 @@ export function addVersionOut(data: any) {
   return request({ url: '/project/versionOut', method: 'post', data })
 }
 
+// 修改批次版本
+export function updateVersionOut(data: any) {
+  return request({ url: '/project/versionOut', method: 'put', data })
+}
+
+// 删除批次版本
+export function delVersionOut(ids: number | string | (number | string)[]) {
+  return request({ url: `/project/versionOut/${ids}`, method: 'delete' })
+}
+
 // 实时生成出入库版本号
 export function generateOutLibVersion(data: any, params?: any) {
   return request({ url: '/project/versionOut/generateOutLibVersion', method: 'post', data, params })

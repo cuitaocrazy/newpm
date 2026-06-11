@@ -107,12 +107,12 @@ description: "Task list for 批次版本管理 implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] 在 `VersionOutServiceImpl` 实现 `updateVersionOut`：判断 sys_name/version_type/sub_version_code 是否变更决定是否重算版本号 → 主表更新 → 任务行整体替换，`@Transactional`
-- [ ] T030 [US3] 在 `VersionOutServiceImpl` 实现 `deleteVersionOutByIds`：软删除 `del_flag='1'` + 级联处理任务行，`@Transactional`
-- [ ] T031 [US3] 在 `VersionOutController` 实现 `PUT /project/versionOut`（`@Log(修改)`）与 `DELETE /{ids}`（`@Log(删除)`）
-- [ ] T032 [US3] 创建 `ruoyi-ui/src/views/project/versionOut/edit.vue`（复用 add 表单，回显 + 版本号重算逻辑）
-- [ ] T033 [US3] 在 `versionOut.ts` 补全 `updateVersionOut`/`delVersionOut`
-- [ ] T034 [P] [US3] 在 `VersionOutServiceImplTest` 增加 update（重算/不重算）/ delete 用例
+- [x] T029 [US3] 在 `VersionOutServiceImpl` 实现 `updateVersionOut`：判断 sys_name/version_type/sub_version_code 是否变更决定是否重算版本号 → 主表更新 → 任务行整体替换，`@Transactional`
+- [x] T030 [US3] 在 `VersionOutServiceImpl` 实现 `deleteVersionOutByIds`：软删除 `del_flag='1'` + 级联处理任务行，`@Transactional`
+- [x] T031 [US3] 在 `VersionOutController` 实现 `PUT /project/versionOut`（`@Log(修改)`）与 `DELETE /{ids}`（`@Log(删除)`）
+- [x] T032 [US3] 创建 `ruoyi-ui/src/views/project/versionOut/edit.vue`（复用 add 表单，回显 + 版本号重算逻辑）
+- [x] T033 [US3] 在 `versionOut.ts` 补全 `updateVersionOut`/`delVersionOut`
+- [x] T034 [P] [US3] 在 `VersionOutServiceImplTest` 增加 update（重算/不重算）/ delete 用例
 
 **Checkpoint**: 完整 CRUD 可用
 

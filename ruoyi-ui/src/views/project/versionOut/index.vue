@@ -53,9 +53,11 @@
       <el-table-column label="提交人员" prop="userName" width="100" align="center" />
       <el-table-column label="投产日期" prop="versionPDate" width="110" align="center" />
       <el-table-column label="创建时间" prop="createTime" width="160" align="center" sortable="custom" />
-      <el-table-column label="操作" width="120" align="center" fixed="right">
+      <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link icon="View" @click="handleDetail(row)" v-hasPermi="['project:versionOut:query']">详情</el-button>
+          <el-button type="primary" link icon="Edit" @click="handleEdit(row)" v-hasPermi="['project:versionOut:edit']">编辑</el-button>
+          <el-button type="danger" link icon="Delete" @click="handleDelete(row)" v-hasPermi="['project:versionOut:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -69,7 +71,7 @@
 import { ref, reactive, toRefs, getCurrentInstance, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { onBeforeRouteLeave } from 'vue-router'
-import { listVersionOut } from '@/api/project/versionOut'
+import { listVersionOut, delVersionOut } from '@/api/project/versionOut'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -127,6 +129,19 @@ function handleAdd() {
 
 function handleDetail(row) {
   router.push(`/project/versionOut/detail/${row.id}`)
+}
+
+function handleEdit(row) {
+  router.push(`/project/versionOut/edit/${row.id}`)
+}
+
+function handleDelete(row) {
+  proxy.$modal.confirm(`确认删除出入库版本号「${row.outLibVersion}」？`).then(() => {
+    return delVersionOut(row.id)
+  }).then(() => {
+    getList()
+    proxy.$modal.msgSuccess('删除成功')
+  }).catch(() => {})
 }
 
 // 搜索状态缓存：离开详情/新增返回时保留查询条件

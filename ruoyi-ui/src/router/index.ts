@@ -323,6 +323,19 @@ export const constantRoutes = [
         meta: { title: '批次版本详情', activeMenu: '/storageVersion/versionOut' }
       }
     ]
+  },
+  {
+    path: '/project/versionOut/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':id(\\d+)',
+        component: () => import('@/views/project/versionOut/edit.vue'),
+        name: 'VersionOutEdit',
+        meta: { title: '编辑批次版本', activeMenu: '/storageVersion/versionOut' }
+      }
+    ]
   }
 ]
 
