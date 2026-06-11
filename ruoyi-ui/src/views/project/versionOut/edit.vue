@@ -172,7 +172,7 @@ import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   getVersionOut, updateVersionOut, generateOutLibVersion, getBatchByYear,
-  getSysNameByProduct, getOutVersionOptions, getVersionPDate, getTaskOptions
+  getSysNameByProduct, getOutVersionOptions, getTaskOptions
 } from '@/api/project/versionOut'
 
 const { proxy } = getCurrentInstance()
@@ -217,14 +217,13 @@ async function onYearChange(year) {
   batchOptions.value = res.data || []
 }
 
-async function onBatchChange(batchId) {
+function onBatchChange(batchId) {
   const found = batchOptions.value.find(b => b.batchId === batchId)
   form.value.proBatchNo = found ? found.batchNo : null
+  // 版本投产日期 = 批次的计划投产日期（直接取自批次选项，与任务管理一致）
+  form.value.versionPDate = found && found.planProductionDate ? found.planProductionDate.substring(0, 10) : null
   resetTaskRows()
-  if (!batchId) { form.value.versionPDate = null; return }
-  const res = await getVersionPDate(batchId)
-  form.value.versionPDate = res.data || null
-  loadTaskOptions()
+  if (batchId) loadTaskOptions()
 }
 
 async function onProductChange(product) {
