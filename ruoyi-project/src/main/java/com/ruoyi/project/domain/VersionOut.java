@@ -100,7 +100,13 @@ public class VersionOut extends BaseEntity
     @Excel(name = "版本状态", dictType = "sys_version_status")
     private String versionStatus;
 
+    /** 版本简介 */
+    @NotBlank(message = "版本简介不能为空")
+    @Excel(name = "版本简介")
+    private String versionBrief;
+
     /** 版本说明 */
+    @NotBlank(message = "版本说明不能为空")
     @Excel(name = "版本说明")
     private String versionDescr;
 
@@ -154,6 +160,8 @@ public class VersionOut extends BaseEntity
     public String getPackageMode() { return packageMode; }
     public void setVersionStatus(String versionStatus) { this.versionStatus = versionStatus; }
     public String getVersionStatus() { return versionStatus; }
+    public void setVersionBrief(String versionBrief) { this.versionBrief = versionBrief; }
+    public String getVersionBrief() { return versionBrief; }
     public void setVersionDescr(String versionDescr) { this.versionDescr = versionDescr; }
     public String getVersionDescr() { return versionDescr; }
     public void setRemarks(String remarks) { this.remarks = remarks; }

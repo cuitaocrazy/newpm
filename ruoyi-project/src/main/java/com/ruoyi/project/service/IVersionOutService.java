@@ -41,6 +41,9 @@ public interface IVersionOutService
     /** 软件中心任务号→任务回显信息 */
     public VersionOutTask selectTaskInfoByDemandNo(String softwareDemandNo);
 
+    /** 任务下拉选项：按 年份+批次+产品 */
+    public List<VersionOutTask> selectTaskOptions(String productionYear, Long batchId, String product);
+
     /** 子系统+版本类型→升级包初级版本号候选 */
     public List<String> selectOutVersionOptions(String sysName, String versionType);
 }

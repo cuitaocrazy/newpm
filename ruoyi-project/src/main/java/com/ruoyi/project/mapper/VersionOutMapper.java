@@ -63,6 +63,10 @@ public interface VersionOutMapper
     /** 软件中心任务号→任务回显信息(task_name/demand_name/project_name) */
     public VersionOutTask selectTaskInfoByDemandNo(String softwareDemandNo);
 
+    /** 任务下拉选项：按 年份+批次+产品 查 pm_task（含回显字段） */
+    public List<VersionOutTask> selectTaskOptions(@Param("productionYear") String productionYear,
+            @Param("batchId") Long batchId, @Param("product") String product);
+
     /** 子系统+版本类型→已有升级包初级版本号候选（类型5/6） */
     public List<String> selectOutVersionOptions(@Param("sysName") String sysName, @Param("versionType") String versionType);
 }

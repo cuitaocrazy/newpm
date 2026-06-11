@@ -181,4 +181,10 @@ public class VersionOutServiceImpl implements IVersionOutService
     {
         return versionOutMapper.selectOutVersionOptions(sysName, versionType);
     }
+
+    @Override
+    public List<VersionOutTask> selectTaskOptions(String productionYear, Long batchId, String product)
+    {
+        return versionOutMapper.selectTaskOptions(productionYear, batchId, product);
+    }
 }

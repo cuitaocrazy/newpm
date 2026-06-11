@@ -151,4 +151,12 @@ public class VersionOutController extends BaseController
         VersionOutTask info = versionOutService.selectTaskInfoByDemandNo(taskNo);
         return success(info);
     }
+
+    /** 任务下拉选项：按 年份+批次+产品（含回显字段） */
+    @PreAuthorize("@ss.hasPermi('project:versionOut:list')")
+    @GetMapping("/taskOptions")
+    public AjaxResult taskOptions(@RequestParam String productionYear, @RequestParam Long batchId, @RequestParam String product)
+    {
+        return success(versionOutService.selectTaskOptions(productionYear, batchId, product));
+    }
 }

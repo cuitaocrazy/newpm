@@ -23,6 +23,7 @@
         <result property="usbUpdate"       column="usb_update"/>
         <result property="packageMode"     column="package_mode"/>
         <result property="versionStatus"   column="version_status"/>
+        <result property="versionBrief"    column="version_brief"/>
         <result property="versionDescr"    column="version_descr"/>
         <result property="remarks"         column="remarks"/>
         <result property="manualInput"     column="manual_input"/>
@@ -51,7 +52,7 @@
         select v.id, v.production_year, v.batch_id, v.pro_batch_no, v.sub_version_code, v.product,
                v.version_type, v.sys_name, v.base_version_code, v.out_lib_version, v.version_code,
                v.out_version, v.comm_name, u.nick_name as user_name, v.version_p_date, v.is_involved,
-               v.db_update, v.usb_update, v.package_mode, v.version_status, v.version_descr, v.remarks,
+               v.db_update, v.usb_update, v.package_mode, v.version_status, v.version_brief, v.version_descr, v.remarks,
                v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark
         from pm_version_out v
         left join sys_user u on v.comm_name = u.user_id
@@ -95,12 +96,12 @@
         insert into pm_version_out(
             production_year, batch_id, pro_batch_no, sub_version_code, product, version_type, sys_name,
             base_version_code, out_lib_version, version_code, out_version, comm_name, version_p_date,
-            is_involved, db_update, usb_update, package_mode, version_status, version_descr, remarks,
+            is_involved, db_update, usb_update, package_mode, version_status, version_brief, version_descr, remarks,
             manual_input, del_flag, create_by, create_time, remark)
         values(
             #{productionYear}, #{batchId}, #{proBatchNo}, #{subVersionCode}, #{product}, #{versionType}, #{sysName},
             #{baseVersionCode}, #{outLibVersion}, #{versionCode}, #{outVersion}, #{commName}, #{versionPDate},
-            #{isInvolved}, #{dbUpdate}, #{usbUpdate}, #{packageMode}, #{versionStatus}, #{versionDescr}, #{remarks},
+            #{isInvolved}, #{dbUpdate}, #{usbUpdate}, #{packageMode}, #{versionStatus}, #{versionBrief}, #{versionDescr}, #{remarks},
             '0', '0', #{createBy}, sysdate(), #{remark})
     </insert>
 
@@ -125,6 +126,7 @@
             <if test="usbUpdate != null">usb_update = #{usbUpdate},</if>
             <if test="packageMode != null">package_mode = #{packageMode},</if>
             <if test="versionStatus != null">version_status = #{versionStatus},</if>
+            <if test="versionBrief != null">version_brief = #{versionBrief},</if>
             <if test="versionDescr != null">version_descr = #{versionDescr},</if>
             <if test="remarks != null">remarks = #{remarks},</if>
             update_by = #{updateBy}, update_time = sysdate()
@@ -204,6 +206,17 @@
         left join pm_project pj on pt.project_id = pj.project_id
         where pt.software_demand_no = #{softwareDemandNo}
         limit 1
+    </select>
+
+    <select id="selectTaskOptions" resultMap="VersionOutTaskResult">
+        select t.task_id, t.software_demand_no as task_no, t.task_name, t.demand_name,
+               p.project_name as prj_name
+        from pm_task t
+        left join pm_project p on t.project_id = p.project_id
+        where t.production_year = #{productionYear}
+          and t.batch_id = #{batchId}
+          and t.product = #{product}
+        order by t.software_demand_no desc
     </select>
 
     <select id="selectOutVersionOptions" resultType="java.lang.String">

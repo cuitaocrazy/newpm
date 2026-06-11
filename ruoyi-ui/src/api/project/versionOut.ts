@@ -54,3 +54,8 @@ export function getVersionPDate(batchId: number | string) {
 export function getTaskInfo(taskNo: string) {
   return request({ url: '/project/versionOut/taskInfo', method: 'get', params: { taskNo } })
 }
+
+// 任务下拉选项：按 年份+批次+产品
+export function getTaskOptions(productionYear: string, batchId: number | string, product: string) {
+  return request({ url: '/project/versionOut/taskOptions', method: 'get', params: { productionYear, batchId, product } })
+}

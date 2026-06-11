@@ -27,6 +27,7 @@
 | usb_update | char(1) | 接口是否修改 0是1否 | usbUpdate | |
 | package_mode | varchar(8) | 组包方式 1-6 | packageMode | 字典 sys_package_mode |
 | version_status | varchar(20) | 版本状态 | versionStatus | 字典 sys_version_status（**值待生产数据，初始空字典，管理员可维护；本轮可选**） |
+| version_brief | varchar(512) | 版本简介（必填） | taskName(老系统借用此列) | 老表单 name="taskName"，版本级，与"版本说明"是两个字段 |
 | version_descr | varchar(512) | 版本说明 | versionDescr | |
 | remarks | varchar(2048) | 备注 | remarks | |
 | manual_input | char(1) | 批次标志 0=批次 1=非批次 | manualInput | **本 spec 仅 0** |

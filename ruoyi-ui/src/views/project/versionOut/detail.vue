@@ -25,6 +25,7 @@
         <el-descriptions-item label="数据库是否修改">{{ form.dbUpdate === '0' ? '是' : '否' }}</el-descriptions-item>
         <el-descriptions-item label="接口是否修改">{{ form.usbUpdate === '0' ? '是' : '否' }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ form.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="版本简介" :span="3">{{ form.versionBrief }}</el-descriptions-item>
         <el-descriptions-item label="版本说明" :span="3">{{ form.versionDescr }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="3">{{ form.remarks }}</el-descriptions-item>
       </el-descriptions>

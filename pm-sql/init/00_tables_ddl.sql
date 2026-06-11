@@ -1276,3 +1276,6 @@ CREATE TABLE IF NOT EXISTS pm_sys_name (
 
 -- 4. 既有表变更：pm_task 新增 需求名称（本特性引入；JOIN 给版本管理回显用）
 ALTER TABLE pm_task ADD COLUMN demand_name varchar(255) DEFAULT NULL COMMENT '需求名称';
+
+-- feature 007 补充：版本简介
+ALTER TABLE pm_version_out ADD COLUMN version_brief varchar(512) DEFAULT NULL COMMENT '版本简介' AFTER remarks;

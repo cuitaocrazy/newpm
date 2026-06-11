@@ -38,7 +38,7 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="提交人员" prop="commName">
-              <user-select v-model="form.commName" post-code="pm" placeholder="默认当前用户" filterable />
+              <user-select v-model="form.commName" placeholder="默认当前用户" filterable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -111,8 +111,15 @@
             </el-form-item>
           </el-col>
           <el-col :span="16">
-            <el-form-item label="版本说明">
-              <el-input v-model="form.versionDescr" placeholder="请输入版本说明" />
+            <el-form-item label="版本简介" prop="versionBrief">
+              <el-input v-model="form.versionBrief" placeholder="请输入版本简介" maxlength="512" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="版本说明" prop="versionDescr">
+              <el-input v-model="form.versionDescr" type="textarea" :rows="2" placeholder="请输入版本说明" maxlength="512" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -129,17 +136,21 @@
       <el-card shadow="hover" style="margin-bottom: 15px;">
         <template #header>
           <span style="font-size: 16px; font-weight: bold;">三、关联任务</span>
-          <el-button type="primary" link style="float:right" @click="addTaskRow">+ 添加任务</el-button>
+          <el-button type="primary" link style="float:right" @click="addTaskRow" :disabled="!taskOptionsReady">+ 添加任务</el-button>
         </template>
+        <el-alert v-if="!taskOptionsReady" type="info" :closable="false" show-icon
+          title="请先选择 投产年份 + 投产批次 + 产品，任务号下拉才有数据" style="margin-bottom: 10px;" />
         <el-table :data="form.taskList" border size="small">
-          <el-table-column label="软件中心任务号" min-width="180">
+          <el-table-column label="软件中心任务号" min-width="200">
             <template #default="{ row }">
-              <el-input v-model="row.taskNo" placeholder="输入任务号后失焦回显" @blur="onTaskNoBlur(row)" />
+              <el-select v-model="row.taskId" placeholder="请选择任务号" filterable style="width:100%" @change="onTaskSelect(row)">
+                <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskNo" :value="t.taskId" />
+              </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="任务名称" prop="taskName" min-width="160" />
-          <el-table-column label="项目名称" prop="prjName" min-width="160" />
-          <el-table-column label="需求名称" prop="demandName" min-width="160" />
+          <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="项目名称" prop="prjName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="需求名称" prop="demandName" min-width="160" show-overflow-tooltip />
           <el-table-column label="操作" width="80">
             <template #default="{ $index }">
               <el-button type="danger" link @click="removeTaskRow($index)">删除</el-button>
@@ -162,7 +173,7 @@ import { useRouter } from 'vue-router'
 import useUserStore from '@/store/modules/user'
 import {
   addVersionOut, generateOutLibVersion, getBatchByYear, getSysNameByProduct,
-  getOutVersionOptions, getVersionPDate, getTaskInfo
+  getOutVersionOptions, getVersionPDate, getTaskOptions
 } from '@/api/project/versionOut'
 
 const { proxy } = getCurrentInstance()
@@ -173,6 +184,7 @@ const formRef = ref()
 const batchOptions = ref([])
 const sysNameOptions = ref([])
 const outVersionOptions = ref([])
+const taskOptions = ref([])
 
 const form = ref({
   productionYear: null, batchId: null, proBatchNo: null, versionPDate: null,
@@ -180,7 +192,7 @@ const form = ref({
   sysName: null, baseVersionCode: null, versionType: null, outVersion: null,
   outLibVersion: null, versionCode: null, packageMode: null, versionStatus: null,
   isInvolved: '1', dbUpdate: '1', usbUpdate: '1',
-  versionDescr: null, remarks: null,
+  versionBrief: null, versionDescr: null, remarks: null,
   taskList: []
 })
 
@@ -192,6 +204,8 @@ const rules = ref({
   sysName:        [{ required: true, message: '子系统不能为空', trigger: 'change' }],
   versionType:    [{ required: true, message: '版本类型不能为空', trigger: 'change' }],
   packageMode:    [{ required: true, message: '组包方式不能为空', trigger: 'change' }],
+  versionBrief:   [{ required: true, message: '版本简介不能为空', trigger: 'blur' }],
+  versionDescr:   [{ required: true, message: '版本说明不能为空', trigger: 'blur' }],
   isInvolved:     [{ required: true, message: '请选择是否涉及TWS改造', trigger: 'change' }],
   dbUpdate:       [{ required: true, message: '请选择数据库是否修改', trigger: 'change' }],
   usbUpdate:      [{ required: true, message: '请选择接口是否修改', trigger: 'change' }]
@@ -199,12 +213,15 @@ const rules = ref({
 
 // 类型5(B包升级包)/6(SP包升级包) 需要选升级包初级版本号
 const isUpgrade = computed(() => form.value.versionType === '5' || form.value.versionType === '6')
+// 年份+批次+产品 都选了，任务号下拉才有数据源
+const taskOptionsReady = computed(() => !!(form.value.productionYear && form.value.batchId && form.value.product))
 
 async function onYearChange(year) {
   form.value.batchId = null
   form.value.versionPDate = null
   form.value.proBatchNo = null
   batchOptions.value = []
+  resetTaskRows()
   if (!year) return
   const res = await getBatchByYear(year)
   batchOptions.value = res.data || []
@@ -213,18 +230,36 @@ async function onYearChange(year) {
 async function onBatchChange(batchId) {
   const found = batchOptions.value.find(b => b.batchId === batchId)
   form.value.proBatchNo = found ? found.batchNo : null
+  resetTaskRows()
   if (!batchId) { form.value.versionPDate = null; return }
   const res = await getVersionPDate(batchId)
   form.value.versionPDate = res.data || null
+  loadTaskOptions()
 }
 
 async function onProductChange(product) {
   form.value.sysName = null
   form.value.baseVersionCode = null
   sysNameOptions.value = []
+  resetTaskRows()
   if (!product) return
   const res = await getSysNameByProduct(product)
   sysNameOptions.value = res.data || []
+  loadTaskOptions()
+}
+
+// 切换 年份/批次/产品 时，已选任务作废，清空任务行与选项
+function resetTaskRows() {
+  form.value.taskList = []
+  taskOptions.value = []
+}
+
+// 年份+批次+产品 齐了才拉任务下拉数据源
+async function loadTaskOptions() {
+  const f = form.value
+  if (!(f.productionYear && f.batchId && f.product)) return
+  const res = await getTaskOptions(f.productionYear, f.batchId, f.product)
+  taskOptions.value = res.data || []
 }
 
 function onSysNameChange(sysName) {
@@ -268,17 +303,14 @@ function removeTaskRow(index) {
   form.value.taskList.splice(index, 1)
 }
 
-async function onTaskNoBlur(row) {
-  if (!row.taskNo) return
-  const res = await getTaskInfo(row.taskNo)
-  if (res.data) {
-    row.taskId = res.data.taskId
-    row.taskName = res.data.taskName
-    row.prjName = res.data.prjName
-    row.demandName = res.data.demandName
-  } else {
-    row.taskId = null; row.taskName = ''; row.prjName = ''; row.demandName = ''
-    proxy.$modal.msgWarning('未找到对应任务，将仅保存任务号')
+// 选中任务号 → 回填该行 任务名/项目名/需求名
+function onTaskSelect(row) {
+  const opt = taskOptions.value.find(t => t.taskId === row.taskId)
+  if (opt) {
+    row.taskNo = opt.taskNo
+    row.taskName = opt.taskName
+    row.prjName = opt.prjName
+    row.demandName = opt.demandName
   }
 }
 
