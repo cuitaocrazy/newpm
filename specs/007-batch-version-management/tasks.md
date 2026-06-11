@@ -28,10 +28,10 @@ description: "Task list for 批次版本管理 implementation"
 
 **Purpose**: 建表、字典、菜单权限
 
-- [ ] T001 在 `pm-sql/init/00_tables_ddl.sql` 追加 `pm_version_out`、`pm_version_out_task`、`pm_sys_name` 三张表 DDL（utf8mb4_0900_ai_ci，含索引 + 唯一键 `uk_sys_type_outlib`，字段见 data-model.md）
-- [ ] T002 [P] 在 `pm-sql/init/01_tables_data.sql` 追加字典：`sys_version_type`(1=SP升级包…6=SP包升级包)、`sys_package_mode`(1=A1本批次全量…6=C2多任务增量，值见 research.md D3)、`sys_version_status`(**建成空字典 type，不 seed 数据值** —— 枚举来自生产库，待迁移数据到位由管理员/迁移填充)
-- [ ] T003 [P] 在 `pm-sql/init/02_menu_data.sql` 追加一级菜单"出入库版本管理" + 二级菜单"批次版本管理"(`/project/versionOut`) + 6 个权限点 `project:versionOut:{list,query,add,edit,remove,export}`（菜单 parent_id 用子查询动态取，勿硬编码）
-- [ ] T004 应用 SQL 到本地：`cat` 管道 `docker exec -i newpm-mysql-1 mysql ...` 建表+字典+菜单，并 `docker exec -i newpm-redis-1 redis-cli DEL sys_dict:sys_version_type sys_dict:sys_package_mode sys_dict:sys_version_status` 刷缓存
+- [x] T001 在 `pm-sql/init/00_tables_ddl.sql` 追加 `pm_version_out`、`pm_version_out_task`、`pm_sys_name` 三张表 DDL（utf8mb4_0900_ai_ci，含索引 + 唯一键 `uk_sys_type_outlib`）+ `ALTER TABLE pm_task ADD demand_name varchar(255) COMMENT '需求名称'`（字段见 data-model.md）
+- [x] T002 [P] 在 `pm-sql/init/01_tables_data.sql` 追加字典：`sys_version_type`(1=SP升级包…6=SP包升级包)、`sys_package_mode`(1=A1本批次全量…6=C2多任务增量，值见 research.md D3)、`sys_version_status`(**建成空字典 type，不 seed 数据值** —— 枚举来自生产库，待迁移数据到位由管理员/迁移填充)
+- [x] T003 [P] 在 `pm-sql/init/02_menu_data.sql` 追加一级菜单"出入库版本管理" + 二级菜单"批次版本管理"(`/project/versionOut`) + 6 个权限点 `project:versionOut:{list,query,add,edit,remove,export}`（菜单 parent_id 用子查询动态取，勿硬编码）
+- [x] T004 应用 SQL 到本地：`cat` 管道 `docker exec -i newpm-mysql-1 mysql ...` 建表+字典+菜单，并 `docker exec -i newpm-redis-1 redis-cli DEL sys_dict:sys_version_type sys_dict:sys_package_mode sys_dict:sys_version_status` 刷缓存
 
 **Checkpoint**: 表、字典、菜单就绪
 
@@ -41,15 +41,15 @@ description: "Task list for 批次版本管理 implementation"
 
 **⚠️ CRITICAL**: 完成前任何用户故事都不能开工
 
-- [ ] T005 [P] 创建 `domain/VersionOut.java`（extends BaseEntity，全字段含 `sub_version_code`+冗余 `product` + `@Excel` 注解 + `List<VersionOutTask> taskList` + 非持久查询字段 + `@NotBlank/@NotNull` 必填校验；**version_status 不加必填**，本轮可选）
-- [ ] T006 [P] 创建 `domain/VersionOutTask.java`（version_id/task_id/task_no/task_name/prj_name/demand_name）
-- [ ] T007 [P] 创建 `domain/SysName.java`（sys_name/base_version_code/p_id 一级产品ID/product 产品名称，extends BaseEntity）
-- [ ] T008 创建 `mapper/VersionOutMapper.java` + `mapper/project/VersionOutMapper.xml`：resultMap 含 `<collection>` 装配 taskList；基础 CRUD（select list/by id、insert、update、软删除 update del_flag）；所有查询硬编码 `manual_input='0'`；JOIN sys_user/sys_dict_data 加 `COLLATE utf8mb4_unicode_ci`（依赖 T005/T006）
-- [ ] T009 [P] 创建 `mapper/SysNameMapper.java` + `mapper/project/SysNameMapper.xml`（按 product 查子系统列表、按 sys_name 取 base_version_code）
-- [ ] T010 创建 `service/IVersionOutService.java` + `service/ISysNameService.java` 接口（命名 select*List/select*ById/insert*/update*/delete*ByIds）
-- [ ] T011 创建 `service/impl/VersionOutServiceImpl.java` + `service/impl/SysNameServiceImpl.java` 骨架（注入 mapper，空实现占位）
-- [ ] T012 创建 `controller/VersionOutController.java` 骨架（extends BaseController，类级 `@RequestMapping("/project/versionOut")`，`@PreAuthorize` 占位）
-- [ ] T013 [P] 创建 `ruoyi-ui/src/api/project/versionOut.ts` 骨架（import request，导出空函数占位）
+- [x] T005 [P] 创建 `domain/VersionOut.java`（extends BaseEntity，全字段含 `sub_version_code`+冗余 `product` + `@Excel` 注解 + `List<VersionOutTask> taskList` + 非持久查询字段 + `@NotBlank/@NotNull` 必填校验；**version_status 不加必填**，本轮可选）
+- [x] T006 [P] 创建 `domain/VersionOutTask.java`（持久字段 version_id/task_id；transient 回显字段 taskNo/taskName/prjName/demandName，由 JOIN 填充）
+- [x] T007 [P] 创建 `domain/SysName.java`（sys_name/base_version_code/p_id 一级产品ID/product 产品名称，extends BaseEntity）
+- [x] T008 创建 `mapper/VersionOutMapper.java` + `mapper/project/VersionOutMapper.xml`：resultMap 含 `<collection>` 装配 taskList；基础 CRUD（select list/by id、insert、update、软删除 update del_flag）；所有查询硬编码 `manual_input='0'`；JOIN sys_user/sys_dict_data 加 `COLLATE utf8mb4_unicode_ci`（依赖 T005/T006）
+- [x] T009 [P] 创建 `mapper/SysNameMapper.java` + `mapper/project/SysNameMapper.xml`（按 product 查子系统列表、按 sys_name 取 base_version_code）
+- [x] T010 创建 `service/IVersionOutService.java` + `service/ISysNameService.java` 接口（命名 select*List/select*ById/insert*/update*/delete*ByIds）
+- [x] T011 创建 `service/impl/VersionOutServiceImpl.java` + `service/impl/SysNameServiceImpl.java` 骨架（注入 mapper，空实现占位）
+- [x] T012 创建 `controller/VersionOutController.java` 骨架（extends BaseController，类级 `@RequestMapping("/project/versionOut")`，`@PreAuthorize` 占位）
+- [x] T013 [P] 创建 `ruoyi-ui/src/api/project/versionOut.ts` 骨架（import request，导出空函数占位）
 
 **Checkpoint**: 实体/Mapper/Service/Controller/API 骨架就绪，可并行开发各故事
 
@@ -63,18 +63,18 @@ description: "Task list for 批次版本管理 implementation"
 
 ### Tests for User Story 1 ⚠️（先写，先失败）
 
-- [ ] T014 [P] [US1] 创建 `service/impl/VersionNumberGeneratorTest.java`：覆盖 6 类型 + 边界（空 maxCode→01、类型3 续号 09→10、类型4 新增/编辑沿用、类型5 首个 02.01、类型5 已有 02.09→02.10 进位、类型6 回退基线）—— 用例见 quickstart.md（JUnit5 + Mockito，mock mapper 查询）
+- [x] T014 [P] [US1] 创建 `service/impl/VersionNumberGeneratorTest.java`：覆盖 6 类型 + 边界（空 maxCode→01、类型3 续号 09→10、类型4 新增/编辑沿用、类型5 首个 02.01、类型5 已有 02.09→02.10 进位、类型6 回退基线）—— 用例见 quickstart.md（JUnit5 + Mockito，mock mapper 查询）
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] 在 `VersionOutMapper.xml` 增加版本号生成所需查询：`getMaxVersionCode(sysName,versionType)`、`getMaxVersionCodeByYear(subVersionCode,versionType)`、`getCodeByOutVersion(sysName,versionType,outVersion)`、`getCodeByBaseVersion(sysName,baseVersionType,outVersion)`（空值 COALESCE 防御）
-- [ ] T016 [US1] 实现 `service/impl/VersionNumberGenerator.java`：端口 Scala `getOutLibVersion` 全部 6 类型逻辑（补零/进位/5→3、6→1 回退/编辑重算），使 T014 全绿（依赖 T015）
-- [ ] T017 [US1] 在 `VersionOutServiceImpl` 实现 `insertVersionOut`：调 generator 生成版本号 → 主表插入 → `pm_version_out_task` 级联插入（task_no 在 pm_task 找不到时 task_id 留空、仅存文本）→ 命中 `uk_sys_type_outlib` 冲突重试(≤3次)，`@Transactional`
-- [ ] T018 [US1] 在 `VersionOutController` 实现 `POST /project/versionOut`（`@Log(新增)` + `@PreAuthorize('project:versionOut:add')` + `@Validated`）与 `GET /generateOutLibVersion`（实时生成回填）
-- [ ] T019 [US1] 实现级联端点：`GET /sysNameByProduct`、`GET /outVersionOptions`（依赖 SysNameService / VersionOutMapper）
-- [ ] T020 [P] [US1] 实现级联端点：`GET /batchByYear`（查 pm_production_batch）、`GET /versionPDate`（批次→投产日期）、`GET /taskInfo`（查 pm_task 回显任务名/项目/需求）
-- [ ] T021 [US1] 创建 `ruoyi-ui/src/views/project/versionOut/add.vue`：级联下拉（年份→批次、产品→子系统→带出基准版本号/product、子系统+类型→初级版本号）、版本号只读实时回填、多任务行动态增删、必填校验（version_status 可选、空字典时下拉为空可不选）、提交人员默认当前用户（`<user-select post-code="pm">`，字典用 `<dict-select>`）
-- [ ] T022 [US1] 在 `versionOut.ts` 补全 `addVersionOut`/`generateOutLibVersion`/`batchByYear`/`sysNameByProduct`/`outVersionOptions`/`versionPDate`/`taskInfo` 函数
+- [x] T015 [US1] 在 `VersionOutMapper.xml` 增加版本号生成所需查询：`getMaxVersionCode(sysName,versionType)`、`getMaxVersionCodeByYear(subVersionCode,versionType)`、`getCodeByOutVersion(sysName,versionType,outVersion)`、`getCodeByBaseVersion(sysName,baseVersionType,outVersion)`（空值 COALESCE 防御）
+- [x] T016 [US1] 实现 `service/impl/VersionNumberGenerator.java`：端口 Scala `getOutLibVersion` 全部 6 类型逻辑（补零/进位/5→3、6→1 回退/编辑重算），使 T014 全绿（依赖 T015）
+- [x] T017 [US1] 在 `VersionOutServiceImpl` 实现 `insertVersionOut`：调 generator 生成版本号 → 主表插入 → `pm_version_out_task` 级联插入（task_no 在 pm_task 找不到时 task_id 留空、仅存文本）→ 命中 `uk_sys_type_outlib` 冲突重试(≤3次)，`@Transactional`
+- [x] T018 [US1] 在 `VersionOutController` 实现 `POST /project/versionOut`（`@Log(新增)` + `@PreAuthorize('project:versionOut:add')` + `@Validated`）与 `GET /generateOutLibVersion`（实时生成回填）
+- [x] T019 [US1] 实现级联端点：`GET /sysNameByProduct`、`GET /outVersionOptions`（依赖 SysNameService / VersionOutMapper）
+- [x] T020 [P] [US1] 实现级联端点：`GET /batchByYear`（查 pm_production_batch，按 production_year）、`GET /versionPDate`（批次→plan_production_date）、`GET /taskInfo`（按 software_demand_no 查 pm_task → 回显 task_name/demand_name，JOIN pm_project 取 project_name；JOIN 加 COLLATE）
+- [x] T021 [US1] 创建 `ruoyi-ui/src/views/project/versionOut/add.vue`：级联下拉（年份→批次、产品→子系统→带出基准版本号/product、子系统+类型→初级版本号）、版本号只读实时回填、多任务行动态增删、必填校验（version_status 可选、空字典时下拉为空可不选）、提交人员默认当前用户（`<user-select post-code="pm">`，字典用 `<dict-select>`）
+- [x] T022 [US1] 在 `versionOut.ts` 补全 `addVersionOut`/`generateOutLibVersion`/`batchByYear`/`sysNameByProduct`/`outVersionOptions`/`versionPDate`/`taskInfo` 函数
 
 **Checkpoint**: 可独立新增批次版本并生成正确版本号 —— MVP 达成
 

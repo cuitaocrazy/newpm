@@ -45,18 +45,31 @@
 
 ## 表 2：`pm_version_out_task`（版本-任务关联，主从子表）
 
+**最小化设计**：只存关联键，显示字段全部 JOIN 实时取（贴合"通过表获取"，任务改名版本里自动跟随）。
+
 | 列 | 类型 | 说明 |
 |---|---|---|
 | id | bigint PK auto_increment | 主键 |
 | version_id | bigint | FK pm_version_out.id |
-| task_id | bigint | FK pm_task.task_id（可空，老数据可能无对应） |
-| task_no | varchar(64) | 软件中心任务号（software_demand_no） |
-| task_name | varchar(255) | 任务名称（冗余回显） |
-| prj_name | varchar(255) | 项目名称（回显） |
-| demand_name | varchar(255) | 需求名称（回显） |
+| task_id | bigint | FK pm_task.task_id |
+
+**回显字段（不入库，JOIN 取 / domain 中为 transient）**：
+- `taskNo` ← `pm_task.software_demand_no`（软件中心需求编号）
+- `taskName` ← `pm_task.task_name`
+- `prjName` ← `pm_task.project_id` JOIN `pm_project.project_name`
+- `demandName` ← `pm_task.demand_name`（**本特性新增列，见下**）
 
 - 主从级联：保存版本时整体替换其任务行；删除版本时级联删除（`@Transactional`）。
-- resultMap 用 `<collection>` 装配 taskList。
+- resultMap 用 `<collection>` 装配 taskList，子查询 JOIN pm_task/pm_project 填充回显字段。
+
+## 既有表变更：`pm_task` 新增 `demand_name`
+
+| 列 | 类型 | 说明 |
+|---|---|---|
+| demand_name | varchar(255) | 需求名称（**新增**，本特性引入） |
+
+- 来源澄清：任务名/项目名/需求名均为任务的属性，版本管理只读取、不冗余存储。
+- 本期仅 `ALTER TABLE pm_task ADD demand_name`；值由后续数据迁移（US5）或任务管理界面（007 范围外）填充，未填时版本回显为空。
 
 ## 表 3：`pm_sys_name`（子系统配置表）
 

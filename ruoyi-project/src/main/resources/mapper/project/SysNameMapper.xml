@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.SysNameMapper">
+
+    <resultMap type="SysName" id="SysNameResult">
+        <id     property="id"              column="id"/>
+        <result property="sysName"         column="sys_name"/>
+        <result property="baseVersionCode" column="base_version_code"/>
+        <result property="pId"             column="p_id"/>
+        <result property="product"         column="product"/>
+        <result property="createBy"        column="create_by"/>
+        <result property="createTime"      column="create_time"/>
+        <result property="updateBy"        column="update_by"/>
+        <result property="updateTime"      column="update_time"/>
+        <result property="remark"          column="remark"/>
+    </resultMap>
+
+    <sql id="selectSysNameVo">
+        select id, sys_name, base_version_code, p_id, product, create_by, create_time, update_by, update_time, remark
+        from pm_sys_name
+    </sql>
+
+    <select id="selectSysNameByProduct" parameterType="String" resultMap="SysNameResult">
+        <include refid="selectSysNameVo"/>
+        where del_flag = '0' and product = #{product}
+        order by sys_name
+    </select>
+
+    <select id="selectSysNameByName" parameterType="String" resultMap="SysNameResult">
+        <include refid="selectSysNameVo"/>
+        where del_flag = '0' and sys_name = #{sysName}
+        limit 1
+    </select>
+
+    <select id="selectSysNameList" parameterType="SysName" resultMap="SysNameResult">
+        <include refid="selectSysNameVo"/>
+        <where>
+            del_flag = '0'
+            <if test="sysName != null and sysName != ''"> and sys_name like concat('%', #{sysName}, '%')</if>
+            <if test="product != null and product != ''"> and product = #{product}</if>
+        </where>
+        order by sys_name
+    </select>
+
+</mapper>
