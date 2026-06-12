@@ -23,7 +23,10 @@
         <el-descriptions-item label="涉及TWS改造">{{ form.isInvolved === '0' ? '是' : '否' }}</el-descriptions-item>
         <el-descriptions-item label="数据库是否修改">{{ form.dbUpdate === '0' ? '是' : '否' }}</el-descriptions-item>
         <el-descriptions-item label="接口是否修改">{{ form.usbUpdate === '0' ? '是' : '否' }}</el-descriptions-item>
+        <el-descriptions-item label="创建人员">{{ form.createByName || form.createBy }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ form.createTime }}</el-descriptions-item>
+        <el-descriptions-item label="修改人员">{{ form.updateByName || form.updateBy }}</el-descriptions-item>
+        <el-descriptions-item label="最后修改时间">{{ form.updateTime }}</el-descriptions-item>
         <el-descriptions-item label="版本简介" :span="3">{{ form.versionBrief }}</el-descriptions-item>
         <el-descriptions-item label="版本说明" :span="3">{{ form.versionDescr }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="3">{{ form.remarks }}</el-descriptions-item>

@@ -27,6 +27,9 @@
         <result property="versionDescr"    column="version_descr"/>
         <result property="remarks"         column="remarks"/>
         <result property="manualInput"     column="manual_input"/>
+        <result property="createByName"    column="create_by_name"/>
+        <result property="updateByName"    column="update_by_name"/>
+        <result property="taskNos"         column="task_nos"/>
         <result property="createBy"        column="create_by"/>
         <result property="createTime"      column="create_time"/>
         <result property="updateBy"        column="update_by"/>
@@ -53,9 +56,15 @@
                v.version_type, v.sys_name, v.base_version_code, v.out_lib_version, v.version_code,
                v.out_version, v.comm_name, u.nick_name as user_name, v.version_p_date, v.is_involved,
                v.db_update, v.usb_update, v.package_mode, v.version_status, v.version_brief, v.version_descr, v.remarks,
-               v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark
+               v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark,
+               cu.nick_name as create_by_name, mu.nick_name as update_by_name,
+               (select group_concat(distinct pt.software_demand_no separator ', ')
+                from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
+                where vt.version_id = v.id) as task_nos
         from pm_version_out v
         left join sys_user u on v.comm_name = u.user_id
+        left join sys_user cu on v.create_by COLLATE utf8mb4_unicode_ci = cu.user_name
+        left join sys_user mu on v.update_by COLLATE utf8mb4_unicode_ci = mu.user_name
     </sql>
 
     <select id="selectVersionOutList" parameterType="VersionOut" resultMap="VersionOutResult">
@@ -64,6 +73,7 @@
             v.del_flag = '0' and v.manual_input = '0'
             <if test="productionYear != null and productionYear != ''"> and v.production_year = #{productionYear}</if>
             <if test="batchId != null"> and v.batch_id = #{batchId}</if>
+            <if test="proBatchNo != null and proBatchNo != ''"> and v.pro_batch_no like concat('%', #{proBatchNo}, '%')</if>
             <if test="subVersionCode != null and subVersionCode != ''"> and v.sub_version_code = #{subVersionCode}</if>
             <if test="product != null and product != ''"> and v.product = #{product}</if>
             <if test="versionType != null and versionType != ''"> and v.version_type = #{versionType}</if>
@@ -73,6 +83,11 @@
             <if test="packageMode != null and packageMode != ''"> and v.package_mode = #{packageMode}</if>
             <if test="versionStatus != null and versionStatus != ''"> and v.version_status = #{versionStatus}</if>
             <if test="outLibVersion != null and outLibVersion != ''"> and v.out_lib_version like concat('%', #{outLibVersion}, '%')</if>
+            <if test="versionPDate != null and versionPDate != ''"> and v.version_p_date = #{versionPDate}</if>
+            <if test="taskNo != null and taskNo != ''">
+                and exists (select 1 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
+                            where vt.version_id = v.id and pt.software_demand_no like concat('%', #{taskNo}, '%'))
+            </if>
         </where>
         order by v.create_time desc
     </select>

@@ -117,6 +117,21 @@ public class VersionOut extends BaseEntity
     /** 批次标志 0批次 1非批次 */
     private String manualInput;
 
+    /** 创建人员姓名(显示,JOIN sys_user) */
+    @Excel(name = "创建人员")
+    private String createByName;
+
+    /** 修改人员姓名(显示,JOIN sys_user) */
+    @Excel(name = "修改人员")
+    private String updateByName;
+
+    /** 关联任务号拼接(显示,子查询 GROUP_CONCAT) */
+    @Excel(name = "软件中心任务号")
+    private String taskNos;
+
+    /** 软件中心任务号(查询过滤用) */
+    private String taskNo;
+
     /** 关联任务列表(主从) */
     private List<VersionOutTask> taskList;
 
@@ -168,6 +183,14 @@ public class VersionOut extends BaseEntity
     public String getRemarks() { return remarks; }
     public void setManualInput(String manualInput) { this.manualInput = manualInput; }
     public String getManualInput() { return manualInput; }
+    public void setCreateByName(String createByName) { this.createByName = createByName; }
+    public String getCreateByName() { return createByName; }
+    public void setUpdateByName(String updateByName) { this.updateByName = updateByName; }
+    public String getUpdateByName() { return updateByName; }
+    public void setTaskNos(String taskNos) { this.taskNos = taskNos; }
+    public String getTaskNos() { return taskNos; }
+    public void setTaskNo(String taskNo) { this.taskNo = taskNo; }
+    public String getTaskNo() { return taskNo; }
     public void setTaskList(List<VersionOutTask> taskList) { this.taskList = taskList; }
     public List<VersionOutTask> getTaskList() { return taskList; }
 

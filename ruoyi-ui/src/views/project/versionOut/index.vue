@@ -20,6 +20,24 @@
       <el-form-item label="组包方式" prop="packageMode">
         <dict-select v-model="queryParams.packageMode" dict-type="sys_package_mode" placeholder="全部" clearable style="width:160px" />
       </el-form-item>
+      <el-form-item label="投产批次号" prop="proBatchNo">
+        <el-input v-model="queryParams.proBatchNo" placeholder="批次号" clearable style="width:160px" @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item label="软件中心任务号" prop="taskNo">
+        <el-input v-model="queryParams.taskNo" placeholder="任务号" clearable style="width:160px" @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item label="基准版本号" prop="baseVersionCode">
+        <el-input v-model="queryParams.baseVersionCode" placeholder="基准版本号" clearable style="width:160px" @keyup.enter="handleQuery" />
+      </el-form-item>
+      <el-form-item label="版本状态" prop="versionStatus">
+        <dict-select v-model="queryParams.versionStatus" dict-type="sys_version_status" placeholder="全部" clearable style="width:160px" />
+      </el-form-item>
+      <el-form-item label="投产日期" prop="versionPDate">
+        <el-date-picker v-model="queryParams.versionPDate" type="date" value-format="YYYY-MM-DD" placeholder="投产日期" clearable style="width:160px" />
+      </el-form-item>
+      <el-form-item label="提交人员" prop="commName">
+        <user-select v-model="queryParams.commName" placeholder="提交人员" clearable filterable width="160px" />
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -39,11 +57,15 @@
 
     <!-- 表格 -->
     <el-table v-loading="loading" :data="versionList" border @sort-change="handleSortChange">
-      <el-table-column label="出入库版本号" prop="outLibVersion" min-width="150" show-overflow-tooltip />
+      <el-table-column label="出入库版本号" prop="outLibVersion" min-width="150" show-overflow-tooltip fixed="left" />
+      <el-table-column label="软件中心任务号" prop="taskNos" min-width="150" show-overflow-tooltip />
       <el-table-column label="投产年份" prop="productionYear" width="90" align="center" />
       <el-table-column label="投产批次号" prop="proBatchNo" width="110" align="center" />
       <el-table-column label="产品" prop="product" width="110" align="center" />
       <el-table-column label="子系统" prop="sysName" min-width="120" show-overflow-tooltip />
+      <el-table-column label="版本简介" prop="versionBrief" min-width="140" show-overflow-tooltip />
+      <el-table-column label="基准版本号" prop="baseVersionCode" width="120" align="center" />
+      <el-table-column label="版本编号" prop="versionCode" width="100" align="center" />
       <el-table-column label="版本类型" prop="versionType" width="110" align="center">
         <template #default="{ row }"><dict-tag :options="sys_version_type" :value="row.versionType" /></template>
       </el-table-column>
@@ -53,9 +75,21 @@
       <el-table-column label="版本状态" prop="versionStatus" width="100" align="center">
         <template #default="{ row }"><dict-tag :options="sys_version_status" :value="row.versionStatus" /></template>
       </el-table-column>
-      <el-table-column label="提交人员" prop="userName" width="100" align="center" />
       <el-table-column label="投产日期" prop="versionPDate" width="110" align="center" />
+      <el-table-column label="涉及TWS改造" width="100" align="center">
+        <template #default="{ row }">{{ row.isInvolved === '0' ? '是' : '否' }}</template>
+      </el-table-column>
+      <el-table-column label="数据库是否修改" width="110" align="center">
+        <template #default="{ row }">{{ row.dbUpdate === '0' ? '是' : '否' }}</template>
+      </el-table-column>
+      <el-table-column label="接口是否修改" width="110" align="center">
+        <template #default="{ row }">{{ row.usbUpdate === '0' ? '是' : '否' }}</template>
+      </el-table-column>
+      <el-table-column label="提交人员" prop="userName" width="100" align="center" />
+      <el-table-column label="版本说明" prop="versionDescr" min-width="140" show-overflow-tooltip />
       <el-table-column label="创建时间" prop="createTime" width="160" align="center" sortable="custom" />
+      <el-table-column label="修改时间" prop="updateTime" width="160" align="center" sortable="custom" />
+      <el-table-column label="备注" prop="remarks" min-width="120" show-overflow-tooltip />
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link icon="View" @click="handleDetail(row)" v-hasPermi="['project:versionOut:query']">详情</el-button>
@@ -93,6 +127,8 @@ const data = reactive({
     pageNum: 1, pageSize: 10,
     productionYear: null, product: null, versionType: null,
     sysName: null, outLibVersion: null, packageMode: null,
+    proBatchNo: null, taskNo: null, baseVersionCode: null,
+    versionStatus: null, versionPDate: null, commName: null,
     orderByColumn: null, isAsc: null
   }
 })
