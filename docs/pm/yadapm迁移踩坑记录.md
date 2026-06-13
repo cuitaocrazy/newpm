@@ -32,4 +32,9 @@
 > - ✅ **软删时改写唯一字段加 `_DEL_{id}` 后缀腾位** → 原号腾空、软删记录间靠 id 唯一不撞。这是软删+唯一键的稳妥解法。
 > **坑13 教训**：缺陷批次就有，但当时没"删→重建同号"所以没暴露；非批次 E2E 跑（数据含软删记录）才炸出来。**印证 E2E 真跑的价值**——手工点验碰不到这种数据组合，连续 CRUD 才暴露。
 
+| 14 | **只读字段漏传 id（提交人员空白）** | 列表/详情"提交人员"列空白，但"创建人员"有值 | 前端提交人员只 `:value="userStore.nickName"` 只读展示，**没把 commName=userStore.id 放进 form** → 提交时 comm_name 为空 → JOIN sys_user 取不到 userName | add.vue `onMounted(() => form.value.commName = userStore.id)`。批次 add 当时绑了，非批次复制裁剪时漏了 |
+
+> **坑14 升华**：只读显示的关联字段（人员/部门等"显示名+底层id"的字段），**展示用昵称、提交用id，两者别混**。务必确认 form 里有那个 id 字段并初始化。
+> **坑14 教训**：**API/E2E 测不到**（测试 payload 直接传了 commName）；**只有浏览器真点保存 + 看详情/列表 JOIN 字段是否空** 才暴露。这就是为什么"浏览器 UI 验证必须真走完整流程、不能只截静态图"。
+
 > **教训升华**：多个功能共用一个 domain 实体时，实体上的 Bean Validation 注解（@NotBlank/@NotNull）是"最全字段集"的约束。被某个模块裁剪掉的字段，其校验注解会在该模块 `@Validated` 时误伤。**对策**：共用实体的不同模块，校验要么各自 service 层手动做，要么用 validation group 分组，不能无脑 `@Validated`。

@@ -170,10 +170,13 @@ const form = ref({
   product: null, subVersionCode: null,
   manualTaskNo: null, manualTaskName: null,
   sysName: null, baseVersionCode: null, versionType: null, outVersion: null,
-  outLibVersion: null, versionCode: null,
+  outLibVersion: null, versionCode: null, commName: null,
   isInvolved: '1', dbUpdate: '1', usbUpdate: '1',
   versionDescr: null, remarks: null
 })
+
+// 提交人员默认当前登录用户（只读显示昵称，提交存 userId）
+onMounted(() => { form.value.commName = userStore.id || null })
 
 const rules = ref({
   productionYear: [{ required: true, message: '投产年份不能为空', trigger: 'change' }],
