@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.OldVersionOutMapper">
+
+    <resultMap type="com.ruoyi.project.domain.OldVersionOut" id="OldVersionOutResult">
+        <id     property="id"              column="id"                />
+        <result property="sysName"         column="sys_name"          />
+        <result property="product"         column="product"           />
+        <result property="baseVersionCode" column="base_version_code" />
+        <result property="outLibVersion"   column="out_lib_version"   />
+        <result property="versionType"     column="version_type"      />
+        <result property="versionCode"     column="version_code"      />
+        <result property="commName"        column="comm_name"         />
+        <result property="versionPDate"    column="version_p_date"    />
+        <result property="versionDescr"    column="version_descr"     />
+        <result property="remarks"         column="remarks"           />
+        <result property="taskNo"          column="task_no"           />
+        <result property="taskName"        column="task_name"         />
+        <result property="proYear"         column="pro_year"          />
+        <result property="proBatchNo"      column="pro_batch_no"      />
+        <result property="isInvolved"      column="is_involved"       />
+        <result property="dbUpdate"        column="db_update"         />
+        <result property="usbUpdate"       column="usb_update"        />
+        <result property="sequenceNo"      column="sequence_no"       />
+    </resultMap>
+
+    <sql id="selectOldVersionOutVo">
+        select id, sys_name, product, base_version_code, out_lib_version, version_type,
+               version_code, comm_name, version_p_date, version_descr, remarks, task_no,
+               task_name, pro_year, pro_batch_no, is_involved, db_update, usb_update, sequence_no
+        from pm_old_version_out
+    </sql>
+
+    <select id="selectOldVersionOutList" parameterType="com.ruoyi.project.domain.OldVersionOut" resultMap="OldVersionOutResult">
+        <include refid="selectOldVersionOutVo"/>
+        <where>
+            <if test="taskNo != null and taskNo != ''"> and task_no like concat('%', #{taskNo}, '%')</if>
+            <if test="proBatchNo != null and proBatchNo != ''"> and pro_batch_no = #{proBatchNo}</if>
+            <if test="product != null and product != ''"> and product = #{product}</if>
+            <if test="versionType != null and versionType != ''"> and version_type = #{versionType}</if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectProBatchNoOptions" resultType="java.lang.String">
+        select distinct pro_batch_no from pm_old_version_out
+        where pro_batch_no is not null and pro_batch_no != ''
+        order by pro_batch_no
+    </select>
+
+    <select id="selectProductOptions" resultType="java.lang.String">
+        select distinct product from pm_old_version_out
+        where product is not null and product != ''
+        order by product
+    </select>
+
+    <select id="selectVersionTypeOptions" resultType="java.lang.String">
+        select distinct version_type from pm_old_version_out
+        where version_type is not null and version_type != ''
+        order by version_type
+    </select>
+
+</mapper>

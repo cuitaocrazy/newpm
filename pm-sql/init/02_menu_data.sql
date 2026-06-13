@@ -479,3 +479,16 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 ('非批次版本删除', @sub_id, 4, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:remove', '#', 'admin', NOW()),
 ('非批次版本导出', @sub_id, 5, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:export', '#', 'admin', NOW());
 
+
+-- ===== feature 009 旧数据查询 菜单 =====
+SET @parent_id = (SELECT menu_id FROM sys_menu WHERE menu_name='出入库版本管理' AND parent_id=0 LIMIT 1);
+DELETE FROM sys_menu WHERE perms='project:oldVersionOut:list';
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+VALUES ('旧数据查询', @parent_id, 3, 'oldVersionOut', 'project/oldVersionOut/index', 'OldVersionOut', 1, 0, 'C', '0', '0', 'project:oldVersionOut:list', 'time-range', 'admin', NOW(), '旧数据查询菜单');
+SET @sub_id = LAST_INSERT_ID();
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
+('旧数据查询权限', @sub_id, 1, '', NULL, 1, 0, 'F', '0', '0', 'project:oldVersionOut:list', '#', 'admin', NOW());
+
+COMMIT;

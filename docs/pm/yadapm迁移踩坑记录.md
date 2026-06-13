@@ -42,3 +42,12 @@
 > **坑15 升华**：兜底/默认值要和字段的**真实存储类型/口径一致**（存 id 就兜 id，别兜 name）。**这类潜伏隐患测试覆盖不到（兜底分支不触发），靠 Code Review 通审才能揪出**——印证"测试通过≠代码好，Code Review 必做"。
 
 > **教训升华**：多个功能共用一个 domain 实体时，实体上的 Bean Validation 注解（@NotBlank/@NotNull）是"最全字段集"的约束。被某个模块裁剪掉的字段，其校验注解会在该模块 `@Validated` 时误伤。**对策**：共用实体的不同模块，校验要么各自 service 层手动做，要么用 validation group 分组，不能无脑 `@Validated`。
+
+---
+
+## 旧数据查询 (spec 009) 踩坑
+
+| 16 | **迁移脚本菜单 INSERT 不幂等 / 父id 为空插孤儿菜单** | Code Review 发现：建表用 `CREATE TABLE IF NOT EXISTS`（幂等），但 `INSERT sys_menu` 无去重——生产重跑会插重复菜单；且 `@parent_id` 取不到（一级菜单还没建）时静默插出 `parent_id=NULL` 的孤儿菜单 | 纯只读功能本身零 bug，问题全在迁移脚本健壮性 | ① INSERT 前 `DELETE FROM sys_menu WHERE perms='xxx:list'` 去重（对齐 `02_menu_data.sql` 约定）；② `SET @parent_id=(...)` 后加一句校验 SELECT 让执行者肉眼确认非空；③ 顺手补 `route_name`（与既有 C 类菜单风格一致，keep-alive 缓存命名才对得上 `<script setup name>`） |
+
+> **坑16 升华**：迁移脚本的 DDL 幂等（`IF NOT EXISTS`）容易，**DML（菜单/字典 INSERT）幂等容易被忽略**。凡 `INSERT sys_menu/sys_dict_*` 一律「先按唯一标识 DELETE 再 INSERT」。父 id 用子查询取时，**要防子查询命中 0 行返回 NULL** → 插出孤儿数据。
+> **坑16 教训**：**功能再简单也要做 Code Review**——本功能纯只读、Controller/Service/Mapper 零 bug、零回归，但 Code Review 仍揪出 2 个迁移脚本健壮性问题（生产环境才会炸的那种）。测试覆盖功能正确性，Code Review 覆盖「运维/重跑/异常环境」这类测试照不到的角落。
