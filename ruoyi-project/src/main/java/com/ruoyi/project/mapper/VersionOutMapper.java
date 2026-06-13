@@ -29,6 +29,15 @@ public interface VersionOutMapper
     /** 软删除批次版本（del_flag='1'） */
     public int deleteVersionOutByIds(Long[] ids);
 
+    /** 非批次列表（manual_input='1'） */
+    public List<VersionOut> selectVersionOutManualList(VersionOut versionOut);
+
+    /** 非批次新增（manual_input='1' + 手填任务） */
+    public int insertVersionOutManual(VersionOut versionOut);
+
+    /** 非批次修改 */
+    public int updateVersionOutManual(VersionOut versionOut);
+
     /** 批量插入版本-任务关联 */
     public int batchInsertVersionOutTask(List<VersionOutTask> list);
 

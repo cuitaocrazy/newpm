@@ -84,7 +84,9 @@ argument-hint: "<功能名，如 非批次版本管理>"
 - 可选跑 `/speckit-analyze` 复检 spec↔plan↔tasks↔实现一致性。
 - 最终 `/speckit-git-commit` 提交，commit 含做了什么+验证结果。
 
-## 四、避坑清单（批次版本管理实战教训，全部源于"需求没写细、源码才有"）
+## 四、避坑清单（实战教训，完整版见 `docs/pm/yadapm迁移踩坑记录.md`）
+
+> 完整坑表（现象+根因+解法）见 `docs/pm/yadapm迁移踩坑记录.md`。**开发新功能先扫一遍**；遇到新坑**随手追加到该文档，并同步回下表**。
 
 | 坑 | 教训（以源码为准就能避免） |
 |---|---|
@@ -98,6 +100,7 @@ argument-hint: "<功能名，如 非批次版本管理>"
 | 列表/详情字段缺失 | 对齐老 show.html/list.html 全字段(含审计4字段、多任务号聚合列) |
 | JOIN 字符集报错 | PM表与系统表 JOIN 必加 `COLLATE utf8mb4_unicode_ci` |
 | E2E 跑不起来 | ①80端口常被占→`E2E_BASE_URL=http://localhost:8090`；②容器闲置会挂→先查MySQL/Redis健康，挂了先`docker start`再重启后端 |
+| **共用实体 @Validated 误伤** | 多模块共用一个 domain 时，实体 `@NotBlank/@NotNull` 是"全字段集"约束。被某模块裁剪掉的字段，其校验会在该模块 `@Validated` 时误伤（报"XX不能为空"但 XX 根本不在该模块）。对策：复用实体但裁字段的模块，Controller **去掉 `@Validated`**，改 service 层手动校验真正必填项 |
 
 ## 五、本地环境与命令速查
 
