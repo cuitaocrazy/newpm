@@ -1311,3 +1311,38 @@ CREATE TABLE IF NOT EXISTS pm_old_version_out (
   KEY idx_pro_batch_no (pro_batch_no),
   KEY idx_product (product)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='出入库版本旧数据归档表';
+
+-- ===== feature 010 批次任务问题单及缺陷 主表 =====
+-- 1. 主表（问题单=缺陷同一条记录；布尔标记+派生字段存主表；关联字段实时JOIN取，不冗余）
+CREATE TABLE IF NOT EXISTS pm_prolist_defect (
+  problem_id                bigint        NOT NULL AUTO_INCREMENT COMMENT '问题单ID',
+  task_id                   bigint        DEFAULT NULL COMMENT '任务ID(FK→pm_task)',
+  problem_no                varchar(160)  DEFAULT NULL COMMENT '问题单编号(唯一,留余量给软删_DEL_后缀)',
+  problem_level             varchar(32)   DEFAULT NULL COMMENT '问题单级别(字典sys_problem_level)',
+  current_status            varchar(32)   DEFAULT NULL COMMENT '当前状态(字典sys_problem_state)',
+  submit_date               date          DEFAULT NULL COMMENT '提交日期',
+  settle_date               date          DEFAULT NULL COMMENT '解决/关闭日期(可空)',
+  verify_date               date          DEFAULT NULL COMMENT '核查日期',
+  whether_defect            char(1)       DEFAULT '0' COMMENT '是否缺陷(0否1是)',
+  whether_overtime          char(1)       DEFAULT '0' COMMENT '是否超时(0否1是)',
+  whether_pro_recurrence    char(1)       DEFAULT '0' COMMENT '是否问题重现(0否1是)',
+  whether_att_required      char(1)       DEFAULT '0' COMMENT '是否须关注(0否1是)',
+  whether_update_version    char(1)       DEFAULT '0' COMMENT '是否更新版本(0否1是)',
+  solution_time_over_one_day char(1)      DEFAULT '0' COMMENT '解决时间超一天(派生:0否1是)',
+  defect_desc               varchar(128)  DEFAULT NULL COMMENT '缺陷说明/超时说明',
+  production_year           varchar(20)   DEFAULT NULL COMMENT '投产年份(字典sys_ndgl)',
+  batch_id                  bigint        DEFAULT NULL COMMENT '投产批次ID(FK→pm_production_batch)',
+  dept_id                   bigint        DEFAULT NULL COMMENT '部门ID(项目组→部门,FK sys_dept)',
+  remarks                   varchar(2048) DEFAULT NULL COMMENT '备注',
+  del_flag                  char(1)       DEFAULT '0' COMMENT '删除标志(0正常1删除)',
+  create_by                 varchar(64)   DEFAULT '' COMMENT '创建者',
+  create_time               datetime      DEFAULT NULL COMMENT '创建时间',
+  update_by                 varchar(64)   DEFAULT '' COMMENT '更新者',
+  update_time               datetime      DEFAULT NULL COMMENT '更新时间',
+  remark                    varchar(500)  DEFAULT NULL COMMENT '备注(系统)',
+  PRIMARY KEY (problem_id),
+  UNIQUE KEY uk_problem_no (problem_no),
+  KEY idx_task_id (task_id),
+  KEY idx_batch_id (batch_id),
+  KEY idx_dept_id (dept_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='批次任务问题单及缺陷';

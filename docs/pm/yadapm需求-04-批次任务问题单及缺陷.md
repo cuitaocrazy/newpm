@@ -136,7 +136,17 @@
 5. **任务审核校验**：若保留，按"批次版本管理决策 B"同口径 —— 项目级 `pm_project.approval_status='1'`（待确认是否对问题单也加此校验）。
 6. **解决时间超一天**：后端按日期计算的派生字段，不入库或入库均可（老系统入库 SOLUTINO_TIME_OVER_ONE_DAY）。
 
-## 十、待澄清
+## 十、待澄清（已全部澄清，2026-06-14）
 - ~~选任务时是否校验任务审核状态~~ → **已核实：不校验**（见第七节.3）。
-- "项目组(subtaskTeam)"在 newpm 对应什么（pm_task 字段 / 部门 / 团队）？任务号下拉按它过滤，需先确定映射。
-- 当前状态 / 问题单级别 / 附件类型 用字典还是配置表？（建议字典）
+- ~~"项目组(subtaskTeam)"在 newpm 对应什么~~ → **已定：映射为部门(dept)**。任务号下拉按 `年份+批次+部门` 过滤（部门走 ancestors）；主表 `dept_id` 按所选任务的 `project_dept` 落库（保证过滤同源）。
+- ~~当前状态 / 问题单级别 / 附件类型 用字典还是配置表~~ → **已定：全部用字典**（`sys_problem_state` / `sys_problem_level` / `sys_prolist_file_type`）。
+
+## 十一、落地结果（spec 010，2026-06-14 完成）
+
+- **表**：`pm_prolist_defect`（主表，FK task_id→pm_task；problem_no varchar(160) 唯一，软删 `_DEL_{id}` 腾位）。附件复用 `pm_attachment`(business_type=`prolist`)+`pm_attachment_log`。
+- **字典**：3 个 `sys_problem_state`(6值)/`sys_problem_level`(3值)/`sys_prolist_file_type`(相关材料)，照搬老配置表预置值。
+- **后端**：`ProlistDefectController` → `/project/prolistDefect`，CRUD+导出+6联动端点(batchByYear/tcDate/taskOptions/taskInfo/checkProblemNo)；4级权限 list/query/edit/remove/file。派生 solutionTimeOverOneDay(解决日期−提交>1天,空用当天)；问题单编号查重(编辑排除自己,修老bug)；任务审核不校验。`AttachmentController`/`AttachmentServiceImpl` 加 prolist 分支复用附件。
+- **前端**：四件套(add≡edit,联动链年→批→部门→任务→回显+查重失焦;index 多维查询30列布尔颜色高亮;detail 全字段+附件上传/下载/删除+操作日志)。
+- **测试**：单测 15(覆盖率指令96%/分支100%)；E2E 13 真跑通(全端点+联动+查重+软删坑13+派生算法);浏览器UI全流程(联动/计划投产日期回显/列表颜色/详情/附件上传删除日志)；全量回归163零失败;前端build退出0。
+- **Code Review**：修 C1(dept_id 按任务 project_dept 落库保证同源)、C2(布尔位无条件set)、M1(problem_no 放宽160防_DEL_溢出)；坑17/18/19 已回写。
+- **数据迁移**：T_B_PROLIST_AND_DEFECT/T_B_PROLIST_FILE → 新表/pm_attachment，属独立后续任务，先建空表上线。

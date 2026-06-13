@@ -1740,3 +1740,26 @@ INSERT INTO sys_dict_data (dict_sort, dict_label, dict_value, dict_type, is_defa
 
 -- sys_version_status 不插数据值（空字典，管理员/迁移填充）
 
+
+-- ===== feature 010 批次任务问题单及缺陷 字典 =====
+-- 2. 字典（照搬老 T_C_CURRENT_STATE / T_C_PROBLEM_LEVEL / T_C_PROLISTFILE_TYPE 预置值）
+DELETE FROM sys_dict_data WHERE dict_type IN ('sys_problem_state','sys_problem_level','sys_prolist_file_type');
+DELETE FROM sys_dict_type WHERE dict_type IN ('sys_problem_state','sys_problem_level','sys_prolist_file_type');
+
+INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark) VALUES
+('问题单当前状态', 'sys_problem_state', '0', 'admin', NOW(), '批次任务问题单及缺陷-当前状态'),
+('问题单级别', 'sys_problem_level', '0', 'admin', NOW(), '批次任务问题单及缺陷-级别'),
+('问题单附件类型', 'sys_prolist_file_type', '0', 'admin', NOW(), '批次任务问题单及缺陷-附件文档类型');
+
+INSERT INTO sys_dict_data (dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, create_by, create_time) VALUES
+(1, '已定位',     '1', 'sys_problem_state', '', 'default', 'N', '0', 'admin', NOW()),
+(2, '待验证',     '2', 'sys_problem_state', '', 'warning', 'N', '0', 'admin', NOW()),
+(3, '未受理',     '3', 'sys_problem_state', '', 'info',    'N', '0', 'admin', NOW()),
+(4, '已受理',     '4', 'sys_problem_state', '', 'primary', 'N', '0', 'admin', NOW()),
+(5, '问题已解决', '5', 'sys_problem_state', '', 'success', 'N', '0', 'admin', NOW()),
+(6, '问题再现',   '6', 'sys_problem_state', '', 'danger',  'N', '0', 'admin', NOW()),
+(1, '高优先级:2天内解决', '1', 'sys_problem_level', '', 'danger',  'N', '0', 'admin', NOW()),
+(2, '中优先级:4天内解决', '2', 'sys_problem_level', '', 'warning', 'N', '0', 'admin', NOW()),
+(3, '低优先级:6天内解决', '3', 'sys_problem_level', '', 'info',    'N', '0', 'admin', NOW()),
+(1, '相关材料', '1', 'sys_prolist_file_type', '', 'default', 'Y', '0', 'admin', NOW());
+

@@ -51,3 +51,15 @@
 
 > **坑16 升华**：迁移脚本的 DDL 幂等（`IF NOT EXISTS`）容易，**DML（菜单/字典 INSERT）幂等容易被忽略**。凡 `INSERT sys_menu/sys_dict_*` 一律「先按唯一标识 DELETE 再 INSERT」。父 id 用子查询取时，**要防子查询命中 0 行返回 NULL** → 插出孤儿数据。
 > **坑16 教训**：**功能再简单也要做 Code Review**——本功能纯只读、Controller/Service/Mapper 零 bug、零回归，但 Code Review 仍揪出 2 个迁移脚本健壮性问题（生产环境才会炸的那种）。测试覆盖功能正确性，Code Review 覆盖「运维/重跑/异常环境」这类测试照不到的角落。
+
+---
+
+## 批次任务问题单及缺陷 (spec 010) 踩坑
+
+| 17 | **复用通用附件体系不止加权限白名单——`getBusinessFolder` 硬编码 switch 漏分支** | 浏览器上传附件报「业务数据不存在」 | `AttachmentServiceImpl.getBusinessFolder(businessType, businessId)` 是硬编码 if-else，只认 contract/project/payment，新业务类型返回 null → 校验失败 | 新业务类型复用 pm_attachment **三处都要改**：①各端点 `@PreAuthorize` 白名单加新权限；②`getBusinessFolder` 加 `else if("prolist")` 分支(反查业务记录、返回存储子目录)；③注入该业务的 Mapper。只做①不做②会上传失败 |
+| 18 | **又一次 `success(String)` 塞 msg（批次→计划投产日期联动）** | 选批次后前端"计划投产日期"空白；网络请求 200 但 res.data 为 null | controller `return success(service.selectXxx())` 当返回值是 String 时命中 `success(String msg)` 重载，值进 msg 不进 data | 用 2 参重载 `AjaxResult.success("查询成功", value)` 强制进 data。**凡联动端点返回单个 String/日期，一律用 2 参重载**（坑「接口返回裸字符串」的再次复发，说明此坑极易踩，写联动端点先自检返回类型） |
+| 19 | **新旧概念映射后，存储口径要让"过滤维度"与"被过滤数据"同源** | Code Review 发现：列表按"项目组"筛 `pd.dept_id`，但任务下拉按任务所属项目 `p.project_dept` 过滤——用户选父部门(ancestors命中子部门任务)时，存进主表的是"选中的父部门id"，与任务真实 `project_dept` 不一致 → "新增搜得到、列表按部门筛不到" | 老"项目组"映射到新"部门"时，主表 dept_id **不存用户在表单选的过滤部门，而是 insert/update 时按 taskId 反查任务的 project_dept 落库**，保证列表过滤(dept_id+ancestors)与任务下拉(project_dept)同源 |
+
+> **坑17 升华**：「复用现成体系」要顺着调用链把所有"按类型分发"的地方都补全——权限白名单、业务校验 switch、存储路径 switch、（可能还有）日志/导出分发。漏一处就在某个操作上炸。
+> **坑18 升华**：`success(String)` 坑会反复踩（007 一次、010 又一次）。**写任何返回单值的 GET 联动端点，先问自己返回类型是不是 String**，是就用 `success(msg,data)` 2 参重载或包成对象。
+> **坑19 升华**：新旧概念映射（项目组→部门）不只是"字段换名"，要追问"这个值参与哪些过滤、和谁比较"。**过滤条件与被过滤数据必须同源同口径**，否则出现自相矛盾的查询结果。这类逻辑坑测试不易发现（需构造跨层级部门数据），靠 Code Review 的数据链路追踪揪出。

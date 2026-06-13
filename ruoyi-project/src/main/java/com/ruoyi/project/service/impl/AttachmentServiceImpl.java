@@ -52,6 +52,9 @@ public class AttachmentServiceImpl implements IAttachmentService
     @Autowired
     private PaymentMapper paymentMapper;
 
+    @Autowired
+    private com.ruoyi.project.mapper.ProlistDefectMapper prolistDefectMapper;
+
     /** 允许的文件扩展名 */
     private static final String[] ALLOWED_EXTENSIONS = {
         ".doc", ".docx", ".xls", ".xlsx", ".pdf", ".csv",
@@ -332,6 +335,15 @@ public class AttachmentServiceImpl implements IAttachmentService
                 return null;
             }
             return "款项" + File.separator + businessId + "_" + sanitizePathName(payment.getPaymentMethodName());
+        }
+        else if ("prolist".equals(businessType))
+        {
+            com.ruoyi.project.domain.ProlistDefect defect = prolistDefectMapper.selectProlistDefectByProblemId(businessId);
+            if (defect == null)
+            {
+                return null;
+            }
+            return "问题单" + File.separator + businessId + "_" + sanitizePathName(defect.getProblemNo());
         }
         return null;
     }

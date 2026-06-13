@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.ProlistDefectMapper">
+
+    <resultMap type="com.ruoyi.project.domain.ProlistDefect" id="ProlistDefectResult">
+        <id     property="problemId"              column="problem_id"               />
+        <result property="taskId"                 column="task_id"                  />
+        <result property="problemNo"              column="problem_no"               />
+        <result property="problemLevel"           column="problem_level"            />
+        <result property="currentStatus"          column="current_status"           />
+        <result property="submitDate"             column="submit_date"              />
+        <result property="settleDate"             column="settle_date"              />
+        <result property="verifyDate"             column="verify_date"              />
+        <result property="whetherDefect"          column="whether_defect"           />
+        <result property="whetherOvertime"        column="whether_overtime"         />
+        <result property="whetherProRecurrence"   column="whether_pro_recurrence"   />
+        <result property="whetherAttRequired"     column="whether_att_required"     />
+        <result property="whetherUpdateVersion"   column="whether_update_version"   />
+        <result property="solutionTimeOverOneDay" column="solution_time_over_one_day"/>
+        <result property="defectDesc"             column="defect_desc"              />
+        <result property="productionYear"         column="production_year"          />
+        <result property="batchId"                column="batch_id"                 />
+        <result property="deptId"                 column="dept_id"                  />
+        <result property="remarks"                column="remarks"                  />
+        <result property="delFlag"                column="del_flag"                 />
+        <result property="createBy"               column="create_by"                />
+        <result property="createTime"             column="create_time"              />
+        <result property="updateBy"               column="update_by"                />
+        <result property="updateTime"             column="update_time"              />
+        <!-- 关联展示字段 -->
+        <result property="taskName"               column="task_name"                />
+        <result property="taskCode"               column="task_code"                />
+        <result property="product"                column="product"                  />
+        <result property="internalClosureDate"    column="internal_closure_date"    />
+        <result property="functionalTestDate"     column="functional_test_date"     />
+        <result property="productionVersionDate"  column="production_version_date"   />
+        <result property="scheduleStatus"         column="schedule_status"          />
+        <result property="batchNo"                column="batch_no"                 />
+        <result property="planProductionDate"     column="plan_production_date"      />
+        <result property="deptName"               column="dept_name"                />
+        <result property="createByName"           column="create_by_name"           />
+        <result property="updateByName"           column="update_by_name"           />
+    </resultMap>
+
+    <!-- 列表/详情共用：JOIN 任务/批次/部门/用户取展示字段。PM表与系统表 JOIN 加 COLLATE -->
+    <sql id="selectProlistDefectVo">
+        select pd.problem_id, pd.task_id, pd.problem_no, pd.problem_level, pd.current_status,
+               pd.submit_date, pd.settle_date, pd.verify_date,
+               pd.whether_defect, pd.whether_overtime, pd.whether_pro_recurrence,
+               pd.whether_att_required, pd.whether_update_version, pd.solution_time_over_one_day,
+               pd.defect_desc, pd.production_year, pd.batch_id, pd.dept_id, pd.remarks, pd.del_flag,
+               pd.create_by, pd.create_time, pd.update_by, pd.update_time,
+               t.task_name, t.task_code, t.product,
+               DATE_FORMAT(t.internal_closure_date, '%Y-%m-%d')    as internal_closure_date,
+               DATE_FORMAT(t.functional_test_date, '%Y-%m-%d')     as functional_test_date,
+               DATE_FORMAT(t.production_version_date, '%Y-%m-%d')   as production_version_date,
+               t.schedule_status,
+               b.batch_no,
+               DATE_FORMAT(b.plan_production_date, '%Y-%m-%d')      as plan_production_date,
+               d.dept_name,
+               uc.nick_name as create_by_name,
+               uu.nick_name as update_by_name
+        from pm_prolist_defect pd
+        left join pm_task t on pd.task_id = t.task_id
+        left join pm_production_batch b on pd.batch_id = b.batch_id
+        left join sys_dept d on pd.dept_id = d.dept_id
+        left join sys_user uc on pd.create_by COLLATE utf8mb4_unicode_ci = uc.user_name
+        left join sys_user uu on pd.update_by COLLATE utf8mb4_unicode_ci = uu.user_name
+    </sql>
+
+    <select id="selectProlistDefectList" parameterType="com.ruoyi.project.domain.ProlistDefect" resultMap="ProlistDefectResult">
+        <include refid="selectProlistDefectVo"/>
+        <where>
+            pd.del_flag = '0'
+            <if test="productionYear != null and productionYear != ''"> and pd.production_year = #{productionYear}</if>
+            <if test="batchId != null"> and pd.batch_id = #{batchId}</if>
+            <if test="product != null and product != ''"> and t.product = #{product}</if>
+            <if test="taskId != null"> and pd.task_id = #{taskId}</if>
+            <if test="taskCode != null and taskCode != ''"> and t.task_code like concat('%', #{taskCode}, '%')</if>
+            <if test="taskName != null and taskName != ''"> and t.task_name like concat('%', #{taskName}, '%')</if>
+            <if test="problemNo != null and problemNo != ''"> and pd.problem_no like concat('%', #{problemNo}, '%')</if>
+            <if test="problemLevel != null and problemLevel != ''"> and pd.problem_level = #{problemLevel}</if>
+            <if test="currentStatus != null and currentStatus != ''"> and pd.current_status = #{currentStatus}</if>
+            <if test="whetherDefect != null and whetherDefect != ''"> and pd.whether_defect = #{whetherDefect}</if>
+            <if test="whetherOvertime != null and whetherOvertime != ''"> and pd.whether_overtime = #{whetherOvertime}</if>
+            <if test="whetherProRecurrence != null and whetherProRecurrence != ''"> and pd.whether_pro_recurrence = #{whetherProRecurrence}</if>
+            <if test="whetherAttRequired != null and whetherAttRequired != ''"> and pd.whether_att_required = #{whetherAttRequired}</if>
+            <if test="solutionTimeOverOneDay != null and solutionTimeOverOneDay != ''"> and pd.solution_time_over_one_day = #{solutionTimeOverOneDay}</if>
+            <if test="creatorName != null and creatorName != ''"> and uc.nick_name like concat('%', #{creatorName}, '%')</if>
+            <if test="submitDateStart != null and submitDateStart != ''"> and pd.submit_date &gt;= #{submitDateStart}</if>
+            <if test="submitDateEnd != null and submitDateEnd != ''"> and pd.submit_date &lt;= #{submitDateEnd}</if>
+            <if test="createDateStart != null and createDateStart != ''"> and pd.create_time &gt;= #{createDateStart}</if>
+            <if test="createDateEnd != null and createDateEnd != ''"> and pd.create_time &lt;= concat(#{createDateEnd}, ' 23:59:59')</if>
+            <!-- 部门过滤：匹配自身或子部门(ancestors) -->
+            <if test="deptId != null">
+                and (pd.dept_id = #{deptId}
+                     or pd.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+        </where>
+        order by pd.create_time desc, pd.problem_id desc
+    </select>
+
+    <select id="selectProlistDefectByProblemId" parameterType="java.lang.Long" resultMap="ProlistDefectResult">
+        <include refid="selectProlistDefectVo"/>
+        where pd.problem_id = #{problemId} and pd.del_flag = '0'
+    </select>
+
+    <insert id="insertProlistDefect" parameterType="com.ruoyi.project.domain.ProlistDefect" useGeneratedKeys="true" keyProperty="problemId">
+        insert into pm_prolist_defect (
+            task_id, problem_no, problem_level, current_status, submit_date, settle_date, verify_date,
+            whether_defect, whether_overtime, whether_pro_recurrence, whether_att_required,
+            whether_update_version, solution_time_over_one_day, defect_desc, production_year,
+            batch_id, dept_id, remarks, del_flag, create_by, create_time
+        ) values (
+            #{taskId}, #{problemNo}, #{problemLevel}, #{currentStatus}, #{submitDate}, #{settleDate}, #{verifyDate},
+            #{whetherDefect}, #{whetherOvertime}, #{whetherProRecurrence}, #{whetherAttRequired},
+            #{whetherUpdateVersion}, #{solutionTimeOverOneDay}, #{defectDesc}, #{productionYear},
+            #{batchId}, #{deptId}, #{remarks}, '0', #{createBy}, now()
+        )
+    </insert>
+
+    <update id="updateProlistDefect" parameterType="com.ruoyi.project.domain.ProlistDefect">
+        update pm_prolist_defect
+        <set>
+            <if test="taskId != null">task_id = #{taskId},</if>
+            <if test="problemNo != null">problem_no = #{problemNo},</if>
+            <if test="problemLevel != null">problem_level = #{problemLevel},</if>
+            <if test="currentStatus != null">current_status = #{currentStatus},</if>
+            <if test="submitDate != null">submit_date = #{submitDate},</if>
+            settle_date = #{settleDate},
+            <if test="verifyDate != null">verify_date = #{verifyDate},</if>
+            <!-- 布尔标记位无条件 set，避免 API 传 null 时静默跳过（与 settle_date/defect_desc 一致） -->
+            whether_defect = #{whetherDefect},
+            whether_overtime = #{whetherOvertime},
+            whether_pro_recurrence = #{whetherProRecurrence},
+            whether_att_required = #{whetherAttRequired},
+            whether_update_version = #{whetherUpdateVersion},
+            solution_time_over_one_day = #{solutionTimeOverOneDay},
+            defect_desc = #{defectDesc},
+            <if test="productionYear != null">production_year = #{productionYear},</if>
+            <if test="batchId != null">batch_id = #{batchId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            remarks = #{remarks},
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = now()
+        </set>
+        where problem_id = #{problemId}
+    </update>
+
+    <!-- 软删除：改写 problem_no 加 _DEL_{id} 后缀腾位，避免删后重建同号撞唯一键(坑13) -->
+    <update id="deleteProlistDefectByProblemIds" parameterType="java.lang.Long">
+        update pm_prolist_defect
+        set del_flag = '1',
+            problem_no = concat(problem_no, '_DEL_', problem_id)
+        where problem_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <select id="checkProblemNoUnique" resultType="int">
+        select count(1) from pm_prolist_defect
+        where problem_no = #{problemNo} and del_flag = '0'
+        <if test="problemId != null"> and problem_id != #{problemId}</if>
+    </select>
+
+    <select id="selectBatchByYear" resultType="java.util.Map">
+        select batch_id as batchId, batch_no as batchNo
+        from pm_production_batch
+        where production_year = #{year}
+        order by sort_order, batch_id
+    </select>
+
+    <select id="selectPlanProductionDate" resultType="java.lang.String">
+        select DATE_FORMAT(plan_production_date, '%Y-%m-%d')
+        from pm_production_batch where batch_id = #{batchId}
+    </select>
+
+    <!-- 年份+批次+部门 → 任务号下拉。部门取任务所属项目 project_dept，走 ancestors -->
+    <select id="selectTaskOptions" resultType="java.util.Map">
+        select t.task_id as taskId, t.task_code as taskCode, t.task_name as taskName, t.product as product
+        from pm_task t
+        left join pm_project p on t.project_id = p.project_id
+        where t.production_year = #{productionYear}
+          and t.batch_id = #{batchId}
+        <if test="deptId != null">
+          and (p.project_dept = #{deptId}
+               or p.project_dept in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+        </if>
+        order by t.task_code
+    </select>
+
+    <select id="selectTaskProjectDept" resultType="java.lang.String">
+        select p.project_dept from pm_task t
+        left join pm_project p on t.project_id = p.project_id
+        where t.task_id = #{taskId}
+    </select>
+
+    <select id="selectTaskInfo" resultMap="ProlistDefectResult">
+        select t.task_id, t.task_name, t.task_code, t.product,
+               DATE_FORMAT(t.internal_closure_date, '%Y-%m-%d')  as internal_closure_date,
+               DATE_FORMAT(t.functional_test_date, '%Y-%m-%d')   as functional_test_date,
+               DATE_FORMAT(t.production_version_date, '%Y-%m-%d') as production_version_date,
+               t.schedule_status
+        from pm_task t where t.task_id = #{taskId}
+    </select>
+
+</mapper>

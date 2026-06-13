@@ -119,6 +119,9 @@ argument-hint: "<功能名，如 非批次版本管理>"
 | **软删除占用唯一键** | 业务唯一键(如 out_lib_version)软删记录仍占号→删后重建同值撞键。对策：**软删时改写唯一字段加 `_DEL_{id}` 后缀腾位**(`set del_flag='1', x=concat(x,'_DEL_',id)`)，唯一键不含 del_flag。⚠️别把 del_flag 纳入唯一键(会导致两条软删同号互撞)。**E2E连续CRUD才暴露**，手工点验碰不到 |
 | **只读字段漏传 id** | 提交人员/创建人等只读显示昵称的字段，前端只 `:value=昵称` 展示，**忘了把 id 放进 form 提交** → 存了空 → 列表/详情 JOIN 不出姓名(空白)。对策：onMounted 设 `form.commName=userStore.id`。**API/E2E测不到**(测试直接传了id)，**只有浏览器真点保存+看详情才暴露** |
 | **迁移脚本 DML 不幂等/插孤儿菜单** | DDL 用 `CREATE TABLE IF NOT EXISTS` 幂等，但 `INSERT sys_menu/sys_dict_*` 常忘幂等→生产重跑插重复菜单；父id用子查询取时命中0行返回 NULL→插出 `parent_id=NULL` 孤儿菜单。对策：①INSERT 前 `DELETE FROM sys_menu WHERE perms='xxx:list'` 再插；②`SET @parent_id=(...)` 后加校验 SELECT 确认非空；③补 `route_name`(与既有C菜单一致，keep-alive 命名对得上 `<script setup name>`)。**功能再简单也要 Code Review**——纯只读零bug，仍靠Review揪出运维/重跑环境才炸的脚本问题 |
+| **复用通用附件体系漏改分发点** | 复用 `pm_attachment`(business_type=新类型)上传报"业务数据不存在"。根因：`AttachmentServiceImpl.getBusinessFolder` 是硬编码 switch 只认 contract/project/payment。对策：**三处都改**①各端点 `@PreAuthorize` 白名单加新权限 `project:xxx:file/query`；②`getBusinessFolder` 加 `else if("xxx")` 分支(反查业务记录返存储子目录)；③注入该业务 Mapper。只加权限不加分支必上传失败 |
+| **`success(String)` 联动端点反复踩** | 选批次带不出计划投产日期(网络200但res.data=null)。根因：联动端点 `return success(service.selectXxx())` 当返回 String 时命中 `success(String msg)` 重载，值进 msg 不进 data。对策：**凡返回单个 String/日期的 GET 联动端点，一律用 2 参重载 `AjaxResult.success("查询成功", value)`** 强制进 data。写联动端点先自检返回类型是不是 String |
+| **新旧概念映射后过滤口径不同源** | 列表按"项目组"筛 `pd.dept_id`，任务下拉按 `p.project_dept` 过滤→选父部门时存的是父部门id、任务真实 project_dept 是子部门→"新增搜得到、列表筛不到"。对策：老"项目组"映射新"部门"，主表 dept_id **不存表单选的过滤部门，而是 insert/update 时按 taskId 反查任务 project_dept 落库**，保证过滤维度与被过滤数据同源。新旧概念映射要追问"这个值和谁比较" |
 
 ## 五、本地环境与命令速查
 

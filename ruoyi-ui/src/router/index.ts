@@ -376,6 +376,46 @@ export const constantRoutes = [
         meta: { title: '编辑非批次版本', activeMenu: '/storageVersion/versionOutManual' }
       }
     ]
+  },
+  // 批次任务问题单及缺陷：新增 / 编辑 / 详情（父菜单 /quality/prolistDefect）
+  {
+    path: '/project/prolistDefect/add',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/prolistDefect/add.vue'),
+        name: 'ProlistDefectAddPage',
+        meta: { title: '新增问题单及缺陷', activeMenu: '/quality/prolistDefect' }
+      }
+    ]
+  },
+  {
+    path: '/project/prolistDefect/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/prolistDefect/edit.vue'),
+        name: 'ProlistDefectEditPage',
+        meta: { title: '编辑问题单及缺陷', activeMenu: '/quality/prolistDefect' }
+      }
+    ]
+  },
+  {
+    path: '/project/prolistDefect/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/prolistDefect/detail.vue'),
+        name: 'ProlistDefectDetailPage',
+        meta: { title: '问题单及缺陷详情', activeMenu: '/quality/prolistDefect' }
+      }
+    ]
   }
 ]
 
