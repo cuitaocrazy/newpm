@@ -76,15 +76,32 @@ argument-hint: "<功能名，如 非批次版本管理>"
    跑：`mvn test -pl ruoyi-project -am -Dtest=XxxServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false`
 2. **E2E**（Playwright API驱动 `tests/e2e-<feature>-crud.spec.js`）：覆盖 Controller **全部端点**，用 `setupApi()`（`tests/helpers/api-client.js`，支持 `E2E_BASE_URL`）。**必须真跑通**（批次版本管理犯过"写了从没跑、还过时"的错）。
 3. **JaCoCo**：已配进根 pom，`mvn test` 自动出 `target/site/jacoco/index.html`，提取数字确认达标。
-4. **Playwright 浏览器验证**：关键页面真点一遍，截图确认。
+4. **Playwright 浏览器 UI 验证（强制走完整流程，不是只截图看渲染）**：必须**真点击操作**走完整 CRUD，因为很多 bug API/E2E 测不到（前端表单漏传字段、联动、回显）：
+   - **新增页**：依次选 年份→批次（看投产日期带出）→产品（看子系统联动）→子系统（看基准版本号带出）→版本类型（看出入库版本号实时生成）→填手填项 → **点保存** → 看是否跳列表。
+   - **列表页**：看新记录出现、各列值对、字典标签渲染、提交人员/创建人有值。
+   - **详情页**：点详情，核对全字段（尤其审计字段、JOIN 出的人员姓名）。
+   - **编辑页**：点编辑看回显，改关键字段看版本号重算，保存。
+   - ⚠️ **重点查"提交人员/创建人"等 JOIN 字段在列表/详情是否为空**——为空说明前端表单漏传了 id（见坑14）。
+   - 截图存证。**只截一张静态图 = 没验**（批次版本管理就因只截新增页没点，漏了 commName bug 到非批次才发现）。
 
-### Step 4 — 收尾
+### Step 4 — Code Review（强制，测试通过 ≠ 代码好）
+功能跑通、测试全绿后，**通审一遍代码**找隐患（测试覆盖不到的设计/一致性问题）。重点查：
+1. **复用裁剪的不一致**：从蓝本(批次)复制裁剪时，被改的部分是否留下隐患（如 commName 兜底沿用了批次的 `getUsername()` 但字段存的是 userId → JOIN 不上；如 v-if 字段的 `:span` 没归位导致布局不齐）。
+2. **复用方法的副作用**：非批次复用批次的 service/mapper 方法时，是否带进了不该有的逻辑（如批次删除会级联任务表，非批次没任务表是否多余/报错）。
+3. **字段存取一致性**：显示名(userName/nickName) vs 底层id(commName/userId) 别混；只读字段是否真存了 id（见坑14/坑15）。
+4. **SQL 隐患**：JOIN 字符集 COLLATE、查询是否硬编码隔离条件(manual_input)、唯一键与软删冲突(坑13)。
+5. **前端布局**：复用裁剪后 el-row/el-col 的 span 是否对齐（条件字段 v-if 隐藏后别留半行/错位，统一 span=8 三列网格最稳）。
+> 发现问题→修→重跑测试→记入坑文档(若是通用坑)。Review 找到的都是测试漏网之鱼，价值高。
+
+### Step 5 — 收尾
 - 全量回归 `mvn test -pl ruoyi-project -am`（零回归）+ 前端 `npm run build:prod`（退出码0）。
 - 把核实到的细节**回写修正需求文档**，差异表标记完成。
 - 可选跑 `/speckit-analyze` 复检 spec↔plan↔tasks↔实现一致性。
 - 最终 `/speckit-git-commit` 提交，commit 含做了什么+验证结果。
 
-## 四、避坑清单（批次版本管理实战教训，全部源于"需求没写细、源码才有"）
+## 四、避坑清单（实战教训，完整版见 `docs/pm/yadapm迁移踩坑记录.md`）
+
+> 完整坑表（现象+根因+解法）见 `docs/pm/yadapm迁移踩坑记录.md`。**开发新功能先扫一遍**；遇到新坑**随手追加到该文档，并同步回下表**。
 
 | 坑 | 教训（以源码为准就能避免） |
 |---|---|
@@ -98,6 +115,9 @@ argument-hint: "<功能名，如 非批次版本管理>"
 | 列表/详情字段缺失 | 对齐老 show.html/list.html 全字段(含审计4字段、多任务号聚合列) |
 | JOIN 字符集报错 | PM表与系统表 JOIN 必加 `COLLATE utf8mb4_unicode_ci` |
 | E2E 跑不起来 | ①80端口常被占→`E2E_BASE_URL=http://localhost:8090`；②容器闲置会挂→先查MySQL/Redis健康，挂了先`docker start`再重启后端 |
+| **共用实体 @Validated 误伤** | 多模块共用一个 domain 时，实体 `@NotBlank/@NotNull` 是"全字段集"约束。被某模块裁剪掉的字段，其校验会在该模块 `@Validated` 时误伤（报"XX不能为空"但 XX 根本不在该模块）。对策：复用实体但裁字段的模块，Controller **去掉 `@Validated`**，改 service 层手动校验真正必填项 |
+| **软删除占用唯一键** | 业务唯一键(如 out_lib_version)软删记录仍占号→删后重建同值撞键。对策：**软删时改写唯一字段加 `_DEL_{id}` 后缀腾位**(`set del_flag='1', x=concat(x,'_DEL_',id)`)，唯一键不含 del_flag。⚠️别把 del_flag 纳入唯一键(会导致两条软删同号互撞)。**E2E连续CRUD才暴露**，手工点验碰不到 |
+| **只读字段漏传 id** | 提交人员/创建人等只读显示昵称的字段，前端只 `:value=昵称` 展示，**忘了把 id 放进 form 提交** → 存了空 → 列表/详情 JOIN 不出姓名(空白)。对策：onMounted 设 `form.commName=userStore.id`。**API/E2E测不到**(测试直接传了id)，**只有浏览器真点保存+看详情才暴露** |
 
 ## 五、本地环境与命令速查
 

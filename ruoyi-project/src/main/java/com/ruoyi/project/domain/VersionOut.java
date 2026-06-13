@@ -44,6 +44,14 @@ public class VersionOut extends BaseEntity
     @Excel(name = "产品")
     private String product;
 
+    /** 手填软件中心任务号(非批次专用,manual_input=1) */
+    @Excel(name = "软件中心任务号")
+    private String manualTaskNo;
+
+    /** 手填任务名称(非批次专用,manual_input=1) */
+    @Excel(name = "任务名称")
+    private String manualTaskName;
+
     /** 版本类型1-6(字典 sys_version_type) */
     @NotBlank(message = "版本类型不能为空")
     @Excel(name = "版本类型", dictType = "sys_version_type")
@@ -147,6 +155,10 @@ public class VersionOut extends BaseEntity
     public String getSubVersionCode() { return subVersionCode; }
     public void setProduct(String product) { this.product = product; }
     public String getProduct() { return product; }
+    public void setManualTaskNo(String manualTaskNo) { this.manualTaskNo = manualTaskNo; }
+    public String getManualTaskNo() { return manualTaskNo; }
+    public void setManualTaskName(String manualTaskName) { this.manualTaskName = manualTaskName; }
+    public String getManualTaskName() { return manualTaskName; }
     public void setVersionType(String versionType) { this.versionType = versionType; }
     public String getVersionType() { return versionType; }
     public void setSysName(String sysName) { this.sysName = sysName; }

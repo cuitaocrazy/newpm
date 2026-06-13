@@ -28,6 +28,11 @@ public interface IVersionOutService
     /** 软删除批次版本 */
     public int deleteVersionOutByIds(Long[] ids);
 
+    // ---------- 非批次（manual_input='1'，任务手填，复用版本号生成） ----------
+    public List<VersionOut> selectVersionOutManualList(VersionOut versionOut);
+    public int insertVersionOutManual(VersionOut versionOut);
+    public int updateVersionOutManual(VersionOut versionOut);
+
     /** 生成出入库版本号（实时，供前端回填）。返回 {outLibVersion, versionCode} */
     public Map<String, String> generateOutLibVersion(VersionOut versionOut, String addFlag,
             String oldSubVersionCode, String oldVersionType);

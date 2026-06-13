@@ -463,3 +463,19 @@ INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component,
 
 -- ---------- 给 admin 角色(role 1=超管自动拥有,无需授权;此处给普通角色可选) ----------
 -- 超级管理员(user_id=1)走 admin 全权,无需 role_menu。
+
+-- ===== feature 008 非批次版本管理 菜单 =====
+-- 2. 菜单 + 权限（出入库版本管理一级菜单下新增二级"非批次版本管理"）
+SET @parent_id = (SELECT menu_id FROM sys_menu WHERE menu_name='出入库版本管理' AND parent_id=0 LIMIT 1);
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+VALUES ('非批次版本管理', @parent_id, 2, 'versionOutManual', 'project/versionOutManual/index', 1, 0, 'C', '0', '0', 'project:versionOutManual:list', 'documentation', 'admin', NOW(), '非批次版本管理菜单');
+SET @sub_id = LAST_INSERT_ID();
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
+('非批次版本查询', @sub_id, 1, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:query',  '#', 'admin', NOW()),
+('非批次版本新增', @sub_id, 2, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:add',    '#', 'admin', NOW()),
+('非批次版本修改', @sub_id, 3, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:edit',   '#', 'admin', NOW()),
+('非批次版本删除', @sub_id, 4, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:remove', '#', 'admin', NOW()),
+('非批次版本导出', @sub_id, 5, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:export', '#', 'admin', NOW());
+

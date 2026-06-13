@@ -126,7 +126,12 @@
    - （已否决方案 B：给关联表加文本列、插 task_id=null 行。）
 3. **字段裁剪**：非批次前端不显示 组包方式/版本状态/版本简介/项目名称/需求名称/多任务行。
 4. **版本号生成**：直接复用已实现的 `VersionNumberGenerator`（逻辑相同）。
-5. **菜单**：在"出入库版本管理"一级菜单下新增二级"非批次版本管理"，权限 `project:versionOutManual:*` 或复用 `project:versionOut:*`（待定，建议独立权限点便于区分）。
+5. **菜单**：在"出入库版本管理"一级菜单下新增二级"非批次版本管理"。**权限决策（已定 2026-06-13）：独立权限点 `project:versionOutManual:{list,query,add,edit,remove,export}`**（旧系统非批次与批次共用 Shiro `storageManagement*`，但 newpm 选独立权限便于分别授权）。
+
+> **源码核实结论（2026-06-13，开发前逐文件核对 storageManual 源码）**：需求文档 02 的字段表/列表/查询条件/联动/提交人员只读 **全部与旧系统源码一致**，可直接据此开发。补充核实到的事实：
+> - 旧系统非批次**与批次共用同一套 Shiro 权限** `storageManagement{Query,Edit,Delete}`（非独立）—— newpm 选独立权限是主动决策。
+> - create.html 确认：软件中心任务号/任务名称均为 `<input type=text>` 手填★；提交人员 `readonly th:value=${uerName}`；产品 name=subVersionCode onchange=getSysName（只联动子系统）；无组包方式/版本状态/版本简介/多任务行。
+> - 初级版本号(outVersion) 类型5/6 时存在（下拉）；列表18列、查询9条件均与文档一致。
 
 ## 九、与批次版本管理的差异速查表
 

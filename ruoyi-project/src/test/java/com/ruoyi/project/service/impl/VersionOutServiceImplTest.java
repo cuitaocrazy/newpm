@@ -10,6 +10,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -238,5 +239,137 @@ public class VersionOutServiceImplTest
         List<VersionOutTask> tasks = Arrays.asList(new VersionOutTask());
         when(versionOutMapper.selectTaskOptions("2026", 1L, "P1")).thenReturn(tasks);
         assertSame(tasks, service.selectTaskOptions("2026", 1L, "P1"));
+    }
+
+    // ---------- 非批次（manual） ----------
+
+    /** 构造一条非批次必填齐全的实体 */
+    private VersionOut validManual()
+    {
+        VersionOut v = new VersionOut();
+        v.setProductionYear("2026"); v.setBatchId(1L); v.setProduct("P1");
+        v.setSysName("SYS"); v.setVersionType("1");
+        v.setManualTaskNo("M-001"); v.setManualTaskName("手填任务");
+        v.setIsInvolved("1"); v.setDbUpdate("1"); v.setUsbUpdate("1"); v.setVersionDescr("说明");
+        return v;
+    }
+
+    @Test
+    public void insertManual_setsManualFlag_generatesNumber()
+    {
+        VersionOut v = validManual();
+        when(versionNumberGenerator.generate(eq("SYS"), any(), eq("1"), any(), eq("1"), any(), any(), any()))
+                .thenReturn(new String[] { "ABC_SP01", "01" });
+        when(versionOutMapper.insertVersionOutManual(v)).thenReturn(1);
+        try (MockedStatic<SecurityUtils> ms = mockStatic(SecurityUtils.class))
+        {
+            ms.when(SecurityUtils::getUsername).thenReturn("tester");
+            assertEquals(1, service.insertVersionOutManual(v));
+        }
+        assertEquals("1", v.getManualInput());
+        assertEquals("ABC_SP01", v.getOutLibVersion());
+    }
+
+    @Test
+    public void insertManual_missingTaskNo_throws()
+    {
+        VersionOut v = validManual();
+        v.setManualTaskNo(null);
+        ServiceException ex = assertThrows(ServiceException.class, () -> service.insertVersionOutManual(v));
+        assertTrue(ex.getMessage().contains("软件中心任务号"));
+    }
+
+    @Test
+    public void insertManual_upgradeTypeMissingOutVersion_throws()
+    {
+        VersionOut v = validManual();
+        v.setVersionType("5"); // 升级包需初级版本号
+        ServiceException ex = assertThrows(ServiceException.class, () -> service.insertVersionOutManual(v));
+        assertTrue(ex.getMessage().contains("初级版本号"));
+    }
+
+    @Test
+    public void insertManual_validateBranches_throwForEachMissing()
+    {
+        // 逐个必填缺失都应抛 ServiceException（覆盖 validateManual 各分支）
+        VersionOut a = validManual(); a.setProductionYear(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(a));
+        VersionOut b = validManual(); b.setBatchId(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(b));
+        VersionOut c = validManual(); c.setProduct(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(c));
+        VersionOut d = validManual(); d.setSysName(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(d));
+        VersionOut e = validManual(); e.setVersionType(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(e));
+        VersionOut f = validManual(); f.setManualTaskName(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(f));
+        VersionOut g = validManual(); g.setIsInvolved(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(g));
+        VersionOut h = validManual(); h.setDbUpdate(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(h));
+        VersionOut i = validManual(); i.setUsbUpdate(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(i));
+        VersionOut j = validManual(); j.setVersionDescr(null);
+        assertThrows(ServiceException.class, () -> service.insertVersionOutManual(j));
+    }
+
+    @Test
+    public void updateManual_keyUnchanged_keepsNumber()
+    {
+        VersionOut old = new VersionOut();
+        old.setId(6L); old.setSysName("SYS"); old.setVersionType("1"); old.setSubVersionCode("P1");
+        old.setOutLibVersion("SYS_SP09"); old.setVersionCode("09");
+        when(versionOutMapper.selectVersionOutById(6L)).thenReturn(old);
+
+        VersionOut upd = validManual();
+        upd.setId(6L); upd.setSysName("SYS"); upd.setSubVersionCode("P1");
+        when(versionOutMapper.updateVersionOutManual(upd)).thenReturn(1);
+        try (MockedStatic<SecurityUtils> ms = mockStatic(SecurityUtils.class))
+        {
+            ms.when(SecurityUtils::getUsername).thenReturn("tester");
+            service.updateVersionOutManual(upd);
+        }
+        assertEquals("SYS_SP09", upd.getOutLibVersion());
+        verifyNoInteractions(versionNumberGenerator);
+    }
+
+    @Test
+    public void updateManual_recordNotFound_throws()
+    {
+        VersionOut upd = validManual();
+        upd.setId(99L);
+        when(versionOutMapper.selectVersionOutById(99L)).thenReturn(null);
+        assertThrows(ServiceException.class, () -> service.updateVersionOutManual(upd));
+    }
+
+    @Test
+    public void updateManual_keyChanged_regenerates()
+    {
+        VersionOut old = new VersionOut();
+        old.setId(5L); old.setSysName("OLD"); old.setVersionType("1"); old.setSubVersionCode("S1");
+        old.setOutLibVersion("OLD_SP01"); old.setVersionCode("01");
+        when(versionOutMapper.selectVersionOutById(5L)).thenReturn(old);
+
+        VersionOut upd = validManual();
+        upd.setId(5L); upd.setSysName("NEW"); upd.setSubVersionCode("S1");
+        when(versionNumberGenerator.generate(eq("NEW"), any(), eq("1"), any(), eq("2"), eq(5L), any(), any()))
+                .thenReturn(new String[] { "NEW_SP03", "03" });
+        when(versionOutMapper.updateVersionOutManual(upd)).thenReturn(1);
+        try (MockedStatic<SecurityUtils> ms = mockStatic(SecurityUtils.class))
+        {
+            ms.when(SecurityUtils::getUsername).thenReturn("tester");
+            service.updateVersionOutManual(upd);
+        }
+        assertEquals("NEW_SP03", upd.getOutLibVersion());
+    }
+
+    @Test
+    public void selectManualList_delegates()
+    {
+        VersionOut q = new VersionOut();
+        List<VersionOut> list = Arrays.asList(new VersionOut());
+        when(versionOutMapper.selectVersionOutManualList(q)).thenReturn(list);
+        assertSame(list, service.selectVersionOutManualList(q));
     }
 }

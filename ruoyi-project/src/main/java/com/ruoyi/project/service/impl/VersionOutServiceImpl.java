@@ -54,7 +54,8 @@ public class VersionOutServiceImpl implements IVersionOutService
         versionOut.setCreateBy(SecurityUtils.getUsername());
         if (StringUtils.isEmpty(versionOut.getCommName()))
         {
-            versionOut.setCommName(SecurityUtils.getUsername());
+            // 提交人员存 userId（与 JOIN sys_user.user_id 一致），不能存登录名
+            versionOut.setCommName(String.valueOf(SecurityUtils.getUserId()));
         }
 
         DuplicateKeyException last = null;
@@ -143,6 +144,92 @@ public class VersionOutServiceImpl implements IVersionOutService
         {
             versionOutMapper.batchInsertVersionOutTask(toInsert);
         }
+    }
+
+    // ---------- 非批次（manual_input='1'，任务手填存主表列，复用版本号生成+重试） ----------
+
+    @Override
+    public List<VersionOut> selectVersionOutManualList(VersionOut versionOut)
+    {
+        return versionOutMapper.selectVersionOutManualList(versionOut);
+    }
+
+    /** 非批次必填校验（实体 @NotBlank 是批次专用字段，非批次手动校验真正必填项） */
+    private void validateManual(VersionOut v)
+    {
+        if (StringUtils.isEmpty(v.getProductionYear())) throw new ServiceException("投产年份不能为空");
+        if (v.getBatchId() == null) throw new ServiceException("投产批次不能为空");
+        if (StringUtils.isEmpty(v.getProduct())) throw new ServiceException("产品不能为空");
+        if (StringUtils.isEmpty(v.getSysName())) throw new ServiceException("子系统不能为空");
+        if (StringUtils.isEmpty(v.getVersionType())) throw new ServiceException("版本类型不能为空");
+        if (StringUtils.isEmpty(v.getManualTaskNo())) throw new ServiceException("软件中心任务号不能为空");
+        if (StringUtils.isEmpty(v.getManualTaskName())) throw new ServiceException("任务名称不能为空");
+        if (StringUtils.isEmpty(v.getIsInvolved())) throw new ServiceException("请选择是否涉及TWS改造");
+        if (StringUtils.isEmpty(v.getDbUpdate())) throw new ServiceException("请选择数据库是否修改");
+        if (StringUtils.isEmpty(v.getUsbUpdate())) throw new ServiceException("请选择接口是否修改");
+        if (StringUtils.isEmpty(v.getVersionDescr())) throw new ServiceException("版本说明不能为空");
+        if (("5".equals(v.getVersionType()) || "6".equals(v.getVersionType())) && StringUtils.isEmpty(v.getOutVersion()))
+            throw new ServiceException("请选择升级包初级版本号");
+    }
+
+    @Override
+    @Transactional
+    public int insertVersionOutManual(VersionOut versionOut)
+    {
+        validateManual(versionOut);
+        versionOut.setManualInput("1");
+        versionOut.setCreateBy(SecurityUtils.getUsername());
+        if (StringUtils.isEmpty(versionOut.getCommName()))
+        {
+            // 提交人员存 userId（与前端/JOIN sys_user.user_id 一致），不能存登录名
+            versionOut.setCommName(String.valueOf(SecurityUtils.getUserId()));
+        }
+        for (int attempt = 0; attempt < MAX_RETRY; attempt++)
+        {
+            String[] gen = versionNumberGenerator.generate(versionOut.getSysName(), versionOut.getSubVersionCode(),
+                    versionOut.getVersionType(), versionOut.getOutVersion(), "1", null, null, null);
+            versionOut.setOutLibVersion(gen[0]);
+            versionOut.setVersionCode(gen[1]);
+            try
+            {
+                return versionOutMapper.insertVersionOutManual(versionOut);
+            }
+            catch (DuplicateKeyException e)
+            {
+                // 撞号，重新生成重试
+            }
+        }
+        throw new ServiceException("出入库版本号生成冲突，请重试");
+    }
+
+    @Override
+    @Transactional
+    public int updateVersionOutManual(VersionOut versionOut)
+    {
+        validateManual(versionOut);
+        VersionOut old = versionOutMapper.selectVersionOutById(versionOut.getId());
+        if (old == null)
+        {
+            throw new ServiceException("版本记录不存在");
+        }
+        boolean keyChanged = !StringUtils.equals(old.getSysName(), versionOut.getSysName())
+                || !StringUtils.equals(old.getVersionType(), versionOut.getVersionType())
+                || !StringUtils.equals(old.getSubVersionCode(), versionOut.getSubVersionCode());
+        if (keyChanged)
+        {
+            String[] gen = versionNumberGenerator.generate(versionOut.getSysName(), versionOut.getSubVersionCode(),
+                    versionOut.getVersionType(), versionOut.getOutVersion(), "2", versionOut.getId(),
+                    old.getSubVersionCode(), old.getVersionType());
+            versionOut.setOutLibVersion(gen[0]);
+            versionOut.setVersionCode(gen[1]);
+        }
+        else
+        {
+            versionOut.setOutLibVersion(old.getOutLibVersion());
+            versionOut.setVersionCode(old.getVersionCode());
+        }
+        versionOut.setUpdateBy(SecurityUtils.getUsername());
+        return versionOutMapper.updateVersionOutManual(versionOut);
     }
 
     @Override
