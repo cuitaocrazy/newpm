@@ -296,6 +296,46 @@ export const constantRoutes = [
         meta: { title: '任务详情', activeMenu: '/task/subproject' }
       }
     ]
+  },
+  // 批次版本管理：新增 / 详情（父菜单 /storageVersion/versionOut）
+  {
+    path: '/project/versionOut/add',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/versionOut/add.vue'),
+        name: 'VersionOutAdd',
+        meta: { title: '新增批次版本', activeMenu: '/storageVersion/versionOut' }
+      }
+    ]
+  },
+  {
+    path: '/project/versionOut/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':id(\\d+)',
+        component: () => import('@/views/project/versionOut/detail.vue'),
+        name: 'VersionOutDetail',
+        meta: { title: '批次版本详情', activeMenu: '/storageVersion/versionOut' }
+      }
+    ]
+  },
+  {
+    path: '/project/versionOut/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':id(\\d+)',
+        component: () => import('@/views/project/versionOut/edit.vue'),
+        name: 'VersionOutEdit',
+        meta: { title: '编辑批次版本', activeMenu: '/storageVersion/versionOut' }
+      }
+    ]
   }
 ]
 

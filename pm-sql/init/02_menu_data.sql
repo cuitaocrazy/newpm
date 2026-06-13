@@ -442,3 +442,24 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 VALUES ('查询', @weeklyStatsMenuId, 1, '#', '', 1, 0, 'F', '0', '0', 'project:dailyReport:weeklyStats', '#', 'admin', sysdate(), '', NULL, '');
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, update_by, update_time, remark)
 VALUES ('导出', @weeklyStatsMenuId, 2, '#', '', 1, 0, 'F', '0', '0', 'project:dailyReport:weeklyStatsExport', '#', 'admin', sysdate(), '', NULL, '');
+
+
+-- ===== feature 007 菜单权限 =====
+-- ---------- 菜单：一级 出入库版本管理 (2290) ----------
+INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+VALUES (2290, '出入库版本管理', 0, 8, 'storageVersion', NULL, 1, 0, 'M', '0', '0', '', 'build', 'admin', NOW(), '出入库版本管理一级菜单');
+
+-- ---------- 菜单：二级 批次版本管理 (2291) ----------
+INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+VALUES (2291, '批次版本管理', 2290, 1, 'versionOut', 'project/versionOut/index', 1, 0, 'C', '0', '0', 'project:versionOut:list', 'list', 'admin', NOW(), '批次版本管理菜单');
+
+-- ---------- 按钮权限 (2292-2296) ----------
+INSERT INTO sys_menu (menu_id, menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
+(2292, '批次版本查询', 2291, 1, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOut:query',  '#', 'admin', NOW()),
+(2293, '批次版本新增', 2291, 2, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOut:add',    '#', 'admin', NOW()),
+(2294, '批次版本修改', 2291, 3, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOut:edit',   '#', 'admin', NOW()),
+(2295, '批次版本删除', 2291, 4, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOut:remove', '#', 'admin', NOW()),
+(2296, '批次版本导出', 2291, 5, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOut:export', '#', 'admin', NOW());
+
+-- ---------- 给 admin 角色(role 1=超管自动拥有,无需授权;此处给普通角色可选) ----------
+-- 超级管理员(user_id=1)走 admin 全权,无需 role_menu。

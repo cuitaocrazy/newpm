@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.VersionOutMapper">
+
+    <resultMap type="VersionOut" id="VersionOutResult">
+        <id     property="id"              column="id"/>
+        <result property="productionYear"  column="production_year"/>
+        <result property="batchId"         column="batch_id"/>
+        <result property="proBatchNo"      column="pro_batch_no"/>
+        <result property="subVersionCode"  column="sub_version_code"/>
+        <result property="product"         column="product"/>
+        <result property="versionType"     column="version_type"/>
+        <result property="sysName"         column="sys_name"/>
+        <result property="baseVersionCode" column="base_version_code"/>
+        <result property="outLibVersion"   column="out_lib_version"/>
+        <result property="versionCode"     column="version_code"/>
+        <result property="outVersion"      column="out_version"/>
+        <result property="commName"        column="comm_name"/>
+        <result property="userName"        column="user_name"/>
+        <result property="versionPDate"    column="version_p_date"/>
+        <result property="isInvolved"      column="is_involved"/>
+        <result property="dbUpdate"        column="db_update"/>
+        <result property="usbUpdate"       column="usb_update"/>
+        <result property="packageMode"     column="package_mode"/>
+        <result property="versionStatus"   column="version_status"/>
+        <result property="versionBrief"    column="version_brief"/>
+        <result property="versionDescr"    column="version_descr"/>
+        <result property="remarks"         column="remarks"/>
+        <result property="manualInput"     column="manual_input"/>
+        <result property="createByName"    column="create_by_name"/>
+        <result property="updateByName"    column="update_by_name"/>
+        <result property="taskNos"         column="task_nos"/>
+        <result property="createBy"        column="create_by"/>
+        <result property="createTime"      column="create_time"/>
+        <result property="updateBy"        column="update_by"/>
+        <result property="updateTime"      column="update_time"/>
+        <result property="remark"          column="remark"/>
+    </resultMap>
+
+    <resultMap type="VersionOut" id="VersionOutDetailResult" extends="VersionOutResult">
+        <collection property="taskList" ofType="VersionOutTask" column="id" select="selectTaskListByVersionId"/>
+    </resultMap>
+
+    <resultMap type="VersionOutTask" id="VersionOutTaskResult">
+        <id     property="id"         column="id"/>
+        <result property="versionId"  column="version_id"/>
+        <result property="taskId"     column="task_id"/>
+        <result property="taskNo"     column="task_no"/>
+        <result property="taskName"   column="task_name"/>
+        <result property="prjName"    column="prj_name"/>
+        <result property="demandName" column="demand_name"/>
+    </resultMap>
+
+    <sql id="selectVersionOutVo">
+        select v.id, v.production_year, v.batch_id, v.pro_batch_no, v.sub_version_code, v.product,
+               v.version_type, v.sys_name, v.base_version_code, v.out_lib_version, v.version_code,
+               v.out_version, v.comm_name, u.nick_name as user_name, v.version_p_date, v.is_involved,
+               v.db_update, v.usb_update, v.package_mode, v.version_status, v.version_brief, v.version_descr, v.remarks,
+               v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark,
+               cu.nick_name as create_by_name, mu.nick_name as update_by_name,
+               (select group_concat(distinct pt.software_demand_no separator ', ')
+                from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
+                where vt.version_id = v.id) as task_nos
+        from pm_version_out v
+        left join sys_user u on v.comm_name = u.user_id
+        left join sys_user cu on v.create_by COLLATE utf8mb4_unicode_ci = cu.user_name
+        left join sys_user mu on v.update_by COLLATE utf8mb4_unicode_ci = mu.user_name
+    </sql>
+
+    <select id="selectVersionOutList" parameterType="VersionOut" resultMap="VersionOutResult">
+        <include refid="selectVersionOutVo"/>
+        <where>
+            v.del_flag = '0' and v.manual_input = '0'
+            <if test="productionYear != null and productionYear != ''"> and v.production_year = #{productionYear}</if>
+            <if test="batchId != null"> and v.batch_id = #{batchId}</if>
+            <if test="proBatchNo != null and proBatchNo != ''"> and v.pro_batch_no like concat('%', #{proBatchNo}, '%')</if>
+            <if test="subVersionCode != null and subVersionCode != ''"> and v.sub_version_code = #{subVersionCode}</if>
+            <if test="product != null and product != ''"> and v.product = #{product}</if>
+            <if test="versionType != null and versionType != ''"> and v.version_type = #{versionType}</if>
+            <if test="sysName != null and sysName != ''"> and v.sys_name = #{sysName}</if>
+            <if test="baseVersionCode != null and baseVersionCode != ''"> and v.base_version_code = #{baseVersionCode}</if>
+            <if test="commName != null and commName != ''"> and v.comm_name = #{commName}</if>
+            <if test="packageMode != null and packageMode != ''"> and v.package_mode = #{packageMode}</if>
+            <if test="versionStatus != null and versionStatus != ''"> and v.version_status = #{versionStatus}</if>
+            <if test="outLibVersion != null and outLibVersion != ''"> and v.out_lib_version like concat('%', #{outLibVersion}, '%')</if>
+            <if test="versionPDate != null and versionPDate != ''"> and v.version_p_date = #{versionPDate}</if>
+            <if test="taskNo != null and taskNo != ''">
+                and exists (select 1 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
+                            where vt.version_id = v.id and pt.software_demand_no like concat('%', #{taskNo}, '%'))
+            </if>
+        </where>
+        order by v.create_time desc
+    </select>
+
+    <select id="selectVersionOutById" parameterType="Long" resultMap="VersionOutDetailResult">
+        <include refid="selectVersionOutVo"/>
+        where v.del_flag = '0' and v.id = #{id}
+    </select>
+
+    <select id="selectTaskListByVersionId" parameterType="Long" resultMap="VersionOutTaskResult">
+        select t.id, t.version_id, t.task_id,
+               pt.software_demand_no as task_no, pt.task_name, pt.demand_name,
+               pj.project_name as prj_name
+        from pm_version_out_task t
+        left join pm_task pt on t.task_id = pt.task_id
+        left join pm_project pj on pt.project_id = pj.project_id
+        where t.version_id = #{versionId}
+    </select>
+
+    <insert id="insertVersionOut" parameterType="VersionOut" useGeneratedKeys="true" keyProperty="id">
+        insert into pm_version_out(
+            production_year, batch_id, pro_batch_no, sub_version_code, product, version_type, sys_name,
+            base_version_code, out_lib_version, version_code, out_version, comm_name, version_p_date,
+            is_involved, db_update, usb_update, package_mode, version_status, version_brief, version_descr, remarks,
+            manual_input, del_flag, create_by, create_time, remark)
+        values(
+            #{productionYear}, #{batchId}, #{proBatchNo}, #{subVersionCode}, #{product}, #{versionType}, #{sysName},
+            #{baseVersionCode}, #{outLibVersion}, #{versionCode}, #{outVersion}, #{commName}, #{versionPDate},
+            #{isInvolved}, #{dbUpdate}, #{usbUpdate}, #{packageMode}, #{versionStatus}, #{versionBrief}, #{versionDescr}, #{remarks},
+            '0', '0', #{createBy}, sysdate(), #{remark})
+    </insert>
+
+    <update id="updateVersionOut" parameterType="VersionOut">
+        update pm_version_out
+        <set>
+            <if test="productionYear != null">production_year = #{productionYear},</if>
+            <if test="batchId != null">batch_id = #{batchId},</if>
+            <if test="proBatchNo != null">pro_batch_no = #{proBatchNo},</if>
+            <if test="subVersionCode != null">sub_version_code = #{subVersionCode},</if>
+            <if test="product != null">product = #{product},</if>
+            <if test="versionType != null">version_type = #{versionType},</if>
+            <if test="sysName != null">sys_name = #{sysName},</if>
+            <if test="baseVersionCode != null">base_version_code = #{baseVersionCode},</if>
+            <if test="outLibVersion != null">out_lib_version = #{outLibVersion},</if>
+            <if test="versionCode != null">version_code = #{versionCode},</if>
+            <if test="outVersion != null">out_version = #{outVersion},</if>
+            <if test="commName != null">comm_name = #{commName},</if>
+            <if test="versionPDate != null">version_p_date = #{versionPDate},</if>
+            <if test="isInvolved != null">is_involved = #{isInvolved},</if>
+            <if test="dbUpdate != null">db_update = #{dbUpdate},</if>
+            <if test="usbUpdate != null">usb_update = #{usbUpdate},</if>
+            <if test="packageMode != null">package_mode = #{packageMode},</if>
+            <if test="versionStatus != null">version_status = #{versionStatus},</if>
+            <if test="versionBrief != null">version_brief = #{versionBrief},</if>
+            <if test="versionDescr != null">version_descr = #{versionDescr},</if>
+            <if test="remarks != null">remarks = #{remarks},</if>
+            update_by = #{updateBy}, update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <update id="deleteVersionOutByIds" parameterType="Long">
+        update pm_version_out set del_flag = '1' where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <insert id="batchInsertVersionOutTask" parameterType="java.util.List">
+        insert into pm_version_out_task(version_id, task_id) values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.versionId}, #{item.taskId})
+        </foreach>
+    </insert>
+
+    <delete id="deleteVersionOutTaskByVersionId" parameterType="Long">
+        delete from pm_version_out_task where version_id = #{versionId}
+    </delete>
+
+    <delete id="deleteVersionOutTaskByVersionIds" parameterType="Long">
+        delete from pm_version_out_task where version_id in
+        <foreach collection="array" item="vid" open="(" separator="," close=")">#{vid}</foreach>
+    </delete>
+
+    <!-- ========== 版本号生成查询 ========== -->
+
+    <select id="getMaxVersionCode" resultType="java.lang.Integer">
+        select coalesce(max(cast(version_code as unsigned)), 0)
+        from pm_version_out
+        where del_flag = '0' and sys_name = #{sysName} and version_type = #{versionType}
+    </select>
+
+    <select id="getMaxVersionCodeByYear" resultType="java.lang.Integer">
+        select coalesce(max(cast(version_code as unsigned)), 0)
+        from pm_version_out
+        where del_flag = '0' and sub_version_code = #{subVersionCode} and version_type = #{versionType}
+          and out_lib_version like concat('T\_', year(now()), '\_%')
+    </select>
+
+    <select id="getCodeByOutVersion" resultType="java.lang.String">
+        select version_code
+        from pm_version_out
+        where del_flag = '0' and sys_name = #{sysName} and version_type = #{versionType}
+          and out_version = #{outVersion}
+        order by version_code desc limit 1
+    </select>
+
+    <select id="getCodeByBaseVersion" resultType="java.lang.String">
+        select version_code
+        from pm_version_out
+        where del_flag = '0' and sys_name = #{sysName} and version_type = #{baseVersionType}
+          and out_lib_version = #{outVersion}
+        order by version_code desc limit 1
+    </select>
+
+    <!-- ========== 级联/联动查询 ========== -->
+
+    <select id="selectBatchByYear" parameterType="String" resultType="java.util.Map">
+        select batch_id as batchId, batch_no as batchNo, plan_production_date as planProductionDate
+        from pm_production_batch
+        where production_year = #{productionYear}
+        order by sort_order
+    </select>
+
+    <select id="selectVersionPDate" parameterType="Long" resultType="java.lang.String">
+        select date_format(plan_production_date, '%Y-%m-%d') from pm_production_batch where batch_id = #{batchId}
+    </select>
+
+    <select id="selectTaskInfoByDemandNo" parameterType="String" resultMap="VersionOutTaskResult">
+        select pt.task_id, pt.software_demand_no as task_no, pt.task_name, pt.demand_name,
+               pj.project_name as prj_name
+        from pm_task pt
+        left join pm_project pj on pt.project_id = pj.project_id
+        where pt.software_demand_no = #{softwareDemandNo}
+        limit 1
+    </select>
+
+    <select id="selectTaskOptions" resultMap="VersionOutTaskResult">
+        select t.task_id, t.software_demand_no as task_no, t.task_name, t.demand_name,
+               p.project_name as prj_name
+        from pm_task t
+        left join pm_project p on t.project_id = p.project_id
+        where t.production_year = #{productionYear}
+          and t.batch_id = #{batchId}
+          and t.product = #{product}
+        order by t.software_demand_no desc
+    </select>
+
+    <select id="selectOutVersionOptions" resultType="java.lang.String">
+        select distinct out_version
+        from pm_version_out
+        where del_flag = '0' and sys_name = #{sysName} and version_type = #{versionType}
+          and out_version is not null and out_version != ''
+        order by out_version
+    </select>
+
+</mapper>

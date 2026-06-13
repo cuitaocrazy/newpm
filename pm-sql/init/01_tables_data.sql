@@ -1705,3 +1705,38 @@ insert into sys_dict_data values(386,7,'丧假','bereavement','sys_rbtype','','i
 -- 投产批次字典类型
 INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
 VALUES ('投产批次', 'sys_tcpc', '0', 'admin', NOW(), '任务投产批次');
+
+
+-- ===== feature 007 字典 =====
+-- ============================================================
+-- T002 字典 + T003 菜单权限 — feature 007 批次版本管理
+-- ============================================================
+
+-- ---------- 字典类型 ----------
+INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
+VALUES ('出入库版本类型', 'sys_version_type', '0', 'admin', NOW(), '出入库版本类型1-6');
+INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
+VALUES ('出入库组包方式', 'sys_package_mode', '0', 'admin', NOW(), '组包方式1-6');
+INSERT INTO sys_dict_type (dict_name, dict_type, status, create_by, create_time, remark)
+VALUES ('出入库版本状态', 'sys_version_status', '0', 'admin', NOW(), '版本状态(空字典,值待生产数据填充)');
+
+-- ---------- 字典数据：版本类型 ----------
+INSERT INTO sys_dict_data (dict_sort, dict_label, dict_value, dict_type, is_default, status, create_by, create_time) VALUES
+(1, 'SP升级包',   '1', 'sys_version_type', 'N', '0', 'admin', NOW()),
+(2, 'PTF补丁包',  '2', 'sys_version_type', 'N', '0', 'admin', NOW()),
+(3, 'B测试包',    '3', 'sys_version_type', 'N', '0', 'admin', NOW()),
+(4, '临时版本包', '4', 'sys_version_type', 'N', '0', 'admin', NOW()),
+(5, 'B包升级包',  '5', 'sys_version_type', 'N', '0', 'admin', NOW()),
+(6, 'SP包升级包', '6', 'sys_version_type', 'N', '0', 'admin', NOW());
+
+-- ---------- 字典数据：组包方式 ----------
+INSERT INTO sys_dict_data (dict_sort, dict_label, dict_value, dict_type, is_default, status, create_by, create_time) VALUES
+(1, 'A1-本批次全量版本',   '1', 'sys_package_mode', 'N', '0', 'admin', NOW()),
+(2, 'A2-本批次增量版本',   '2', 'sys_package_mode', 'N', '0', 'admin', NOW()),
+(3, 'B1-单个任务全量版本', '3', 'sys_package_mode', 'N', '0', 'admin', NOW()),
+(4, 'B2-单个任务增量版本', '4', 'sys_package_mode', 'N', '0', 'admin', NOW()),
+(5, 'C1-多个任务全量版本', '5', 'sys_package_mode', 'N', '0', 'admin', NOW()),
+(6, 'C2-多个任务增量版本', '6', 'sys_package_mode', 'N', '0', 'admin', NOW());
+
+-- sys_version_status 不插数据值（空字典，管理员/迁移填充）
+

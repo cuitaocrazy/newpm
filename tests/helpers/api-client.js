@@ -5,7 +5,7 @@
 
 import { request as playwrightRequest } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:80';
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:80';
 
 /**
  * 创建带认证的 API 客户端（手动管理 APIRequestContext 生命周期）

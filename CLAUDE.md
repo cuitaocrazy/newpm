@@ -550,5 +550,6 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+`specs/007-batch-version-management/plan.md` (批次版本管理 / 出入库版本，迁移自 yadapm)
 <!-- SPECKIT END -->
