@@ -37,4 +37,8 @@
 > **坑14 升华**：只读显示的关联字段（人员/部门等"显示名+底层id"的字段），**展示用昵称、提交用id，两者别混**。务必确认 form 里有那个 id 字段并初始化。
 > **坑14 教训**：**API/E2E 测不到**（测试 payload 直接传了 commName）；**只有浏览器真点保存 + 看详情/列表 JOIN 字段是否空** 才暴露。这就是为什么"浏览器 UI 验证必须真走完整流程、不能只截静态图"。
 
+| 15 | **兜底值类型不一致（commName 兜底成登录名）** | code review 发现：commName 为空时兜底 `setCommName(getUsername())`(登录名)，但该字段存 userId、JOIN `sys_user.user_id` | 从批次复制的兜底逻辑，批次也有此隐患（前端都传 userId 所以兜底分支没触发，潜伏） | 兜底改 `String.valueOf(getUserId())`。**Code Review 才发现**，测试不触发(都传了值) |
+
+> **坑15 升华**：兜底/默认值要和字段的**真实存储类型/口径一致**（存 id 就兜 id，别兜 name）。**这类潜伏隐患测试覆盖不到（兜底分支不触发），靠 Code Review 通审才能揪出**——印证"测试通过≠代码好，Code Review 必做"。
+
 > **教训升华**：多个功能共用一个 domain 实体时，实体上的 Bean Validation 注解（@NotBlank/@NotNull）是"最全字段集"的约束。被某个模块裁剪掉的字段，其校验注解会在该模块 `@Validated` 时误伤。**对策**：共用实体的不同模块，校验要么各自 service 层手动做，要么用 validation group 分组，不能无脑 `@Validated`。

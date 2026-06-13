@@ -79,44 +79,30 @@
           </el-col>
         </el-row>
         <el-row :gutter="20">
-          <el-col :span="6" v-if="isUpgrade">
+          <el-col :span="8" v-if="isUpgrade">
             <el-form-item label="升级包初级版本号" prop="outVersion">
               <el-select v-model="form.outVersion" placeholder="请选择初级版本号" filterable clearable style="width:100%" @change="tryGenerate">
                 <el-option v-for="o in outVersionOptions" :key="o" :label="o" :value="o" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="isUpgrade ? 6 : 12">
+          <el-col :span="8">
             <el-form-item label="出入库版本号">
               <el-input v-model="form.outLibVersion" readonly placeholder="自动生成">
                 <template #append><el-tag type="success" size="small">自动</el-tag></template>
               </el-input>
             </el-form-item>
           </el-col>
-          <el-col :span="isUpgrade ? 6 : 6">
+          <el-col :span="8">
             <el-form-item label="涉及TWS改造" prop="isInvolved">
               <el-radio-group v-model="form.isInvolved"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="6" v-if="isUpgrade">
-            <el-form-item label="数据库是否修改" prop="dbUpdate">
-              <el-radio-group v-model="form.dbUpdate"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" v-if="!isUpgrade">
           <el-col :span="8">
             <el-form-item label="数据库是否修改" prop="dbUpdate">
               <el-radio-group v-model="form.dbUpdate"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="接口是否修改" prop="usbUpdate">
-              <el-radio-group v-model="form.usbUpdate"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20" v-if="isUpgrade">
           <el-col :span="8">
             <el-form-item label="接口是否修改" prop="usbUpdate">
               <el-radio-group v-model="form.usbUpdate"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>

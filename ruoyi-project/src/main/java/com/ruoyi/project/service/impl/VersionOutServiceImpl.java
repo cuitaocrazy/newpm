@@ -54,7 +54,8 @@ public class VersionOutServiceImpl implements IVersionOutService
         versionOut.setCreateBy(SecurityUtils.getUsername());
         if (StringUtils.isEmpty(versionOut.getCommName()))
         {
-            versionOut.setCommName(SecurityUtils.getUsername());
+            // 提交人员存 userId（与 JOIN sys_user.user_id 一致），不能存登录名
+            versionOut.setCommName(String.valueOf(SecurityUtils.getUserId()));
         }
 
         DuplicateKeyException last = null;
@@ -180,7 +181,8 @@ public class VersionOutServiceImpl implements IVersionOutService
         versionOut.setCreateBy(SecurityUtils.getUsername());
         if (StringUtils.isEmpty(versionOut.getCommName()))
         {
-            versionOut.setCommName(SecurityUtils.getUsername());
+            // 提交人员存 userId（与前端/JOIN sys_user.user_id 一致），不能存登录名
+            versionOut.setCommName(String.valueOf(SecurityUtils.getUserId()));
         }
         for (int attempt = 0; attempt < MAX_RETRY; attempt++)
         {
