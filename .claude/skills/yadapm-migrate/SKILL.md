@@ -101,6 +101,7 @@ argument-hint: "<功能名，如 非批次版本管理>"
 | JOIN 字符集报错 | PM表与系统表 JOIN 必加 `COLLATE utf8mb4_unicode_ci` |
 | E2E 跑不起来 | ①80端口常被占→`E2E_BASE_URL=http://localhost:8090`；②容器闲置会挂→先查MySQL/Redis健康，挂了先`docker start`再重启后端 |
 | **共用实体 @Validated 误伤** | 多模块共用一个 domain 时，实体 `@NotBlank/@NotNull` 是"全字段集"约束。被某模块裁剪掉的字段，其校验会在该模块 `@Validated` 时误伤（报"XX不能为空"但 XX 根本不在该模块）。对策：复用实体但裁字段的模块，Controller **去掉 `@Validated`**，改 service 层手动校验真正必填项 |
+| **软删除占用唯一键** | 业务唯一键(如 out_lib_version)软删记录仍占号→删后重建同值撞键。对策：**软删时改写唯一字段加 `_DEL_{id}` 后缀腾位**(`set del_flag='1', x=concat(x,'_DEL_',id)`)，唯一键不含 del_flag。⚠️别把 del_flag 纳入唯一键(会导致两条软删同号互撞)。**E2E连续CRUD才暴露**，手工点验碰不到 |
 
 ## 五、本地环境与命令速查
 

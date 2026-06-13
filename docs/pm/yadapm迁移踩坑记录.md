@@ -25,5 +25,11 @@
 | # | 坑 | 现象 | 根因 | 解法 |
 |---|---|---|---|---|
 | 12 | **共用实体 @Validated 误伤** | 非批次新增报"组包方式不能为空"(500)，但非批次根本没这字段 | 复用了批次的 `VersionOut` 实体，实体上 `packageMode`/`versionStatus` 等带 `@NotBlank`；Controller 用 `@Validated` 会强制校验这些被裁剪掉的批次专用字段 | 复用实体但裁剪字段的新模块，Controller **去掉 `@Validated`**，改在 **service 层手动校验**该模块真正必填的字段 |
+| 13 | **软删除记录占用唯一键**（批次就埋下，E2E才暴露） | ①删一条后新增同号报"生成冲突"；②若把 del_flag 纳入唯一键，则软删两条同号记录又互相撞键 | 唯一键 `uk(sys_name,version_type,out_lib_version)`，软删(del_flag='1')记录仍占号 | **软删时改写版本号腾位**：`update set del_flag='1', out_lib_version=concat(out_lib_version,'_DEL_',id)`。id 唯一保证改写后也唯一；原号腾空可重建；软删记录间也不撞。唯一键保持不含 del_flag |
+
+> **坑13 升华**：凡"软删除 + 业务唯一键"组合都有此隐患。**试过两个方案**：
+> - ❌ 唯一键纳入 del_flag → 治了"删后重建"，却导致"两条软删同号"撞键（del_flag 都=1 时仍相同）。
+> - ✅ **软删时改写唯一字段加 `_DEL_{id}` 后缀腾位** → 原号腾空、软删记录间靠 id 唯一不撞。这是软删+唯一键的稳妥解法。
+> **坑13 教训**：缺陷批次就有，但当时没"删→重建同号"所以没暴露；非批次 E2E 跑（数据含软删记录）才炸出来。**印证 E2E 真跑的价值**——手工点验碰不到这种数据组合，连续 CRUD 才暴露。
 
 > **教训升华**：多个功能共用一个 domain 实体时，实体上的 Bean Validation 注解（@NotBlank/@NotNull）是"最全字段集"的约束。被某个模块裁剪掉的字段，其校验注解会在该模块 `@Validated` 时误伤。**对策**：共用实体的不同模块，校验要么各自 service 层手动做，要么用 validation group 分组，不能无脑 `@Validated`。

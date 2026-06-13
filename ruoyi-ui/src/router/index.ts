@@ -336,6 +336,46 @@ export const constantRoutes = [
         meta: { title: '编辑批次版本', activeMenu: '/storageVersion/versionOut' }
       }
     ]
+  },
+  // 非批次版本管理：新增 / 详情 / 编辑（父菜单 /storageVersion/versionOutManual）
+  {
+    path: '/project/versionOutManual/add',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/versionOutManual/add.vue'),
+        name: 'VersionOutManualAdd',
+        meta: { title: '新增非批次版本', activeMenu: '/storageVersion/versionOutManual' }
+      }
+    ]
+  },
+  {
+    path: '/project/versionOutManual/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':id(\\d+)',
+        component: () => import('@/views/project/versionOutManual/detail.vue'),
+        name: 'VersionOutManualDetail',
+        meta: { title: '非批次版本详情', activeMenu: '/storageVersion/versionOutManual' }
+      }
+    ]
+  },
+  {
+    path: '/project/versionOutManual/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: ':id(\\d+)',
+        component: () => import('@/views/project/versionOutManual/edit.vue'),
+        name: 'VersionOutManualEdit',
+        meta: { title: '编辑非批次版本', activeMenu: '/storageVersion/versionOutManual' }
+      }
+    ]
   }
 ]
 

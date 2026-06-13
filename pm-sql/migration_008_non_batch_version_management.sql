@@ -24,3 +24,4 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 ('非批次版本导出', @sub_id, 5, '', NULL, 1, 0, 'F', '0', '0', 'project:versionOutManual:export', '#', 'admin', NOW());
 
 COMMIT;
+
