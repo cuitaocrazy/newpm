@@ -26,10 +26,12 @@
 
 | 条件 | 字段 | 控件 |
 |---|---|---|
-| 任务编号 | taskNo | 下拉（来自历史数据 distinct） |
-| 投产批次号 | proBatchNo | 下拉（distinct） |
-| 子产品 | product | 下拉 |
-| 版本类型 | versionType | 下拉 |
+| 任务编号 | taskNo | **文本输入框**（源码核实：`<input type=text>`，非下拉） |
+| 投产批次号 | proBatchNo | 下拉（distinct from 历史数据） |
+| 子产品 | product | 下拉（distinct） |
+| 版本类型 | versionType | 下拉（distinct，**存文本非字典**） |
+
+> **源码核实（2026-06-14）**：任务编号是文本输入框（非下拉）；其余3个下拉的选项来自 `pm_old_version_out` 表 distinct（版本类型也是历史文本，不接字典）。新系统照此实现。
 
 ## 四、列表列（18 列）
 
