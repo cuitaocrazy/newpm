@@ -37,43 +37,52 @@ argument-hint: "<功能名，如 非批次版本管理>"
 2. **以批次版本管理为蓝本**：参考 `specs/007-batch-version-management/` 设计 + `ruoyi-project` 下 `VersionOut*`/`SysName*`/`VersionNumberGenerator` + `ruoyi-ui/src/views/project/versionOut/` 四件套 + `tests/e2e-version-out-crud.spec.js`。
 3. 旧系统是 Oracle+Scala+Thymeleaf+Shiro，newpm 是 MySQL+SpringBoot3+Vue3+SpringSecurity：类型/语法/鉴权/模板都要换壳。
 
-## 三、流水线步骤
+## 三、流水线步骤（speckit 驱动主干 + 手动分段验证）
 
-### Step 0 — 切独立分支
-每个功能独立分支。用 `/speckit-git-feature <短名>`（sequential，自动取下一个 NNN）。
+> **核心方式（C）**：设计阶段**全程用 /speckit-* skill**串起来；实现阶段用 **`/speckit-implement` 起底**（生成骨架、铺代码），但**保留手动分段验证 + review 的灵活性**——每段实现后立即测试/浏览器验证/必要时插入修正，不是跑完一把 implement 就完事。
+>
+> 完整 speckit 调用链（批次版本管理实测走通的）：
+> `/speckit-git-feature` → `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` → `/speckit-implement`（分段）→ 各段 `/speckit-git-commit`。
+> 每个 speckit skill 触发后会输出可选/强制钩子（如 before_specify 的 git-feature、after_* 的 git-commit），按提示执行。
 
-### Step 1 — Spec Kit 设计三件套
-按顺序：`/speckit-specify`（功能描述里引用需求文档+源码路径）→ `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze`（修掉MEDIUM再往下）。
-**设计阶段对照源码把字段/规则/算法就地写清楚**，不要只留"详见XX"链接。
+### Step 0 — 切分支：`/speckit-git-feature <短名>`
+每个功能独立分支（sequential 自动取下一个 NNN，如 008/009…）。注意 `/speckit-specify` 的 before_specify 钩子也会触发它，别重复切。
 
-### Step 2 — 数据库（DDL/字典/菜单）
-- 新表写 `pm-sql/init/00_tables_ddl.sql`；字典 `01_tables_data.sql`；菜单 `02_menu_data.sql`。
-- 另产出可移植迁移脚本 `pm-sql/migration_<NNN>_<feature>.sql`（建表+列+字典+菜单一个文件，菜单用 `LAST_INSERT_ID` 动态取父id）。
-- 应用到本地 + 刷 Redis 字典缓存。
+### Step 1 — 设计三件套（全程 speckit）
+1. **`/speckit-specify`** —— 功能描述里**引用需求文档路径 + 旧系统源码模块路径**，让 spec 基于源码事实而非凭空。产出 spec.md（用户故事P1..Pn + FR + SC + 假设）。
+2. **`/speckit-plan`** —— 产出 plan.md + research/data-model/contracts。**对照源码把字段/规则/核心算法就地写清楚**（如版本号生成规则全表），不要只留"详见XX"链接。
+3. **`/speckit-tasks`** —— 产出 tasks.md，分阶段：Setup → Foundational → US1(MVP) → US2.. → Polish。
+4. **`/speckit-analyze`** —— 跨文档一致性体检，**修掉 MEDIUM 及以上再往下**（批次版本管理就靠它抓出 product/子产品、版本状态枚举等问题）。
 
-### Step 3 — 后端（ruoyi-project，分段实现）
-domain → mapper(+xml) → service接口 → serviceImpl → controller → 前端api骨架。
-- 继承 `BaseController`，list 首行 `startPage()`，`@PreAuthorize`+`@Log`。
-- 列表子表聚合（如多任务号）用 `GROUP_CONCAT` 子查询；创建/修改人昵称 JOIN `sys_user` **必加 `COLLATE utf8mb4_unicode_ci`**。
-- 唯一性防并发：组合唯一键 + 插入失败重试(≤3)。
+### Step 2 — 实现：`/speckit-implement` 起底 + 手动分段验证（C 的核心）
+用 **`/speckit-implement`** 读 tasks.md 驱动实现，但**按 tasks 的阶段分段做、每段验证**（批次版本管理实测分了 5 段：MVP新增→查询→改删→导出→Polish）：
 
-### Step 4 — 前端（ruoyi-ui）
-四件套 index/add/edit/detail + api ts，参考 versionOut/。
-- 字典用 `<dict-select>`/`<dict-tag>`；服务端排序 `sortable=custom`；搜索状态缓存 sessionStorage。
-- **add≡edit（同字段同布局）；detail=add/edit超集+审计字段；index查询条件和列对齐老系统**。
-- 联动/去重/readonly/默认值**全部照旧系统 HTML 的 JS 实现**。
+**每段内部顺序**（后端→前端→验证）：
+- 后端（ruoyi-project）：domain → mapper(+xml) → service接口 → serviceImpl → controller → 前端api骨架。
+  - 继承 `BaseController`，list 首行 `startPage()`，`@PreAuthorize`+`@Log`。
+  - 列表子表聚合（多任务号等）用 `GROUP_CONCAT` 子查询；创建/修改人昵称 JOIN `sys_user` **必加 `COLLATE utf8mb4_unicode_ci`**。
+  - 唯一性防并发：组合唯一键 + 插入失败重试(≤3)。
+- 前端（ruoyi-ui）：四件套 index/add/edit/detail + api ts，参考 versionOut/。
+  - 字典用 `<dict-select>`/`<dict-tag>`；服务端排序 `sortable=custom`；搜索缓存 sessionStorage。
+  - **add≡edit（同字段同布局）；detail=add/edit超集+审计字段；index查询条件和列对齐老系统**。
+  - 联动/去重/readonly/默认值**全部照旧系统 HTML 的 JS 实现**（第一原则）。
+- **每段验证**：重建jar重启后端 → 关验证码 → API冒烟/浏览器点验 → **及时插入 review 修正**（这是 C 比纯 implement 灵活的地方）。
+- 每段用 **`/speckit-git-commit`**（或 after_implement 钩子）提交。
 
-### Step 5 — 测试三件套（强制，不可跳过）
+数据库（在 Setup 段做）：新表写 `pm-sql/init/00_tables_ddl.sql`、字典 `01_tables_data.sql`、菜单 `02_menu_data.sql`；另产可移植迁移脚本 `pm-sql/migration_<NNN>_<feature>.sql`（建表+列+字典+菜单一文件，菜单用 `LAST_INSERT_ID` 取父id）；应用到本地 + 刷 Redis 字典缓存。
+
+### Step 3 — 测试三件套（强制，不可跳过）
 1. **单元测试**（JUnit5+Mockito，service层）：核心算法+CRUD+重试/级联分支+各转发方法。**逻辑类（算法+Service）指令覆盖率 ≥ 90%**（实体getter/setter、Controller不靠单测）。
    跑：`mvn test -pl ruoyi-project -am -Dtest=XxxServiceImplTest -Dsurefire.failIfNoSpecifiedTests=false`
 2. **E2E**（Playwright API驱动 `tests/e2e-<feature>-crud.spec.js`）：覆盖 Controller **全部端点**，用 `setupApi()`（`tests/helpers/api-client.js`，支持 `E2E_BASE_URL`）。**必须真跑通**（批次版本管理犯过"写了从没跑、还过时"的错）。
 3. **JaCoCo**：已配进根 pom，`mvn test` 自动出 `target/site/jacoco/index.html`，提取数字确认达标。
 4. **Playwright 浏览器验证**：关键页面真点一遍，截图确认。
 
-### Step 6 — 收尾
+### Step 4 — 收尾
 - 全量回归 `mvn test -pl ruoyi-project -am`（零回归）+ 前端 `npm run build:prod`（退出码0）。
 - 把核实到的细节**回写修正需求文档**，差异表标记完成。
-- `/speckit-git-commit` 分段提交，commit 含做了什么+验证结果。
+- 可选跑 `/speckit-analyze` 复检 spec↔plan↔tasks↔实现一致性。
+- 最终 `/speckit-git-commit` 提交，commit 含做了什么+验证结果。
 
 ## 四、避坑清单（批次版本管理实战教训，全部源于"需求没写细、源码才有"）
 
@@ -113,6 +122,7 @@ domain → mapper(+xml) → service接口 → serviceImpl → controller → 前
 
 ## 六、完成标准（Definition of Done）
 
+- [ ] **全程走 speckit 链**：git-feature→specify→plan→tasks→analyze→implement(分段)→git-commit，产物 spec/plan/tasks 齐全
 - [ ] **每处实现都核对过旧系统源码**（非仅照需求文档），核实细节已回写需求文档
 - [ ] 单元测试逻辑类覆盖率 ≥ 90%，全量 `mvn test` 零回归
 - [ ] E2E 覆盖 Controller 全端点，**真跑通过**
