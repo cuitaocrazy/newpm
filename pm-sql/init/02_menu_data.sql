@@ -492,3 +492,31 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 ('旧数据查询权限', @sub_id, 1, '', NULL, 1, 0, 'F', '0', '0', 'project:oldVersionOut:list', '#', 'admin', NOW());
 
 COMMIT;
+
+-- ===== feature 010 批次任务问题单及缺陷 菜单 =====
+-- 3. 菜单（新一级「项目质量管理」+ 二级「批次任务问题单及缺陷」+ 4权限；幂等）
+-- 先删旧（按 perms 前缀 + 一级菜单名）
+DELETE FROM sys_menu WHERE perms LIKE 'project:prolistDefect:%';
+DELETE FROM sys_menu WHERE menu_name='批次任务问题单及缺陷' AND menu_type='C';
+
+-- 一级菜单：项目质量管理（不存在才建）
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+SELECT '项目质量管理', 0, 9, 'quality', NULL, '', 1, 0, 'M', '0', '0', '', 'cascader', 'admin', NOW(), '项目质量管理目录'
+FROM dual WHERE NOT EXISTS (SELECT 1 FROM (SELECT menu_id FROM sys_menu WHERE menu_name='项目质量管理' AND parent_id=0) t);
+
+SET @quality_id = (SELECT menu_id FROM sys_menu WHERE menu_name='项目质量管理' AND parent_id=0 LIMIT 1);
+SELECT IFNULL(@quality_id, 0) AS quality_parent_must_not_be_zero;
+
+-- 二级菜单：批次任务问题单及缺陷
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+VALUES ('批次任务问题单及缺陷', @quality_id, 1, 'prolistDefect', 'project/prolistDefect/index', 'ProlistDefect', 1, 0, 'C', '0', '0', 'project:prolistDefect:list', 'bug', 'admin', NOW(), '批次任务问题单及缺陷菜单');
+SET @sub_id = LAST_INSERT_ID();
+
+-- 4级权限按钮
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
+('问题单查询', @sub_id, 1, '', NULL, 1, 0, 'F', '0', '0', 'project:prolistDefect:query',  '#', 'admin', NOW()),
+('问题单新增导出', @sub_id, 2, '', NULL, 1, 0, 'F', '0', '0', 'project:prolistDefect:edit',  '#', 'admin', NOW()),
+('问题单删除', @sub_id, 3, '', NULL, 1, 0, 'F', '0', '0', 'project:prolistDefect:remove','#', 'admin', NOW()),
+('问题单附件', @sub_id, 4, '', NULL, 1, 0, 'F', '0', '0', 'project:prolistDefect:file',  '#', 'admin', NOW());
+
+COMMIT;
