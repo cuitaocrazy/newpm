@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.project.mapper.NobatchProlistDefectMapper">
+
+    <resultMap type="com.ruoyi.project.domain.NobatchProlistDefect" id="NobatchProlistDefectResult">
+        <id     property="problemId"              column="problem_id"               />
+        <result property="taskNo"                 column="task_no"                  />
+        <result property="taskName"               column="task_name"                />
+        <result property="product"                column="product"                  />
+        <result property="internalClosureDate"    column="internal_closure_date"    />
+        <result property="functionalTestDate"     column="functional_test_date"     />
+        <result property="productionVersionDate"  column="production_version_date"   />
+        <result property="scheduleStatus"         column="schedule_status"          />
+        <result property="problemNo"              column="problem_no"               />
+        <result property="problemLevel"           column="problem_level"            />
+        <result property="currentStatus"          column="current_status"           />
+        <result property="submitDate"             column="submit_date"              />
+        <result property="settleDate"             column="settle_date"              />
+        <result property="verifyDate"             column="verify_date"              />
+        <result property="whetherDefect"          column="whether_defect"           />
+        <result property="whetherOvertime"        column="whether_overtime"         />
+        <result property="whetherProRecurrence"   column="whether_pro_recurrence"   />
+        <result property="whetherAttRequired"     column="whether_att_required"     />
+        <result property="whetherUpdateVersion"   column="whether_update_version"   />
+        <result property="solutionTimeOverOneDay" column="solution_time_over_one_day"/>
+        <result property="defectDesc"             column="defect_desc"              />
+        <result property="productionYear"         column="production_year"          />
+        <result property="batchId"                column="batch_id"                 />
+        <result property="deptId"                 column="dept_id"                  />
+        <result property="remarks"                column="remarks"                  />
+        <result property="delFlag"                column="del_flag"                 />
+        <result property="createBy"               column="create_by"                />
+        <result property="createTime"             column="create_time"              />
+        <result property="updateBy"               column="update_by"                />
+        <result property="updateTime"             column="update_time"              />
+        <!-- 关联展示字段 -->
+        <result property="batchNo"                column="batch_no"                 />
+        <result property="planProductionDate"     column="plan_production_date"      />
+        <result property="deptName"               column="dept_name"                />
+        <result property="createByName"           column="create_by_name"           />
+        <result property="updateByName"           column="update_by_name"           />
+    </resultMap>
+
+    <!-- 任务字段读本表(无 JOIN pm_task)；批次/部门/用户 JOIN 加 COLLATE -->
+    <sql id="selectNobatchProlistDefectVo">
+        select nd.problem_id, nd.task_no, nd.task_name, nd.product,
+               DATE_FORMAT(nd.internal_closure_date, '%Y-%m-%d')   as internal_closure_date,
+               DATE_FORMAT(nd.functional_test_date, '%Y-%m-%d')    as functional_test_date,
+               DATE_FORMAT(nd.production_version_date, '%Y-%m-%d')  as production_version_date,
+               nd.schedule_status,
+               nd.problem_no, nd.problem_level, nd.current_status,
+               nd.submit_date, nd.settle_date, nd.verify_date,
+               nd.whether_defect, nd.whether_overtime, nd.whether_pro_recurrence,
+               nd.whether_att_required, nd.whether_update_version, nd.solution_time_over_one_day,
+               nd.defect_desc, nd.production_year, nd.batch_id, nd.dept_id, nd.remarks, nd.del_flag,
+               nd.create_by, nd.create_time, nd.update_by, nd.update_time,
+               b.batch_no,
+               DATE_FORMAT(b.plan_production_date, '%Y-%m-%d')      as plan_production_date,
+               d.dept_name,
+               uc.nick_name as create_by_name,
+               uu.nick_name as update_by_name
+        from pm_nobatch_prolist_defect nd
+        left join pm_production_batch b on nd.batch_id = b.batch_id
+        left join sys_dept d on nd.dept_id = d.dept_id
+        left join sys_user uc on nd.create_by COLLATE utf8mb4_unicode_ci = uc.user_name
+        left join sys_user uu on nd.update_by COLLATE utf8mb4_unicode_ci = uu.user_name
+    </sql>
+
+    <select id="selectNobatchProlistDefectList" parameterType="com.ruoyi.project.domain.NobatchProlistDefect" resultMap="NobatchProlistDefectResult">
+        <include refid="selectNobatchProlistDefectVo"/>
+        <where>
+            nd.del_flag = '0'
+            <if test="productionYear != null and productionYear != ''"> and nd.production_year = #{productionYear}</if>
+            <if test="batchId != null"> and nd.batch_id = #{batchId}</if>
+            <if test="product != null and product != ''"> and nd.product = #{product}</if>
+            <if test="taskNo != null and taskNo != ''"> and nd.task_no like concat('%', #{taskNo}, '%')</if>
+            <if test="taskName != null and taskName != ''"> and nd.task_name like concat('%', #{taskName}, '%')</if>
+            <if test="problemNo != null and problemNo != ''"> and nd.problem_no like concat('%', #{problemNo}, '%')</if>
+            <if test="problemLevel != null and problemLevel != ''"> and nd.problem_level = #{problemLevel}</if>
+            <if test="currentStatus != null and currentStatus != ''"> and nd.current_status = #{currentStatus}</if>
+            <if test="scheduleStatus != null and scheduleStatus != ''"> and nd.schedule_status = #{scheduleStatus}</if>
+            <if test="whetherDefect != null and whetherDefect != ''"> and nd.whether_defect = #{whetherDefect}</if>
+            <if test="whetherOvertime != null and whetherOvertime != ''"> and nd.whether_overtime = #{whetherOvertime}</if>
+            <if test="whetherProRecurrence != null and whetherProRecurrence != ''"> and nd.whether_pro_recurrence = #{whetherProRecurrence}</if>
+            <if test="whetherAttRequired != null and whetherAttRequired != ''"> and nd.whether_att_required = #{whetherAttRequired}</if>
+            <if test="solutionTimeOverOneDay != null and solutionTimeOverOneDay != ''"> and nd.solution_time_over_one_day = #{solutionTimeOverOneDay}</if>
+            <if test="creatorName != null and creatorName != ''"> and uc.nick_name like concat('%', #{creatorName}, '%')</if>
+            <if test="submitDateStart != null and submitDateStart != ''"> and nd.submit_date &gt;= #{submitDateStart}</if>
+            <if test="submitDateEnd != null and submitDateEnd != ''"> and nd.submit_date &lt;= #{submitDateEnd}</if>
+            <if test="createDateStart != null and createDateStart != ''"> and nd.create_time &gt;= #{createDateStart}</if>
+            <if test="createDateEnd != null and createDateEnd != ''"> and nd.create_time &lt;= concat(#{createDateEnd}, ' 23:59:59')</if>
+            <if test="deptId != null">
+                and (nd.dept_id = #{deptId}
+                     or nd.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
+            </if>
+        </where>
+        order by nd.create_time desc, nd.problem_id desc
+    </select>
+
+    <select id="selectNobatchProlistDefectByProblemId" parameterType="java.lang.Long" resultMap="NobatchProlistDefectResult">
+        <include refid="selectNobatchProlistDefectVo"/>
+        where nd.problem_id = #{problemId} and nd.del_flag = '0'
+    </select>
+
+    <insert id="insertNobatchProlistDefect" parameterType="com.ruoyi.project.domain.NobatchProlistDefect" useGeneratedKeys="true" keyProperty="problemId">
+        insert into pm_nobatch_prolist_defect (
+            task_no, task_name, product, internal_closure_date, functional_test_date, production_version_date,
+            schedule_status, problem_no, problem_level, current_status, submit_date, settle_date, verify_date,
+            whether_defect, whether_overtime, whether_pro_recurrence, whether_att_required,
+            whether_update_version, solution_time_over_one_day, defect_desc, production_year,
+            batch_id, dept_id, remarks, del_flag, create_by, create_time
+        ) values (
+            #{taskNo}, #{taskName}, #{product}, #{internalClosureDate}, #{functionalTestDate}, #{productionVersionDate},
+            #{scheduleStatus}, #{problemNo}, #{problemLevel}, #{currentStatus}, #{submitDate}, #{settleDate}, #{verifyDate},
+            #{whetherDefect}, #{whetherOvertime}, #{whetherProRecurrence}, #{whetherAttRequired},
+            #{whetherUpdateVersion}, #{solutionTimeOverOneDay}, #{defectDesc}, #{productionYear},
+            #{batchId}, #{deptId}, #{remarks}, '0', #{createBy}, now()
+        )
+    </insert>
+
+    <update id="updateNobatchProlistDefect" parameterType="com.ruoyi.project.domain.NobatchProlistDefect">
+        update pm_nobatch_prolist_defect
+        <set>
+            task_no = #{taskNo},
+            task_name = #{taskName},
+            product = #{product},
+            internal_closure_date = #{internalClosureDate},
+            functional_test_date = #{functionalTestDate},
+            production_version_date = #{productionVersionDate},
+            schedule_status = #{scheduleStatus},
+            <if test="problemNo != null">problem_no = #{problemNo},</if>
+            <if test="problemLevel != null">problem_level = #{problemLevel},</if>
+            <if test="currentStatus != null">current_status = #{currentStatus},</if>
+            <if test="submitDate != null">submit_date = #{submitDate},</if>
+            settle_date = #{settleDate},
+            <if test="verifyDate != null">verify_date = #{verifyDate},</if>
+            <!-- 布尔标记位无条件 set，避免 API 传 null 时静默跳过 -->
+            whether_defect = #{whetherDefect},
+            whether_overtime = #{whetherOvertime},
+            whether_pro_recurrence = #{whetherProRecurrence},
+            whether_att_required = #{whetherAttRequired},
+            whether_update_version = #{whetherUpdateVersion},
+            solution_time_over_one_day = #{solutionTimeOverOneDay},
+            defect_desc = #{defectDesc},
+            <if test="productionYear != null">production_year = #{productionYear},</if>
+            <if test="batchId != null">batch_id = #{batchId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            remarks = #{remarks},
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            update_time = now()
+        </set>
+        where problem_id = #{problemId}
+    </update>
+
+    <!-- 软删除：改写 problem_no 加 _DEL_{id} 后缀腾位(坑13) -->
+    <update id="deleteNobatchProlistDefectByProblemIds" parameterType="java.lang.Long">
+        update pm_nobatch_prolist_defect
+        set del_flag = '1',
+            problem_no = concat(problem_no, '_DEL_', problem_id)
+        where problem_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <select id="checkProblemNoUnique" resultType="int">
+        select count(1) from pm_nobatch_prolist_defect
+        where problem_no = #{problemNo} and del_flag = '0'
+        <if test="problemId != null"> and problem_id != #{problemId}</if>
+    </select>
+
+    <select id="selectBatchByYear" resultType="java.util.Map">
+        select batch_id as batchId, batch_no as batchNo
+        from pm_production_batch
+        where production_year = #{year}
+        order by sort_order, batch_id
+    </select>
+
+    <select id="selectPlanProductionDate" resultType="java.lang.String">
+        select DATE_FORMAT(plan_production_date, '%Y-%m-%d')
+        from pm_production_batch where batch_id = #{batchId}
+    </select>
+
+</mapper>

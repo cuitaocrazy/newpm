@@ -84,3 +84,12 @@ AJAX 端点也基本相同（getBatchNoByBatchYear/getProductByPidArr/getTaskNoB
 | 批次号/项目组 联动任务 | 是 | 否 |
 | 附件/布尔标记/状态/级别/查重 | —— | 与批次相同 |
 | 权限 | proListAndDefect* | proNoBatchListAndDefect* |
+
+## 九、落地结果（spec 011，2026-06-14 完成）
+
+- **表**：独立表 `pm_nobatch_prolist_defect`(任务字段冗余实存手填，无 task_id FK；problem_no varchar(160)唯一，软删 `_DEL_{id}` 腾位)。附件复用 `pm_attachment`(business_type=`nobatch_prolist`)。复用 ④ 建的3字典。
+- **后端**：`NobatchProlistDefectController` → `/project/nobatchProlist`，CRUD+导出+3联动端点(batchByYear/tcDate/checkProblemNo，**无任务联动**)；4级独立权限 list/query/edit/remove/file。派生算法/查重(编辑排除自己)同④。`AttachmentServiceImpl.getBusinessFolder` 加 nobatch_prolist 分支。
+- **前端**：四件套(add≡edit，任务号/任务名文本手填、二级产品sys_product/排期状态sys_pqzt字典手选、三测试日期手填、投产年份→批次→计划投产日期联动不联动任务、查重失焦；index多维查询布尔颜色高亮；detail全字段+附件)。
+- **测试**：单测15(覆盖率指令100%/分支100%)；E2E 10真跑通(全端点+查重+派生+软删坑13)；浏览器UI全流程(手填字段/批次联动计划投产日期/列表颜色/详情/附件上传日志)；全量回归178零失败；前端build退出0。
+- **Code Review**：零Critical零Major，④踩的所有坑(success(String)/JOIN COLLATE/ancestors/软删腾位/布尔无条件set/查重排除自己/附件白名单+分支)全部一次性规避——skill避坑清单生效验证。
+- **数据迁移**：T_B_NOBATCH_PROLIST_AND_DEFECT/T_B_NOBATCH_PROLIST_FILE → 新表/pm_attachment，独立后续任务，先建空表上线。

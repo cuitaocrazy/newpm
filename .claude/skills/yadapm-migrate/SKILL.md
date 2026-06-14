@@ -26,10 +26,12 @@ argument-hint: "<功能名，如 非批次版本管理>"
 | 功能 | 老系统URL前缀 | 老模块名 | 需求文档(导航) | 复杂度 |
 |---|---|---|---|---|
 | 批次版本管理 | /storage | storage | `docs/pm/yadapm需求-01-批次版本管理.md` | ✅ 已完成(样板, spec 007) |
-| 非批次版本管理 | /storageManual | storageManual | `docs/pm/yadapm需求-02-非批次版本管理.md` | 中(共用 pm_version_out, manual_input=1) |
-| 旧数据查询 | /oldStorage | oldStorage | `docs/pm/yadapm需求-03-旧数据查询.md` | 低(只读) |
-| 批次任务问题单及缺陷 | /proListAndDefect | proListAndDefect | `docs/pm/yadapm需求-04-批次任务问题单及缺陷.md` | 高(含附件) |
-| 非批次任务问题单及缺陷 | /proNoBatchListAndDefect | proNoBatchListAndDefect | `docs/pm/yadapm需求-05-非批次任务问题单及缺陷.md` | 中 |
+| 非批次版本管理 | /storageManual | storageManual | `docs/pm/yadapm需求-02-非批次版本管理.md` | ✅ 已完成(spec 008, 共用 pm_version_out manual_input=1) |
+| 旧数据查询 | /oldStorage | oldStorage | `docs/pm/yadapm需求-03-旧数据查询.md` | ✅ 已完成(spec 009, 只读独立表) |
+| 批次任务问题单及缺陷 | /proListAndDefect | proListAndDefect | `docs/pm/yadapm需求-04-批次任务问题单及缺陷.md` | ✅ 已完成(spec 010, 含附件+任务联动) |
+| 非批次任务问题单及缺陷 | /proNoBatchListAndDefect | proNoBatchListAndDefect | `docs/pm/yadapm需求-05-非批次任务问题单及缺陷.md` | ✅ 已完成(spec 011, 独立表任务字段手填) |
+
+> **🎉 5 个功能全部迁移完成（2026-06-14）**。⑤(011)Code Review **零Critical零Major**——④踩的所有坑(success(String)/JOIN COLLATE/ancestors/软删腾位/布尔无条件set/查重排除自己/附件白名单+分支)一次性全规避，**验证了本避坑清单的价值**：越往后做坑越少。剩余仅数据迁移(老库存量导入)，依赖旧库数据到位，独立后续任务。
 
 ## 二、开工前必读
 

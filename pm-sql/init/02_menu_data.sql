@@ -520,3 +520,23 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame
 ('问题单附件', @sub_id, 4, '', NULL, 1, 0, 'F', '0', '0', 'project:prolistDefect:file',  '#', 'admin', NOW());
 
 COMMIT;
+
+-- ===== feature 011 非批次任务问题单及缺陷 菜单 =====
+-- 2. 菜单（项目质量管理一级下二级"非批次任务问题单及缺陷" + 4权限；幂等）
+SET @quality_id = (SELECT menu_id FROM sys_menu WHERE menu_name='项目质量管理' AND parent_id=0 LIMIT 1);
+SELECT IFNULL(@quality_id, 0) AS quality_parent_must_not_be_zero;
+
+DELETE FROM sys_menu WHERE perms LIKE 'project:nobatchProlist:%';
+DELETE FROM sys_menu WHERE menu_name='非批次任务问题单及缺陷' AND menu_type='C';
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark)
+VALUES ('非批次任务问题单及缺陷', @quality_id, 2, 'nobatchProlist', 'project/nobatchProlist/index', 'NobatchProlistDefect', 1, 0, 'C', '0', '0', 'project:nobatchProlist:list', 'bug', 'admin', NOW(), '非批次任务问题单及缺陷菜单');
+SET @sub_id = LAST_INSERT_ID();
+
+INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time) VALUES
+('非批次问题单查询', @sub_id, 1, '', NULL, 1, 0, 'F', '0', '0', 'project:nobatchProlist:query',  '#', 'admin', NOW()),
+('非批次问题单新增导出', @sub_id, 2, '', NULL, 1, 0, 'F', '0', '0', 'project:nobatchProlist:edit',  '#', 'admin', NOW()),
+('非批次问题单删除', @sub_id, 3, '', NULL, 1, 0, 'F', '0', '0', 'project:nobatchProlist:remove','#', 'admin', NOW()),
+('非批次问题单附件', @sub_id, 4, '', NULL, 1, 0, 'F', '0', '0', 'project:nobatchProlist:file',  '#', 'admin', NOW());
+
+COMMIT;

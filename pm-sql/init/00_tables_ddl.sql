@@ -1346,3 +1346,44 @@ CREATE TABLE IF NOT EXISTS pm_prolist_defect (
   KEY idx_batch_id (batch_id),
   KEY idx_dept_id (dept_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='批次任务问题单及缺陷';
+
+-- ===== feature 011 非批次任务问题单及缺陷 主表 =====
+-- 1. 主表（任务字段冗余实存手填，无 task_id FK；问题单=缺陷同一条记录）
+CREATE TABLE IF NOT EXISTS pm_nobatch_prolist_defect (
+  problem_id                bigint        NOT NULL AUTO_INCREMENT COMMENT '问题单ID',
+  task_no                   varchar(64)   DEFAULT NULL COMMENT '软件中心任务号(手填)',
+  task_name                 varchar(255)  DEFAULT NULL COMMENT '任务名称(手填)',
+  product                   varchar(64)   DEFAULT NULL COMMENT '二级产品(字典sys_product手选)',
+  internal_closure_date     date          DEFAULT NULL COMMENT '提交内部测试B包日期(手填)',
+  functional_test_date      date          DEFAULT NULL COMMENT '提交功能测试版本日期(手填)',
+  production_version_date    date          DEFAULT NULL COMMENT '提交生产版本日期(手填)',
+  schedule_status           varchar(32)   DEFAULT NULL COMMENT '排期状态(字典sys_pqzt手选)',
+  problem_no                varchar(160)  DEFAULT NULL COMMENT '问题单编号(唯一,留余量给软删_DEL_后缀)',
+  problem_level             varchar(32)   DEFAULT NULL COMMENT '问题单级别(字典sys_problem_level)',
+  current_status            varchar(32)   DEFAULT NULL COMMENT '当前状态(字典sys_problem_state)',
+  submit_date               date          DEFAULT NULL COMMENT '提交日期',
+  settle_date               date          DEFAULT NULL COMMENT '解决/关闭日期(可空)',
+  verify_date               date          DEFAULT NULL COMMENT '核查日期',
+  whether_defect            char(1)       DEFAULT '0' COMMENT '是否缺陷(0否1是)',
+  whether_overtime          char(1)       DEFAULT '0' COMMENT '是否超时(0否1是)',
+  whether_pro_recurrence    char(1)       DEFAULT '0' COMMENT '是否问题重现(0否1是)',
+  whether_att_required      char(1)       DEFAULT '0' COMMENT '是否须关注(0否1是)',
+  whether_update_version    char(1)       DEFAULT '0' COMMENT '是否更新版本(0否1是)',
+  solution_time_over_one_day char(1)      DEFAULT '0' COMMENT '解决时间超一天(派生:0否1是)',
+  defect_desc               varchar(128)  DEFAULT NULL COMMENT '缺陷说明/超时说明',
+  production_year           varchar(20)   DEFAULT NULL COMMENT '投产年份(字典sys_ndgl)',
+  batch_id                  bigint        DEFAULT NULL COMMENT '投产批次ID(FK→pm_production_batch)',
+  dept_id                   bigint        DEFAULT NULL COMMENT '部门ID(项目组手选,FK sys_dept)',
+  remarks                   varchar(2048) DEFAULT NULL COMMENT '备注',
+  del_flag                  char(1)       DEFAULT '0' COMMENT '删除标志(0正常1删除)',
+  create_by                 varchar(64)   DEFAULT '' COMMENT '创建者',
+  create_time               datetime      DEFAULT NULL COMMENT '创建时间',
+  update_by                 varchar(64)   DEFAULT '' COMMENT '更新者',
+  update_time               datetime      DEFAULT NULL COMMENT '更新时间',
+  remark                    varchar(500)  DEFAULT NULL COMMENT '备注(系统)',
+  PRIMARY KEY (problem_id),
+  UNIQUE KEY uk_nobatch_problem_no (problem_no),
+  KEY idx_nb_task_no (task_no),
+  KEY idx_nb_batch_id (batch_id),
+  KEY idx_nb_dept_id (dept_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='非批次任务问题单及缺陷';

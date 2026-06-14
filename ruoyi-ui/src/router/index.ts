@@ -416,6 +416,46 @@ export const constantRoutes = [
         meta: { title: '问题单及缺陷详情', activeMenu: '/quality/prolistDefect' }
       }
     ]
+  },
+  // 非批次任务问题单及缺陷：新增 / 编辑 / 详情（父菜单 /quality/nobatchProlist）
+  {
+    path: '/project/nobatchProlist/add',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/nobatchProlist/add.vue'),
+        name: 'NobatchProlistAddPage',
+        meta: { title: '新增非批次问题单及缺陷', activeMenu: '/quality/nobatchProlist' }
+      }
+    ]
+  },
+  {
+    path: '/project/nobatchProlist/edit',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/nobatchProlist/edit.vue'),
+        name: 'NobatchProlistEditPage',
+        meta: { title: '编辑非批次问题单及缺陷', activeMenu: '/quality/nobatchProlist' }
+      }
+    ]
+  },
+  {
+    path: '/project/nobatchProlist/detail',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/nobatchProlist/detail.vue'),
+        name: 'NobatchProlistDetailPage',
+        meta: { title: '非批次问题单及缺陷详情', activeMenu: '/quality/nobatchProlist' }
+      }
+    ]
   }
 ]
 
