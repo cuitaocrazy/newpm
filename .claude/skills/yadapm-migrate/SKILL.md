@@ -118,6 +118,7 @@ argument-hint: "<功能名，如 非批次版本管理>"
 | **共用实体 @Validated 误伤** | 多模块共用一个 domain 时，实体 `@NotBlank/@NotNull` 是"全字段集"约束。被某模块裁剪掉的字段，其校验会在该模块 `@Validated` 时误伤（报"XX不能为空"但 XX 根本不在该模块）。对策：复用实体但裁字段的模块，Controller **去掉 `@Validated`**，改 service 层手动校验真正必填项 |
 | **软删除占用唯一键** | 业务唯一键(如 out_lib_version)软删记录仍占号→删后重建同值撞键。对策：**软删时改写唯一字段加 `_DEL_{id}` 后缀腾位**(`set del_flag='1', x=concat(x,'_DEL_',id)`)，唯一键不含 del_flag。⚠️别把 del_flag 纳入唯一键(会导致两条软删同号互撞)。**E2E连续CRUD才暴露**，手工点验碰不到 |
 | **只读字段漏传 id** | 提交人员/创建人等只读显示昵称的字段，前端只 `:value=昵称` 展示，**忘了把 id 放进 form 提交** → 存了空 → 列表/详情 JOIN 不出姓名(空白)。对策：onMounted 设 `form.commName=userStore.id`。**API/E2E测不到**(测试直接传了id)，**只有浏览器真点保存+看详情才暴露** |
+| **迁移脚本 DML 不幂等/插孤儿菜单** | DDL 用 `CREATE TABLE IF NOT EXISTS` 幂等，但 `INSERT sys_menu/sys_dict_*` 常忘幂等→生产重跑插重复菜单；父id用子查询取时命中0行返回 NULL→插出 `parent_id=NULL` 孤儿菜单。对策：①INSERT 前 `DELETE FROM sys_menu WHERE perms='xxx:list'` 再插；②`SET @parent_id=(...)` 后加校验 SELECT 确认非空；③补 `route_name`(与既有C菜单一致，keep-alive 命名对得上 `<script setup name>`)。**功能再简单也要 Code Review**——纯只读零bug，仍靠Review揪出运维/重跑环境才炸的脚本问题 |
 
 ## 五、本地环境与命令速查
 

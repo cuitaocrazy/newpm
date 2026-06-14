@@ -1283,3 +1283,31 @@ ALTER TABLE pm_version_out ADD COLUMN version_brief varchar(512) DEFAULT NULL CO
 -- feature 008 非批次版本管理：手填任务2列
 ALTER TABLE pm_version_out ADD COLUMN manual_task_no varchar(64) DEFAULT NULL COMMENT '手填软件中心任务号(非批次)';
 ALTER TABLE pm_version_out ADD COLUMN manual_task_name varchar(255) DEFAULT NULL COMMENT '手填任务名称(非批次)';
+
+-- feature 009 旧数据查询归档表
+-- 1. 旧版本归档表（纯只读，数据来自迁移；无 del_flag/审计，扁平快照）
+CREATE TABLE IF NOT EXISTS pm_old_version_out (
+  id                bigint        NOT NULL AUTO_INCREMENT COMMENT '主键',
+  sys_name          varchar(128)  DEFAULT NULL COMMENT '子系统名称',
+  product           varchar(64)   DEFAULT NULL COMMENT '子产品名称',
+  base_version_code varchar(64)   DEFAULT NULL COMMENT '基准版本号',
+  out_lib_version   varchar(128)  DEFAULT NULL COMMENT '出入库版本号',
+  version_type      varchar(64)   DEFAULT NULL COMMENT '版本类型(历史文本)',
+  version_code      varchar(64)   DEFAULT NULL COMMENT '版本编号',
+  comm_name         varchar(64)   DEFAULT NULL COMMENT '提交人员(历史文本,非user_id)',
+  version_p_date    varchar(20)   DEFAULT NULL COMMENT '版本投产日期',
+  version_descr     varchar(512)  DEFAULT NULL COMMENT '版本说明',
+  remarks           varchar(2048) DEFAULT NULL COMMENT '备注',
+  task_no           varchar(64)   DEFAULT NULL COMMENT '任务编号',
+  task_name         varchar(255)  DEFAULT NULL COMMENT '任务名称',
+  pro_year          varchar(20)   DEFAULT NULL COMMENT '投产年份',
+  pro_batch_no      varchar(64)   DEFAULT NULL COMMENT '投产批次号',
+  is_involved       varchar(8)    DEFAULT NULL COMMENT '是否涉及TWS改造',
+  db_update         varchar(8)    DEFAULT NULL COMMENT '数据库是否修改',
+  usb_update        varchar(8)    DEFAULT NULL COMMENT '接口是否修改',
+  sequence_no       varchar(32)   DEFAULT NULL COMMENT '顺序号',
+  PRIMARY KEY (id),
+  KEY idx_task_no (task_no),
+  KEY idx_pro_batch_no (pro_batch_no),
+  KEY idx_product (product)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='出入库版本旧数据归档表';
