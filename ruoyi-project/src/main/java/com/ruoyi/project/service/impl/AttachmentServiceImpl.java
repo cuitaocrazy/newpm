@@ -55,6 +55,9 @@ public class AttachmentServiceImpl implements IAttachmentService
     @Autowired
     private com.ruoyi.project.mapper.ProlistDefectMapper prolistDefectMapper;
 
+    @Autowired
+    private com.ruoyi.project.mapper.NobatchProlistDefectMapper nobatchProlistDefectMapper;
+
     /** 允许的文件扩展名 */
     private static final String[] ALLOWED_EXTENSIONS = {
         ".doc", ".docx", ".xls", ".xlsx", ".pdf", ".csv",
@@ -344,6 +347,15 @@ public class AttachmentServiceImpl implements IAttachmentService
                 return null;
             }
             return "问题单" + File.separator + businessId + "_" + sanitizePathName(defect.getProblemNo());
+        }
+        else if ("nobatch_prolist".equals(businessType))
+        {
+            com.ruoyi.project.domain.NobatchProlistDefect defect = nobatchProlistDefectMapper.selectNobatchProlistDefectByProblemId(businessId);
+            if (defect == null)
+            {
+                return null;
+            }
+            return "非批次问题单" + File.separator + businessId + "_" + sanitizePathName(defect.getProblemNo());
         }
         return null;
     }
