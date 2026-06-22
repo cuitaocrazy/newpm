@@ -2,9 +2,9 @@
   <div class="app-container home">
     <el-row :gutter="20">
       <el-col :sm="24" :lg="12" style="padding-left: 20px">
-        <h2>项目管理框架</h2>
+        <h2>项目及任务管理系统</h2>
         <p>
-          <b>当前版本:</b> <span>v{{ version }}</span>
+          <b>当前版本:</b> <span>V{{ version }}</span>
         </p>
       </el-col>
     </el-row>
@@ -12,7 +12,7 @@
 </template>
 
 <script setup name="Index">
-const version = ref('0.0.1')
+const version = ref('2.0.0')
 
 function goTarget(url) {
   window.open(url, '__blank')
