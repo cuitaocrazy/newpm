@@ -1177,6 +1177,7 @@ CREATE TABLE IF NOT EXISTS `pm_task` (
   `update_by`               varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '更新者',
   `update_time`             datetime      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `remark`                  text          COLLATE utf8mb4_unicode_ci                   COMMENT '备注',
+  `demand_name`             varchar(255)  COLLATE utf8mb4_unicode_ci DEFAULT NULL      COMMENT '需求名称',
   PRIMARY KEY (`task_id`),
   KEY `idx_project_id`      (`project_id`),
   KEY `idx_task_stage`      (`task_stage`),
