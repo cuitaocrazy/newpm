@@ -50,12 +50,14 @@
                pd.whether_att_required, pd.whether_update_version, pd.solution_time_over_one_day,
                pd.defect_desc, pd.production_year, pd.batch_id, pd.dept_id, pd.remarks, pd.del_flag,
                pd.create_by, pd.create_time, pd.update_by, pd.update_time,
-               t.task_name, t.task_code, t.product,
-               DATE_FORMAT(t.internal_closure_date, '%Y-%m-%d')    as internal_closure_date,
-               DATE_FORMAT(t.functional_test_date, '%Y-%m-%d')     as functional_test_date,
-               DATE_FORMAT(t.production_version_date, '%Y-%m-%d')   as production_version_date,
-               t.schedule_status,
-               b.batch_no,
+               COALESCE(t.task_name, pd.task_name) as task_name,
+               COALESCE(t.task_code, pd.task_no)   as task_code,
+               COALESCE(t.product, pd.product)     as product,
+               COALESCE(DATE_FORMAT(t.internal_closure_date, '%Y-%m-%d'),   DATE_FORMAT(pd.internal_closure_date, '%Y-%m-%d'))   as internal_closure_date,
+               COALESCE(DATE_FORMAT(t.functional_test_date, '%Y-%m-%d'),    DATE_FORMAT(pd.functional_test_date, '%Y-%m-%d'))    as functional_test_date,
+               COALESCE(DATE_FORMAT(t.production_version_date, '%Y-%m-%d'),  DATE_FORMAT(pd.production_version_date, '%Y-%m-%d'))  as production_version_date,
+               COALESCE(t.schedule_status, pd.schedule_status) as schedule_status,
+               COALESCE(b.batch_no, pd.pro_batch_no) as batch_no,
                DATE_FORMAT(b.plan_production_date, '%Y-%m-%d')      as plan_production_date,
                d.dept_name,
                uc.nick_name as create_by_name,
@@ -74,10 +76,10 @@
             pd.del_flag = '0'
             <if test="productionYear != null and productionYear != ''"> and pd.production_year = #{productionYear}</if>
             <if test="batchId != null"> and pd.batch_id = #{batchId}</if>
-            <if test="product != null and product != ''"> and t.product = #{product}</if>
+            <if test="product != null and product != ''"> and COALESCE(t.product, pd.product) = #{product}</if>
             <if test="taskId != null"> and pd.task_id = #{taskId}</if>
-            <if test="taskCode != null and taskCode != ''"> and t.task_code like concat('%', #{taskCode}, '%')</if>
-            <if test="taskName != null and taskName != ''"> and t.task_name like concat('%', #{taskName}, '%')</if>
+            <if test="taskCode != null and taskCode != ''"> and COALESCE(t.task_code, pd.task_no) like concat('%', #{taskCode}, '%')</if>
+            <if test="taskName != null and taskName != ''"> and COALESCE(t.task_name, pd.task_name) like concat('%', #{taskName}, '%')</if>
             <if test="problemNo != null and problemNo != ''"> and pd.problem_no like concat('%', #{problemNo}, '%')</if>
             <if test="problemLevel != null and problemLevel != ''"> and pd.problem_level = #{problemLevel}</if>
             <if test="currentStatus != null and currentStatus != ''"> and pd.current_status = #{currentStatus}</if>

@@ -54,7 +54,7 @@
                nd.whether_att_required, nd.whether_update_version, nd.solution_time_over_one_day,
                nd.defect_desc, nd.production_year, nd.batch_id, nd.dept_id, nd.remarks, nd.del_flag,
                nd.create_by, nd.create_time, nd.update_by, nd.update_time,
-               b.batch_no,
+               COALESCE(b.batch_no, nd.pro_batch_no) as batch_no,
                DATE_FORMAT(b.plan_production_date, '%Y-%m-%d')      as plan_production_date,
                d.dept_name,
                uc.nick_name as create_by_name,
