@@ -14,6 +14,8 @@
    - 显示逻辑兜底：有 FK(新数据)→JOIN 取；无 FK(历史快照)→读本表文本列。新数据关联新任务的现有功能完全不变。
    - 需加快照列：④ pm_prolist_defect 加 `task_no/task_name/product/internal_closure_date/functional_test_date/production_version_date/schedule_status/pro_batch_no`(8列)；⑤ pm_nobatch_prolist_defect 加 `pro_batch_no`(1列)；①②③ 已足够文本化无需加。
    - 重叠的 7 任务/5 批次仍按"以新系统为准"挂 FK；其余走快照。
+4. **【已定·用户确认 2026-06-23】重复数据一条不丢（B 方案）**：老数据有 22 条"重复业务键"（④18/⑤2/①②2），细查后仅 1 条真·完全重复、其余 21 条是同编号但内容不同（任务/日期/解决状态不同）的真实记录，**全部保留**。迁移时撞唯一键自动给编号/版本号加 `_R2/_R3...` 后缀腾位。
+   - 另发现 **全角/半角括号 collation 撞键**：MySQL `utf8mb4_0900_ai_ci` 把 `（）` 与 `()` 当同字，老库两条不同编号迁入会撞——同样靠加后缀保留（也提示新系统手动录入可能误判重复，待评估是否收紧）。
 
 ## 一、真实行数（迁移工作量）
 

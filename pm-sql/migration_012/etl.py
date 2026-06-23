@@ -98,24 +98,43 @@ def year_of(year_id):
 
 report = []  # (功能, 源表, 源数, 迁入, FK挂上, 快照, 失败)
 
-def insert_rows(table, col_list, rows, label):
-    """批量插入, 逐行容错, 返回(成功, 失败)"""
+def insert_rows(table, col_list, rows, label, uniq_idx=None, uniq_maxlen=160):
+    """批量插入, 一条不丢: 撞唯一键(1062)时给 uniq_idx 列加后缀 _R2/_R3... 重试.
+    返回(成功, 失败, 加后缀条数). uniq_idx=None 则不重试(无唯一键表)."""
     placeholders = ','.join(['%s'] * len(col_list))
     sql = f"INSERT INTO {table} ({','.join(col_list)}) VALUES ({placeholders})"
-    ok = fail = 0
+    ok = fail = suffixed = 0
     errs = {}
     for vals in rows:
-        try:
-            cur.execute(sql, vals)
-            ok += 1
-        except Exception as e:
-            fail += 1
-            k = str(e)[:60]
-            errs[k] = errs.get(k, 0) + 1
+        vals = list(vals)
+        base = vals[uniq_idx] if uniq_idx is not None else None
+        attempt = 0
+        while True:
+            try:
+                cur.execute(sql, vals)
+                ok += 1
+                if attempt > 0:
+                    suffixed += 1
+                break
+            except pymysql.err.IntegrityError as e:
+                if e.args and e.args[0] == 1062 and uniq_idx is not None and attempt < 50 and base:
+                    attempt += 1
+                    suf = f"_R{attempt+1}"
+                    vals[uniq_idx] = base[:max(1, uniq_maxlen - len(suf))] + suf
+                    continue
+                fail += 1
+                errs[str(e)[:60]] = errs.get(str(e)[:60], 0) + 1
+                break
+            except Exception as e:
+                fail += 1
+                errs[str(e)[:60]] = errs.get(str(e)[:60], 0) + 1
+                break
     mysql.commit()
     if errs:
         print(f"  [{label}] 失败样例: {dict(list(errs.items())[:3])}", flush=True)
-    return ok, fail
+    if suffixed:
+        print(f"  [{label}] 撞键加后缀保留: {suffixed} 条", flush=True)
+    return ok, fail, suffixed
 
 # ========== ③ T_B_OLD_VERSION_OUT -> pm_old_version_out (纯文本快照) ==========
 def etl_old_version_out():
@@ -133,8 +152,8 @@ def etl_old_version_out():
                      r['VERSION_TYPE'], r['VERSION_CODE'], r['COMM_NAME'], r['VERSION_P_DATE'], r['VERSION_DESCR'],
                      r['REMARKS'], r['TASK_NO'], r['TASK_NAME'], r['PRO_YEAR'], r['PRO_BATCH_NO'],
                      r['IS_INVOLVED'], r['DB_UPDATE'], r['USB_UPDATE'], r['SEQUENCE_NO']])
-    ok, fail = insert_rows('pm_old_version_out', cols, rows, '③旧数据查询')
-    report.append(('③旧数据查询','T_B_OLD_VERSION_OUT', len(src), ok, '-', ok, fail))
+    ok, fail, sfx = insert_rows('pm_old_version_out', cols, rows, '③旧数据查询')
+    report.append(('③旧数据查询','T_B_OLD_VERSION_OUT', len(src), ok, '-', ok, fail, sfx))
 
 # ========== ①② T_B_VERSION_OUT -> pm_version_out ==========
 def etl_version_out():
@@ -167,8 +186,9 @@ def etl_version_out():
                      r['OUT_VERSION'], r['COMM_NAME'], r['VERSION_P_DATE'], r['IS_INVOLVED'], r['DB_UPDATE'],
                      r['USB_UPDATE'], r['PACKAGE_MODE'], r['VERSION_STATUS'], vbrief, r['VERSION_DESCR'], r['REMARKS'],
                      mi, '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE'])])
-    ok, fail = insert_rows('pm_version_out', cols, rows, '①②版本管理')
-    report.append(('①②版本管理','T_B_VERSION_OUT', len(src), ok, fk, snap, fail))
+    # out_lib_version 在 cols 中索引=10, varchar(64); 撞唯一键(sys_name+version_type+out_lib_version)加后缀
+    ok, fail, sfx = insert_rows('pm_version_out', cols, rows, '①②版本管理', uniq_idx=10, uniq_maxlen=64)
+    report.append(('①②版本管理','T_B_VERSION_OUT', len(src), ok, fk, snap, fail, sfx))
 
 # ========== ④ T_B_PROLIST_AND_DEFECT -> pm_prolist_defect (任务快照来自老T_B_TASK) ==========
 def etl_prolist():
@@ -201,8 +221,9 @@ def etl_prolist():
                      r['WHETHER_PRO_RECURRENCE'], r['WHETHER_ATT_REQUIRED'], r['UPDATE_VERSION'],
                      r['SOLUTINO_TIME_OVER_ONE_DAY'], r['DEFECT_DESC'], year_of(r['YEAR_ID']), new_bid, old_batch_no,
                      r['REMARKS'], '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE'])])
-    ok, fail = insert_rows('pm_prolist_defect', cols, rows, '④批次问题单')
-    report.append(('④批次问题单','T_B_PROLIST_AND_DEFECT', len(src), ok, fk, snap, fail))
+    # problem_no 在 cols 中索引=8, varchar(160); 撞唯一键加后缀(含全/半角括号 collation 撞键)
+    ok, fail, sfx = insert_rows('pm_prolist_defect', cols, rows, '④批次问题单', uniq_idx=8, uniq_maxlen=160)
+    report.append(('④批次问题单','T_B_PROLIST_AND_DEFECT', len(src), ok, fk, snap, fail, sfx))
 
 # ========== ⑤ T_B_NOBATCH_PROLIST_AND_DEFECT -> pm_nobatch_prolist_defect ==========
 def etl_nobatch():
@@ -235,8 +256,9 @@ def etl_nobatch():
                      r['UPDATE_VERSION'], r['SOLUTINO_TIME_OVER_ONE_DAY'], r['DEFECT_DESC'], year_of(r['YEAR_ID']),
                      new_bid, old_batch_no, r['REMARKS'], '0', MARK, parse_dt(r['CREATION_DATE']),
                      parse_dt(r['LAST_MODIFICATION_DATE'])])
-    ok, fail = insert_rows('pm_nobatch_prolist_defect', cols, rows, '⑤非批次问题单')
-    report.append(('⑤非批次问题单','T_B_NOBATCH_PROLIST_AND_DEFECT', len(src), ok, fk, snap, fail))
+    # problem_no 在 cols 中索引=7, varchar(160); 撞唯一键加后缀
+    ok, fail, sfx = insert_rows('pm_nobatch_prolist_defect', cols, rows, '⑤非批次问题单', uniq_idx=7, uniq_maxlen=160)
+    report.append(('⑤非批次问题单','T_B_NOBATCH_PROLIST_AND_DEFECT', len(src), ok, fk, snap, fail, sfx))
 
 # ========== ④附件 T_B_PROLIST_FILE -> pm_attachment(prolist) 仅元数据 ==========
 def etl_attachment():
@@ -261,8 +283,8 @@ def etl_attachment():
                      parse_dt(r['UPLOAD_DATE']), '迁移自yadapm-物理文件缺失'])
     # business_id 为空的也插(标记孤儿), 但 business_id NOT NULL? 允许NULL则插, 否则跳过
     rows2 = [v for v in rows if v[1] is not None]
-    ok, fail = insert_rows('pm_attachment', cols, rows2, '④附件')
-    report.append(('④附件','T_B_PROLIST_FILE', len(src), ok, matched, '-', len(src)-len(rows2)+fail))
+    ok, fail, sfx = insert_rows('pm_attachment', cols, rows2, '④附件')
+    report.append(('④附件','T_B_PROLIST_FILE', len(src), ok, matched, '-', len(src)-len(rows2)+fail, sfx))
 
 if __name__ == '__main__':
     etl_old_version_out()
@@ -271,8 +293,11 @@ if __name__ == '__main__':
     etl_nobatch()
     etl_attachment()
     print("\n==== 迁移汇总 ====")
-    print(f"{'功能':<16}{'源表':<32}{'源数':>6}{'迁入':>6}{'FK':>6}{'快照':>6}{'失败':>6}")
-    for f, s, src, ok, fk, snap, fail in report:
-        print(f"{f:<16}{s:<32}{src:>6}{ok:>6}{str(fk):>6}{str(snap):>6}{fail:>6}")
+    print(f"{'功能':<16}{'源表':<32}{'源数':>6}{'迁入':>6}{'FK':>6}{'快照':>6}{'失败':>6}{'加后缀':>7}")
+    tot_src = tot_ok = tot_fail = tot_sfx = 0
+    for f, s, src, ok, fk, snap, fail, sfx in report:
+        print(f"{f:<16}{s:<32}{src:>6}{ok:>6}{str(fk):>6}{str(snap):>6}{fail:>6}{sfx:>7}")
+        tot_src += src; tot_ok += ok; tot_fail += fail; tot_sfx += sfx
+    print(f"{'合计':<16}{'':<32}{tot_src:>6}{tot_ok:>6}{'':>6}{'':>6}{tot_fail:>6}{tot_sfx:>7}")
     mysql.close()
     print("done")
