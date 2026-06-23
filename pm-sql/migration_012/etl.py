@@ -170,8 +170,8 @@ def etl_version_out():
     cur.execute(f"DELETE FROM pm_version_out WHERE create_by='{MARK}'")
     cols = ['production_year','batch_id','pro_batch_no','sub_version_code','product','manual_task_no','manual_task_name',
             'version_type','sys_name','base_version_code','out_lib_version','version_code','out_version','comm_name',
-            'version_p_date','is_involved','db_update','usb_update','package_mode','version_status','version_brief',
-            'version_descr','remarks','manual_input','del_flag','create_by','create_time','update_time']
+            'comm_name_display','version_p_date','is_involved','db_update','usb_update','package_mode','version_status',
+            'version_brief','version_descr','remarks','manual_input','del_flag','create_by','create_time','update_time']
     rows = []
     fk = snap = 0
     for r in src:
@@ -188,7 +188,7 @@ def etl_version_out():
             mtask_no, mtask_name, vbrief = r['TASK_NO'], None, r['TASK_NAME']
         rows.append([year_of(r['PRO_YEAR']), new_bid, old_batch_no, prod, prod, mtask_no, mtask_name,
                      r['VERSION_TYPE'], r['SYS_NAME'], r['BASE_VERSION_CODE'], r['OUT_LIB_VERSION'], r['VERSION_CODE'],
-                     r['OUT_VERSION'], r['COMM_NAME'], r['VERSION_P_DATE'], r['IS_INVOLVED'], r['DB_UPDATE'],
+                     r['OUT_VERSION'], r['COMM_NAME'], uname(r['COMM_NAME']), r['VERSION_P_DATE'], r['IS_INVOLVED'], r['DB_UPDATE'],
                      r['USB_UPDATE'], r['PACKAGE_MODE'], r['VERSION_STATUS'], vbrief, r['VERSION_DESCR'], r['REMARKS'],
                      mi, '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE'])])
     # out_lib_version 在 cols 中索引=10, varchar(64); 撞唯一键(sys_name+version_type+out_lib_version)加后缀

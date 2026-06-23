@@ -72,3 +72,18 @@ test('①② 版本管理含迁移历史(批次+非批次)', async () => {
   expect(r.code).toBe(200)
   expect(r.total).toBeGreaterThan(1000)             // 批次版本历史
 })
+
+test('① 批次版本: 关联任务号兜底显示(子表为空时回退 manual_task_no)', async () => {
+  const r = await api.get('/project/versionOut/list', { pageSize: 20 })
+  expect(r.code).toBe(200)
+  const withTask = r.rows.find(x => x.taskNos)
+  expect(withTask).toBeTruthy()                     // task_nos 经 COALESCE(子表, manual_task_no) 非空
+})
+
+test('② 非批次版本: 提交人显示姓名(comm_name 解码兜底)', async () => {
+  const r = await api.get('/project/versionOutManual/list', { pageSize: 20 })
+  expect(r.code).toBe(200)
+  const withName = r.rows.find(x => x.userName)
+  expect(withName).toBeTruthy()                     // userName 经 COALESCE(nick_name, comm_name_display)
+  expect(/^\d+$/.test(withName.userName)).toBeFalsy()  // 是姓名不是纯数字 user_id
+})

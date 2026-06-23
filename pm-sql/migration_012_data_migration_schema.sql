@@ -74,4 +74,13 @@ SET @s4 := IF(@c4=0,
     ADD COLUMN modifier_name varchar(64) DEFAULT NULL COMMENT ''修改人姓名(历史快照,老修改人)'' AFTER update_by',
  'SELECT ''pm_nobatch_prolist_defect 补迁列 exist''');
 PREPARE st4 FROM @s4; EXECUTE st4; DEALLOCATE PREPARE st4;
+
+-- ===== ① ② pm_version_out 加 comm_name_display(提交人显示名快照) =====
+-- 老 comm_name 存的是 user_name(可能匹配不到 sys_user),迁移时解码为显示名兜底
+SET @c5 := (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pm_version_out' AND column_name='comm_name_display');
+SET @s5 := IF(@c5=0,
+ 'ALTER TABLE pm_version_out
+    ADD COLUMN comm_name_display varchar(64) DEFAULT NULL COMMENT ''提交人员显示名(迁移历史文本快照,优先nick_name再兜底此列)'' AFTER comm_name',
+ 'SELECT ''pm_version_out.comm_name_display exist''');
+PREPARE st5 FROM @s5; EXECUTE st5; DEALLOCATE PREPARE st5;
 COMMIT;

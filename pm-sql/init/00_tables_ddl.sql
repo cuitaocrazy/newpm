@@ -1227,6 +1227,7 @@ CREATE TABLE IF NOT EXISTS pm_version_out (
   version_code      varchar(64)   DEFAULT NULL COMMENT '版本编号(生成中间值)',
   out_version       varchar(64)   DEFAULT NULL COMMENT '升级包初级版本号(类型5/6)',
   comm_name         varchar(64)   DEFAULT NULL COMMENT '提交人员(sys_user.user_name)',
+  comm_name_display varchar(64)   DEFAULT NULL COMMENT '提交人员显示名(迁移历史文本快照,优先nick_name再兜底此列)',
   version_p_date    varchar(20)   DEFAULT NULL COMMENT '版本投产日期(只读,批次带出)',
   is_involved       char(1)       DEFAULT NULL COMMENT '是否涉及TWS改造 0是1否',
   db_update         char(1)       DEFAULT NULL COMMENT '数据库是否修改 0是1否',
