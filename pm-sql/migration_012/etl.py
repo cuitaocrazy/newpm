@@ -25,11 +25,12 @@ def ora_extract(table, cols, where=None):
     exprs = []
     for c in cols:
         exprs.append(f"TRIM(REPLACE(REPLACE(NVL(TO_CHAR({c}),''),CHR(10),' '),CHR(13),' '))")
-    sel = " || CHR(1) || ".join(exprs)
-    sql = f"SET PAGESIZE 0 HEADING OFF FEEDBACK OFF LINESIZE 32767 LONG 32767 TRIMSPOOL ON\n"
-    sql += f"SELECT {sel} FROM {table}"
+    # 每列一行(列间用 ||CHR(1)|| 连接), 避免 sqlplus 单行 >2499 限制
+    sel = " || CHR(1) ||\n".join(exprs)
+    sql = f"SET PAGESIZE 0 HEADING OFF FEEDBACK OFF LINESIZE 32767 LONG 32767 TRIMSPOOL ON SQLBLANKLINES ON\n"
+    sql += f"SELECT\n{sel}\nFROM {table}"
     if where:
-        sql += f" WHERE {where}"
+        sql += f"\nWHERE {where}"
     sql += ";\nEXIT;\n"
     r = subprocess.run(ORA, input=sql, capture_output=True, text=True)
     rows = []
@@ -91,10 +92,14 @@ cur.execute("SELECT TRIM(task_code), MIN(task_id) FROM pm_task WHERE task_code I
 NEW_TASK = {k: v for k, v in cur.fetchall()}
 cur.execute("SELECT batch_no, MIN(batch_id) FROM pm_production_batch WHERE batch_no IS NOT NULL GROUP BY batch_no")
 NEW_BATCH = {k: v for k, v in cur.fetchall()}
-print(f"[init] PRODUCT={len(PRODUCT)} YEAR={len(YEAR)} BATCH_NO_BY_ID={len(BATCH_NO_BY_ID)} 新任务={len(NEW_TASK)} 新批次={len(NEW_BATCH)}", flush=True)
+USER_NAME_BY_ID = load_map('T_N_SHIRO_USER', 'USER_ID', 'USER_NAME')  # 老用户id->姓名
+print(f"[init] PRODUCT={len(PRODUCT)} YEAR={len(YEAR)} BATCH_NO_BY_ID={len(BATCH_NO_BY_ID)} 用户={len(USER_NAME_BY_ID)} 新任务={len(NEW_TASK)} 新批次={len(NEW_BATCH)}", flush=True)
 
 def year_of(year_id):
     return YEAR.get(year_id)  # '2026' / '待定' etc.
+
+def uname(uid):
+    return USER_NAME_BY_ID.get(uid)  # 老录入人id->姓名
 
 report = []  # (功能, 源表, 源数, 迁入, FK挂上, 快照, 失败)
 
@@ -198,13 +203,15 @@ def etl_prolist():
         ['PROBLEM_NO','SUBMIT_DATE','SETTLE_DATE','DEFECT_DESC','VERIFY_DATE','WHETHER_DEFECT','WHETHER_OVERTIME',
          'WHETHER_PRO_RECURRENCE','WHETHER_ATT_REQUIRED','SOLUTINO_TIME_OVER_ONE_DAY','CREATION_DATE',
          'LAST_MODIFICATION_DATE','YEAR_ID','BATCH_NO','CURRENT_STATUS_ID','REMARKS','PROBLEM_LEVEL_ID',
-         'UPDATE_VERSION','BATCH_ID','TKNO','TKNAME','TKPROD','TSUBB','TVER','TPRO','TSCH'])
+         'UPDATE_VERSION','BATCH_ID','TKNO','TKNAME','TKPROD','TSUBB','TVER','TPRO','TSCH',
+         'SUBTASK_TEAM','CREATOR','MODIFIER','TC_PRO_DATE'])
     cur.execute(f"DELETE FROM pm_prolist_defect WHERE create_by='{MARK}'")
     cols = ['task_id','task_no','task_name','product','internal_closure_date','functional_test_date',
             'production_version_date','schedule_status','problem_no','problem_level','current_status','submit_date',
             'settle_date','verify_date','whether_defect','whether_overtime','whether_pro_recurrence',
             'whether_att_required','whether_update_version','solution_time_over_one_day','defect_desc',
-            'production_year','batch_id','pro_batch_no','remarks','del_flag','create_by','create_time','update_time']
+            'production_year','batch_id','pro_batch_no','remarks','del_flag','create_by','create_time','update_time',
+            'subtask_team','plan_production_date','creator_name','modifier_name']
     rows = []
     fk = snap = 0
     for r in src:
@@ -220,25 +227,26 @@ def etl_prolist():
                      parse_date(r['VERIFY_DATE']), r['WHETHER_DEFECT'], r['WHETHER_OVERTIME'],
                      r['WHETHER_PRO_RECURRENCE'], r['WHETHER_ATT_REQUIRED'], r['UPDATE_VERSION'],
                      r['SOLUTINO_TIME_OVER_ONE_DAY'], r['DEFECT_DESC'], year_of(r['YEAR_ID']), new_bid, old_batch_no,
-                     r['REMARKS'], '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE'])])
+                     r['REMARKS'], '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE']),
+                     r['SUBTASK_TEAM'], parse_date(r['TC_PRO_DATE']), uname(r['CREATOR']), uname(r['MODIFIER'])])
     # problem_no 在 cols 中索引=8, varchar(160); 撞唯一键加后缀(含全/半角括号 collation 撞键)
     ok, fail, sfx = insert_rows('pm_prolist_defect', cols, rows, '④批次问题单', uniq_idx=8, uniq_maxlen=160)
     report.append(('④批次问题单','T_B_PROLIST_AND_DEFECT', len(src), ok, fk, snap, fail, sfx))
 
 # ========== ⑤ T_B_NOBATCH_PROLIST_AND_DEFECT -> pm_nobatch_prolist_defect ==========
 def etl_nobatch():
-    src = ora_extract('T_B_NOBATCH_PROLIST_AND_DEFECT', [
+    src = ora_extract('V_NOBATCH_MIG', [
         'PROBLEM_NO','SUBMIT_DATE','SETTLE_DATE','DEFECT_DESC','VERIFY_DATE','WHETHER_DEFECT','WHETHER_OVERTIME',
         'WHETHER_PRO_RECURRENCE','WHETHER_ATT_REQUIRED','SOLUTINO_TIME_OVER_ONE_DAY','CREATION_DATE',
         'LAST_MODIFICATION_DATE','YEAR_ID','CURRENT_STATUS_ID','REMARKS','PROBLEM_LEVEL_ID','UPDATE_VERSION',
         'BATCH_ID','TASK_NO','TASK_NAME','PRODUCT','TEST_SUB_B_DATE','TEST_VERSION_DATE','PRO_VERSION_DATE',
-        'SCHEDULING_STATUS'])
+        'SCHEDULING_STATUS','SUBTASK_TEAM','CREATOR','MODIFIER','TC_PRO_DATE'])
     cur.execute(f"DELETE FROM pm_nobatch_prolist_defect WHERE create_by='{MARK}'")
     cols = ['task_no','task_name','product','internal_closure_date','functional_test_date','production_version_date',
             'schedule_status','problem_no','problem_level','current_status','submit_date','settle_date','verify_date',
             'whether_defect','whether_overtime','whether_pro_recurrence','whether_att_required','whether_update_version',
             'solution_time_over_one_day','defect_desc','production_year','batch_id','pro_batch_no','remarks','del_flag',
-            'create_by','create_time','update_time']
+            'create_by','create_time','update_time','subtask_team','plan_production_date','creator_name','modifier_name']
     rows = []
     fk = snap = 0
     for r in src:
@@ -255,7 +263,8 @@ def etl_nobatch():
                      r['WHETHER_DEFECT'], r['WHETHER_OVERTIME'], r['WHETHER_PRO_RECURRENCE'], r['WHETHER_ATT_REQUIRED'],
                      r['UPDATE_VERSION'], r['SOLUTINO_TIME_OVER_ONE_DAY'], r['DEFECT_DESC'], year_of(r['YEAR_ID']),
                      new_bid, old_batch_no, r['REMARKS'], '0', MARK, parse_dt(r['CREATION_DATE']),
-                     parse_dt(r['LAST_MODIFICATION_DATE'])])
+                     parse_dt(r['LAST_MODIFICATION_DATE']), r['SUBTASK_TEAM'], parse_date(r['TC_PRO_DATE']),
+                     uname(r['CREATOR']), uname(r['MODIFIER'])])
     # problem_no 在 cols 中索引=7, varchar(160); 撞唯一键加后缀
     ok, fail, sfx = insert_rows('pm_nobatch_prolist_defect', cols, rows, '⑤非批次问题单', uniq_idx=7, uniq_maxlen=160)
     report.append(('⑤非批次问题单','T_B_NOBATCH_PROLIST_AND_DEFECT', len(src), ok, fk, snap, fail, sfx))

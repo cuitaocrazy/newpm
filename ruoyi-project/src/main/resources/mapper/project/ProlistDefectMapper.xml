@@ -58,10 +58,10 @@
                COALESCE(DATE_FORMAT(t.production_version_date, '%Y-%m-%d'),  DATE_FORMAT(pd.production_version_date, '%Y-%m-%d'))  as production_version_date,
                COALESCE(t.schedule_status, pd.schedule_status) as schedule_status,
                COALESCE(b.batch_no, pd.pro_batch_no) as batch_no,
-               DATE_FORMAT(b.plan_production_date, '%Y-%m-%d')      as plan_production_date,
-               d.dept_name,
-               uc.nick_name as create_by_name,
-               uu.nick_name as update_by_name
+               COALESCE(DATE_FORMAT(b.plan_production_date, '%Y-%m-%d'), DATE_FORMAT(pd.plan_production_date, '%Y-%m-%d')) as plan_production_date,
+               COALESCE(d.dept_name, pd.subtask_team) as dept_name,
+               COALESCE(uc.nick_name, pd.creator_name) as create_by_name,
+               COALESCE(uu.nick_name, pd.modifier_name) as update_by_name
         from pm_prolist_defect pd
         left join pm_task t on pd.task_id = t.task_id
         left join pm_production_batch b on pd.batch_id = b.batch_id

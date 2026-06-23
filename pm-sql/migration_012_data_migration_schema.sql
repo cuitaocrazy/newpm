@@ -52,3 +52,26 @@ INSERT INTO sys_dict_data (dict_sort,dict_label,dict_value,dict_type,css_class,l
 (16,'转出至WCB','16','sys_problem_state','','warning','N','0','admin',NOW(),'迁移补全');
 
 COMMIT;
+
+-- ===== 补迁字段(项目组/计划投产日期/创建人姓名/修改人姓名 快照) =====
+-- ④ pm_prolist_defect 加 4 列
+SET @c3 := (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pm_prolist_defect' AND column_name='subtask_team');
+SET @s3 := IF(@c3=0,
+ 'ALTER TABLE pm_prolist_defect
+    ADD COLUMN subtask_team varchar(64) DEFAULT NULL COMMENT ''项目组(历史快照,无dept_id时用)'' AFTER dept_id,
+    ADD COLUMN plan_production_date date DEFAULT NULL COMMENT ''计划投产日期(历史快照,无batch_id时用)'' AFTER pro_batch_no,
+    ADD COLUMN creator_name varchar(64) DEFAULT NULL COMMENT ''创建人姓名(历史快照,老录入人)'' AFTER create_by,
+    ADD COLUMN modifier_name varchar(64) DEFAULT NULL COMMENT ''修改人姓名(历史快照,老修改人)'' AFTER update_by',
+ 'SELECT ''pm_prolist_defect 补迁列 exist''');
+PREPARE st3 FROM @s3; EXECUTE st3; DEALLOCATE PREPARE st3;
+-- ⑤ pm_nobatch_prolist_defect 加 4 列
+SET @c4 := (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pm_nobatch_prolist_defect' AND column_name='subtask_team');
+SET @s4 := IF(@c4=0,
+ 'ALTER TABLE pm_nobatch_prolist_defect
+    ADD COLUMN subtask_team varchar(64) DEFAULT NULL COMMENT ''项目组(历史快照,无dept_id时用)'' AFTER dept_id,
+    ADD COLUMN plan_production_date date DEFAULT NULL COMMENT ''计划投产日期(历史快照,无batch_id时用)'' AFTER pro_batch_no,
+    ADD COLUMN creator_name varchar(64) DEFAULT NULL COMMENT ''创建人姓名(历史快照,老录入人)'' AFTER create_by,
+    ADD COLUMN modifier_name varchar(64) DEFAULT NULL COMMENT ''修改人姓名(历史快照,老修改人)'' AFTER update_by',
+ 'SELECT ''pm_nobatch_prolist_defect 补迁列 exist''');
+PREPARE st4 FROM @s4; EXECUTE st4; DEALLOCATE PREPARE st4;
+COMMIT;

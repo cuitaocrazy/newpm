@@ -44,6 +44,15 @@ test('④ 加后缀保留: 同编号两条都在(原件 + _R2)', async () => {
   expect(nos.some(n => n.endsWith('_R2'))).toBeTruthy()
 })
 
+test('④ 补迁字段: 项目组/计划投产日期/创建人(姓名) 历史行能显示', async () => {
+  const r = await api.get('/project/prolistDefect/list', { pageSize: 50 })
+  expect(r.rows.filter(x => x.deptName).length).toBeGreaterThan(0)            // 项目组(subtask_team快照)
+  expect(r.rows.filter(x => x.planProductionDate).length).toBeGreaterThan(0)  // 计划投产日期(快照)
+  const withCreator = r.rows.filter(x => x.createByName)
+  expect(withCreator.length).toBeGreaterThan(0)                               // 创建人(老id映射姓名)
+  expect(/^\d+$/.test(withCreator[0].createByName)).toBeFalsy()               // 是姓名不是纯数字id
+})
+
 test('⑤ 列表含迁移历史 + 批次号快照显示', async () => {
   const r = await api.get('/project/nobatchProlist/list', { pageSize: 5 })
   expect(r.code).toBe(200)

@@ -55,10 +55,10 @@
                nd.defect_desc, nd.production_year, nd.batch_id, nd.dept_id, nd.remarks, nd.del_flag,
                nd.create_by, nd.create_time, nd.update_by, nd.update_time,
                COALESCE(b.batch_no, nd.pro_batch_no) as batch_no,
-               DATE_FORMAT(b.plan_production_date, '%Y-%m-%d')      as plan_production_date,
-               d.dept_name,
-               uc.nick_name as create_by_name,
-               uu.nick_name as update_by_name
+               COALESCE(DATE_FORMAT(b.plan_production_date, '%Y-%m-%d'), DATE_FORMAT(nd.plan_production_date, '%Y-%m-%d')) as plan_production_date,
+               COALESCE(d.dept_name, nd.subtask_team) as dept_name,
+               COALESCE(uc.nick_name, nd.creator_name) as create_by_name,
+               COALESCE(uu.nick_name, nd.modifier_name) as update_by_name
         from pm_nobatch_prolist_defect nd
         left join pm_production_batch b on nd.batch_id = b.batch_id
         left join sys_dept d on nd.dept_id = d.dept_id
