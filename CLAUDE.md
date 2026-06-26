@@ -544,6 +544,8 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 - MySQL 8.x（只读查询，无新表） (003-team-daily-report)
 - Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Vue 3.5, Element Plus 2.13 (004-daily-report-leave-types)
 - MySQL 8.x (`ry-vue`)，涉及表：`sys_dict_data`、`pm_daily_report`、`pm_daily_report_detail`、`pm_work_calendar` (004-daily-report-leave-types)
+- TypeScript 5.6 / Vue 3.5（前端 only） + Element Plus 2.13（`el-input` / `el-select` / `el-option`），既有 `formList` 响应式数据 (013-daily-report-write-filter)
+- N/A（无持久化；查询条件为会话内 reactive 视图状态） (013-daily-report-write-filter)
 
 ## Recent Changes
 - 001-daily-report-stats: Added Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Apache POI (Excel), Vue 3.5, Element Plus 2.13, dayjs

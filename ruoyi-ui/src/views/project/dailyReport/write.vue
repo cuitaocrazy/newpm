@@ -60,6 +60,33 @@
             </div>
           </template>
 
+          <!-- 查询条件栏：项目名称 / 任务名称 模糊 + 项目经理下拉（纯前端过滤已加载列表） -->
+          <div v-if="!loading && projects.length > 0" class="dr-filter-bar">
+            <el-input
+              v-model="filterProjectName"
+              placeholder="项目名称"
+              clearable
+              :prefix-icon="Search"
+              class="dr-filter-item"
+            />
+            <el-input
+              v-model="filterTaskName"
+              placeholder="任务名称"
+              clearable
+              :prefix-icon="Search"
+              class="dr-filter-item"
+            />
+            <el-select
+              v-model="filterManager"
+              placeholder="项目经理"
+              clearable
+              filterable
+              class="dr-filter-item"
+            >
+              <el-option v-for="m in managerOptions" :key="m" :label="m" :value="m" />
+            </el-select>
+          </div>
+
           <div v-if="loading" style="text-align: center; padding: 40px;">
             <el-icon class="is-loading" :size="24"><Loading /></el-icon>
             <p style="color: #909399; margin-top: 8px;">加载中...</p>
@@ -110,7 +137,11 @@
               </div>
             </div>
 
-            <div v-for="(item, index) in formList" :key="item.projectId" class="project-item">
+            <div v-if="filteredFormList.length === 0 && hasActiveFilter" class="filter-empty">
+              没有符合筛选条件的项目
+            </div>
+
+            <div v-for="(item, index) in filteredFormList" :key="item.projectId" class="project-item">
               <!-- 第一行：项目经理 + 年度 + 项目名 + 阶段 -->
               <div class="prj-header">
                 <div class="prj-color-bar" :style="{ background: getColor(index) }"></div>
@@ -195,7 +226,8 @@
                 </div>
                 <div v-else class="task-rows-container">
                   <div v-if="item.taskRows.length === 0" style="font-size:13px;color:#c0c4cc;padding:8px 0;">暂无任务</div>
-                  <div v-for="task in item.taskRows" :key="task.subProjectId" class="task-row">
+                  <div v-else-if="visibleTaskRows(item).length === 0" style="font-size:13px;color:#c0c4cc;padding:8px 0;">该项目下无符合「任务名称」筛选的任务</div>
+                  <div v-for="task in visibleTaskRows(item)" :key="task.subProjectId" class="task-row">
                     <!-- 任务头（只读信息） -->
                     <div class="task-row-header">
                       <el-tag v-if="task.batchNo" size="small" type="info">{{ task.batchNo }}</el-tag>
@@ -283,7 +315,7 @@
 <script setup name="DailyReportWrite">
 import { ref, onMounted, computed, watch, getCurrentInstance } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Loading, InfoFilled } from '@element-plus/icons-vue'
+import { Loading, InfoFilled, Search } from '@element-plus/icons-vue'
 import { getMyReport, getMyProjects, saveDailyReport, listDailyReport, delDailyReport, batchSaveLeave } from '@/api/project/dailyReport'
 import { checkSelfInWhitelist } from '@/api/project/whitelist'
 import { getWorkCalendarByYear } from '@/api/project/workCalendar'
@@ -311,6 +343,49 @@ const currentYearMonth = ref((() => {
 })())
 const projects = ref([])
 const formList = ref([])
+
+// ===== 查询条件（会话内视图状态，切换日期不重置）：项目名/任务名模糊 + 项目经理下拉 =====
+const filterProjectName = ref('')
+const filterTaskName = ref('')
+const filterManager = ref('')
+
+const hasActiveFilter = computed(() =>
+  !!(filterProjectName.value.trim() || filterTaskName.value.trim() || filterManager.value)
+)
+
+// 项目经理下拉选项：参与项目去重后的经理集合（不查 system/user，规避 PM 角色 403）
+const managerOptions = computed(() => {
+  const set = new Set()
+  formList.value.forEach(item => { if (item.projectManagerName) set.add(item.projectManagerName) })
+  return Array.from(set).sort()
+})
+
+// 派生可见列表（只读，不修改 formList/taskRows；保存仍遍历 formList 全量，过滤不丢工时）
+const filteredFormList = computed(() => {
+  const pName = filterProjectName.value.trim().toLowerCase()
+  const tName = filterTaskName.value.trim().toLowerCase()
+  const mgr = filterManager.value
+  return formList.value.filter(item => {
+    if (pName && !(item.projectName || '').toLowerCase().includes(pName)) return false
+    if (mgr && item.projectManagerName !== mgr) return false
+    if (tName) {
+      // 任务名过滤只针对含子任务的项目；普通项目不计入匹配
+      if (!item.hasSubProject) return false
+      const rows = item.taskRows || []
+      if (!rows.some(t => (t.taskName || '').toLowerCase().includes(tName))) return false
+    }
+    return true
+  })
+})
+
+// 任务行展示层过滤：任务名筛选时只显示匹配行（不改原 taskRows，保证保存遍历全量）
+function visibleTaskRows(item) {
+  if (!item.taskRows) return []
+  const kw = filterTaskName.value.trim().toLowerCase()
+  if (!kw) return item.taskRows
+  return item.taskRows.filter(t => (t.taskName || '').toLowerCase().includes(kw))
+}
+
 const currentReportId = ref(null)
 const loading = ref(false)
 const saving = ref(false)
@@ -764,6 +839,28 @@ onMounted(async () => {
   margin-top: 1px;
   line-height: 1.2;
   display: block;
+}
+
+/* 查询条件栏 */
+.dr-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: #f7f9fc;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+}
+.dr-filter-item { width: 220px; flex: 0 0 auto; }
+
+/* 过滤无结果空状态 */
+.filter-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #909399;
+  font-size: 14px;
 }
 
 /* 项目列表 */

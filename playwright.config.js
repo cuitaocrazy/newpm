@@ -26,8 +26,8 @@ export default defineConfig({
 
   // 全局配置
   use: {
-    // 基础 URL
-    baseURL: 'http://localhost:80',
+    // 基础 URL（支持 E2E_BASE_URL 覆盖，便于在非 80 端口跑 dev server）
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:80',
 
     // 浏览器上下文选项
     viewport: { width: 1920, height: 1080 },
