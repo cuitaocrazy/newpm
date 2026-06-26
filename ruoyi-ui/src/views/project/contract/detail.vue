@@ -225,7 +225,7 @@
         </el-table-column>
         <el-table-column label="实际人天" align="center" prop="actualWorkload" width="110">
           <template #default="scope">
-            {{ scope.row.actualWorkload || '-' }}
+            {{ scope.row.actualWorkload ? toPersonDays(scope.row.actualWorkload, scope.row.adjustWorkload) : '-' }}
           </template>
         </el-table-column>
         <el-table-column label="收入确认年度" align="center" width="120">
