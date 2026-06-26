@@ -94,3 +94,62 @@ test.describe('合同详情 - 关联项目列表 实际人天', () => {
     await expect(cell).not.toHaveText(new RegExp(`^\\s*${rawInt}(\\.0+)?\\s*$`));
   });
 });
+
+test.describe('付款详情 - 关联项目列表 实际人天', () => {
+  let api;
+  /** { paymentId, contractId, projectName, rawHours, adjust, expected } */
+  let sample;
+
+  test.beforeAll(async () => {
+    api = await setupApi();
+    // 1) 收集「关联项目含实际工时」的合同（付款详情的项目列表同样来自 getContract().projectList）
+    const cres = await api.get('/project/contract/list', { pageNum: 1, pageSize: 300 });
+    expect(cres.code, '合同列表应返回 200').toBe(200);
+    const byContract = new Map();
+    for (const c of cres.rows || []) {
+      const proj = (c.projectList || []).find(p => Number(p.actualWorkload) > 0);
+      if (proj && !byContract.has(c.contractId)) {
+        byContract.set(c.contractId, {
+          projectName: proj.projectName,
+          rawHours: Number(proj.actualWorkload),
+          adjust: Number(proj.adjustWorkload || 0),
+          expected: toPersonDays(proj.actualWorkload, proj.adjustWorkload),
+        });
+      }
+    }
+    // 2) 找一条 contractId 命中上述合同的付款里程碑
+    const pres = await api.get('/project/payment/list', { pageNum: 1, pageSize: 300 });
+    expect(pres.code, '付款列表应返回 200').toBe(200);
+    for (const pay of pres.rows || []) {
+      if (byContract.has(pay.contractId)) {
+        sample = { paymentId: pay.paymentId, contractId: pay.contractId, ...byContract.get(pay.contractId) };
+        break;
+      }
+    }
+    expect(sample, '需要一条「合同含实际工时关联项目」的付款里程碑作为样本').toBeTruthy();
+    // eslint-disable-next-line no-console
+    console.log('[payment-sample]', JSON.stringify(sample));
+  });
+
+  test.afterAll(async () => {
+    if (api) await api.dispose();
+  });
+
+  test('UI: 实际人天列显示换算后的人天，而非原始小时', async ({ page }) => {
+    await login(page);
+    await page.goto(`${BASE_URL}/htkx/payment/detail/${sample.paymentId}`);
+
+    const card = page.locator('.el-card', { has: page.getByText('关联项目列表', { exact: true }) });
+    await expect(card).toBeVisible({ timeout: 15000 });
+
+    const row = card.locator('.el-table__body tbody tr', { hasText: sample.projectName }).first();
+    await expect(row).toBeVisible({ timeout: 15000 });
+
+    // 付款详情列序：序号/项目名称/当前阶段/预算金额/预估工作量/实际人天 → td 索引 5
+    const cell = row.locator('td').nth(5);
+    await expect(cell).toHaveText(sample.expected);
+
+    const rawInt = String(Math.trunc(sample.rawHours));
+    await expect(cell).not.toHaveText(new RegExp(`^\\s*${rawInt}(\\.0+)?\\s*$`));
+  });
+});
