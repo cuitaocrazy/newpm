@@ -92,7 +92,7 @@
                             where vt.version_id = v.id and pt.software_demand_no like concat('%', #{taskNo}, '%'))
             </if>
         </where>
-        order by v.create_time desc
+        order by v.create_time desc, v.id desc
     </select>
 
     <select id="selectVersionOutById" parameterType="Long" resultMap="VersionOutDetailResult">
@@ -116,7 +116,7 @@
             <if test="versionPDate != null and versionPDate != ''"> and v.version_p_date = #{versionPDate}</if>
             <if test="manualTaskNo != null and manualTaskNo != ''"> and v.manual_task_no like concat('%', #{manualTaskNo}, '%')</if>
         </where>
-        order by v.create_time desc
+        order by v.create_time desc, v.id desc
     </select>
 
     <insert id="insertVersionOutManual" parameterType="VersionOut" useGeneratedKeys="true" keyProperty="id">

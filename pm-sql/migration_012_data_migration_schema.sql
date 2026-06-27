@@ -83,4 +83,8 @@ SET @s5 := IF(@c5=0,
     ADD COLUMN comm_name_display varchar(64) DEFAULT NULL COMMENT ''提交人员显示名(迁移历史文本快照,优先nick_name再兜底此列)'' AFTER comm_name',
  'SELECT ''pm_version_out.comm_name_display exist''');
 PREPARE st5 FROM @s5; EXECUTE st5; DEALLOCATE PREPARE st5;
+
+-- ===== ① 批次版本 manual_task_no 加宽 64→512 =====
+-- 批次版本关联任务号(老 TASK_NO 解码成软件中心任务号串,多任务时较长)复用此列作快照,64 不够
+ALTER TABLE pm_version_out MODIFY manual_task_no varchar(512) DEFAULT NULL COMMENT '手填软件中心任务号(非批次)/批次版本关联任务号快照';
 COMMIT;

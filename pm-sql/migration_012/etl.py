@@ -86,6 +86,23 @@ print(f"[init] 目标库={TARGET_DB}, 载入解码表...", flush=True)
 PRODUCT = load_map('T_C_PRODUCT', 'ID', 'PRODUCT')            # 产品id->名
 YEAR = load_map('T_C_YEAR', 'ID', 'YEAR')                     # 年份id->年
 BATCH_NO_BY_ID = load_map('T_C_BATCH_STATUS', 'ID', 'BATCH_NO')  # 老批次id->批次号
+PRO_DATE_BY_ID = load_map('T_C_BATCH_STATUS', 'ID', 'PRO_DATE')  # 老批次id->投产日期(版本列表"版本投产日期"列显示用)
+CENTER_BY_TASKID = {}                                            # 老任务内部id -> 软件中心任务号(CENTER_TASK_NO)
+for _r in ora_extract('T_B_TASK', ['TASK_ID', 'CENTER_TASK_NO']):
+    _k = str(_r['TASK_ID']).strip().split('.')[0]
+    if _k:
+        CENTER_BY_TASKID[_k] = _r['CENTER_TASK_NO']
+def decode_task_nos(s):
+    """老 TASK_NO 是逗号分隔的任务内部id串(如 '763,762') -> 解码成软件中心任务号串(M-201901-89144,...)"""
+    if not s:
+        return s
+    out = []
+    for p in str(s).replace('，', ',').split(','):
+        p = p.strip().split('.')[0]
+        if not p:
+            continue
+        out.append(CENTER_BY_TASKID.get(p, p))   # 命中解码,未命中保留原值
+    return ','.join(out) if out else s
 # 新系统 overlap 映射: task_code->新task_id, batch_no->新batch_id
 cur = mysql.cursor()
 cur.execute("SELECT TRIM(task_code), MIN(task_id) FROM pm_task WHERE task_code IS NOT NULL GROUP BY TRIM(task_code)")
@@ -177,18 +194,21 @@ def etl_version_out():
     for r in src:
         mi = r['MANUAL_INPUT'] or '0'
         prod = PRODUCT.get(r['SUB_VERSION_CODE'])               # 解码产品名
-        old_batch_no = r['PRO_BATCH_NO']
-        new_bid = NEW_BATCH.get(old_batch_no)                   # 批次以新系统为准
+        # 投产批次号: 老列表显示的是 BATCH_ID JOIN T_C_BATCH_STATUS.BATCH_NO(1612全有),非原表空列 PRO_BATCH_NO
+        old_batch_no = BATCH_NO_BY_ID.get(r['BATCH_ID']) or r['PRO_BATCH_NO']
+        new_bid = NEW_BATCH.get(old_batch_no)                   # 批次以新系统为准(历史批次多数不在新表,挂不上走快照)
         if new_bid: fk += 1
         else: snap += 1
+        # 版本投产日期: 老列表显示批次表 PRO_DATE(按BATCH_ID),非原表 VERSION_P_DATE
+        version_p_date = parse_date(PRO_DATE_BY_ID.get(r['BATCH_ID']) or r['VERSION_P_DATE'])
         # 坑9: TASK_NAME 批次=版本简介 / 非批次=任务名称
         if mi == '1':
-            mtask_no, mtask_name, vbrief = r['TASK_NO'], r['TASK_NAME'], None
+            mtask_no, mtask_name, vbrief = r['TASK_NO'], r['TASK_NAME'], None   # 非批次:任务号手填文本,保留原值
         else:
-            mtask_no, mtask_name, vbrief = r['TASK_NO'], None, r['TASK_NAME']
+            mtask_no, mtask_name, vbrief = decode_task_nos(r['TASK_NO']), None, r['TASK_NAME']  # 批次:TASK_NO是内部id串,解码成软件中心任务号
         rows.append([year_of(r['PRO_YEAR']), new_bid, old_batch_no, prod, prod, mtask_no, mtask_name,
                      r['VERSION_TYPE'], r['SYS_NAME'], r['BASE_VERSION_CODE'], r['OUT_LIB_VERSION'], r['VERSION_CODE'],
-                     r['OUT_VERSION'], r['COMM_NAME'], uname(r['COMM_NAME']), r['VERSION_P_DATE'], r['IS_INVOLVED'], r['DB_UPDATE'],
+                     r['OUT_VERSION'], r['COMM_NAME'], uname(r['COMM_NAME']), version_p_date, r['IS_INVOLVED'], r['DB_UPDATE'],
                      r['USB_UPDATE'], r['PACKAGE_MODE'], r['VERSION_STATUS'], vbrief, r['VERSION_DESCR'], r['REMARKS'],
                      mi, '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE'])])
     # out_lib_version 在 cols 中索引=10, varchar(64); 撞唯一键(sys_name+version_type+out_lib_version)加后缀
