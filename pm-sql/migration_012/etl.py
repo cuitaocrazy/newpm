@@ -92,6 +92,14 @@ for _r in ora_extract('T_B_TASK', ['TASK_ID', 'CENTER_TASK_NO']):
     _k = str(_r['TASK_ID']).strip().split('.')[0]
     if _k:
         CENTER_BY_TASKID[_k] = _r['CENTER_TASK_NO']
+SCHED_MAP = {   # 老排期状态中文 -> 新 sys_pqzt 字典值(已作废无对应,保留原文,前端兜底显示)
+    '已排期待投产': '1', '已投产': '2',
+    '未排期已征求意见': '3', '未排期-未征求排期意见': '4', '未排期未征求意见': '4',
+}
+def map_sched(s):
+    if not s:
+        return s
+    return SCHED_MAP.get(str(s).strip(), s)   # 映射不到(如"已作废")保留原文
 def decode_task_nos(s):
     """老 TASK_NO 是逗号分隔的任务内部id串(如 '763,762') -> 解码成软件中心任务号串(M-201901-89144,...)"""
     if not s:
@@ -242,7 +250,7 @@ def etl_prolist():
         if new_tid or new_bid: fk += 1
         else: snap += 1
         rows.append([new_tid, tkno, r['TKNAME'], r['TKPROD'], parse_date(r['TSUBB']), parse_date(r['TVER']),
-                     parse_date(r['TPRO']), r['TSCH'], (r['PROBLEM_NO'] or '')[:160], r['PROBLEM_LEVEL_ID'],
+                     parse_date(r['TPRO']), map_sched(r['TSCH']), (r['PROBLEM_NO'] or '')[:160], r['PROBLEM_LEVEL_ID'],
                      r['CURRENT_STATUS_ID'], parse_date(r['SUBMIT_DATE']), parse_date(r['SETTLE_DATE']),
                      parse_date(r['VERIFY_DATE']), r['WHETHER_DEFECT'], r['WHETHER_OVERTIME'],
                      r['WHETHER_PRO_RECURRENCE'], r['WHETHER_ATT_REQUIRED'], r['UPDATE_VERSION'],

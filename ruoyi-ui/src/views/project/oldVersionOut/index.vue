@@ -44,9 +44,15 @@
       <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
       <el-table-column label="投产年份" prop="proYear" width="90" align="center" />
       <el-table-column label="投产批次号" prop="proBatchNo" width="110" align="center" />
-      <el-table-column label="是否涉及TWS改造" prop="isInvolved" width="130" align="center" />
-      <el-table-column label="数据库是否修改" prop="dbUpdate" width="120" align="center" />
-      <el-table-column label="接口是否修改" prop="usbUpdate" width="110" align="center" />
+      <el-table-column label="是否涉及TWS改造" prop="isInvolved" width="130" align="center">
+        <template #default="{ row }">{{ row.isInvolved === '0' ? '是' : row.isInvolved === '1' ? '否' : '' }}</template>
+      </el-table-column>
+      <el-table-column label="数据库是否修改" prop="dbUpdate" width="120" align="center">
+        <template #default="{ row }">{{ row.dbUpdate === '0' ? '是' : row.dbUpdate === '1' ? '否' : '' }}</template>
+      </el-table-column>
+      <el-table-column label="接口是否修改" prop="usbUpdate" width="110" align="center">
+        <template #default="{ row }">{{ row.usbUpdate === '0' ? '是' : row.usbUpdate === '1' ? '否' : '' }}</template>
+      </el-table-column>
       <el-table-column label="顺序号" prop="sequenceNo" width="80" align="center" />
     </el-table>
 

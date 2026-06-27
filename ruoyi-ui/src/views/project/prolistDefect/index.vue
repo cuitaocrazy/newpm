@@ -89,7 +89,10 @@
         <template #default="{ row }"><dict-tag :options="sys_problem_state" :value="row.currentStatus" /></template>
       </el-table-column>
       <el-table-column label="排期状态" prop="scheduleStatus" width="120" align="center">
-        <template #default="{ row }"><dict-tag :options="sys_pqzt" :value="row.scheduleStatus" /></template>
+        <template #default="{ row }">
+          <dict-tag v-if="/^\d+$/.test(row.scheduleStatus)" :options="sys_pqzt" :value="row.scheduleStatus" />
+          <span v-else>{{ row.scheduleStatus }}</span>
+        </template>
       </el-table-column>
       <el-table-column label="问题单编号" prop="problemNo" min-width="130" show-overflow-tooltip />
       <el-table-column label="问题单级别" prop="problemLevel" width="140" align="center">
