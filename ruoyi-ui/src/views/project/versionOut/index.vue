@@ -57,6 +57,7 @@
 
     <!-- 表格 -->
     <el-table v-loading="loading" :data="versionList" border @sort-change="handleSortChange">
+      <el-table-column type="index" label="序号" width="55" align="center" fixed="left" />
       <el-table-column label="出入库版本号" prop="outLibVersion" min-width="150" show-overflow-tooltip fixed="left" />
       <el-table-column label="软件中心任务号" prop="taskNos" min-width="150" show-overflow-tooltip />
       <el-table-column label="投产年份" prop="productionYear" width="90" align="center" />

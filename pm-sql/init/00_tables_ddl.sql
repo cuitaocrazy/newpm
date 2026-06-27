@@ -1406,3 +1406,5 @@ CREATE TABLE IF NOT EXISTS pm_nobatch_prolist_defect (
   KEY idx_nb_batch_id (batch_id),
   KEY idx_nb_dept_id (dept_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='非批次任务问题单及缺陷';
+
+ALTER TABLE pm_version_out ADD COLUMN legacy_id bigint DEFAULT NULL COMMENT '老yadapm T_B_VERSION_OUT.ID(迁移排序用)';

@@ -88,3 +88,22 @@ PREPARE st5 FROM @s5; EXECUTE st5; DEALLOCATE PREPARE st5;
 -- 批次版本关联任务号(老 TASK_NO 解码成软件中心任务号串,多任务时较长)复用此列作快照,64 不够
 ALTER TABLE pm_version_out MODIFY manual_task_no varchar(512) DEFAULT NULL COMMENT '手填软件中心任务号(非批次)/批次版本关联任务号快照';
 COMMIT;
+
+-- ===== ①② pm_version_out 加 legacy_id(老ID,列表排序对齐老 ID DESC) =====
+SET @c6 := (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pm_version_out' AND column_name='legacy_id');
+SET @s6 := IF(@c6=0,
+ 'ALTER TABLE pm_version_out ADD COLUMN legacy_id bigint DEFAULT NULL COMMENT ''老yadapm T_B_VERSION_OUT.ID(迁移行排序对齐老ID DESC)'', ADD INDEX idx_legacy_id (legacy_id)',
+ 'SELECT ''pm_version_out.legacy_id exist''');
+PREPARE st6 FROM @s6; EXECUTE st6; DEALLOCATE PREPARE st6;
+
+-- ===== sys_version_status 字典(版本状态,建表时漏建→版本管理"版本状态"列空白) =====
+DELETE FROM sys_dict_data WHERE dict_type='sys_version_status';
+DELETE FROM sys_dict_type WHERE dict_type='sys_version_status';
+INSERT INTO sys_dict_type (dict_name,dict_type,status,create_by,create_time,remark) VALUES ('版本状态','sys_version_status','0','admin',NOW(),'迁移补全(老T_C_VERSION_STATUS)');
+INSERT INTO sys_dict_data (dict_sort,dict_label,dict_value,dict_type,list_class,is_default,status,create_by,create_time) VALUES
+(1,'B1-参与组生产包','1','sys_version_status','default','N','0','admin',NOW()),
+(2,'B2-不参与组生产包','2','sys_version_status','info','N','0','admin',NOW()),
+(3,'S1-参与投产','3','sys_version_status','success','N','0','admin',NOW()),
+(4,'S2-不参与投产','4','sys_version_status','warning','N','0','admin',NOW()),
+(5,'T-其他','5','sys_version_status','default','N','0','admin',NOW());
+COMMIT;

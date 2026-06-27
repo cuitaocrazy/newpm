@@ -30,6 +30,7 @@
     </el-row>
 
     <el-table v-loading="loading" :data="dataList" border>
+      <el-table-column type="index" label="序号" width="55" align="center" fixed="left" />
       <el-table-column label="子系统名称" prop="sysName" min-width="130" show-overflow-tooltip fixed="left" />
       <el-table-column label="子产品名称" prop="product" width="110" align="center" />
       <el-table-column label="基准版本号" prop="baseVersionCode" width="120" align="center" />
