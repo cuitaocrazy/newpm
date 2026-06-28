@@ -20,6 +20,9 @@ public class VersionOutTask
     /** 任务id(pm_task.task_id) */
     private Long taskId;
 
+    /** 老任务内部id(迁移历史任务,链接快照详情用) */
+    private Long legacyTaskId;
+
     /** 软件中心任务号(回显, JOIN pm_task.software_demand_no) */
     private String taskNo;
 
@@ -38,6 +41,8 @@ public class VersionOutTask
     public Long getVersionId() { return versionId; }
     public void setTaskId(Long taskId) { this.taskId = taskId; }
     public Long getTaskId() { return taskId; }
+    public void setLegacyTaskId(Long legacyTaskId) { this.legacyTaskId = legacyTaskId; }
+    public Long getLegacyTaskId() { return legacyTaskId; }
     public void setTaskNo(String taskNo) { this.taskNo = taskNo; }
     public String getTaskNo() { return taskNo; }
     public void setTaskName(String taskName) { this.taskName = taskName; }

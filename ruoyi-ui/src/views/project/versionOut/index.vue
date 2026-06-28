@@ -1,42 +1,42 @@
 <template>
   <div class="app-container">
     <!-- 查询表单 -->
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="84px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="投产年份" prop="productionYear">
-        <dict-select v-model="queryParams.productionYear" dict-type="sys_ndgl" placeholder="全部" clearable style="width:160px" />
+        <dict-select v-model="queryParams.productionYear" dict-type="sys_ndgl" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="产品" prop="product">
-        <dict-select v-model="queryParams.product" dict-type="sys_product" placeholder="全部" clearable style="width:160px" />
+        <dict-select v-model="queryParams.product" dict-type="sys_product" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="版本类型" prop="versionType">
-        <dict-select v-model="queryParams.versionType" dict-type="sys_version_type" placeholder="全部" clearable style="width:160px" />
+        <dict-select v-model="queryParams.versionType" dict-type="sys_version_type" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="子系统" prop="sysName">
-        <el-input v-model="queryParams.sysName" placeholder="子系统名称" clearable style="width:160px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.sysName" placeholder="子系统名称" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="出入库版本号" prop="outLibVersion">
-        <el-input v-model="queryParams.outLibVersion" placeholder="模糊匹配" clearable style="width:180px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.outLibVersion" placeholder="模糊匹配" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="组包方式" prop="packageMode">
-        <dict-select v-model="queryParams.packageMode" dict-type="sys_package_mode" placeholder="全部" clearable style="width:160px" />
+        <dict-select v-model="queryParams.packageMode" dict-type="sys_package_mode" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="投产批次号" prop="proBatchNo">
-        <el-input v-model="queryParams.proBatchNo" placeholder="批次号" clearable style="width:160px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.proBatchNo" placeholder="批次号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="软件中心任务号" prop="taskNo">
-        <el-input v-model="queryParams.taskNo" placeholder="任务号" clearable style="width:160px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.taskNo" placeholder="任务号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="基准版本号" prop="baseVersionCode">
-        <el-input v-model="queryParams.baseVersionCode" placeholder="基准版本号" clearable style="width:160px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.baseVersionCode" placeholder="基准版本号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="版本状态" prop="versionStatus">
-        <dict-select v-model="queryParams.versionStatus" dict-type="sys_version_status" placeholder="全部" clearable style="width:160px" />
+        <dict-select v-model="queryParams.versionStatus" dict-type="sys_version_status" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="投产日期" prop="versionPDate">
-        <el-date-picker v-model="queryParams.versionPDate" type="date" value-format="YYYY-MM-DD" placeholder="投产日期" clearable style="width:160px" />
+        <el-date-picker v-model="queryParams.versionPDate" type="date" value-format="YYYY-MM-DD" placeholder="投产日期" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="提交人员" prop="commName">
-        <user-select v-model="queryParams.commName" placeholder="提交人员" clearable filterable width="160px" />
+        <user-select v-model="queryParams.commName" placeholder="提交人员" clearable filterable width="240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -59,7 +59,16 @@
     <el-table v-loading="loading" :data="versionList" border @sort-change="handleSortChange">
       <el-table-column type="index" label="序号" width="55" align="center" fixed="left" />
       <el-table-column label="出入库版本号" prop="outLibVersion" min-width="150" show-overflow-tooltip fixed="left" />
-      <el-table-column label="软件中心任务号" prop="taskNos" min-width="150" show-overflow-tooltip />
+      <el-table-column label="软件中心任务号" prop="taskNos" min-width="150" show-overflow-tooltip>
+        <template #default="{ row }">
+          <template v-for="(t, i) in taskCellTokens(row)" :key="i">
+            <span v-if="i > 0">, </span>
+            <router-link v-if="t.type === 'L'" class="task-link" :to="`/task/subproject/detail/${t.id}`">{{ t.no }}</router-link>
+            <router-link v-else-if="t.type === 'S'" class="task-link" :to="`/project/versionOut/taskSnapshot?legacyId=${t.id}`">{{ t.no }}</router-link>
+            <span v-else>{{ t.no }}</span>
+          </template>
+        </template>
+      </el-table-column>
       <el-table-column label="投产年份" prop="productionYear" width="90" align="center" />
       <el-table-column label="投产批次号" prop="proBatchNo" width="110" align="center" />
       <el-table-column label="产品" prop="product" width="110" align="center" />
@@ -144,6 +153,40 @@ function getList() {
   }).catch(() => { loading.value = false })
 }
 
+// 解析后端 taskRefs("任务号::L{taskId};;任务号::S{legacyTaskId}") → { 任务号: {type,id} }
+// L=新系统实时任务(跳任务管理详情) / S=迁移老任务(跳历史任务快照详情)
+function parseTaskRefs(taskRefs) {
+  const map = {}
+  if (!taskRefs) return map
+  for (const seg of taskRefs.split(';;')) {
+    const idx = seg.lastIndexOf('::')
+    if (idx < 0) continue
+    const no = seg.slice(0, idx).trim()
+    const ref = seg.slice(idx + 2).trim()
+    if (!no || !ref) continue
+    const type = ref.charAt(0)
+    const id = ref.slice(1)
+    if ((type === 'L' || type === 'S') && id) map[no] = { type, id }
+  }
+  return map
+}
+
+// 列表"软件中心任务号"单元格：按 taskNos 逐个任务号输出 {no, type, id}
+// type=L→实时任务详情链接, S→历史快照详情链接, null→纯文本(无法定位的任务号)
+function taskCellTokens(row) {
+  const map = parseTaskRefs(row.taskRefs)
+  const seen = new Set()
+  const out = []
+  for (const raw of (row.taskNos || '').split(',')) {
+    const no = raw.trim()
+    if (!no || seen.has(no)) continue
+    seen.add(no)
+    const ref = map[no]
+    out.push({ no, type: ref ? ref.type : null, id: ref ? ref.id : null })
+  }
+  return out
+}
+
 function handleQuery() {
   queryParams.value.pageNum = 1
   getList()
@@ -210,3 +253,13 @@ onMounted(() => {
   getList()
 })
 </script>
+
+<style scoped>
+.task-link {
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+.task-link:hover {
+  text-decoration: underline;
+}
+</style>

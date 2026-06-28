@@ -1,29 +1,29 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="96px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="投产年份" prop="productionYear">
-        <dict-select v-model="queryParams.productionYear" dict-type="sys_ndgl" placeholder="全部" clearable style="width:150px" />
+        <dict-select v-model="queryParams.productionYear" dict-type="sys_ndgl" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="投产批次号" prop="proBatchNo">
-        <el-input v-model="queryParams.proBatchNo" placeholder="批次号" clearable style="width:150px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.proBatchNo" placeholder="批次号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="软件中心任务号" prop="manualTaskNo">
-        <el-input v-model="queryParams.manualTaskNo" placeholder="任务号" clearable style="width:150px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.manualTaskNo" placeholder="任务号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="产品" prop="product">
-        <dict-select v-model="queryParams.product" dict-type="sys_product" placeholder="全部" clearable style="width:150px" />
+        <dict-select v-model="queryParams.product" dict-type="sys_product" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="版本类型" prop="versionType">
-        <dict-select v-model="queryParams.versionType" dict-type="sys_version_type" placeholder="全部" clearable style="width:150px" />
+        <dict-select v-model="queryParams.versionType" dict-type="sys_version_type" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="基准版本号" prop="baseVersionCode">
-        <el-input v-model="queryParams.baseVersionCode" placeholder="基准版本号" clearable style="width:150px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.baseVersionCode" placeholder="基准版本号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="出入库版本号" prop="outLibVersion">
-        <el-input v-model="queryParams.outLibVersion" placeholder="模糊匹配" clearable style="width:160px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.outLibVersion" placeholder="模糊匹配" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="投产日期" prop="versionPDate">
-        <el-date-picker v-model="queryParams.versionPDate" type="date" value-format="YYYY-MM-DD" placeholder="投产日期" clearable style="width:150px" />
+        <el-date-picker v-model="queryParams.versionPDate" type="date" value-format="YYYY-MM-DD" placeholder="投产日期" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>

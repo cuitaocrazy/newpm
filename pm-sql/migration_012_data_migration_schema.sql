@@ -84,6 +84,18 @@ SET @s5 := IF(@c5=0,
  'SELECT ''pm_version_out.comm_name_display exist''');
 PREPARE st5 FROM @s5; EXECUTE st5; DEALLOCATE PREPARE st5;
 
+-- ===== ①② pm_version_out 加 creator_name/modifier_name(创建人/修改人姓名快照) =====
+-- 老 T_B_VERSION_OUT.CREATOR/MODIFIER 存旧USER_ID,迁移时解码为姓名快照(参照旧系统显示纯姓名);
+-- create_by 仍恒为 'yadapm-migrate' 作幂等标记,显示走快照列(对齐 ④⑤ creator_name/modifier_name)
+SET @c7 := (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pm_version_out' AND column_name='creator_name');
+SET @s7 := IF(@c7=0,
+ 'ALTER TABLE pm_version_out
+    ADD COLUMN creator_name varchar(64) DEFAULT NULL COMMENT ''创建人姓名(历史快照,老录入人)'' AFTER create_by,
+    ADD COLUMN modifier_name varchar(64) DEFAULT NULL COMMENT ''修改人姓名(历史快照,老修改人)'' AFTER update_by',
+ 'SELECT ''pm_version_out 创建/修改人快照列 exist''');
+PREPARE st7 FROM @s7; EXECUTE st7; DEALLOCATE PREPARE st7;
+COMMIT;
+
 -- ===== ① 批次版本 manual_task_no 加宽 64→512 =====
 -- 批次版本关联任务号(老 TASK_NO 解码成软件中心任务号串,多任务时较长)复用此列作快照,64 不够
 ALTER TABLE pm_version_out MODIFY manual_task_no varchar(512) DEFAULT NULL COMMENT '手填软件中心任务号(非批次)/批次版本关联任务号快照';
@@ -106,4 +118,87 @@ INSERT INTO sys_dict_data (dict_sort,dict_label,dict_value,dict_type,list_class,
 (3,'S1-参与投产','3','sys_version_status','success','N','0','admin',NOW()),
 (4,'S2-不参与投产','4','sys_version_status','warning','N','0','admin',NOW()),
 (5,'T-其他','5','sys_version_status','default','N','0','admin',NOW());
+COMMIT;
+
+-- ===== 历史任务快照表 pm_task_snapshot(迁移自 T_B_TASK 完整任务详情;老任务在新pm_task无对应时点任务号看这里) =====
+-- ============================================================
+-- 历史任务快照表 pm_task_snapshot
+-- 承载老 yadapm T_B_TASK(46列) 完整任务详情，纯归档只读快照(不入主业务流)
+-- 字段命名对齐 pm_task；加 legacy_task_id(老PK) 与 task_no(=center_task_no)
+-- collation 与新表 pm_task 一致: utf8mb4_unicode_ci
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `pm_task_snapshot` (
+  `snapshot_id`             bigint        NOT NULL AUTO_INCREMENT                       COMMENT '快照主键(自增)',
+  `legacy_task_id`          bigint        NOT NULL                                      COMMENT '老任务内部ID(T_B_TASK.TASK_ID，真PK，去重用)',
+  `task_no`                 varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '软件中心任务号(T_B_TASK.CENTER_TASK_NO，非唯一,可空/脏值)',
+  `new_task_id`             bigint        DEFAULT NULL                                  COMMENT '新系统任务ID(pm_task.task_id；按task_no命中pm_task.task_code则挂上，否则NULL=纯快照)',
+  `task_name`               varchar(200)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '任务名称(T_B_TASK.TASK_NAME)',
+  `task_kind`               varchar(32)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '任务类型(T_B_TASK.TASK_KIND，老编码1-9，无对应字典保留原值)',
+  `product`                 varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '产品(T_B_TASK.PRODUCT，多为产品名如HHAP-TMS；命中T_C_PRODUCT则解码)',
+  `subtask_team`            varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '子任务团队/项目组(T_B_TASK.SUBTASK_TEAM)',
+  `task_holders_name`       varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '任务负责人姓名(T_B_TASK.TASK_HOLDERS 用户id->姓名)',
+  `subtask_holders_name`    varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '子任务负责人姓名(T_B_TASK.SUBTASK_HOLDERS 用户id->姓名)',
+  `saler_name`              varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '销售姓名(T_B_TASK.SALER 用户id->姓名)',
+  `inside_subtask_no`       varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '内部子任务号(T_B_TASK.INSIDE_SUBTASK_NO)',
+  `lx_no`                   varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '立项号(T_B_TASK.LX_NO)',
+  `batch_no`                varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '投产批次号(T_B_TASK.BATCH_NO，冗余文本展示)',
+  `batch_id`                bigint        DEFAULT NULL                                  COMMENT '新系统投产批次ID(老BATCH_ID->BATCH_NO->pm_production_batch.batch_id命中则挂，否则NULL)',
+  `legacy_batch_id`         bigint        DEFAULT NULL                                  COMMENT '老投产批次内部id(T_B_TASK.BATCH_ID原值，留档追溯)',
+  `task_manday`             decimal(10,2) DEFAULT NULL                                  COMMENT '任务人天/预估工作量(T_B_TASK.TASK_MANDAY)',
+  `manday_amount`           decimal(15,2) DEFAULT NULL                                  COMMENT '人天金额(T_B_TASK.MANDAY_AMOUNT)',
+  `ys_amount`               decimal(15,2) DEFAULT NULL                                  COMMENT '预算/验收金额(T_B_TASK.YS_AMOUNT)',
+  `schedule_status`         varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '排期状态(T_B_TASK.SCHEDULING_STATUS 中文->sys_pqzt字典值,无对应保留原文)',
+  `product_report_status`   varchar(32)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '投产报告状态(T_B_TASK.RRODUCT_REPORT_STATUS)',
+  `product_report_tracking` varchar(512)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '投产报告跟踪(T_B_TASK.RRODUCT_REPORT_TRACKING)',
+  `product_report_url`      varchar(512)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '投产报告URL(T_B_TASK.RRODUCT_REPORT_URL，物理文件可能缺失)',
+  `product_report_date`     date          DEFAULT NULL                                  COMMENT '投产报告日期(T_B_TASK.RRODUCT_REPORT_DATE yyyymmdd)',
+  `function_description`    text          COLLATE utf8mb4_unicode_ci                    COMMENT '功能点说明(T_B_TASK.FUNCTION_DESC，对应详情页"功能点说明")',
+  `task_plan`               text          COLLATE utf8mb4_unicode_ci                    COMMENT '任务计划/实施计划(T_B_TASK.PLAN，对应详情页"实施计划")',
+  `internal_closure_date`   date          DEFAULT NULL                                  COMMENT '内部B包日期(T_B_TASK.TEST_SUB_B_DATE yyyymmdd)',
+  `functional_test_date`    date          DEFAULT NULL                                  COMMENT '功能测试版本日期(T_B_TASK.TEST_VERSION_DATE yyyymmdd)',
+  `production_version_date` date          DEFAULT NULL                                  COMMENT '生产版本日期(T_B_TASK.PRO_VERSION_DATE yyyymmdd)',
+  `actual_production_date`  date          DEFAULT NULL                                  COMMENT '实际投产日期(T_B_TASK.ACTUAL_TC_DATE yyyymmdd)',
+  `demand_id`               bigint        DEFAULT NULL                                  COMMENT '需求内部id(T_B_TASK.DEMAND_ID原值留档)',
+  `bank_demand_no`          varchar(100)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '需求号(T_B_TASK.DEMAND_NO，对齐pm_task.bank_demand_no/总行需求号)',
+  `demand_name`             varchar(255)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '需求名称(T_B_TASK.DEMAND_NAME)',
+  `demand_contacts`         varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '需求联系人(T_B_TASK.DEMAND_CONTACTS)',
+  `contacts_tel`            varchar(32)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '联系人电话(T_B_TASK.CONTACTS_TEL)',
+  `contacts_mobile`         varchar(32)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '联系人手机(T_B_TASK.CONTACTS_MOBILE)',
+  `parent_project_name`     varchar(200)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '所属项目名称(T_B_TASK.PRJ_NAME，冗余文本)',
+  `legacy_project_id`       bigint        DEFAULT NULL                                  COMMENT '老所属项目内部id(T_B_TASK.PRJ_ID原值留档)',
+  `production_year`         varchar(10)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '投产年度(T_B_TASK.YEAR_ID 老年份id->年份文本/sys_ndgl)',
+  `check_status`            varchar(32)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '审核状态(T_B_TASK.CHECK_STATUS，老编码1/2/3，无对应字典保留原值)',
+  `reviewer_name`           varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '审核人姓名(T_B_TASK.REVIEWER 用户id->姓名)',
+  `check_date`              datetime      DEFAULT NULL                                  COMMENT '审核时间(T_B_TASK.CHECK_DATE yyyymmddhhmmss)',
+  `print_date`              datetime      DEFAULT NULL                                  COMMENT '打印时间(T_B_TASK.PRINT_DATE yyyymmddhhmmss)',
+  `remarks`                 text          COLLATE utf8mb4_unicode_ci                    COMMENT '备注(T_B_TASK.REMARKS，对齐详情页"备注")',
+  `creator_name`            varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '创建人姓名快照(T_B_TASK.CREATOR 用户id->登录名(姓名))',
+  `modifier_name`           varchar(128)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '修改人姓名快照(T_B_TASK.MODIFIER 用户id->登录名(姓名))',
+  `legacy_creation_date`    datetime      DEFAULT NULL                                  COMMENT '老创建时间(T_B_TASK.CREATION_DATE yyyymmddhhmmss)',
+  `legacy_modification_date` datetime     DEFAULT NULL                                  COMMENT '老最后修改时间(T_B_TASK.LAST_MODIFICATION_DATE yyyymmddhhmmss)',
+  `del_flag`                char(1)       COLLATE utf8mb4_unicode_ci DEFAULT '0'        COMMENT '删除标志(0正常 1删除)',
+  `create_by`               varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '迁移标记(固定 yadapm-migrate)',
+  `create_time`             datetime      DEFAULT CURRENT_TIMESTAMP                     COMMENT '快照入库时间',
+  `update_by`               varchar(64)   COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '更新者',
+  `update_time`             datetime      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `remark`                  varchar(500)  COLLATE utf8mb4_unicode_ci DEFAULT NULL       COMMENT '备注(框架字段)',
+  PRIMARY KEY (`snapshot_id`),
+  UNIQUE KEY `uk_legacy_task_id` (`legacy_task_id`),
+  KEY `idx_task_no` (`task_no`),
+  KEY `idx_new_task_id` (`new_task_id`),
+  KEY `idx_batch_id` (`batch_id`),
+  KEY `idx_production_year` (`production_year`),
+  KEY `idx_schedule_status` (`schedule_status`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='历史任务快照表(迁移自yadapm T_B_TASK)';
+
+-- ===== pm_version_out_task 加 task_no/legacy_task_id(承载迁移任务关联+快照链接) =====
+SET @c8 := (SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='pm_version_out_task' AND column_name='task_no');
+SET @s8 := IF(@c8=0,
+ 'ALTER TABLE pm_version_out_task
+    ADD COLUMN task_no varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT ''软件中心任务号快照(迁移记录用,新记录走JOIN)'' AFTER task_id,
+    ADD COLUMN legacy_task_id bigint DEFAULT NULL COMMENT ''老任务内部id(T_B_TASK.TASK_ID,链接历史任务快照详情用)'' AFTER task_no,
+    ADD INDEX idx_vot_task_no (task_no),
+    ADD INDEX idx_vot_legacy_task_id (legacy_task_id)',
+ 'SELECT ''pm_version_out_task task_no/legacy_task_id exist''');
+PREPARE st8 FROM @s8; EXECUTE st8; DEALLOCATE PREPARE st8;
 COMMIT;

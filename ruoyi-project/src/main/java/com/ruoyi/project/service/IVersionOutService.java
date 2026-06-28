@@ -19,6 +19,9 @@ public interface IVersionOutService
     /** 查询批次版本详情 */
     public VersionOut selectVersionOutById(Long id);
 
+    /** 按老任务id查历史任务快照详情 */
+    public Map<String, Object> selectTaskSnapshot(Long legacyTaskId);
+
     /** 新增批次版本（生成版本号 + 级联任务 + 唯一性重试） */
     public int insertVersionOut(VersionOut versionOut);
 

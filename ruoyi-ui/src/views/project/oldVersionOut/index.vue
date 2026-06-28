@@ -1,21 +1,21 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="90px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="任务编号" prop="taskNo">
-        <el-input v-model="queryParams.taskNo" placeholder="模糊匹配" clearable style="width:160px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.taskNo" placeholder="模糊匹配" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="投产批次号" prop="proBatchNo">
-        <el-select v-model="queryParams.proBatchNo" placeholder="全部" clearable filterable style="width:160px">
+        <el-select v-model="queryParams.proBatchNo" placeholder="全部" clearable filterable style="width: 240px">
           <el-option v-for="v in proBatchNoOptions" :key="v" :label="v" :value="v" />
         </el-select>
       </el-form-item>
       <el-form-item label="子产品" prop="product">
-        <el-select v-model="queryParams.product" placeholder="全部" clearable filterable style="width:160px">
+        <el-select v-model="queryParams.product" placeholder="全部" clearable filterable style="width: 240px">
           <el-option v-for="v in productOptions" :key="v" :label="v" :value="v" />
         </el-select>
       </el-form-item>
       <el-form-item label="版本类型" prop="versionType">
-        <el-select v-model="queryParams.versionType" placeholder="全部" clearable filterable style="width:160px">
+        <el-select v-model="queryParams.versionType" placeholder="全部" clearable filterable style="width: 240px">
           <el-option v-for="v in versionTypeOptions" :key="v" :label="v" :value="v" />
         </el-select>
       </el-form-item>

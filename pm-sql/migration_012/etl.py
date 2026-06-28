@@ -125,6 +125,7 @@ NEW_TASK = {k: v for k, v in cur.fetchall()}
 cur.execute("SELECT batch_no, MIN(batch_id) FROM pm_production_batch WHERE batch_no IS NOT NULL GROUP BY batch_no")
 NEW_BATCH = {k: v for k, v in cur.fetchall()}
 USER_NAME_BY_ID = load_map('T_N_SHIRO_USER', 'USER_ID', 'USER_NAME')  # 老用户id->姓名
+LOGIN_BY_ID = load_map('T_N_SHIRO_USER', 'USER_ID', 'LOGIN_NAME')     # 老用户id->登录名
 print(f"[init] PRODUCT={len(PRODUCT)} YEAR={len(YEAR)} BATCH_NO_BY_ID={len(BATCH_NO_BY_ID)} 用户={len(USER_NAME_BY_ID)} 新任务={len(NEW_TASK)} 新批次={len(NEW_BATCH)}", flush=True)
 
 def year_of(year_id):
@@ -132,6 +133,14 @@ def year_of(year_id):
 
 def uname(uid):
     return USER_NAME_BY_ID.get(uid)  # 老录入人id->姓名
+
+def uname_login(uid):
+    # 老用户id -> "登录名(姓名)"，如 jiansheng.liang(梁建盛)；缺一项时兜底显示存在的那项
+    name = USER_NAME_BY_ID.get(uid)
+    login = LOGIN_BY_ID.get(uid)
+    if login and name:
+        return f"{login}({name})"
+    return name or login
 
 report = []  # (功能, 源表, 源数, 迁入, FK挂上, 快照, 失败)
 
@@ -193,17 +202,66 @@ def etl_old_version_out():
     report.append(('③旧数据查询','T_B_OLD_VERSION_OUT', len(src), ok, '-', ok, fail, sfx))
 
 # ========== ①② T_B_VERSION_OUT -> pm_version_out ==========
+def etl_task_snapshot():
+    """迁老 T_B_TASK 全量任务详情 -> pm_task_snapshot(历史任务快照,点老任务号看这里).
+    去重键 legacy_task_id(=老TASK_ID,源天然唯一). create_by=MARK 幂等."""
+    src = ora_extract('T_B_TASK', [
+        'TASK_ID','CENTER_TASK_NO','TASK_NAME','TASK_KIND','PRODUCT','SUBTASK_TEAM','TASK_HOLDERS','SUBTASK_HOLDERS',
+        'SALER','INSIDE_SUBTASK_NO','LX_NO','BATCH_NO','BATCH_ID','TASK_MANDAY','MANDAY_AMOUNT','YS_AMOUNT',
+        'SCHEDULING_STATUS','RRODUCT_REPORT_STATUS','RRODUCT_REPORT_TRACKING','RRODUCT_REPORT_URL','RRODUCT_REPORT_DATE',
+        'FUNCTION_DESC','PLAN','TEST_SUB_B_DATE','TEST_VERSION_DATE','PRO_VERSION_DATE','ACTUAL_TC_DATE',
+        'DEMAND_ID','DEMAND_NO','DEMAND_NAME','DEMAND_CONTACTS','CONTACTS_TEL','CONTACTS_MOBILE','PRJ_NAME','PRJ_ID',
+        'YEAR_ID','CHECK_STATUS','REVIEWER','CHECK_DATE','PRINT_DATE','REMARKS','CREATOR','MODIFIER',
+        'CREATION_DATE','LAST_MODIFICATION_DATE'])
+    cur.execute(f"DELETE FROM pm_task_snapshot WHERE create_by='{MARK}'")
+    cols = ['legacy_task_id','task_no','new_task_id','task_name','task_kind','product','subtask_team','task_holders_name',
+            'subtask_holders_name','saler_name','inside_subtask_no','lx_no','batch_no','batch_id','legacy_batch_id',
+            'task_manday','manday_amount','ys_amount','schedule_status','product_report_status','product_report_tracking',
+            'product_report_url','product_report_date','function_description','task_plan','internal_closure_date',
+            'functional_test_date','production_version_date','actual_production_date','demand_id','bank_demand_no',
+            'demand_name','demand_contacts','contacts_tel','contacts_mobile','parent_project_name','legacy_project_id',
+            'production_year','check_status','reviewer_name','check_date','print_date','remarks','creator_name',
+            'modifier_name','legacy_creation_date','legacy_modification_date','create_by']
+    rows = []
+    fk = snap = 0
+    for r in src:
+        tid = r['TASK_ID']
+        if tid is None:
+            continue
+        center = r['CENTER_TASK_NO']
+        new_tid = NEW_TASK.get((center or '').strip()) if center else None   # 软件中心任务号=新task_code 则挂上
+        if new_tid: fk += 1
+        else: snap += 1
+        old_batch_no = BATCH_NO_BY_ID.get(r['BATCH_ID']) or r['BATCH_NO']
+        new_bid = NEW_BATCH.get(old_batch_no)
+        rows.append([int(str(tid).split('.')[0]), center, new_tid, r['TASK_NAME'], r['TASK_KIND'],
+                     PRODUCT.get(r['PRODUCT'], r['PRODUCT']), r['SUBTASK_TEAM'], uname(r['TASK_HOLDERS']),
+                     uname(r['SUBTASK_HOLDERS']), uname(r['SALER']), r['INSIDE_SUBTASK_NO'], r['LX_NO'],
+                     old_batch_no, new_bid, r['BATCH_ID'],
+                     r['TASK_MANDAY'], r['MANDAY_AMOUNT'], r['YS_AMOUNT'], map_sched(r['SCHEDULING_STATUS']),
+                     r['RRODUCT_REPORT_STATUS'], r['RRODUCT_REPORT_TRACKING'], r['RRODUCT_REPORT_URL'],
+                     parse_date(r['RRODUCT_REPORT_DATE']), r['FUNCTION_DESC'], r['PLAN'], parse_date(r['TEST_SUB_B_DATE']),
+                     parse_date(r['TEST_VERSION_DATE']), parse_date(r['PRO_VERSION_DATE']), parse_date(r['ACTUAL_TC_DATE']),
+                     r['DEMAND_ID'], r['DEMAND_NO'], r['DEMAND_NAME'], r['DEMAND_CONTACTS'], r['CONTACTS_TEL'],
+                     r['CONTACTS_MOBILE'], r['PRJ_NAME'], r['PRJ_ID'], year_of(r['YEAR_ID']), r['CHECK_STATUS'],
+                     uname(r['REVIEWER']), parse_dt(r['CHECK_DATE']), parse_dt(r['PRINT_DATE']), r['REMARKS'],
+                     uname_login(r['CREATOR']), uname_login(r['MODIFIER']), parse_dt(r['CREATION_DATE']),
+                     parse_dt(r['LAST_MODIFICATION_DATE']), MARK])
+    ok, fail, _ = insert_rows('pm_task_snapshot', cols, rows, '历史任务快照', uniq_idx=None)
+    report.append(('历史任务快照','T_B_TASK', len(src), ok, fk, snap, fail, 0))
+
 def etl_version_out():
     src = ora_extract('T_B_VERSION_OUT', [
         'SYS_NAME','BASE_VERSION_CODE','OUT_LIB_VERSION','OUT_VERSION','VERSION_TYPE','VERSION_CODE','VERSION_DESCR',
         'COMM_NAME','VERSION_P_DATE','TASK_NO','TASK_NAME','PRO_YEAR','PRO_BATCH_NO','DB_UPDATE','USB_UPDATE',
         'SEQUENCE_NO','IS_INVOLVED','SUB_VERSION_CODE','MANUAL_INPUT','REMARKS','CREATION_DATE',
-        'LAST_MODIFICATION_DATE','PACKAGE_MODE','VERSION_STATUS','BATCH_ID','ID'])
+        'LAST_MODIFICATION_DATE','PACKAGE_MODE','VERSION_STATUS','BATCH_ID','ID','CREATOR','MODIFIER'])
     cur.execute(f"DELETE FROM pm_version_out WHERE create_by='{MARK}'")
     cols = ['production_year','batch_id','pro_batch_no','sub_version_code','product','manual_task_no','manual_task_name',
             'version_type','sys_name','base_version_code','out_lib_version','version_code','out_version','comm_name',
             'comm_name_display','version_p_date','is_involved','db_update','usb_update','package_mode','version_status',
-            'version_brief','version_descr','remarks','manual_input','del_flag','create_by','create_time','update_time','legacy_id']
+            'version_brief','version_descr','remarks','manual_input','del_flag','create_by','create_time','update_time','legacy_id',
+            'creator_name','modifier_name']
     rows = []
     fk = snap = 0
     for r in src:
@@ -223,13 +281,35 @@ def etl_version_out():
             mtask_no, mtask_name, vbrief = decode_task_nos(r['TASK_NO']), None, r['TASK_NAME']  # 批次:TASK_NO是内部id串,解码成软件中心任务号
         rows.append([year_of(r['PRO_YEAR']), new_bid, old_batch_no, prod, prod, mtask_no, mtask_name,
                      r['VERSION_TYPE'], r['SYS_NAME'], r['BASE_VERSION_CODE'], r['OUT_LIB_VERSION'], r['VERSION_CODE'],
-                     r['OUT_VERSION'], r['COMM_NAME'], uname(r['COMM_NAME']), version_p_date,
+                     r['OUT_VERSION'], r['COMM_NAME'], uname_login(r['COMM_NAME']), version_p_date,
                      flip01(r['IS_INVOLVED']), flip01(r['DB_UPDATE']), flip01(r['USB_UPDATE']),
                      r['PACKAGE_MODE'], r['VERSION_STATUS'], vbrief, r['VERSION_DESCR'], r['REMARKS'],
-                     mi, '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE']), r['ID']])
+                     mi, '0', MARK, parse_dt(r['CREATION_DATE']), parse_dt(r['LAST_MODIFICATION_DATE']), r['ID'],
+                     uname_login(r['CREATOR']), uname_login(r['MODIFIER'])])   # 创建人/修改人快照=登录名(姓名),老CREATOR/MODIFIER=旧USER_ID
     # out_lib_version 在 cols 中索引=10, varchar(64); 撞唯一键(sys_name+version_type+out_lib_version)加后缀
     ok, fail, sfx = insert_rows('pm_version_out', cols, rows, '①②版本管理', uniq_idx=10, uniq_maxlen=64)
     report.append(('①②版本管理','T_B_VERSION_OUT', len(src), ok, fk, snap, fail, sfx))
+    # ===== 回填 pm_version_out_task: 老批次版本任务关联(version_id经legacy_id回查; task_id按center=task_code解析; task_no/legacy_task_id快照) =====
+    cur.execute("DELETE FROM pm_version_out_task WHERE legacy_task_id IS NOT NULL")   # 幂等:只删迁移关联,不碰新建记录(task_no/legacy_task_id均NULL)
+    cur.execute(f"SELECT id, legacy_id FROM pm_version_out WHERE create_by='{MARK}'")
+    legacy2new = {str(lg): nid for nid, lg in cur.fetchall() if lg is not None}
+    vot_rows = []
+    for r in src:
+        if (r['MANUAL_INPUT'] or '0') != '0' or not r['TASK_NO']:
+            continue
+        nvid = legacy2new.get(str(r['ID']))
+        if not nvid:
+            continue
+        for part in str(r['TASK_NO']).replace('，', ',').split(','):
+            tid = part.strip().split('.')[0]
+            if not tid:
+                continue
+            center = CENTER_BY_TASKID.get(tid)
+            new_tid = NEW_TASK.get((center or '').strip()) if center else None   # 软件中心任务号=新task_code 命中则可点实时详情
+            vot_rows.append([nvid, new_tid, center or tid, int(tid) if tid.isdigit() else None])
+    vfk = sum(1 for x in vot_rows if x[1]); vsnap = len(vot_rows) - vfk
+    okv, failv, _ = insert_rows('pm_version_out_task', ['version_id','task_id','task_no','legacy_task_id'], vot_rows, '①②版本任务关联', uniq_idx=None)
+    report.append(('①②版本任务关联','(子表)', len(vot_rows), okv, vfk, vsnap, failv, 0))
 
 # ========== ④ T_B_PROLIST_AND_DEFECT -> pm_prolist_defect (任务快照来自老T_B_TASK) ==========
 def etl_prolist():
@@ -333,6 +413,7 @@ def etl_attachment():
 
 if __name__ == '__main__':
     etl_old_version_out()
+    etl_task_snapshot()
     etl_version_out()
     etl_prolist()
     etl_nobatch()

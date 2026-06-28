@@ -11,9 +11,9 @@
         <el-descriptions-item label="任务名称">{{ form.taskName }}</el-descriptions-item>
         <el-descriptions-item label="软件中心任务号">{{ form.taskNo }}</el-descriptions-item>
         <el-descriptions-item label="项目组">{{ form.deptName }}</el-descriptions-item>
-        <el-descriptions-item label="二级产品">{{ form.product }}</el-descriptions-item>
         <el-descriptions-item label="投产年份">{{ form.productionYear }}</el-descriptions-item>
         <el-descriptions-item label="批次号">{{ form.batchNo }}</el-descriptions-item>
+        <el-descriptions-item label="二级产品">{{ form.product }}</el-descriptions-item>
         <el-descriptions-item label="计划投产日期">{{ form.planProductionDate }}</el-descriptions-item>
         <el-descriptions-item label="提交内部测试B包日期">{{ form.internalClosureDate }}</el-descriptions-item>
         <el-descriptions-item label="提交功能测试版本日期">{{ form.functionalTestDate }}</el-descriptions-item>
@@ -27,17 +27,17 @@
       <el-descriptions :column="3" border>
         <el-descriptions-item label="问题单编号">{{ form.problemNo }}</el-descriptions-item>
         <el-descriptions-item label="问题单级别"><dict-tag :options="sys_problem_level" :value="form.problemLevel" /></el-descriptions-item>
-        <el-descriptions-item label="当前状态"><dict-tag :options="sys_problem_state" :value="form.currentStatus" /></el-descriptions-item>
         <el-descriptions-item label="提交日期">{{ form.submitDate }}</el-descriptions-item>
         <el-descriptions-item label="问题单关闭日期">{{ form.settleDate }}</el-descriptions-item>
-        <el-descriptions-item label="核查日期">{{ form.verifyDate }}</el-descriptions-item>
         <el-descriptions-item label="是否缺陷">{{ yn(form.whetherDefect) }}</el-descriptions-item>
         <el-descriptions-item label="是否超时">{{ yn(form.whetherOvertime) }}</el-descriptions-item>
         <el-descriptions-item label="是否问题重现">{{ yn(form.whetherProRecurrence) }}</el-descriptions-item>
         <el-descriptions-item label="是否须关注">{{ yn(form.whetherAttRequired) }}</el-descriptions-item>
         <el-descriptions-item label="解决时间超一天">{{ yn(form.solutionTimeOverOneDay) }}</el-descriptions-item>
-        <el-descriptions-item label="是否更新版本">{{ yn(form.whetherUpdateVersion) }}</el-descriptions-item>
         <el-descriptions-item label="缺陷说明/超时说明" :span="3">{{ form.defectDesc }}</el-descriptions-item>
+        <el-descriptions-item label="当前状态"><dict-tag :options="sys_problem_state" :value="form.currentStatus" /></el-descriptions-item>
+        <el-descriptions-item label="核查日期">{{ form.verifyDate }}</el-descriptions-item>
+        <el-descriptions-item label="是否更新版本">{{ yn(form.whetherUpdateVersion) }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="3">{{ form.remarks }}</el-descriptions-item>
         <el-descriptions-item label="创建人员">{{ form.createByName }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ form.createTime }}</el-descriptions-item>

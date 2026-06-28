@@ -59,3 +59,8 @@ export function getTaskInfo(taskNo: string) {
 export function getTaskOptions(productionYear: string, batchId: number | string, product: string) {
   return request({ url: '/project/versionOut/taskOptions', method: 'get', params: { productionYear, batchId, product } })
 }
+
+// 历史任务快照详情（迁移老任务在新pm_task无对应时，点任务号看这里）
+export function getTaskSnapshot(legacyTaskId: number | string) {
+  return request({ url: '/project/versionOut/taskSnapshot', method: 'get', params: { legacyTaskId } })
+}

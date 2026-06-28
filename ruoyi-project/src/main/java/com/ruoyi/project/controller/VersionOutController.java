@@ -60,6 +60,14 @@ public class VersionOutController extends BaseController
         return success(versionOutService.selectVersionOutById(id));
     }
 
+    /** 历史任务快照详情（迁移老任务在新pm_task无对应时，点任务号看这里） */
+    @PreAuthorize("@ss.hasPermi('project:versionOut:query')")
+    @GetMapping("/taskSnapshot")
+    public AjaxResult taskSnapshot(@RequestParam Long legacyTaskId)
+    {
+        return success(versionOutService.selectTaskSnapshot(legacyTaskId));
+    }
+
     /** 新增批次版本（服务端生成出入库版本号） */
     @PreAuthorize("@ss.hasPermi('project:versionOut:add')")
     @Log(title = "批次版本管理", businessType = BusinessType.INSERT)

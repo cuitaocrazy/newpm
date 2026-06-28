@@ -95,29 +95,17 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="当前状态" prop="currentStatus">
-              <dict-select v-model="form.currentStatus" dict-type="sys_problem_state" placeholder="请选择当前状态" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
             <el-form-item label="提交日期" prop="submitDate">
               <el-date-picker v-model="form.submitDate" type="date" value-format="YYYY-MM-DD" placeholder="提交日期" style="width:100%" />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="问题单关闭日期">
               <el-date-picker v-model="form.settleDate" type="date" value-format="YYYY-MM-DD" placeholder="解决/关闭日期(可空)" clearable style="width:100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item label="核查日期" prop="verifyDate">
-              <el-date-picker v-model="form.verifyDate" type="date" value-format="YYYY-MM-DD" placeholder="核查日期" style="width:100%" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="是否缺陷" prop="whetherDefect">
               <el-radio-group v-model="form.whetherDefect"><el-radio value="1">是</el-radio><el-radio value="0">否</el-radio></el-radio-group>
@@ -128,21 +116,16 @@
               <el-radio-group v-model="form.whetherOvertime"><el-radio value="1">是</el-radio><el-radio value="0">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="是否问题重现" prop="whetherProRecurrence">
               <el-radio-group v-model="form.whetherProRecurrence"><el-radio value="1">是</el-radio><el-radio value="0">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="是否须关注" prop="whetherAttRequired">
               <el-radio-group v-model="form.whetherAttRequired"><el-radio value="1">是</el-radio><el-radio value="0">否</el-radio></el-radio-group>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="是否更新版本" prop="whetherUpdateVersion">
-              <el-radio-group v-model="form.whetherUpdateVersion"><el-radio value="1">是</el-radio><el-radio value="0">否</el-radio></el-radio-group>
             </el-form-item>
           </el-col>
         </el-row>
@@ -150,6 +133,23 @@
           <el-col :span="24">
             <el-form-item label="缺陷说明/超时说明" prop="defectDesc">
               <el-input v-model="form.defectDesc" placeholder="请输入缺陷说明/超时说明" maxlength="128" show-word-limit />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="是否更新版本" prop="whetherUpdateVersion">
+              <el-radio-group v-model="form.whetherUpdateVersion"><el-radio value="1">是</el-radio><el-radio value="0">否</el-radio></el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="当前状态" prop="currentStatus">
+              <dict-select v-model="form.currentStatus" dict-type="sys_problem_state" placeholder="请选择当前状态" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="核查日期" prop="verifyDate">
+              <el-date-picker v-model="form.verifyDate" type="date" value-format="YYYY-MM-DD" placeholder="核查日期" style="width:100%" />
             </el-form-item>
           </el-col>
         </el-row>

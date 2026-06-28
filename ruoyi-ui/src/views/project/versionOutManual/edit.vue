@@ -20,20 +20,22 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="版本投产日期">
-              <el-input v-model="form.versionPDate" placeholder="选批次后自动带出" readonly />
+            <el-form-item label="产品" prop="product">
+              <dict-select v-model="form.product" dict-type="sys_product" placeholder="请选择产品" @change="onProductChange" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="产品" prop="product">
-              <dict-select v-model="form.product" dict-type="sys_product" placeholder="请选择产品" @change="onProductChange" />
+            <el-form-item label="子系统" prop="sysName">
+              <el-select v-model="form.sysName" placeholder="请先选产品" filterable style="width:100%" @change="onSysNameChange">
+                <el-option v-for="s in sysNameOptions" :key="s.id" :label="s.sysName" :value="s.sysName" />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="提交人员">
-              <el-input v-model="form.userName" readonly placeholder="提交人员" />
+            <el-form-item label="基准版本号">
+              <el-input v-model="form.baseVersionCode" readonly placeholder="选子系统后带出" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -61,20 +63,20 @@
         <template #header><span style="font-size: 16px; font-weight: bold;">三、版本信息</span></template>
         <el-row :gutter="20">
           <el-col :span="8">
-            <el-form-item label="子系统" prop="sysName">
-              <el-select v-model="form.sysName" placeholder="请先选产品" filterable style="width:100%" @change="onSysNameChange">
-                <el-option v-for="s in sysNameOptions" :key="s.id" :label="s.sysName" :value="s.sysName" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="基准版本号">
-              <el-input v-model="form.baseVersionCode" readonly placeholder="选子系统后带出" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
             <el-form-item label="版本类型" prop="versionType">
               <dict-select v-model="form.versionType" dict-type="sys_version_type" placeholder="请选择版本类型" @change="onVersionTypeChange" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="出入库版本号">
+              <el-input v-model="form.outLibVersion" readonly placeholder="自动生成">
+                <template #append><el-tag type="success" size="small">自动</el-tag></template>
+              </el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="提交人员">
+              <el-input v-model="form.userName" readonly placeholder="提交人员" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -87,12 +89,12 @@
             </el-form-item>
           </el-col>
           <el-col :span="8">
-            <el-form-item label="出入库版本号">
-              <el-input v-model="form.outLibVersion" readonly placeholder="自动生成">
-                <template #append><el-tag type="success" size="small">自动</el-tag></template>
-              </el-input>
+            <el-form-item label="版本投产日期">
+              <el-input v-model="form.versionPDate" placeholder="选批次后自动带出" readonly />
             </el-form-item>
           </el-col>
+        </el-row>
+        <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="涉及TWS改造" prop="isInvolved">
               <el-radio-group v-model="form.isInvolved"><el-radio value="0">是</el-radio><el-radio value="1">否</el-radio></el-radio-group>

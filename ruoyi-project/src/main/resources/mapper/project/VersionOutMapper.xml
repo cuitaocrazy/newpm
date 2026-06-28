@@ -32,6 +32,7 @@
         <result property="createByName"    column="create_by_name"/>
         <result property="updateByName"    column="update_by_name"/>
         <result property="taskNos"         column="task_nos"/>
+        <result property="taskRefs"        column="task_refs"/>
         <result property="createBy"        column="create_by"/>
         <result property="createTime"      column="create_time"/>
         <result property="updateBy"        column="update_by"/>
@@ -47,6 +48,7 @@
         <id     property="id"         column="id"/>
         <result property="versionId"  column="version_id"/>
         <result property="taskId"     column="task_id"/>
+        <result property="legacyTaskId" column="legacy_task_id"/>
         <result property="taskNo"     column="task_no"/>
         <result property="taskName"   column="task_name"/>
         <result property="prjName"    column="prj_name"/>
@@ -57,13 +59,21 @@
         select v.id, v.production_year, v.batch_id, v.pro_batch_no, v.sub_version_code, v.product,
                v.manual_task_no, v.manual_task_name,
                v.version_type, v.sys_name, v.base_version_code, v.out_lib_version, v.version_code,
-               v.out_version, v.comm_name, COALESCE(u.nick_name, v.comm_name_display) as user_name, v.version_p_date, v.is_involved,
+               v.out_version, v.comm_name, COALESCE(v.comm_name_display, u.nick_name) as user_name, v.version_p_date, v.is_involved,
                v.db_update, v.usb_update, v.package_mode, v.version_status, v.version_brief, v.version_descr, v.remarks,
                v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark,
-               cu.nick_name as create_by_name, mu.nick_name as update_by_name,
-               COALESCE((select group_concat(distinct pt.software_demand_no separator ', ')
+               COALESCE(v.creator_name, cu.nick_name) as create_by_name,
+               COALESCE(v.modifier_name, mu.nick_name) as update_by_name,
+               COALESCE((select group_concat(distinct COALESCE(vt.task_no, pt.software_demand_no) separator ', ')
                 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
-                where vt.version_id = v.id), v.manual_task_no) as task_nos
+                where vt.version_id = v.id), v.manual_task_no) as task_nos,
+               (select group_concat(distinct concat(
+                  COALESCE(vt.task_no, pt.software_demand_no), '::',
+                  case when vt.task_id is not null then concat('L', vt.task_id)
+                       when vt.legacy_task_id is not null then concat('S', vt.legacy_task_id)
+                       else 'X' end) separator ';;')
+                from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
+                where vt.version_id = v.id and (vt.task_id is not null or vt.legacy_task_id is not null)) as task_refs
         from pm_version_out v
         left join sys_user u on v.comm_name = u.user_id
         left join sys_user cu on v.create_by COLLATE utf8mb4_unicode_ci = cu.user_name
@@ -89,7 +99,7 @@
             <if test="versionPDate != null and versionPDate != ''"> and v.version_p_date = #{versionPDate}</if>
             <if test="taskNo != null and taskNo != ''">
                 and exists (select 1 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
-                            where vt.version_id = v.id and pt.software_demand_no like concat('%', #{taskNo}, '%'))
+                            where vt.version_id = v.id and COALESCE(vt.task_no, pt.software_demand_no) like concat('%', #{taskNo}, '%'))
             </if>
         </where>
         order by v.create_time desc, v.legacy_id desc, v.id desc
@@ -98,6 +108,27 @@
     <select id="selectVersionOutById" parameterType="Long" resultMap="VersionOutDetailResult">
         <include refid="selectVersionOutVo"/>
         where v.del_flag = '0' and v.id = #{id}
+    </select>
+
+    <!-- 历史任务快照详情(按老任务id) -->
+    <select id="selectTaskSnapshot" parameterType="Long" resultType="java.util.LinkedHashMap">
+        select legacy_task_id as legacyTaskId, task_no as taskNo, new_task_id as newTaskId,
+               task_name as taskName, task_kind as taskKind, product, subtask_team as subtaskTeam,
+               task_holders_name as taskHoldersName, subtask_holders_name as subtaskHoldersName, saler_name as salerName,
+               inside_subtask_no as insideSubtaskNo, lx_no as lxNo, batch_no as batchNo, production_year as productionYear,
+               schedule_status as scheduleStatus, task_manday as taskManday, manday_amount as mandayAmount, ys_amount as ysAmount,
+               bank_demand_no as bankDemandNo, demand_name as demandName, demand_contacts as demandContacts,
+               contacts_tel as contactsTel, contacts_mobile as contactsMobile, parent_project_name as parentProjectName,
+               internal_closure_date as internalClosureDate, functional_test_date as functionalTestDate,
+               production_version_date as productionVersionDate, actual_production_date as actualProductionDate,
+               product_report_status as productReportStatus, product_report_date as productReportDate,
+               function_description as functionDescription, task_plan as taskPlan, remarks,
+               check_status as checkStatus, reviewer_name as reviewerName, check_date as checkDate,
+               creator_name as creatorName, modifier_name as modifierName,
+               legacy_creation_date as legacyCreationDate, legacy_modification_date as legacyModificationDate
+        from pm_task_snapshot
+        where legacy_task_id = #{legacyTaskId} and del_flag = '0'
+        limit 1
     </select>
 
     <!-- ========== 非批次专用（manual_input='1'，任务手填） ========== -->
@@ -161,12 +192,15 @@
     </update>
 
     <select id="selectTaskListByVersionId" parameterType="Long" resultMap="VersionOutTaskResult">
-        select t.id, t.version_id, t.task_id,
-               pt.software_demand_no as task_no, pt.task_name, pt.demand_name,
-               pj.project_name as prj_name
+        select t.id, t.version_id, t.task_id, t.legacy_task_id,
+               COALESCE(t.task_no, pt.software_demand_no) as task_no,
+               COALESCE(pt.task_name, ts.task_name) as task_name,
+               COALESCE(pt.demand_name, ts.demand_name) as demand_name,
+               COALESCE(pj.project_name, ts.parent_project_name) as prj_name
         from pm_version_out_task t
         left join pm_task pt on t.task_id = pt.task_id
         left join pm_project pj on pt.project_id = pj.project_id
+        left join pm_task_snapshot ts on t.legacy_task_id = ts.legacy_task_id
         where t.version_id = #{versionId}
     </select>
 

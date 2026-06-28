@@ -337,6 +337,20 @@ export const constantRoutes = [
       }
     ]
   },
+  {
+    // 历史任务快照详情（点迁移老任务号进入；legacyId 走 query，因任务号含字母横杠不便做路径占位）
+    path: '/project/versionOut/taskSnapshot',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/project/versionOut/taskSnapshot.vue'),
+        name: 'VersionOutTaskSnapshot',
+        meta: { title: '历史任务快照', activeMenu: '/storageVersion/versionOut' }
+      }
+    ]
+  },
   // 非批次版本管理：新增 / 详情 / 编辑（父菜单 /storageVersion/versionOutManual）
   {
     path: '/project/versionOutManual/add',

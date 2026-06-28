@@ -39,9 +39,37 @@
         </el-row>
       </el-card>
 
-      <!-- 二、版本信息 -->
+      <!-- 二、关联任务 -->
       <el-card shadow="hover" style="margin-bottom: 15px;">
-        <template #header><span style="font-size: 16px; font-weight: bold;">二、版本信息</span></template>
+        <template #header>
+          <span style="font-size: 16px; font-weight: bold;">二、关联任务</span>
+          <el-button type="primary" link style="float:right" @click="addTaskRow" :disabled="!taskOptionsReady">+ 添加任务</el-button>
+        </template>
+        <el-alert v-if="!taskOptionsReady" type="info" :closable="false" show-icon
+          title="请先选择 投产年份 + 投产批次 + 产品，任务号下拉才有数据" style="margin-bottom: 10px;" />
+        <el-table :data="form.taskList" border size="small">
+          <el-table-column label="软件中心任务号" min-width="200">
+            <template #default="{ row }">
+              <el-select v-model="row.taskId" placeholder="请选择任务号" filterable style="width:100%" @change="onTaskSelect(row)">
+                <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskNo" :value="t.taskId"
+                  :disabled="isTaskUsed(t.taskId, row)" />
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="项目名称" prop="prjName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="需求名称" prop="demandName" min-width="160" show-overflow-tooltip />
+          <el-table-column label="操作" width="80">
+            <template #default="{ $index }">
+              <el-button type="danger" link @click="removeTaskRow($index)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <!-- 三、版本信息 -->
+      <el-card shadow="hover" style="margin-bottom: 15px;">
+        <template #header><span style="font-size: 16px; font-weight: bold;">三、版本信息</span></template>
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="子系统" prop="sysName">
@@ -55,7 +83,14 @@
               <el-input v-model="form.baseVersionCode" readonly placeholder="选子系统后带出" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+        </el-row>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="版本简介" prop="versionBrief">
+              <el-input v-model="form.versionBrief" placeholder="请输入版本简介" maxlength="512" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="版本类型" prop="versionType">
               <dict-select v-model="form.versionType" dict-type="sys_version_type" placeholder="请选择版本类型" @change="onVersionTypeChange" />
             </el-form-item>
@@ -106,13 +141,6 @@
         </el-row>
         <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item label="版本简介" prop="versionBrief">
-              <el-input v-model="form.versionBrief" placeholder="请输入版本简介" maxlength="512" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="24">
             <el-form-item label="版本说明" prop="versionDescr">
               <el-input v-model="form.versionDescr" type="textarea" :rows="2" placeholder="请输入版本说明" maxlength="512" />
             </el-form-item>
@@ -125,34 +153,6 @@
             </el-form-item>
           </el-col>
         </el-row>
-      </el-card>
-
-      <!-- 三、关联任务 -->
-      <el-card shadow="hover" style="margin-bottom: 15px;">
-        <template #header>
-          <span style="font-size: 16px; font-weight: bold;">三、关联任务</span>
-          <el-button type="primary" link style="float:right" @click="addTaskRow" :disabled="!taskOptionsReady">+ 添加任务</el-button>
-        </template>
-        <el-alert v-if="!taskOptionsReady" type="info" :closable="false" show-icon
-          title="请先选择 投产年份 + 投产批次 + 产品，任务号下拉才有数据" style="margin-bottom: 10px;" />
-        <el-table :data="form.taskList" border size="small">
-          <el-table-column label="软件中心任务号" min-width="200">
-            <template #default="{ row }">
-              <el-select v-model="row.taskId" placeholder="请选择任务号" filterable style="width:100%" @change="onTaskSelect(row)">
-                <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskNo" :value="t.taskId"
-                  :disabled="isTaskUsed(t.taskId, row)" />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
-          <el-table-column label="项目名称" prop="prjName" min-width="160" show-overflow-tooltip />
-          <el-table-column label="需求名称" prop="demandName" min-width="160" show-overflow-tooltip />
-          <el-table-column label="操作" width="80">
-            <template #default="{ $index }">
-              <el-button type="danger" link @click="removeTaskRow($index)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
       </el-card>
 
       <div style="text-align:center; margin: 20px 0;">

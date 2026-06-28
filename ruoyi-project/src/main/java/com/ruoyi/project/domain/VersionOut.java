@@ -140,6 +140,9 @@ public class VersionOut extends BaseEntity
     /** 软件中心任务号(查询过滤用) */
     private String taskNo;
 
+    /** 关联任务跳转配对串(软件需求号::task_id，多个用 ;; 分隔；仅子表关联到 pm_task 的记录有值，迁移历史快照为空) */
+    private String taskRefs;
+
     /** 关联任务列表(主从) */
     private List<VersionOutTask> taskList;
 
@@ -201,6 +204,8 @@ public class VersionOut extends BaseEntity
     public String getUpdateByName() { return updateByName; }
     public void setTaskNos(String taskNos) { this.taskNos = taskNos; }
     public String getTaskNos() { return taskNos; }
+    public void setTaskRefs(String taskRefs) { this.taskRefs = taskRefs; }
+    public String getTaskRefs() { return taskRefs; }
     public void setTaskNo(String taskNo) { this.taskNo = taskNo; }
     public String getTaskNo() { return taskNo; }
     public void setTaskList(List<VersionOutTask> taskList) { this.taskList = taskList; }

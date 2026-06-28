@@ -1,59 +1,59 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="96px">
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="120px">
       <el-form-item label="投产年份" prop="productionYear">
-        <dict-select v-model="queryParams.productionYear" dict-type="sys_ndgl" placeholder="全部" clearable style="width:140px" @change="onQueryYearChange" />
+        <dict-select v-model="queryParams.productionYear" dict-type="sys_ndgl" placeholder="全部" clearable style="width: 240px" @change="onQueryYearChange" />
       </el-form-item>
       <el-form-item label="投产批次号" prop="batchId">
-        <el-select v-model="queryParams.batchId" placeholder="全部" clearable filterable style="width:140px">
+        <el-select v-model="queryParams.batchId" placeholder="全部" clearable filterable style="width: 240px">
           <el-option v-for="b in queryBatchOptions" :key="b.batchId" :label="b.batchNo" :value="b.batchId" />
         </el-select>
       </el-form-item>
       <el-form-item label="二级产品" prop="product">
-        <dict-select v-model="queryParams.product" dict-type="sys_product" placeholder="全部" clearable style="width:140px" />
+        <dict-select v-model="queryParams.product" dict-type="sys_product" placeholder="全部" clearable style="width: 240px" />
       </el-form-item>
       <el-form-item label="软件中心任务号" prop="taskCode">
-        <el-input v-model="queryParams.taskCode" placeholder="任务号" clearable style="width:140px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.taskCode" placeholder="任务号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="任务名称" prop="taskName">
-        <el-input v-model="queryParams.taskName" placeholder="任务名称" clearable style="width:140px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.taskName" placeholder="任务名称" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="问题单编号" prop="problemNo">
-        <el-input v-model="queryParams.problemNo" placeholder="编号" clearable style="width:140px" @keyup.enter="handleQuery" />
+        <el-input v-model="queryParams.problemNo" placeholder="编号" clearable style="width: 240px" @keyup.enter="handleQuery" />
       </el-form-item>
       <template v-if="moreOpen">
         <el-form-item label="问题单级别" prop="problemLevel">
-          <dict-select v-model="queryParams.problemLevel" dict-type="sys_problem_level" placeholder="全部" clearable style="width:140px" />
+          <dict-select v-model="queryParams.problemLevel" dict-type="sys_problem_level" placeholder="全部" clearable style="width: 240px" />
         </el-form-item>
         <el-form-item label="当前状态" prop="currentStatus">
-          <dict-select v-model="queryParams.currentStatus" dict-type="sys_problem_state" placeholder="全部" clearable style="width:140px" />
+          <dict-select v-model="queryParams.currentStatus" dict-type="sys_problem_state" placeholder="全部" clearable style="width: 240px" />
         </el-form-item>
         <el-form-item label="项目组(部门)" prop="deptId">
           <project-dept-select v-model="queryParams.deptId" placeholder="全部" filterable />
         </el-form-item>
         <el-form-item label="是否缺陷" prop="whetherDefect">
-          <el-select v-model="queryParams.whetherDefect" placeholder="全部" clearable style="width:140px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
+          <el-select v-model="queryParams.whetherDefect" placeholder="全部" clearable style="width: 240px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
         </el-form-item>
         <el-form-item label="是否超时" prop="whetherOvertime">
-          <el-select v-model="queryParams.whetherOvertime" placeholder="全部" clearable style="width:140px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
+          <el-select v-model="queryParams.whetherOvertime" placeholder="全部" clearable style="width: 240px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
         </el-form-item>
         <el-form-item label="是否问题重现" prop="whetherProRecurrence">
-          <el-select v-model="queryParams.whetherProRecurrence" placeholder="全部" clearable style="width:140px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
+          <el-select v-model="queryParams.whetherProRecurrence" placeholder="全部" clearable style="width: 240px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
         </el-form-item>
         <el-form-item label="是否须关注" prop="whetherAttRequired">
-          <el-select v-model="queryParams.whetherAttRequired" placeholder="全部" clearable style="width:140px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
+          <el-select v-model="queryParams.whetherAttRequired" placeholder="全部" clearable style="width: 240px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
         </el-form-item>
         <el-form-item label="解决超一天" prop="solutionTimeOverOneDay">
-          <el-select v-model="queryParams.solutionTimeOverOneDay" placeholder="全部" clearable style="width:140px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
+          <el-select v-model="queryParams.solutionTimeOverOneDay" placeholder="全部" clearable style="width: 240px"><el-option label="是" value="1" /><el-option label="否" value="0" /></el-select>
         </el-form-item>
         <el-form-item label="创建人员" prop="creatorName">
-          <el-input v-model="queryParams.creatorName" placeholder="创建人" clearable style="width:140px" @keyup.enter="handleQuery" />
+          <el-input v-model="queryParams.creatorName" placeholder="创建人" clearable style="width: 240px" @keyup.enter="handleQuery" />
         </el-form-item>
         <el-form-item label="提交日期" prop="submitDateStart">
-          <el-date-picker v-model="submitDateRange" type="daterange" value-format="YYYY-MM-DD" range-separator="~" start-placeholder="开始" end-placeholder="结束" style="width:230px" />
+          <el-date-picker v-model="submitDateRange" type="daterange" value-format="YYYY-MM-DD" range-separator="~" start-placeholder="开始" end-placeholder="结束" style="width: 240px" />
         </el-form-item>
         <el-form-item label="创建日期" prop="createDateStart">
-          <el-date-picker v-model="createDateRange" type="daterange" value-format="YYYY-MM-DD" range-separator="~" start-placeholder="开始" end-placeholder="结束" style="width:230px" />
+          <el-date-picker v-model="createDateRange" type="daterange" value-format="YYYY-MM-DD" range-separator="~" start-placeholder="开始" end-placeholder="结束" style="width: 240px" />
         </el-form-item>
       </template>
       <el-form-item>

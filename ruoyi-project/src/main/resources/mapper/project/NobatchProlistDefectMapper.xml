@@ -41,13 +41,15 @@
         <result property="updateByName"           column="update_by_name"           />
     </resultMap>
 
-    <!-- 任务字段读本表(无 JOIN pm_task)；批次/部门/用户 JOIN 加 COLLATE -->
+    <!-- 任务字段读本表;本表空时兜底取 pm_task_snapshot(按软件中心任务号反查老任务详情,旧非批次问题单源端这些列大面积空) -->
     <sql id="selectNobatchProlistDefectVo">
-        select nd.problem_id, nd.task_no, nd.task_name, nd.product,
-               DATE_FORMAT(nd.internal_closure_date, '%Y-%m-%d')   as internal_closure_date,
-               DATE_FORMAT(nd.functional_test_date, '%Y-%m-%d')    as functional_test_date,
-               DATE_FORMAT(nd.production_version_date, '%Y-%m-%d')  as production_version_date,
-               nd.schedule_status,
+        select nd.problem_id, nd.task_no,
+               COALESCE(NULLIF(nd.task_name,''), ts.task_name) as task_name,
+               COALESCE(NULLIF(nd.product,''), ts.product) as product,
+               COALESCE(DATE_FORMAT(nd.internal_closure_date, '%Y-%m-%d'), DATE_FORMAT(ts.internal_closure_date, '%Y-%m-%d'))   as internal_closure_date,
+               COALESCE(DATE_FORMAT(nd.functional_test_date, '%Y-%m-%d'), DATE_FORMAT(ts.functional_test_date, '%Y-%m-%d'))    as functional_test_date,
+               COALESCE(DATE_FORMAT(nd.production_version_date, '%Y-%m-%d'), DATE_FORMAT(ts.production_version_date, '%Y-%m-%d'))  as production_version_date,
+               COALESCE(NULLIF(nd.schedule_status,''), ts.schedule_status) as schedule_status,
                nd.problem_no, nd.problem_level, nd.current_status,
                nd.submit_date, nd.settle_date, nd.verify_date,
                nd.whether_defect, nd.whether_overtime, nd.whether_pro_recurrence,
@@ -64,6 +66,10 @@
         left join sys_dept d on nd.dept_id = d.dept_id
         left join sys_user uc on nd.create_by COLLATE utf8mb4_unicode_ci = uc.user_name
         left join sys_user uu on nd.update_by COLLATE utf8mb4_unicode_ci = uu.user_name
+        left join (select task_no, min(snapshot_id) sid from pm_task_snapshot
+                   where task_no is not null and task_no != '' group by task_no) tsq
+               on nd.task_no COLLATE utf8mb4_unicode_ci = tsq.task_no
+        left join pm_task_snapshot ts on ts.snapshot_id = tsq.sid
     </sql>
 
     <select id="selectNobatchProlistDefectList" parameterType="com.ruoyi.project.domain.NobatchProlistDefect" resultMap="NobatchProlistDefectResult">

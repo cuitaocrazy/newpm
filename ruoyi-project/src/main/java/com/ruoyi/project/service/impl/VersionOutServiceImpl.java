@@ -47,6 +47,12 @@ public class VersionOutServiceImpl implements IVersionOutService
     }
 
     @Override
+    public Map<String, Object> selectTaskSnapshot(Long legacyTaskId)
+    {
+        return versionOutMapper.selectTaskSnapshot(legacyTaskId);
+    }
+
+    @Override
     @Transactional
     public int insertVersionOut(VersionOut versionOut)
     {

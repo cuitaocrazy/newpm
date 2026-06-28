@@ -20,6 +20,9 @@ public interface VersionOutMapper
     /** 查询批次版本详情（含 taskList） */
     public VersionOut selectVersionOutById(Long id);
 
+    /** 按老任务id查历史任务快照详情（迁移老任务在新pm_task无对应时点任务号看这里） */
+    public Map<String, Object> selectTaskSnapshot(Long legacyTaskId);
+
     /** 新增批次版本主表 */
     public int insertVersionOut(VersionOut versionOut);
 
