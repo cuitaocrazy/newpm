@@ -64,11 +64,11 @@
                v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark,
                COALESCE(v.creator_name, cu.nick_name) as create_by_name,
                COALESCE(v.modifier_name, mu.nick_name) as update_by_name,
-               COALESCE((select group_concat(distinct concat('[', COALESCE(vt.task_no, pt.software_demand_no), ']-[', v.product, ']') separator ', ')
+               COALESCE((select group_concat(distinct concat('[', COALESCE(vt.task_no, pt.task_code), ']-[', v.product, ']') separator ', ')
                 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
                 where vt.version_id = v.id), v.manual_task_no) as task_nos,
                (select group_concat(distinct concat(
-                  '[', COALESCE(vt.task_no, pt.software_demand_no), ']-[', v.product, ']', '::',
+                  '[', COALESCE(vt.task_no, pt.task_code), ']-[', v.product, ']', '::',
                   case when vt.task_id is not null then concat('L', vt.task_id)
                        when vt.legacy_task_id is not null then concat('S', vt.legacy_task_id)
                        else 'X' end) separator ';;')
@@ -99,7 +99,7 @@
             <if test="versionPDate != null and versionPDate != ''"> and v.version_p_date = #{versionPDate}</if>
             <if test="taskNo != null and taskNo != ''">
                 and exists (select 1 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
-                            where vt.version_id = v.id and COALESCE(vt.task_no, pt.software_demand_no) like concat('%', #{taskNo}, '%'))
+                            where vt.version_id = v.id and COALESCE(vt.task_no, pt.task_code) like concat('%', #{taskNo}, '%'))
             </if>
         </where>
         order by v.create_time desc, v.legacy_id desc, v.id desc
@@ -193,7 +193,7 @@
 
     <select id="selectTaskListByVersionId" parameterType="Long" resultMap="VersionOutTaskResult">
         select t.id, t.version_id, t.task_id, t.legacy_task_id,
-               concat('[', COALESCE(t.task_no, pt.software_demand_no), ']-[', v.product, ']') as task_no,
+               concat('[', COALESCE(t.task_no, pt.task_code), ']-[', v.product, ']') as task_no,
                COALESCE(pt.task_name, ts.task_name) as task_name,
                COALESCE(pt.demand_name, ts.demand_name) as demand_name,
                COALESCE(pj.project_name, ts.parent_project_name) as prj_name
@@ -319,23 +319,23 @@
     </select>
 
     <select id="selectTaskInfoByDemandNo" parameterType="String" resultMap="VersionOutTaskResult">
-        select pt.task_id, pt.software_demand_no as task_no, pt.task_name, pt.demand_name,
+        select pt.task_id, pt.task_code as task_no, pt.task_name, pt.demand_name,
                pj.project_name as prj_name
         from pm_task pt
         left join pm_project pj on pt.project_id = pj.project_id
-        where pt.software_demand_no = #{softwareDemandNo}
+        where pt.task_code = #{softwareDemandNo}
         limit 1
     </select>
 
     <select id="selectTaskOptions" resultMap="VersionOutTaskResult">
-        select t.task_id, t.software_demand_no as task_no, t.task_name, t.demand_name,
+        select t.task_id, concat('[', t.task_code, ']-[', t.product, ']') as task_no, t.task_name, t.demand_name,
                p.project_name as prj_name
         from pm_task t
         left join pm_project p on t.project_id = p.project_id
         where t.production_year = #{productionYear}
           and t.batch_id = #{batchId}
           and t.product = #{product}
-        order by t.software_demand_no desc
+        order by t.task_code desc
     </select>
 
     <select id="selectOutVersionOptions" resultType="java.lang.String">
