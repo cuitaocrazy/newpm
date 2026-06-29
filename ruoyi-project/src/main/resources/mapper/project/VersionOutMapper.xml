@@ -64,11 +64,11 @@
                v.manual_input, v.create_by, v.create_time, v.update_by, v.update_time, v.remark,
                COALESCE(v.creator_name, cu.nick_name) as create_by_name,
                COALESCE(v.modifier_name, mu.nick_name) as update_by_name,
-               COALESCE((select group_concat(distinct COALESCE(vt.task_no, pt.software_demand_no) separator ', ')
+               COALESCE((select group_concat(distinct concat('[', COALESCE(vt.task_no, pt.software_demand_no), ']-[', v.product, ']') separator ', ')
                 from pm_version_out_task vt left join pm_task pt on vt.task_id = pt.task_id
                 where vt.version_id = v.id), v.manual_task_no) as task_nos,
                (select group_concat(distinct concat(
-                  COALESCE(vt.task_no, pt.software_demand_no), '::',
+                  '[', COALESCE(vt.task_no, pt.software_demand_no), ']-[', v.product, ']', '::',
                   case when vt.task_id is not null then concat('L', vt.task_id)
                        when vt.legacy_task_id is not null then concat('S', vt.legacy_task_id)
                        else 'X' end) separator ';;')
@@ -193,11 +193,12 @@
 
     <select id="selectTaskListByVersionId" parameterType="Long" resultMap="VersionOutTaskResult">
         select t.id, t.version_id, t.task_id, t.legacy_task_id,
-               COALESCE(t.task_no, pt.software_demand_no) as task_no,
+               concat('[', COALESCE(t.task_no, pt.software_demand_no), ']-[', v.product, ']') as task_no,
                COALESCE(pt.task_name, ts.task_name) as task_name,
                COALESCE(pt.demand_name, ts.demand_name) as demand_name,
                COALESCE(pj.project_name, ts.parent_project_name) as prj_name
         from pm_version_out_task t
+        left join pm_version_out v on t.version_id = v.id
         left join pm_task pt on t.task_id = pt.task_id
         left join pm_project pj on pt.project_id = pj.project_id
         left join pm_task_snapshot ts on t.legacy_task_id = ts.legacy_task_id

@@ -95,6 +95,18 @@ for _r in ora_extract('T_B_TASK', ['TASK_ID', 'CENTER_TASK_NO']):
     _k = str(_r['TASK_ID']).strip().split('.')[0]
     if _k:
         CENTER_BY_TASKID[_k] = _r['CENTER_TASK_NO']
+DEMAND_NAME_BY_ID = {}                                           # 老需求id -> 需求名称(取需求主表 T_B_DEMAND.DEMAND_NAME;治本: T_B_TASK 自带 DEMAND_NAME 稀疏不全)
+for _r in ora_extract('T_B_DEMAND', ['DEMAND_ID', 'DEMAND_NAME']):
+    _dk = str(_r['DEMAND_ID']).strip().split('.')[0] if _r['DEMAND_ID'] is not None else None
+    if _dk:
+        DEMAND_NAME_BY_ID[_dk] = _r['DEMAND_NAME']
+def demand_name_of(demand_id, fallback):
+    """需求名称优先取需求主表 T_B_DEMAND(按 demand_id), 兜底任务表自带的稀疏 DEMAND_NAME"""
+    if demand_id is not None:
+        v = DEMAND_NAME_BY_ID.get(str(demand_id).strip().split('.')[0])
+        if v:
+            return v
+    return fallback
 SCHED_MAP = {   # 老排期状态中文 -> 新 sys_pqzt 字典值(已作废无对应,保留原文,前端兜底显示)
     '已排期待投产': '1', '已投产': '2',
     '未排期已征求意见': '3', '未排期-未征求排期意见': '4', '未排期未征求意见': '4',
@@ -129,7 +141,7 @@ cur.execute("SELECT batch_no, MIN(batch_id) FROM pm_production_batch WHERE batch
 NEW_BATCH = {k: v for k, v in cur.fetchall()}
 USER_NAME_BY_ID = load_map('T_N_SHIRO_USER', 'USER_ID', 'USER_NAME')  # 老用户id->姓名
 LOGIN_BY_ID = load_map('T_N_SHIRO_USER', 'USER_ID', 'LOGIN_NAME')     # 老用户id->登录名
-print(f"[init] PRODUCT={len(PRODUCT)} YEAR={len(YEAR)} BATCH_NO_BY_ID={len(BATCH_NO_BY_ID)} 用户={len(USER_NAME_BY_ID)} 新任务={len(NEW_TASK)} 新批次={len(NEW_BATCH)}", flush=True)
+print(f"[init] PRODUCT={len(PRODUCT)} YEAR={len(YEAR)} BATCH_NO_BY_ID={len(BATCH_NO_BY_ID)} 需求={len(DEMAND_NAME_BY_ID)} 用户={len(USER_NAME_BY_ID)} 新任务={len(NEW_TASK)} 新批次={len(NEW_BATCH)}", flush=True)
 
 def year_of(year_id):
     return YEAR.get(year_id)  # '2026' / '待定' etc.
@@ -245,7 +257,7 @@ def etl_task_snapshot():
                      r['RRODUCT_REPORT_STATUS'], r['RRODUCT_REPORT_TRACKING'], r['RRODUCT_REPORT_URL'],
                      parse_date(r['RRODUCT_REPORT_DATE']), r['FUNCTION_DESC'], r['PLAN'], parse_date(r['TEST_SUB_B_DATE']),
                      parse_date(r['TEST_VERSION_DATE']), parse_date(r['PRO_VERSION_DATE']), parse_date(r['ACTUAL_TC_DATE']),
-                     r['DEMAND_ID'], r['DEMAND_NO'], r['DEMAND_NAME'], r['DEMAND_CONTACTS'], r['CONTACTS_TEL'],
+                     r['DEMAND_ID'], r['DEMAND_NO'], demand_name_of(r['DEMAND_ID'], r['DEMAND_NAME']), r['DEMAND_CONTACTS'], r['CONTACTS_TEL'],
                      r['CONTACTS_MOBILE'], r['PRJ_NAME'], r['PRJ_ID'], year_of(r['YEAR_ID']), r['CHECK_STATUS'],
                      uname(r['REVIEWER']), parse_dt(r['CHECK_DATE']), parse_dt(r['PRINT_DATE']), r['REMARKS'],
                      uname_login(r['CREATOR']), uname_login(r['MODIFIER']), parse_dt(r['CREATION_DATE']),
