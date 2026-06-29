@@ -426,7 +426,24 @@ def etl_attachment():
     ok, fail, sfx = insert_rows('pm_attachment', cols, rows2, '④附件')
     report.append(('④附件','T_B_PROLIST_FILE', len(src), ok, matched, '-', len(src)-len(rows2)+fail, sfx))
 
+def etl_sys_name():
+    """迁老 T_C_SYS_NAME(子系统配置) -> pm_sys_name(非批次/批次新增页"子系统"下拉数据源).
+    产品名经 P_ID 查 PRODUCT(T_C_PRODUCT.ID->名). create_by=MARK 幂等(先删后插)."""
+    src = ora_extract('T_C_SYS_NAME', ['SYS_NAME', 'BASE_VERSIONCODE', 'P_ID'])
+    cur.execute(f"DELETE FROM pm_sys_name WHERE create_by='{MARK}'")
+    prod_by_pid = {str(k).strip().split('.')[0]: v for k, v in PRODUCT.items()}  # 归一化 P_ID 键
+    cols = ['sys_name', 'base_version_code', 'p_id', 'product', 'del_flag', 'create_by']
+    rows = []
+    for r in src:
+        pid = r['P_ID']
+        pid_s = str(pid).strip().split('.')[0] if pid not in (None, '') else None
+        product = prod_by_pid.get(pid_s) if pid_s else None
+        rows.append([r['SYS_NAME'], r['BASE_VERSIONCODE'], pid_s, product, '0', MARK])
+    ok, fail, sfx = insert_rows('pm_sys_name', cols, rows, '子系统配置')
+    report.append(('子系统配置', 'T_C_SYS_NAME', len(src), ok, '-', '-', fail, sfx))
+
 if __name__ == '__main__':
+    etl_sys_name()
     etl_old_version_out()
     etl_task_snapshot()
     etl_version_out()
