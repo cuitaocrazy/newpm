@@ -14,9 +14,10 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="投产批次号" prop="batchId">
-              <el-select v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
+              <el-select v-if="!isMigrated" v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
                 <el-option v-for="b in batchOptions" :key="b.batchId" :label="b.batchNo" :value="b.batchId" />
               </el-select>
+              <el-input v-else :model-value="form.batchNo" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -28,7 +29,8 @@
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="项目组(部门)" prop="deptId">
-              <project-dept-select v-model="form.deptId" placeholder="请选择项目组" filterable />
+              <project-dept-select v-if="!isMigrated" v-model="form.deptId" placeholder="请选择项目组" filterable />
+              <el-input v-else :model-value="form.deptName" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -185,6 +187,9 @@ const router = useRouter()
 const formRef = ref()
 const batchOptions = ref([])
 const isEdit = computed(() => !!route.query.problemId)
+// 迁移记录: 编辑时 FK(批次/部门)为空, 仅有快照文本(batchNo/deptName)。newpm 无对应主数据无法挂FK,
+// 故这2字段改快照只读回显, 校验放行可保存(软件中心任务号是纯文本不受影响)。
+const isMigrated = computed(() => isEdit.value && !form.value.batchId && !form.value.deptId)
 
 const form = ref({
   problemId: null,
@@ -199,8 +204,8 @@ const form = ref({
 
 const rules = ref({
   productionYear: [{ required: true, message: '投产年份不能为空', trigger: 'change' }],
-  batchId:        [{ required: true, message: '投产批次不能为空', trigger: 'change' }],
-  deptId:         [{ required: true, message: '项目组不能为空', trigger: 'change' }],
+  batchId:        [{ validator: (r, v, cb) => (v || form.value.batchNo) ? cb() : cb(new Error('投产批次不能为空')), trigger: 'change' }],
+  deptId:         [{ validator: (r, v, cb) => (v || form.value.deptName) ? cb() : cb(new Error('项目组不能为空')), trigger: 'change' }],
   taskNo:         [{ required: true, message: '软件中心任务号不能为空', trigger: 'blur' }],
   problemNo:      [{ required: true, message: '问题单编号不能为空', trigger: 'blur' }],
   problemLevel:   [{ required: true, message: '问题单级别不能为空', trigger: 'change' }],
