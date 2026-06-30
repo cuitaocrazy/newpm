@@ -14,23 +14,26 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="投产批次号" prop="batchId">
-              <el-select v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
+              <el-select v-if="!isMigrated" v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
                 <el-option v-for="b in batchOptions" :key="b.batchId" :label="b.batchNo" :value="b.batchId" />
               </el-select>
+              <el-input v-else :model-value="form.batchNo" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="项目组(部门)" prop="deptId">
-              <project-dept-select v-model="form.deptId" placeholder="请选择项目组" filterable @change="onDeptChange" />
+              <project-dept-select v-if="!isMigrated" v-model="form.deptId" placeholder="请选择项目组" filterable @change="onDeptChange" />
+              <el-input v-else :model-value="form.deptName" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row :gutter="20">
           <el-col :span="8">
             <el-form-item label="软件中心任务号" prop="taskId">
-              <el-select v-model="form.taskId" placeholder="请先选年份+批次" filterable style="width:100%" @change="onTaskSelect">
+              <el-select v-if="!isMigrated" v-model="form.taskId" placeholder="请先选年份+批次" filterable style="width:100%" @change="onTaskSelect">
                 <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskCode" :value="t.taskId" />
               </el-select>
+              <el-input v-else :model-value="form.taskCode" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -160,6 +163,9 @@ const batchOptions = ref([])
 const taskOptions = ref([])
 
 const isEdit = computed(() => !!route.query.problemId)
+// 迁移记录: 编辑时 FK(批次/部门/任务) 全为空, 仅有快照文本(batchNo/deptName/taskCode)。
+// newpm 无对应主数据, 无法挂 FK/选下拉, 故这3字段改为快照只读回显, 校验放行可保存。
+const isMigrated = computed(() => isEdit.value && !form.value.batchId && !form.value.deptId && !form.value.taskId)
 
 const form = ref({
   problemId: null,
@@ -173,9 +179,9 @@ const form = ref({
 
 const rules = ref({
   productionYear: [{ required: true, message: '投产年份不能为空', trigger: 'change' }],
-  batchId:        [{ required: true, message: '投产批次不能为空', trigger: 'change' }],
-  deptId:         [{ required: true, message: '项目组不能为空', trigger: 'change' }],
-  taskId:         [{ required: true, message: '软件中心任务号不能为空', trigger: 'change' }],
+  batchId:        [{ validator: (r, v, cb) => (v || form.value.batchNo) ? cb() : cb(new Error('投产批次不能为空')), trigger: 'change' }],
+  deptId:         [{ validator: (r, v, cb) => (v || form.value.deptName) ? cb() : cb(new Error('项目组不能为空')), trigger: 'change' }],
+  taskId:         [{ validator: (r, v, cb) => (v || form.value.taskCode) ? cb() : cb(new Error('软件中心任务号不能为空')), trigger: 'change' }],
   problemNo:      [{ required: true, message: '问题单编号不能为空', trigger: 'blur' }],
   problemLevel:   [{ required: true, message: '问题单级别不能为空', trigger: 'change' }],
   currentStatus:  [{ required: true, message: '当前状态不能为空', trigger: 'change' }],
