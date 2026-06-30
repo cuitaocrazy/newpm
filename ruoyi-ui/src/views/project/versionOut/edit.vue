@@ -14,9 +14,10 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="投产批次" prop="batchId">
-              <el-select v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
+              <el-select v-if="!isMigrated" v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
                 <el-option v-for="b in batchOptions" :key="b.batchId" :label="b.batchNo" :value="b.batchId" />
               </el-select>
+              <el-input v-else :model-value="form.proBatchNo" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -50,10 +51,11 @@
         <el-table :data="form.taskList" border size="small">
           <el-table-column label="软件中心任务号" min-width="200">
             <template #default="{ row }">
-              <el-select v-model="row.taskId" placeholder="请选择任务号" filterable style="width:100%" @change="onTaskSelect(row)">
+              <el-select v-if="!isRowMigrated(row)" v-model="row.taskId" placeholder="请选择任务号" filterable style="width:100%" @change="onTaskSelect(row)">
                 <el-option v-for="t in taskOptions" :key="t.taskId" :label="t.taskNo" :value="t.taskId"
                   :disabled="isTaskUsed(t.taskId, row)" />
               </el-select>
+              <el-input v-else :model-value="row.taskNo" readonly placeholder="—（迁移数据）" />
             </template>
           </el-table-column>
           <el-table-column label="任务名称" prop="taskName" min-width="160" show-overflow-tooltip />
@@ -188,7 +190,7 @@ const form = ref({ taskList: [] })
 
 const rules = ref({
   productionYear: [{ required: true, message: '投产年份不能为空', trigger: 'change' }],
-  batchId:        [{ required: true, message: '投产批次不能为空', trigger: 'change' }],
+  batchId:        [{ validator: (r, v, cb) => (v || form.value.proBatchNo) ? cb() : cb(new Error('投产批次不能为空')), trigger: 'change' }],
   product:        [{ required: true, message: '产品不能为空', trigger: 'change' }],
   sysName:        [{ required: true, message: '子系统不能为空', trigger: 'change' }],
   versionType:    [{ required: true, message: '版本类型不能为空', trigger: 'change' }],
@@ -202,6 +204,10 @@ const rules = ref({
 
 const isUpgrade = computed(() => form.value.versionType === '5' || form.value.versionType === '6')
 const taskOptionsReady = computed(() => !!(form.value.productionYear && form.value.batchId && form.value.product))
+// 迁移记录: batch_id 空仅有快照 proBatchNo → 投产批次改快照只读回显
+const isMigrated = computed(() => !form.value.batchId && !!form.value.proBatchNo)
+// 迁移任务行: task_id 空仅有快照 taskNo([任务号]-[产品]) → 软件中心任务号改快照只读回显
+function isRowMigrated(row) { return !row.taskId && !!row.taskNo }
 
 async function onYearChange(year) {
   form.value.batchId = null; form.value.versionPDate = null; form.value.proBatchNo = null
@@ -296,6 +302,11 @@ function isTaskUsed(taskId, currentRow) {
 }
 
 function submitForm() {
+  // 迁移批次版本的关联任务为历史快照(task_id 空),保存会按 task_id 重插而丢失快照,故暂禁止保存
+  if (isMigrated.value || form.value.taskList.some(r => isRowMigrated(r))) {
+    proxy.$modal.msgWarning('迁移批次版本含历史任务快照，暂仅支持查看，不支持在此编辑保存')
+    return
+  }
   formRef.value.validate(valid => {
     if (!valid) return
     updateVersionOut(form.value).then(() => {

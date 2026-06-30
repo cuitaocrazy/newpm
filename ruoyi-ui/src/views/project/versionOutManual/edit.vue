@@ -14,9 +14,10 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="投产批次" prop="batchId">
-              <el-select v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
+              <el-select v-if="!isMigrated" v-model="form.batchId" placeholder="请选择批次" filterable style="width:100%" @change="onBatchChange">
                 <el-option v-for="b in batchOptions" :key="b.batchId" :label="b.batchNo" :value="b.batchId" />
               </el-select>
+              <el-input v-else :model-value="form.proBatchNo" readonly placeholder="—（迁移数据）" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
@@ -167,7 +168,7 @@ const form = ref({
 
 const rules = ref({
   productionYear: [{ required: true, message: '投产年份不能为空', trigger: 'change' }],
-  batchId:        [{ required: true, message: '投产批次不能为空', trigger: 'change' }],
+  batchId:        [{ validator: (r, v, cb) => (v || form.value.proBatchNo) ? cb() : cb(new Error('投产批次不能为空')), trigger: 'change' }],
   product:        [{ required: true, message: '产品不能为空', trigger: 'change' }],
   manualTaskNo:   [{ required: true, message: '软件中心任务号不能为空', trigger: 'blur' }],
   manualTaskName: [{ required: true, message: '任务名称不能为空', trigger: 'blur' }],
@@ -180,6 +181,8 @@ const rules = ref({
 })
 
 const isUpgrade = computed(() => form.value.versionType === '5' || form.value.versionType === '6')
+// 迁移记录: batch_id 为空仅有快照 proBatchNo, newpm 无对应主数据无法挂FK → 投产批次改快照只读回显
+const isMigrated = computed(() => !form.value.batchId && !!form.value.proBatchNo)
 
 async function onYearChange(year) {
   form.value.batchId = null; form.value.versionPDate = null; form.value.proBatchNo = null
