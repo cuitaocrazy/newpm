@@ -49,5 +49,6 @@
 - 老系统 `getVersionCode` 返回字符串后 `.toInt`，空值/非数字需防御（首条记录 versioncode 可能为空，应视作 0）。
 - `%02d` / `%03d` 补零规则必须严格保留。
 - 类型 5/6 的"回退查基线版本类型"映射（5→3、6→1）是隐藏依赖，迁移时容易漏。
+  - ⚠️ 同一映射也适用于「升级包初级版本号下拉候选」(`selectOutVersionOptions`)：应查**基线类型的 `out_lib_version`**(5→查 type3 B测试包、6→查 type1 SP升级包)，**不能**查 version_type=5 自身的 `out_version`——那是自引用，会漏掉从未被升级包引用过的新初级版本(如 B365)。(Issue #1)
 - 并发新增同子系统+类型时，"取最大编号+1"存在竞态 → newpm 实现需保证唯一性（唯一约束 + 重试，或串行化生成）。
 - `getCurYear`、`product`、`baseVersioncode` 的来源需在 newpm 映射到对应字典/配置/任务实体。

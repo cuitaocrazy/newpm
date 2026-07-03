@@ -338,12 +338,18 @@
         order by t.task_code desc
     </select>
 
+    <!--
+      升级包初级版本号候选：查"基线版本类型"的已产出版本号(out_lib_version)。
+      baseVersionType 由 service 按 reference-version-algorithm.md L40 映射后传入
+      (B包升级包5→B测试包3、SP包升级包6→SP升级包1)。
+      不能查 version_type=5 自身的 out_version(自引用会漏掉从未被引用过的新初级版本,如 B365)。
+    -->
     <select id="selectOutVersionOptions" resultType="java.lang.String">
-        select distinct out_version
+        select distinct out_lib_version
         from pm_version_out
-        where del_flag = '0' and sys_name = #{sysName} and version_type = #{versionType}
-          and out_version is not null and out_version != ''
-        order by out_version
+        where del_flag = '0' and sys_name = #{sysName} and version_type = #{baseVersionType}
+          and out_lib_version is not null and out_lib_version != ''
+        order by out_lib_version
     </select>
 
 </mapper>
