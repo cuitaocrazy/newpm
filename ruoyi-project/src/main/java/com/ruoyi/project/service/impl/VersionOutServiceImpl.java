@@ -272,7 +272,11 @@ public class VersionOutServiceImpl implements IVersionOutService
     @Override
     public List<String> selectOutVersionOptions(String sysName, String versionType)
     {
-        return versionOutMapper.selectOutVersionOptions(sysName, versionType);
+        // 升级包初级版本号候选 = 基线版本类型的已产出版本号(out_lib_version)。
+        // 映射见 reference-version-algorithm.md L40：B包升级包(5)→B测试包(3)、SP包升级包(6)→SP升级包(1)。
+        // 不能查 version_type=5 自身的 out_version(自引用会漏掉从未被引用过的新初级版本,如 B365)。
+        String baseVersionType = "6".equals(versionType) ? "1" : "3";
+        return versionOutMapper.selectOutVersionOptions(sysName, baseVersionType);
     }
 
     @Override

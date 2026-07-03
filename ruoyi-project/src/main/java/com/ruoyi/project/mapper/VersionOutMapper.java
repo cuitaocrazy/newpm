@@ -79,6 +79,6 @@ public interface VersionOutMapper
     public List<VersionOutTask> selectTaskOptions(@Param("productionYear") String productionYear,
             @Param("batchId") Long batchId, @Param("product") String product);
 
-    /** 子系统+版本类型→已有升级包初级版本号候选（类型5/6） */
-    public List<String> selectOutVersionOptions(@Param("sysName") String sysName, @Param("versionType") String versionType);
+    /** 子系统+基线版本类型→升级包初级版本号候选：查基线类型的 out_lib_version(baseVersionType 由 service 映射 5→3、6→1) */
+    public List<String> selectOutVersionOptions(@Param("sysName") String sysName, @Param("baseVersionType") String baseVersionType);
 }
