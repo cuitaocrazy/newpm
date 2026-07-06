@@ -110,7 +110,9 @@ public class VersionOutServiceImplTest
             service.updateVersionOut(upd);
         }
         assertEquals("NEW_SP03", upd.getOutLibVersion());
-        verify(versionOutMapper).deleteVersionOutTaskByVersionId(5L);
+        // 编辑保存只替换真实关联行，迁移快照行(task_id空)保留
+        verify(versionOutMapper).deleteVersionOutTaskFkRowsByVersionId(5L);
+        verify(versionOutMapper, Mockito.never()).deleteVersionOutTaskByVersionId(any());
     }
 
     @Test
@@ -232,9 +234,13 @@ public class VersionOutServiceImplTest
         when(versionOutMapper.selectTaskInfoByDemandNo("FR-1")).thenReturn(t);
         assertSame(t, service.selectTaskInfoByDemandNo("FR-1"));
 
+        // 升级包初级版本号：service 把版本类型映射为基线类型再查 mapper（5→3、6→1）
         List<String> opts = Arrays.asList("v1", "v2");
-        when(versionOutMapper.selectOutVersionOptions("SYS", "5")).thenReturn(opts);
+        when(versionOutMapper.selectOutVersionOptions("SYS", "3")).thenReturn(opts);
         assertSame(opts, service.selectOutVersionOptions("SYS", "5"));
+        List<String> spOpts = Arrays.asList("sp1");
+        when(versionOutMapper.selectOutVersionOptions("SYS", "1")).thenReturn(spOpts);
+        assertSame(spOpts, service.selectOutVersionOptions("SYS", "6"));
 
         List<VersionOutTask> tasks = Arrays.asList(new VersionOutTask());
         when(versionOutMapper.selectTaskOptions("2026", 1L, "P1")).thenReturn(tasks);

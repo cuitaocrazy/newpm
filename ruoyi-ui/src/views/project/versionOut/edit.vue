@@ -47,7 +47,8 @@
           <el-button type="primary" link style="float:right" @click="addTaskRow" :disabled="!taskOptionsReady">+ 添加任务</el-button>
         </template>
         <el-alert v-if="!taskOptionsReady" type="info" :closable="false" show-icon
-          title="请先选择 投产年份 + 投产批次 + 产品，任务号下拉才有数据" style="margin-bottom: 10px;" />
+          :title="isMigrated ? '迁移记录未匹配到系统批次，暂不能添加任务；历史任务快照只读保留' : '请先选择 投产年份 + 投产批次 + 产品，任务号下拉才有数据'"
+          style="margin-bottom: 10px;" />
         <el-table :data="form.taskList" border size="small">
           <el-table-column label="软件中心任务号" min-width="200">
             <template #default="{ row }">
@@ -62,8 +63,11 @@
           <el-table-column label="项目名称" prop="prjName" min-width="160" show-overflow-tooltip />
           <el-table-column label="需求名称" prop="demandName" min-width="160" show-overflow-tooltip />
           <el-table-column label="操作" width="80">
-            <template #default="{ $index }">
-              <el-button type="danger" link @click="removeTaskRow($index)">删除</el-button>
+            <template #default="{ row, $index }">
+              <el-button v-if="!isRowMigrated(row)" type="danger" link @click="removeTaskRow($index)">删除</el-button>
+              <el-tooltip v-else content="迁移历史任务快照，保存时自动保留，不可删除" placement="top">
+                <el-tag size="small" type="info">快照</el-tag>
+              </el-tooltip>
             </template>
           </el-table-column>
         </el-table>
@@ -239,7 +243,8 @@ async function onProductChange(product) {
 }
 
 function resetTaskRows() {
-  form.value.taskList = []
+  // 快照行(task_id空)后端保存时也不会删，界面同步保留避免"看着删了其实还在"
+  form.value.taskList = (form.value.taskList || []).filter(r => isRowMigrated(r))
   taskOptions.value = []
 }
 
@@ -302,11 +307,7 @@ function isTaskUsed(taskId, currentRow) {
 }
 
 function submitForm() {
-  // 迁移批次版本的关联任务为历史快照(task_id 空),保存会按 task_id 重插而丢失快照,故暂禁止保存
-  if (isMigrated.value || form.value.taskList.some(r => isRowMigrated(r))) {
-    proxy.$modal.msgWarning('迁移批次版本含历史任务快照，暂仅支持查看，不支持在此编辑保存')
-    return
-  }
+  // 快照行(task_id空)后端只跳过不重插、删除走差量(仅删task_id非空行)，迁移记录可安全保存
   formRef.value.validate(valid => {
     if (!valid) return
     updateVersionOut(form.value).then(() => {

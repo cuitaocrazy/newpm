@@ -114,8 +114,8 @@ public class VersionOutServiceImpl implements IVersionOutService
         }
         versionOut.setUpdateBy(SecurityUtils.getUsername());
         int rows = versionOutMapper.updateVersionOut(versionOut);
-        // 任务行整体替换
-        versionOutMapper.deleteVersionOutTaskByVersionId(versionOut.getId());
+        // 真实关联行(task_id非空)整体替换；迁移快照行(task_id空)不删不重插，防止快照丢失
+        versionOutMapper.deleteVersionOutTaskFkRowsByVersionId(versionOut.getId());
         insertTasks(versionOut);
         return rows;
     }

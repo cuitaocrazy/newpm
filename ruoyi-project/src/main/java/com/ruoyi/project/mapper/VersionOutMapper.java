@@ -47,6 +47,9 @@ public interface VersionOutMapper
     /** 按版本id删除任务关联 */
     public int deleteVersionOutTaskByVersionId(Long versionId);
 
+    /** 按版本id删除真实任务关联行(task_id 非空)，迁移快照行(task_id 空)原样保留 */
+    public int deleteVersionOutTaskFkRowsByVersionId(Long versionId);
+
     /** 按版本id批量删除任务关联 */
     public int deleteVersionOutTaskByVersionIds(Long[] versionIds);
 
