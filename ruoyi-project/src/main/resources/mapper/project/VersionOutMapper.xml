@@ -269,6 +269,11 @@
         delete from pm_version_out_task where version_id = #{versionId}
     </delete>
 
+    <!-- 编辑保存用：迁移快照行(task_id空)必须原样保留，快照列不参与前端往返，全删重插会丢快照 -->
+    <delete id="deleteVersionOutTaskFkRowsByVersionId" parameterType="Long">
+        delete from pm_version_out_task where version_id = #{versionId} and task_id is not null
+    </delete>
+
     <delete id="deleteVersionOutTaskByVersionIds" parameterType="Long">
         delete from pm_version_out_task where version_id in
         <foreach collection="array" item="vid" open="(" separator="," close=")">#{vid}</foreach>
