@@ -367,6 +367,7 @@ function resetQuery() {
 - **守卫**: `permission.ts` 三处增量——whiteList 含 `/m/login`；无 token 访问 `/m/**` → `/m/login?redirect=...`；有 token 访问 `/m/login` → `/m`
 - **字典**: 移动端不用 `<dict-select>`（EP 触控不适配），用 `useDict()` 取数 + Vant Picker/Checkbox 渲染（Constitution VI 例外已在 specs/014 plan.md 登记；禁止硬编码选项的底线不变）
 - **坑**: van-stepper 配 `decimal-length` 时 v-model 回写**字符串**（如 "2.0"），所有工时求和/比较必须 `Number()` 强转
+- **坑**: 手机深色模式下微信/iOS WebView 会**强制改写未声明颜色的文字**（背景显式 #fff + 文字继承默认色 → 白底白字不可见）。防御：`index.html` 已加 `<meta name="color-scheme" content="light">`，且移动页所有文字**必须显式写 color**，不得依赖继承
 - **业务逻辑**: 移动填写页自带逻辑副本（不动桌面 write.vue），保存 payload 以 `specs/014-daily-report-mobile/data-model.md §3` 为唯一基准
 - **E2E**: `tests/e2e-mobile-daily-report.spec.js`（iPhone 13 仿真 + 桌面双端一致用例；需临时关验证码 + admin 挂项目成员造数）
 
