@@ -637,10 +637,17 @@ onMounted(async () => {
 }
 .mdr-week__label {
   font-size: 12px;
+  /* 显式着色：深色模式 WebView 会把未声明颜色的文字强制变浅（白底白字不可见） */
+  color: #969799;
 }
 .mdr-week__num {
   font-size: 16px;
   font-weight: 500;
+  color: #323233;
+}
+.mdr-week__day.is-active .mdr-week__label,
+.mdr-week__day.is-active .mdr-week__num {
+  color: #fff;
 }
 .mdr-week__dot {
   width: 5px;
@@ -757,6 +764,7 @@ onMounted(async () => {
 .mdr-popup__title {
   font-size: 15px;
   font-weight: 500;
+  color: #323233;
 }
 .mdr-popup__btn {
   font-size: 14px;

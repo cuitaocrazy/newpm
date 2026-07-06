@@ -13,6 +13,8 @@ import 'vant/lib/index.css'
 .m-layout {
   min-height: 100vh;
   background: #f7f8fa;
+  /* 显式文字基线色：防深色模式 WebView 强制改写继承色（白底白字） */
+  color: #323233;
   /* iPhone 刘海屏底部安全区，避免固定底栏被 Home 指示条遮挡 */
   padding-bottom: env(safe-area-inset-bottom);
 }
