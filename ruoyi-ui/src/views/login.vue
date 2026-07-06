@@ -2,6 +2,10 @@
   <div class="login">
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
       <h3 class="title">{{ title }}</h3>
+      <!-- 移动设备访问桌面登录页时引导去移动版（specs/014；桌面浏览器不显示） -->
+      <div v-if="isMobileDevice" class="mobile-guide" @click="router.push('/m/login')">
+        📱 手机用户请点此进入移动版填写日报 →
+      </div>
       <el-form-item prop="username">
         <el-input
           v-model="loginForm.username"
@@ -96,6 +100,8 @@ const loginRules = {
 
 const codeUrl = ref("")
 const loading = ref(false)
+// 移动设备检测（仅用于显示移动版引导，不做强制跳转）
+const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
 // 验证码开关
 const captchaEnabled = ref(true)
 // 注册开关
@@ -204,6 +210,17 @@ getCookie()
   font-size: 13px;
   text-align: center;
   color: #bfbfbf;
+}
+.mobile-guide {
+  background: #ecf5ff;
+  color: #1989fa;
+  border: 1px solid #b3d8ff;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
 }
 .login-code {
   width: 33%;
