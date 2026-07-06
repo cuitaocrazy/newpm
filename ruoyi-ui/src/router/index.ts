@@ -47,6 +47,26 @@ export const constantRoutes = [
     component: () => import('@/views/register.vue'),
     hidden: true
   },
+  // 移动端 H5（specs/014-daily-report-mobile）：全部懒加载，桌面用户不加载移动 chunk
+  {
+    path: '/m/login',
+    component: () => import('@/views/m/login/index.vue'),
+    hidden: true
+  },
+  {
+    path: '/m',
+    component: () => import('@/views/m/layout/index.vue'),
+    redirect: '/m/daily-report/write',
+    hidden: true,
+    children: [
+      {
+        path: 'daily-report/write',
+        component: () => import('@/views/m/dailyReport/write.vue'),
+        name: 'MobileDailyReportWrite',
+        meta: { title: '日报填写' }
+      }
+    ]
+  },
   {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404.vue'),

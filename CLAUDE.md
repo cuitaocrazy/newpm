@@ -358,6 +358,18 @@ function resetQuery() {
 **Key rules:** Cache async-loaded dropdown data (e.g., batch options) alongside query params, or the restored dropdown will be empty. Clear cache in `resetQuery`. Implemented in `subproject/index.vue` as reference.
 
 
+### Mobile H5 Pattern (`/m` 移动端子树)
+
+日报移动端 H5（specs/014-daily-report-mobile）。驻场人员手机浏览器访问 `/m/login` 登录填日报。
+
+- **路由**: `src/router/index.ts` constantRoutes 中的 `/m/login`（登录）与 `/m`（MobileLayout → `daily-report/write`），全部懒加载 + hidden——桌面用户不加载移动 chunk，移动端 vant 及其 CSS 随移动 chunk 下发（入口 chunk 零增长）
+- **页面**: `src/views/m/`（layout / login / dailyReport/write），UI 用 **Vant 4**（显式 `import { X as VanX } from 'vant'`，样式在 layout 与 login 各 `import 'vant/lib/index.css'` 一次）
+- **守卫**: `permission.ts` 三处增量——whiteList 含 `/m/login`；无 token 访问 `/m/**` → `/m/login?redirect=...`；有 token 访问 `/m/login` → `/m`
+- **字典**: 移动端不用 `<dict-select>`（EP 触控不适配），用 `useDict()` 取数 + Vant Picker/Checkbox 渲染（Constitution VI 例外已在 specs/014 plan.md 登记；禁止硬编码选项的底线不变）
+- **坑**: van-stepper 配 `decimal-length` 时 v-model 回写**字符串**（如 "2.0"），所有工时求和/比较必须 `Number()` 强转
+- **业务逻辑**: 移动填写页自带逻辑副本（不动桌面 write.vue），保存 payload 以 `specs/014-daily-report-mobile/data-model.md §3` 为唯一基准
+- **E2E**: `tests/e2e-mobile-daily-report.spec.js`（iPhone 13 仿真 + 桌面双端一致用例；需临时关验证码 + admin 挂项目成员造数）
+
 ## Configuration
 
 - `ruoyi-admin/src/main/resources/application.yml` — server port, logging, file upload path, DB, Redis, JWT
@@ -546,6 +558,8 @@ kubectl logs -f deployment/ruoyi-app -n newpm
 - MySQL 8.x (`ry-vue`)，涉及表：`sys_dict_data`、`pm_daily_report`、`pm_daily_report_detail`、`pm_work_calendar` (004-daily-report-leave-types)
 - TypeScript 5.6 / Vue 3.5（前端 only） + Element Plus 2.13（`el-input` / `el-select` / `el-option`），既有 `formList` 响应式数据 (013-daily-report-write-filter)
 - N/A（无持久化；查询条件为会话内 reactive 视图状态） (013-daily-report-write-filter)
+- TypeScript 5.6 / Vue 3.5（前端 only，后端零改动） + Vant 4.9.x（新增，移动 UI）、Vue Router 4.6（既有）、Pinia 3（既有）、现有 request/auth/useDict 基础设施 (014-daily-report-mobile)
+- N/A（复用既有接口，无 schema 变更；表 `pm_daily_report` / `pm_daily_report_detail` 读写不变） (014-daily-report-mobile)
 
 ## Recent Changes
 - 001-daily-report-stats: Added Java 17 / TypeScript 5.6 + Spring Boot 3.5.8, MyBatis, Apache POI (Excel), Vue 3.5, Element Plus 2.13, dayjs

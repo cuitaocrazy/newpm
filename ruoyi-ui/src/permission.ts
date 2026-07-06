@@ -11,7 +11,7 @@ import usePermissionStore from '@/store/modules/permission'
 
 NProgress.configure({ showSpinner: false })
 
-const whiteList = ['/login', '/register']
+const whiteList = ['/login', '/register', '/m/login']
 
 const isWhiteList = (path: string): boolean => {
   return whiteList.some((pattern: string) => isPathMatch(pattern, path))
@@ -24,6 +24,10 @@ router.beforeEach((to, from, next) => {
     /* has token*/
     if (to.path === '/login') {
       next({ path: '/' })
+      NProgress.done()
+    } else if (to.path === '/m/login') {
+      // 已登录访问移动登录页 → 回移动首页
+      next({ path: '/m' })
       NProgress.done()
     } else if (isWhiteList(to.path)) {
       next()
@@ -58,7 +62,9 @@ router.beforeEach((to, from, next) => {
       // 在免登录白名单，直接进入
       next()
     } else {
-      next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到登录页
+      // 移动端路径（/m/**）重定向到移动登录页，其余走桌面登录页
+      const loginPath = to.path.startsWith('/m') ? '/m/login' : '/login'
+      next(`${loginPath}?redirect=${to.fullPath}`)
       NProgress.done()
     }
   }
