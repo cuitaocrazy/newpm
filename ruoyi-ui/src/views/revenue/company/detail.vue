@@ -159,7 +159,7 @@
 
             <!-- 操作按钮 -->
             <div class="action-buttons">
-              <el-button type="primary" @click="goEdit" style="width: 100%;">
+              <el-button type="primary" @click="goEdit" style="width: 100%;" v-hasPermi="['revenue:company:edit']">
                 <el-icon><Edit /></el-icon>&nbsp;编辑收入确认
               </el-button>
               <el-button @click="goBack" style="width: 100%; margin-top: 8px; margin-left: 0;">返回列表</el-button>
@@ -273,7 +273,7 @@
 
               <!-- 按钮区：每个按钮单独一行 -->
               <el-form-item>
-                <el-button type="primary" @click="submitForm" style="width: 100%;">
+                <el-button type="primary" @click="submitForm" style="width: 100%;" v-hasPermi="['revenue:company:edit']">
                   <el-icon><Check /></el-icon>&nbsp;提交
                 </el-button>
               </el-form-item>
