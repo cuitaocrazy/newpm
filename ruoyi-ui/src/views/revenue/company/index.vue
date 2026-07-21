@@ -357,7 +357,7 @@
               type="primary"
               icon="View"
               @click="handleRevenueView(scope.row)"
-              v-hasPermi="['revenue:company:view']"
+              v-hasPermi="['revenue:company:query']"
             >收入查看</el-button>
             <el-button
               link
