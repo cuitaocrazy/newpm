@@ -402,14 +402,53 @@ cat fix_something.sql | docker exec -i $CONTAINER mysql -u root -ppassword --def
 
 ### Backup Strategy (Production k3s001)
 
-| 对象 | 频率 | 保留 | 存储路径 |
-|---|---|---|---|
-| 数据库 (`ry-vue`) | 每日 00:10 | 30天 | `/backup/newpm-mysql/newpm-YYYYMMDD.sql.gz` |
-| 附件 (upload-pvc) | 每周日 01:20 | 30天（约4份） | `/backup/newpm-upload/newpm-upload-YYYYMMDD.tar.gz` |
+**架构：OSS 为主存储，本地仅留极小应急热层。** 本地按**份数**保留（非天数）。
 
-脚本：`/usr/local/bin/backup-newpm-db.sh`、`/usr/local/bin/backup-newpm-upload.sh`（均在 root crontab）
+| 对象 | 频率 | 本地热层 | 单份 | 存储路径 |
+|---|---|---|---|---|
+| 数据库 (`ry-vue`) | **每 6 小时**（00/06/12/18:10） | **留 2 份**（~10M） | ~4.9M | `/backup/newpm-mysql/newpm-YYYYMMDD-HHMM.sql.gz` |
+| 附件 (upload-pvc) | 每日 01:20 | **留 1 份**（~2.4G） | ~2.4G，月增 ~20% | `/backup/newpm-upload/newpm-upload-YYYYMMDD.tar.gz` |
 
-备份均存储在 k3s001 本机 `/backup/` 目录（148G 磁盘，当前 55% 占用）。**无异地备份**，如需恢复直接 ssh 取文件。
+脚本：`/usr/local/bin/backup-newpm-{db,upload}.sh` + `check-backup-health.sh`（每日 08:00 巡检），均在 root crontab。版本管理副本在 `ops/backup/`（改脚本要同步两边）。
+
+**四道安全闸门**：磁盘不足拒备 / 文件<1MB 拒传 / 完整性校验（DB 查 `Dump completed on`、附件 `tar -tzf`）/ **上传 OSS 失败则拒绝清理本地**（本地只留 1~2 份，"上传成功"是关键路径）。
+
+**附件脚本硬编码了 PVC 宿主机目录**（`/var/lib/rancher/k3s/storage/pvc-01f86b13-..._newpm_upload-pvc`）。upload-pvc 一旦重建，UUID 变化会导致备份失败——脚本有「源目录不存在则中止」闸门，重建 PVC 后必须同步改脚本。
+
+**异地备份：阿里云 OSS 归档存储**（2026-07-24 起）
+
+k3s001 本身是阿里云 ECS（cn-beijing-k），走**内网 endpoint** 上传，零流量费、不受出网代理影响。
+
+| 项 | 值 |
+|---|---|
+| Bucket | `yada-newpm-backup`（华北2·北京 / **归档** / **LRS 本地冗余** / 私有） |
+| 前缀 | `newpm-mysql/`（DB，单目录）、`newpm-upload/`（附件，单目录） |
+| 凭证 | `/root/.ossutilconfig`（600），RAM 用户 `li.kong`，**策略无 Delete 权限**（防勒索） |
+| 工具 | `ossutil` v1.7.18 |
+| 上传脚本 | `/usr/local/bin/sync-backup-to-oss.sh <文件> <前缀>`（大小 + 存储类型双校验） |
+| 日志 | `/backup/oss-sync.log` |
+
+```bash
+# 手动上传某个备份到 OSS
+ssh k3s001 "sudo /usr/local/bin/sync-backup-to-oss.sh /backup/newpm-mysql/newpm-YYYYMMDD.sql.gz newpm-mysql"
+
+# 查看 OSS 上的备份（stat 会 403——策略故意不含 GetObjectMeta，用 ls）
+ssh k3s001 "sudo /usr/local/bin/ossutil ls oss://yada-newpm-backup/newpm-mysql/"
+
+# 从 OSS 恢复：归档对象必须先解冻，之后才能下载
+ssh k3s001 "sudo /usr/local/bin/ossutil restore oss://yada-newpm-backup/newpm-mysql/newpm-YYYYMMDD.sql.gz"
+```
+
+**OSS 生命周期规则**（控制台已配 3 条，到期自动删——脚本无删权限，清理全靠这个）：
+- `expire-db`：`newpm-mysql/` 30 天删除
+- `expire-upload`：`newpm-upload/` 60 天删除（覆盖历史遗留的 daily/、monthly/ 子目录）
+- `clean-parts`：整桶未完成分片 7 天清理
+
+**归档存储三条硬约束**：① 最短计费 60 天（附件保留期不得低于 60 天；数据库 30 天虽触发但单份 5M 金额可忽略）；② 读取前必须解冻；③ 最小计量 64KB。资源包 2TB 到期 **2027-06-17**。
+
+完整方案、决策调整与踩坑记录见 `docs/plans/2026-07-24-backup-to-oss-archive.md`（以 §11「最终落地参数」为准）。本地 Mac 第三副本在 `PM/PM-backups/`。
+
+**宿主机磁盘**（148G，2026-07-24 实测 **77%** 已用 / 剩 33G）：大户是 `/var/lib/rancher` 36G（containerd 镜像层）、`/var/lib/docker` 24G、`/root` 18G、`/backup` 14G、`/data` 11G。备份只占 9.5%，不是吃盘主因。
 
 ```bash
 # 手动触发数据库备份
