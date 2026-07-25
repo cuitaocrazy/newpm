@@ -402,16 +402,16 @@ cat fix_something.sql | docker exec -i $CONTAINER mysql -u root -ppassword --def
 
 ### Backup Strategy (Production k3s001)
 
-**架构：OSS 为主存储，本地仅留极小应急热层。** 本地按**份数**保留（非天数）。
+**架构：纯 OSS——本地一份不留，全部只在 OSS。** 脚本 `KEEP_COUNT=0`：备份生成→上传 OSS 成功→删本地这份，本地稳态为空。
 
-| 对象 | 频率 | 本地热层 | 单份 | 存储路径 |
+| 对象 | 频率 | 本地保留 | 单份 | 临时路径（上传后即删） |
 |---|---|---|---|---|
-| 数据库 (`ry-vue`) | **每 6 小时**（00/06/12/18:10） | **留 2 份**（~10M） | ~4.9M | `/backup/newpm-mysql/newpm-YYYYMMDD-HHMM.sql.gz` |
-| 附件 (upload-pvc) | 每日 01:20 | **留 1 份**（~2.4G） | ~2.4G，月增 ~20% | `/backup/newpm-upload/newpm-upload-YYYYMMDD.tar.gz` |
+| 数据库 (`ry-vue`) | **每 6 小时**（00/06/12/18:10） | **0 份** | ~4.9M | `/backup/newpm-mysql/newpm-YYYYMMDD-HHMM.sql.gz` |
+| 附件 (upload-pvc) | 每日 01:20 | **0 份** | ~2.4G，月增 ~20% | `/backup/newpm-upload/newpm-upload-YYYYMMDD.tar.gz` |
 
 脚本：`/usr/local/bin/backup-newpm-{db,upload}.sh` + `check-backup-health.sh`（每日 08:00 巡检），均在 root crontab。版本管理副本在 `ops/backup/`（改脚本要同步两边）。
 
-**四道安全闸门**：磁盘不足拒备 / 文件<1MB 拒传 / 完整性校验（DB 查 `Dump completed on`、附件 `tar -tzf`）/ **上传 OSS 失败则拒绝清理本地**（本地只留 1~2 份，"上传成功"是关键路径）。
+**四道安全闸门**：磁盘不足拒备 / 文件<1MB 拒传 / 完整性校验（DB 查 `Dump completed on`、附件 `tar -tzf`）/ **上传 OSS 失败则拒绝清理本地**（纯 OSS 模式下这是安全垫——上传失败时该份留本地兜底，绝不会本地+OSS 两头皆空）。恢复必走 OSS 归档解冻（有延迟，非秒级）。
 
 **附件脚本硬编码了 PVC 宿主机目录**（`/var/lib/rancher/k3s/storage/pvc-01f86b13-..._newpm_upload-pvc`）。upload-pvc 一旦重建，UUID 变化会导致备份失败——脚本有「源目录不存在则中止」闸门，重建 PVC 后必须同步改脚本。
 

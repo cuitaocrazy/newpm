@@ -9,7 +9,8 @@ DATE=$(date +%Y%m%d-%H%M)          # 带小时：每 6 小时一次，不能只�
 FILE="$BACKUP_DIR/newpm-${DATE}.sql.gz"
 LOG="$BACKUP_DIR/backup.log"
 OSS_PREFIX="newpm-mysql"
-KEEP_COUNT=2                       # 本地留最新 2 份（消除覆盖空窗；仅 ~10M；历史版本靠 OSS）
+KEEP_COUNT=0                       # 纯 OSS：上传成功后删掉本次这份，本地稳态为空
+                                   # （上传失败则本闸门跳过清理，该份留本地兜底，不会两头皆空）
 MIN_FREE_GB=3                      # 低于此空闲空间则拒绝开始
 MIN_SIZE_BYTES=1048576             # dump 小于 1MB 视为异常（正常约 5MB）
 DB_PWD="${NEWPM_DB_PWD:-password}" # DB 密码：可用环境变量覆盖，默认取本环境既定值

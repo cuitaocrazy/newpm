@@ -10,7 +10,8 @@ BACKUP_DIR="/backup/newpm-upload"
 DATE=$(date +%Y%m%d)
 FILE="$BACKUP_DIR/newpm-upload-${DATE}.tar.gz"
 LOG="$BACKUP_DIR/backup.log"
-KEEP_COUNT=1                       # 本地仅留最新 1 份（应急热层，历史版本靠 OSS）
+KEEP_COUNT=0                       # 纯 OSS：上传成功后删掉本次这份，本地稳态为空
+                                   # （上传失败则本闸门跳过清理，该份留本地兜底，不会两头皆空）
 MIN_FREE_GB=8                      # tar 峰值需同时容纳新旧两份
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG"; }
