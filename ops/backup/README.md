@@ -89,8 +89,10 @@ ssh k3s001 "sudo /usr/local/bin/check-backup-health.sh; echo 问题数=\$?"
 ssh k3s001 "sudo /usr/local/bin/ossutil ls oss://yada-newpm-backup/newpm-mysql/"
 
 # 从 OSS 恢复：归档对象必须先解冻（restore 需主账号，li.kong 无此权限）
+# ⚠️ 解冻收费：取回费 ~0.033 元/GB + 下载流量（到 k3s001 走内网免费，到 Mac 走公网 ~0.5元/GB）。
+#    均不被 2TB 存储资源包抵扣。附件全量恢复一次约 0.1~1.5 元。纯 OSS 模式下任何恢复都触发此费用。
 ssh k3s001 "sudo /usr/local/bin/ossutil restore oss://yada-newpm-backup/newpm-mysql/<文件>"
-# 解冻完成后下载 + 校验
+# 解冻完成后下载 + 校验（下载到 k3s001 本机走内网，免流量费）
 ssh k3s001 "sudo /usr/local/bin/ossutil cp oss://yada-newpm-backup/newpm-mysql/<文件> /tmp/ && gzip -t /tmp/<文件>"
 ```
 
@@ -99,4 +101,5 @@ ssh k3s001 "sudo /usr/local/bin/ossutil cp oss://yada-newpm-backup/newpm-mysql/<
 - **DB 密码**：`backup-newpm-db.sh` 默认取 `password`（本环境既定值，已遍布仓库示例）；可用环境变量 `NEWPM_DB_PWD` 覆盖。
 - **附件脚本硬编码 PVC 宿主机路径**（含 UUID）。upload-pvc 重建后 UUID 变化，脚本会在闸门0 报错中止（不会静默备份空目录）——需同步更新 `UPLOAD_DIR`。
 - **归档三约束**：最短计费 60 天；读取前必须解冻；最小计量 64KB。
+- **⚠️ 解冻/取回收费**：纯 OSS 模式下**没有本地兜底**，任何恢复（含日常找回单个误删文件）都要解冻整个对象，产生取回费（~0.033 元/GB）+ 下载流量费，**均不被存储资源包抵扣**。单次金额小（几毛到一块多），但高频误删场景会累积——已知悉此代价后选择纯 OSS（2026-07-25）。
 - **资源包 2TB 到期 2027-06-17**，到期前需决定续费或转按量。

@@ -436,6 +436,7 @@ ssh k3s001 "sudo /usr/local/bin/sync-backup-to-oss.sh /backup/newpm-mysql/newpm-
 ssh k3s001 "sudo /usr/local/bin/ossutil ls oss://yada-newpm-backup/newpm-mysql/"
 
 # 从 OSS 恢复：归档对象必须先解冻，之后才能下载
+# ⚠️ 解冻收费(取回费~0.033元/GB + 下载流量,均不被2TB资源包抵扣)。纯OSS无本地兜底,任何恢复都触发。
 ssh k3s001 "sudo /usr/local/bin/ossutil restore oss://yada-newpm-backup/newpm-mysql/newpm-YYYYMMDD.sql.gz"
 ```
 
