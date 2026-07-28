@@ -55,13 +55,31 @@ public interface ProjectMemberMapper
     public int deleteByProjectId(Long projectId);
 
     /**
-     * 根据项目ID和用户ID列表删除项目成员
+     * 根据项目ID和用户ID列表硬删除项目成员
+     *
+     * <p>成员同步已改用 {@link #deactivateByProjectIdAndUserIds} 做软离场（Issue #5 ⑤），
+     * 硬删会抹掉离场记录，使这些人的历史工时在团队日报里无从呈现。仅在确需彻底清除时使用。
      *
      * @param projectId 项目ID
      * @param userIds 用户ID集合
      * @return 结果
      */
     public int deleteByProjectIdAndUserIds(@Param("projectId") Long projectId, @Param("userIds") Set<Long> userIds);
+
+    /**
+     * 将指定成员置为已离场（软离场：is_active='0' 并记录 leave_date），保留历史行。
+     *
+     * <p>保留离场记录后，这些人过去填报的工时仍可在团队日报以「已离场」行呈现，
+     * 使个人人天能与实际人天对上账（Issue #5 ③⑤）。
+     *
+     * @param projectId 项目ID
+     * @param userIds 用户ID集合
+     * @param updateBy 操作人
+     * @return 结果
+     */
+    public int deactivateByProjectIdAndUserIds(@Param("projectId") Long projectId,
+                                               @Param("userIds") Set<Long> userIds,
+                                               @Param("updateBy") String updateBy);
 
     /**
      * 批量新增项目成员

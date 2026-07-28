@@ -98,6 +98,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </delete>
 
+    <!-- 软离场：保留成员行并记录 leave_date，使其历史工时仍可在团队日报以「已离场」呈现（Issue #5 ③⑤） -->
+    <update id="deactivateByProjectIdAndUserIds">
+        update pm_project_member
+        set is_active   = '0',
+            leave_date  = CURDATE(),
+            update_by   = #{updateBy},
+            update_time = NOW()
+        where project_id = #{projectId}
+          and is_active = '1'
+          and del_flag = '0'
+          and user_id in
+        <foreach item="userId" collection="userIds" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </update>
+
+    <!-- 批量插入项目成员。
+         ON DUPLICATE KEY UPDATE 配合 uk_project_user (project_id, user_id) 唯一索引，
+         使插入幂等：并发/重复提交时不再产生重复活跃行（生产曾因此让项目308 两名成员的
+         日历工时与个人人天翻倍，见 Issue #5 ②），同时把重新加入项目的旧成员激活回 is_active='1'。 -->
     <insert id="batchInsert" parameterType="java.util.List">
         insert into pm_project_member (project_id, user_id, join_date, leave_date, is_active, del_flag, create_by, create_time, update_by, update_time, remark)
         values
@@ -105,6 +125,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             (#{item.projectId}, #{item.userId}, #{item.joinDate}, #{item.leaveDate},
              #{item.isActive}, '0', #{item.createBy}, #{item.createTime}, #{item.createBy}, #{item.createTime}, #{item.remark})
         </foreach>
+        on duplicate key update
+            is_active   = values(is_active),
+            del_flag    = '0',
+            leave_date  = values(leave_date),
+            update_by   = values(update_by),
+            update_time = values(update_time)
     </insert>
 
     <select id="selectProjectWithMembers" parameterType="ProjectMember" resultType="java.util.LinkedHashMap">

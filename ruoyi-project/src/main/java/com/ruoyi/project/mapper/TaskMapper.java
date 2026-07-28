@@ -48,13 +48,18 @@ public interface TaskMapper {
 
     /**
      * 汇总项目下所有任务的实际工时（小时）
-     * 用于更新主项目 actual_workload
+     *
+     * <p><b>警告：不要用它更新 pm_project.actual_workload。</b>该口径只覆盖挂在任务上的工时，
+     * 会漏掉「项目建任务之前直挂父项目」的工时（明细 sub_project_id IS NULL），
+     * 导致父项目实际人天被永久抹掉——生产曾因此丢失 22 个项目共 4341.5 小时（Issue #5 ①）。
+     * 主项目工时请统一用 {@code DailyReportDetailMapper.sumWorkHoursByProjectId}：
+     * 明细的 project_id 存的始终是父项目 id，该汇总天然覆盖两类工时。
      */
     BigDecimal sumActualWorkloadByProjectId(@Param("projectId") Long projectId);
 
     /**
      * 批量查询任务所属的主项目ID（去重）
-     * 用于确定哪些主项目需要用任务汇总更新工时
+     * 用于把受影响任务的父项目纳入工时重算范围
      */
     List<Long> selectProjectIdsByTaskIds(@Param("taskIds") List<Long> taskIds);
 

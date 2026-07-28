@@ -64,6 +64,9 @@
       <span class="legend-item">
         <span class="legend-dot warn-dot"></span><span class="warn-text" style="display:inline">实际人天为红色</span> = 实际人天已超预算的 50%
       </span>
+      <span class="legend-item">
+        <span class="legend-dot former-dot"></span><span class="former-member" style="display:inline">人员为灰色</span> = 本月有工时但已不在项目成员名单，工时仍计入实际人天
+      </span>
     </div>
 
     <!-- 主体表格 -->
@@ -102,8 +105,13 @@
               </div>
             </template>
           </el-table-column>
-          <!-- 固定列：人员 -->
-          <el-table-column label="人员" prop="nickName" fixed width="90" />
+          <!-- 固定列：人员（已离场成员灰显并标注，其工时仍计入实际人天） -->
+          <el-table-column label="人员" prop="nickName" fixed width="92">
+            <template #default="{ row }">
+              <div :class="row.isFormer ? 'former-member' : ''">{{ row.nickName }}</div>
+              <div v-if="row.isFormer" class="former-tag">已离场</div>
+            </template>
+          </el-table-column>
 
           <!-- 动态日期列 -->
           <el-table-column
@@ -230,6 +238,7 @@ const flatRows = computed(() => {
         userId: member.userId,
         nickName: member.nickName,
         deptName: member.deptName,
+        isFormer: member.isFormer === true,
         dailyHours: member.dailyHours || {},
         totalHours: member.totalHours
       })
@@ -374,6 +383,22 @@ onMounted(() => {
 }
 .contract-dot { background: #95d475; }
 .warn-dot     { background: #f56c6c; }
+.former-dot   { background: #c0c4cc; }
+
+/* 已离场成员：本月有工时但已不在项目成员名单，工时仍计入实际人天 */
+.former-member {
+  color: #909399;
+}
+.former-tag {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 0 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #909399;
+  border: 1px solid #dcdfe6;
+  border-radius: 2px;
+}
 
 .contract-label,
 .project-label {

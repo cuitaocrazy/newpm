@@ -526,6 +526,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             u.user_id AS userId,
             u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
             d.dept_name COLLATE utf8mb4_unicode_ci AS deptName,
+            m.isFormer AS isFormer,
             daily_hrs.report_date AS reportDate,
             daily_hrs.projectWorkHours AS totalWorkHours
         FROM pm_project p
@@ -537,8 +538,41 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             WHERE pcr.del_flag = '0' AND pcr.rel_status = '有效'
             GROUP BY pcr.project_id
         ) pc ON pc.project_id = p.project_id
-        INNER JOIN pm_project_member m ON m.project_id = p.project_id
-            AND m.is_active = '1' AND m.del_flag = '0'
+        INNER JOIN (
+            <!-- 在册成员。DISTINCT 是必要兜底：pm_project_member 历史上缺 (project_id,user_id) 唯一约束，
+                 重复活跃行会经下方 daily_hrs 扇出，使日历格与个人人天成倍虚增（Issue #5 ②）。 -->
+            SELECT DISTINCT pm.project_id, pm.user_id, '0' AS isFormer
+            FROM pm_project_member pm
+            WHERE pm.is_active = '1' AND pm.del_flag = '0'
+            UNION
+            <!-- 本月填报了工时、但已不在在册名单中的人（离场/被移出）。其工时已计入
+                 pm_project.actual_workload，若整行不显示，则个人人天与实际人天对不上账
+                 且缺口无迹可寻（Issue #5 ③）。仅取本月有工时者，避免给所有项目凭空加行。
+
+                 【安全约束，勿删】必须同时满足「曾是该项目成员」（pm_project_member 存在任意
+                 状态的行）。原因：saveDailyReport 不校验 detail.projectId 是否属于填报人，
+                 若仅以「有工时」为准入条件，任何持有填报权限的账号都能给任意 projectId 提交
+                 0.01 小时，从而自助获得离场成员身份，再经本查询读出该项目的预算/合同金额/
+                 确认金额——而 @DataScope 的 d 绑定的是成员本人部门（非项目部门），且 deptId
+                 为可选参数，都拦不住这条路径。成员行只能由持项目编辑权限者写入，
+                 故「曾是成员」是不可自助伪造的门槛。 -->
+            SELECT DISTINCT rd.project_id, r.user_id, '1' AS isFormer
+            FROM pm_daily_report r
+            JOIN pm_daily_report_detail rd ON rd.report_id = r.report_id
+                AND rd.entry_type = 'work' AND rd.del_flag = '0'
+            WHERE r.del_flag = '0'
+              AND r.report_date >= STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d')
+              AND r.report_date  &lt; DATE_ADD(STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
+              AND EXISTS (
+                  SELECT 1 FROM pm_project_member pm3
+                  WHERE pm3.project_id = rd.project_id AND pm3.user_id = r.user_id
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM pm_project_member pm2
+                  WHERE pm2.project_id = rd.project_id AND pm2.user_id = r.user_id
+                    AND pm2.is_active = '1' AND pm2.del_flag = '0'
+              )
+        ) m ON m.project_id = p.project_id
         INNER JOIN sys_user u ON u.user_id = m.user_id
         INNER JOIN sys_dept d ON d.dept_id = u.dept_id
         LEFT JOIN (
@@ -572,7 +606,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             ${params.dataScope}
         </where>
-        ORDER BY p.project_id, u.user_id, daily_hrs.report_date
+        ORDER BY p.project_id, m.isFormer, u.user_id, daily_hrs.report_date
     </select>
 
     <!-- 日报统计报表部门树：仅返回三级及以下，三级节点 parentId 设为 0 作为根节点 -->

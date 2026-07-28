@@ -577,7 +577,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="acceptanceStatus != null">acceptance_status = #{acceptanceStatus},</if>
             <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
             <!-- actual_workload 由日报保存回写维护，不在项目编辑时更新（防止查询转换后的人天值覆盖小时值） -->
-            <if test="adjustWorkload != null">adjust_workload = #{adjustWorkload},</if>
+            <!-- adjust_workload 同样不在项目编辑时更新：它必须走人天补正接口
+                 （POST /project/dailyReport/projectStats/{id}/correct → ProjectStatsMapper.updateAdjustWorkload），
+                 由该接口同步写 pm_workload_correct_log 留痕。此处放开会形成无审计后门——
+                 生产已出现项目19 的 109 人天补正查不到任何日志记录（Issue #5 ④）。 -->
             <if test="projectAddress != null">project_address = #{projectAddress},</if>
             <if test="projectPlan != null">project_plan = #{projectPlan},</if>
             <if test="projectDescription != null">project_description = #{projectDescription},</if>

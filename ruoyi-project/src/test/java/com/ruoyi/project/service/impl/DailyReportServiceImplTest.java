@@ -257,7 +257,7 @@ class DailyReportServiceImplTest {
     // ========== saveDailyReport: 工时滚动更新 ==========
 
     @Test
-    @DisplayName("保存日报：子任务工时滚动 → 先更新子任务，再汇总到主项目")
+    @DisplayName("保存日报：子任务工时滚动 → 先更新子任务，父项目再按明细全量汇总")
     void saveDailyReport_workloadRollup_taskThenProject() throws Exception {
         Long taskId = 200L;
         Long projectId = 10L;
@@ -279,17 +279,50 @@ class DailyReportServiceImplTest {
         when(detailMapper.sumWorkHoursBySubProjectId(taskId)).thenReturn(new BigDecimal("16"));
         when(taskMapper.updateActualWorkload(eq(taskId), any())).thenReturn(1);
 
-        // Step 2: parent project rollup from tasks
+        // Step 2: 父项目按日报明细全量汇总（40 = 16 挂在任务上 + 24 直挂父项目）
         when(taskMapper.selectProjectIdsByTaskIds(anyList())).thenReturn(Collections.singletonList(parentProjectId));
-        when(taskMapper.sumActualWorkloadByProjectId(parentProjectId)).thenReturn(new BigDecimal("32"));
+        when(detailMapper.sumWorkHoursByProjectId(parentProjectId)).thenReturn(new BigDecimal("40"));
         when(projectMapper.updateActualWorkload(eq(parentProjectId), any())).thenReturn(1);
 
         service.saveDailyReport(report);
 
         // Verify step 1: task updated with summed hours
         verify(taskMapper).updateActualWorkload(taskId, new BigDecimal("16"));
-        // Verify step 2: parent project updated with task sum
-        verify(projectMapper).updateActualWorkload(parentProjectId, new BigDecimal("32"));
+        // Verify step 2: 父项目取明细全量汇总，而非 SUM(pm_task)——
+        // 后者会抹掉「直挂父项目」的工时（Issue #5 ①）
+        verify(projectMapper).updateActualWorkload(parentProjectId, new BigDecimal("40"));
+        verify(taskMapper, never()).sumActualWorkloadByProjectId(anyLong());
+    }
+
+    @Test
+    @DisplayName("保存日报回归（Issue #5 ①）：项目已有任务时，建任务前直挂父项目的工时不得被抹掉")
+    void saveDailyReport_projectWithTask_keepsHoursDirectlyOnParent() throws Exception {
+        Long taskId = 200L;
+        Long projectId = 10L;
+
+        DailyReport report = buildReport("2026-03-10");
+        DailyReportDetail work = buildDetail("work", new BigDecimal("4"), null, projectId, taskId);
+        report.setDetailList(Collections.singletonList(work));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenAnswer(inv -> {
+            DailyReport r = inv.getArgument(0);
+            r.setReportId(100L);
+            return 1;
+        });
+
+        when(detailMapper.sumWorkHoursBySubProjectId(taskId)).thenReturn(new BigDecimal("89"));
+        when(taskMapper.updateActualWorkload(eq(taskId), any())).thenReturn(1);
+        when(taskMapper.selectProjectIdsByTaskIds(anyList())).thenReturn(Collections.singletonList(projectId));
+        // 复刻生产项目106 的真实场景：89 小时挂在任务上，95 小时是建任务之前直挂父项目的
+        when(detailMapper.sumWorkHoursByProjectId(projectId)).thenReturn(new BigDecimal("184"));
+        when(projectMapper.updateActualWorkload(eq(projectId), any())).thenReturn(1);
+
+        service.saveDailyReport(report);
+
+        // 一旦回退成 SUM(pm_task.actual_workload)，此处会变成 89 —— 那 95 小时就被永久吞掉
+        verify(projectMapper).updateActualWorkload(projectId, new BigDecimal("184"));
     }
 
     @Test
@@ -347,9 +380,9 @@ class DailyReportServiceImplTest {
         when(detailMapper.sumWorkHoursBySubProjectId(oldTaskId)).thenReturn(BigDecimal.ZERO);
         when(taskMapper.updateActualWorkload(eq(oldTaskId), any())).thenReturn(1);
 
-        // Old task's parent project
+        // Old task's parent project —— 同样按明细全量汇总
         when(taskMapper.selectProjectIdsByTaskIds(anyList())).thenReturn(Collections.singletonList(oldProjectId));
-        when(taskMapper.sumActualWorkloadByProjectId(oldProjectId)).thenReturn(BigDecimal.ZERO);
+        when(detailMapper.sumWorkHoursByProjectId(oldProjectId)).thenReturn(BigDecimal.ZERO);
         when(projectMapper.updateActualWorkload(eq(oldProjectId), any())).thenReturn(1);
 
         // New direct project

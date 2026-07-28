@@ -884,7 +884,7 @@ CREATE TABLE `pm_project_member` (
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`member_id`),
-  KEY `idx_project_id` (`project_id`),
+  UNIQUE KEY `uk_project_user` (`project_id`,`user_id`) COMMENT '一个项目下同一用户只允许一行；配合 batchInsert 的 ON DUPLICATE KEY UPDATE 保证并发幂等',
   KEY `idx_user_id` (`user_id`),
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='项目人员管理表';
