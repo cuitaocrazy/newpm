@@ -81,24 +81,34 @@ public class ProjectMemberServiceImpl implements IProjectMemberService
 
     /**
      * 增量同步 pm_project_member（只做成员表的增删，不触碰 pm_project）
+     *
+     * <p>差集以「当前在册成员」（is_active='1' 且 del_flag!='1'）为基准，而非表内全部行：
+     * <ul>
+     *   <li>移出项目 → 软离场（is_active='0' + leave_date），保留历史行，
+     *       使其过去填报的工时仍能在团队日报以「已离场」呈现（Issue #5 ③）；</li>
+     *   <li>重新加回 → 该用户会重新进入 toAdd，经 batchInsert 的
+     *       ON DUPLICATE KEY UPDATE 激活回 is_active='1' 并清空 leave_date。
+     *       若以表内全部行为基准，离场成员永远不进 toAdd，is_active 会永久停在 '0'（Issue #5 ⑤）。</li>
+     * </ul>
      */
     @Override
     public void syncMembers(Long projectId, Set<Long> targetUserIds)
     {
         List<ProjectMember> existingMembers = projectMemberMapper.selectAllMembersByProjectId(projectId);
-        Set<Long> existingUserIds = existingMembers.stream()
+        Set<Long> activeUserIds = existingMembers.stream()
+                .filter(m -> "1".equals(m.getIsActive()) && !"1".equals(m.getDelFlag()))
                 .map(ProjectMember::getUserId)
                 .collect(Collectors.toSet());
 
-        Set<Long> toRemove = new LinkedHashSet<>(existingUserIds);
+        Set<Long> toRemove = new LinkedHashSet<>(activeUserIds);
         toRemove.removeAll(targetUserIds);
 
         Set<Long> toAdd = new LinkedHashSet<>(targetUserIds);
-        toAdd.removeAll(existingUserIds);
+        toAdd.removeAll(activeUserIds);
 
         if (!toRemove.isEmpty())
         {
-            projectMemberMapper.deleteByProjectIdAndUserIds(projectId, toRemove);
+            projectMemberMapper.deactivateByProjectIdAndUserIds(projectId, toRemove, SecurityUtils.getUsername());
         }
 
         if (!toAdd.isEmpty())

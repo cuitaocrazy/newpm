@@ -28,6 +28,13 @@ public class TeamMemberDailyVO
     /** 月累计工时（小时） */
     private BigDecimal totalHours = BigDecimal.ZERO;
 
+    /**
+     * 是否已离场成员：本月填报了工时，但已不在项目在册成员名单中（离职/被移出/is_active=0）。
+     * 这类人的工时已计入 pm_project.actual_workload，必须显示出来，否则个人人天
+     * 与实际人天对不上账且缺口无迹可寻（Issue #5 ③）。前端以灰色行 + 「已离场」标签呈现。
+     */
+    private Boolean isFormer = Boolean.FALSE;
+
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
@@ -42,4 +49,7 @@ public class TeamMemberDailyVO
 
     public BigDecimal getTotalHours() { return totalHours; }
     public void setTotalHours(BigDecimal totalHours) { this.totalHours = totalHours; }
+
+    public Boolean getIsFormer() { return isFormer; }
+    public void setIsFormer(Boolean isFormer) { this.isFormer = isFormer; }
 }

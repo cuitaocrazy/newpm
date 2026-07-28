@@ -262,17 +262,15 @@ public class DailyReportServiceImpl implements IDailyReportService
                 .collect(Collectors.toSet());
         affectedProjectIds.addAll(oldProjectIds);
 
-        // 2a. 有子任务的主项目：从 pm_task 汇总（只更新那些确实有任务记录的父项目）
+        // 2a. 受影响任务的父项目一并纳入重算范围（仅扩大范围，不替代 2b 的汇总口径）
         if (!affectedSubProjectIds.isEmpty()) {
-            List<Long> parentProjectIds = taskMapper.selectProjectIdsByTaskIds(
-                    new java.util.ArrayList<>(affectedSubProjectIds));
-            for (Long parentProjectId : parentProjectIds) {
-                BigDecimal totalTaskHours = taskMapper.sumActualWorkloadByProjectId(parentProjectId);
-                projectMapper.updateActualWorkload(parentProjectId, totalTaskHours);
-                affectedProjectIds.remove(parentProjectId);
-            }
+            affectedProjectIds.addAll(taskMapper.selectProjectIdsByTaskIds(
+                    new java.util.ArrayList<>(affectedSubProjectIds)));
         }
-        // 2b. 普通项目（无子任务）：从日报明细直接汇总工时
+        // 2b. 所有受影响主项目：按日报明细全量汇总工时
+        // pm_daily_report_detail.project_id 存的始终是父项目 id（任务另用 sub_project_id 标识），
+        // 故该汇总天然覆盖「直挂父项目」与「挂在任务上」两类工时。
+        // 不可改用 SUM(pm_task.actual_workload)：项目建任务之前直挂父项目的工时会被永久抹掉（Issue #5 ①）。
         for (Long projectId : affectedProjectIds) {
             BigDecimal directHours = detailMapper.sumWorkHoursByProjectId(projectId);
             projectMapper.updateActualWorkload(projectId, directHours);
@@ -319,15 +317,10 @@ public class DailyReportServiceImpl implements IDailyReportService
             taskMapper.updateActualWorkload(taskId, taskHours);
         }
 
-        // 重算受影响主项目的工时
+        // 重算受影响主项目的工时（口径同 insertOrUpdateMyReport：按明细全量汇总，见 Issue #5 ①）
         if (!affectedSubProjectIds.isEmpty()) {
-            List<Long> parentProjectIds = taskMapper.selectProjectIdsByTaskIds(
-                    new java.util.ArrayList<>(affectedSubProjectIds));
-            for (Long parentProjectId : parentProjectIds) {
-                BigDecimal totalTaskHours = taskMapper.sumActualWorkloadByProjectId(parentProjectId);
-                projectMapper.updateActualWorkload(parentProjectId, totalTaskHours);
-                affectedProjectIds.remove(parentProjectId);
-            }
+            affectedProjectIds.addAll(taskMapper.selectProjectIdsByTaskIds(
+                    new java.util.ArrayList<>(affectedSubProjectIds)));
         }
         for (Long projectId : affectedProjectIds) {
             BigDecimal directHours = detailMapper.sumWorkHoursByProjectId(projectId);
@@ -602,6 +595,7 @@ public class DailyReportServiceImpl implements IDailyReportService
                 vo.setUserId(userId);
                 vo.setNickName(str(row.get("nickName")));
                 vo.setDeptName(str(row.get("deptName")));
+                vo.setIsFormer("1".equals(str(row.get("isFormer"))));
                 project.getMembers().add(vo);
                 return vo;
             });
