@@ -520,6 +520,18 @@ Two tables use hard delete (not soft `del_flag = '1'`):
 
 All other PM tables use soft delete. Do not add unique constraint workarounds for daily reports.
 
+### 全量表单提交的 update 不要加 `<if>` 守卫
+
+`<if test="xxx != null">` 是**部分更新**语义。用在**全量表单提交**的 update 上，会让「用户主动清空」与「字段未提交」不可区分 —— 清空意图被静默丢弃，界面提示保存成功但值不变。`pm_payment` 上此缺陷已复发三次（`expected_quarter` → `actual_payment_date` → `actual_quarter`，Issue #7），每次只修当次报上来的那一个字段。
+
+判断规则：
+
+1. 该 update 的调用方是否只有「全量表单提交」（Controller 的 edit）？是 → **可选业务字段一律无条件更新**；必填字段保留守卫作为兜底，因为它们本就不存在清空场景。
+2. 前端 `el-select` / `el-date-picker` 的 clearable 清空后 v-model 为 `undefined`，`JSON.stringify` 会**直接丢弃该 key**，后端收到的是 null 而非空串。提交前须显式归一为 `null`。
+3. 同一个 update 里「一半字段有守卫、一半没有」是缺陷的化石记录 —— 看到不对称就该查。
+
+参考实现：`PaymentMapper.updatePayment` + `payment/form.vue` 的 `CLEARABLE_FIELDS`；回归用例 `tests/payment-clear-field-regression.spec.js`（同时锁定「可选字段能清空」与「必填字段不被误清」）。
+
 ### Task Fields Belong to pm_task, Not pm_project
 
 All task-specific fields (`taskCode`, `batchId`, `productionYear`, `scheduleStatus`, `bankDemandNo`, `softwareDemandNo`, `product`, `internalClosureDate`, `functionalTestDate`, etc.) now live in `pm_task`. The `pm_project` table is being cleaned of these 19 legacy columns (see `docs/plans/2026-03-13-cleanup-project-task-fields.md`). Do NOT add task-related fields to `pm_project`.

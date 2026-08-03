@@ -163,17 +163,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="hasPenalty != null">has_penalty = #{hasPenalty},</if>
             <if test="penaltyAmount != null">penalty_amount = #{penaltyAmount},</if>
             <if test="paymentStatus != null">payment_status = #{paymentStatus},</if>
+            <!-- 以下为表单上的可选字段，一律无条件更新，不加 <if> 守卫。
+                 updatePayment 的唯一调用方是 PaymentController.edit（全量表单提交），
+                 加守卫会让「用户主动清空」与「字段未提交」不可区分，清空意图被静默丢弃。
+                 详见 Issue #7：清空「实际回款季度」保存后列表仍显示原值。 -->
             expected_quarter = #{expectedQuarter},
-            <if test="actualQuarter != null">actual_quarter = #{actualQuarter},</if>
-            <if test="submitAcceptanceDate != null">submit_acceptance_date = #{submitAcceptanceDate},</if>
+            actual_quarter = #{actualQuarter},
+            submit_acceptance_date = #{submitAcceptanceDate},
             actual_payment_date = #{actualPaymentDate},
-            <if test="confirmYear != null">confirm_year = #{confirmYear},</if>
+            confirm_year = #{confirmYear},
+            remark = #{remark},
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
-            <if test="remark != null">remark = #{remark},</if>
         </trim>
         where payment_id = #{paymentId}
     </update>
