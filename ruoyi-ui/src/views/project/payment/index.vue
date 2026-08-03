@@ -169,6 +169,7 @@
       border
       stripe
       :span-method="spanMethod"
+      @sort-change="handleSortChange"
       style="width: 100%">
       <el-table-column label="序号" width="60" align="center" fixed="left" v-if="columns.index.visible">
         <template #default="scope">
@@ -204,7 +205,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" />
+      <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" sortable="custom" />
       <el-table-column label="合同状态" align="center" prop="contractStatus" width="100" v-if="columns.contractStatus.visible">
         <template #default="scope">
           <dict-tag v-if="!scope.row.isSummary" :options="sys_htzt" :value="scope.row.contractStatus"/>
@@ -590,6 +591,23 @@ function getDisplayUpdateTime(row) {
 function handleQuery() {
   queryParams.value.pageNum = 1
   getList()
+}
+
+/** 排序处理 */
+function handleSortChange({ prop, order }) {
+  if (!order) {
+    // 取消排序，回退到后端默认排序
+    queryParams.value.orderByColumn = undefined
+    queryParams.value.isAsc = undefined
+  } else {
+    // 将驼峰命名转换为下划线命名（后端数据库字段格式）
+    const columnMap = {
+      'contractCode': 'contract_code',
+    }
+    queryParams.value.orderByColumn = columnMap[prop] || prop
+    queryParams.value.isAsc = order === 'ascending' ? 'asc' : 'desc'
+  }
+  handleQuery()
 }
 
 /** 重置按钮操作 */

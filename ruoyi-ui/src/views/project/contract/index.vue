@@ -159,7 +159,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" />
+      <el-table-column label="合同编号" align="center" prop="contractCode" width="160" show-overflow-tooltip v-if="columns.contractCode.visible" sortable="custom" />
       <el-table-column label="合同所属部门" align="center" prop="deptId" min-width="120" show-overflow-tooltip v-if="columns.deptId.visible">
         <template #default="scope">
           <span v-if="!scope.row.isSummary">{{ getDeptName(scope.row.deptId) }}</span>
@@ -586,6 +586,7 @@ const handleSortChange = ({ column, prop, order }) => {
     // 设置排序字段和排序方式
     // 将驼峰命名转换为下划线命名（后端数据库字段格式）
     const columnMap = {
+      'contractCode': 'contract_code',
       'contractSignDate': 'contract_sign_date',
       'contractAmount': 'contract_amount',
       'projectBudget': 'project_budget_total',
