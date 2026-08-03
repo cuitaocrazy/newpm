@@ -629,7 +629,18 @@ Never display raw `actual_workload` hours as person-days. Adjustments logged in 
 
 **GitHub Actions** (`.github/workflows/deploy.yml`): Push to `main` → Docker build → push `cuitaocrazy/newpm:latest` → SSH → `kubectl rollout restart deployment/ruoyi-app -n newpm`.
 
-Ignores: `k8s/`, `pm-sql/`, `*.md`, `.github/`, `docker-compose*.yml`.
+`paths-ignore` 实际配置：`k8s/**`、`sql/**`、`*.md`、`CLAUDE.md`、`.github/**`、`docker-compose*.yml`、`LICENSE`。
+
+⚠️ **其中两条形同虚设，别按字面理解**（glob 的 `*` 不跨 `/`）：
+
+| 规则 | 以为忽略的 | 实际忽略的 | 后果 |
+|---|---|---|---|
+| `'*.md'` | 所有 markdown | **仅仓库根目录**的 md（`README.md` / `CLAUDE.md` 等） | 改 `specs/**`、`docs/**` 下的 md **照常触发生产部署** |
+| `'sql/**'` | `pm-sql/` 下的 SQL | 根级 `sql/` 目录——**本仓库没有这个目录** | 改 `pm-sql/**` **照常触发生产部署** |
+
+**实证**（2026-08-03 复核）：commit `9245991` 的 push 变更集只有 `docs/plans/2026-07-24-backup-to-oss-archive.md` 一个文件，仍触发了 Deploy run（`2026-07-27T09:25:50Z`）。复核方法：`gh run list --limit 60 --json headSha,createdAt` 找该 sha 对应的 run。
+
+因此：**只改 `specs/`、`docs/`、`pm-sql/` 下的文件也会空转一次约 6 分钟的生产部署**（构建镜像 + 滚动重启，无代码变更）。纯文档提交若想避免，要么攒到下次有代码改动时一并提交，要么先把规则改成 `'**/*.md'` 与 `'pm-sql/**'`。
 
 ## Deployment
 
