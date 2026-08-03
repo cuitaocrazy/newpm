@@ -263,7 +263,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="product != null">product = #{product},</if>
             <if test="bankDemandNo != null">bank_demand_no = #{bankDemandNo},</if>
             <if test="softwareDemandNo != null">software_demand_no = #{softwareDemandNo},</if>
-            <if test="taskBudget != null">task_budget = #{taskBudget},</if>
+            task_budget = #{taskBudget},
             <if test="estimatedWorkload != null">estimated_workload = #{estimatedWorkload},</if>
             <if test="productionYear != null">production_year = #{productionYear},</if>
             <if test="batchId != null">batch_id = #{batchId},</if>
@@ -271,11 +271,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="taskDescription != null">task_description = #{taskDescription},</if>
             <if test="startDate != null">start_date = #{startDate},</if>
             <if test="endDate != null">end_date = #{endDate},</if>
-            <if test="productionDate != null">production_date = #{productionDate},</if>
-            <if test="productionVersionDate != null">production_version_date = #{productionVersionDate},</if>
-            <if test="actualProductionDate != null">actual_production_date = #{actualProductionDate},</if>
-            <if test="internalClosureDate != null">internal_closure_date = #{internalClosureDate},</if>
-            <if test="functionalTestDate != null">functional_test_date = #{functionalTestDate},</if>
+            <!-- 以下 5 个日期为任务编辑表单上的可选字段，一律无条件更新，不加 <if> 守卫。
+                 见 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」：
+                 el-date-picker 清空后 v-model 为 undefined，JSON.stringify 直接丢弃该 key，
+                 守卫会把「用户主动清空」误当成「字段未提交」，清空意图被静默丢弃。 -->
+            production_date = #{productionDate},
+            production_version_date = #{productionVersionDate},
+            actual_production_date = #{actualProductionDate},
+            internal_closure_date = #{internalClosureDate},
+            functional_test_date = #{functionalTestDate},
             <if test="scheduleStatus != null">schedule_status = #{scheduleStatus},</if>
             <if test="functionDescription != null">function_description = #{functionDescription},</if>
             <if test="implementationPlan != null">implementation_plan = #{implementationPlan},</if>

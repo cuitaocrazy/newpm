@@ -147,7 +147,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="customerAllName != null and customerAllName != ''">customer_all_name = #{customerAllName},</if>
             <if test="industry != null">industry = #{industry},</if>
             <if test="region != null">region = #{region},</if>
-            <if test="salesManagerId != null">sales_manager_id = #{salesManagerId},</if>
+            <!-- 销售经理为客户编辑表单上的可选字段，无条件更新，不加 <if> 守卫。
+                 见 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」：
+                 el-select 清空后 v-model 为 undefined，JSON.stringify 直接丢弃该 key，
+                 守卫会把「用户主动清空」误当成「字段未提交」，清空意图被静默丢弃。 -->
+            sales_manager_id = #{salesManagerId},
             <if test="officeAddress != null">office_address = #{officeAddress},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>

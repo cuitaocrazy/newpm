@@ -98,9 +98,36 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="update${ClassName}" parameterType="${ClassName}">
         update ${tableName}
         <trim prefix="SET" suffixOverrides=",">
+## ============================================================================
+## update 语句按「是否必填」分流生成，不再对每一列无差别加 <if> 守卫。
+##
+## 原因：<if test="xxx != null"> 是「部分更新」语义，而本系统所有 Controller 的
+## edit 都是「全量表单提交」语义。两者错配时，前端 el-select / el-date-picker
+## 清空后 v-model 变成 undefined，JSON.stringify 直接丢弃该 key，后端收到 null
+## 被守卫拦下 —— SQL 里根本不生成该列的赋值语句，数据库保留旧值，但接口返回 200、
+## 前端提示「修改成功」。失败完全静默。（参考修复：PaymentMapper.updatePayment）
+##
+## 分流规则：
+##   1. 必填字段（$column.required）→ 保留 <if> 守卫。必填字段不存在「清空」场景，
+##      守卫在这里只是兜底，防止把 null 写进 NOT NULL 列。
+##   2. 可选字段 → 无条件更新，让「用户主动清空」能真正落库。
+##   3. 审计字段（create_by / create_time / update_by / update_time / del_flag）
+##      → 保留原有守卫。它们由后端按需赋值而非表单提交，无条件更新会把没赋值的
+##      那一次覆盖成 null。
+##
+##   4. 不在表单上（isInsert=0，表单按 $column.insert 渲染）或不可编辑（isEdit=0）的列
+##      → 保留守卫。这类列根本不会出现在 PUT 请求体里，无条件更新会把它们写成 null。
+##
+## 注意：insert 语句的 <if> 守卫是正确的（未提交的列走数据库默认值），不要一并改。
+## ============================================================================
+#set($auditColumns = ["create_by", "create_time", "update_by", "update_time", "del_flag"])
 #foreach($column in $columns)
 #if($column.columnName != $pkColumn.columnName)
+#if($column.required || !$column.insert || !$column.edit || $auditColumns.contains($column.columnName.toLowerCase()))
             <if test="$column.javaField != null#if($column.javaType == 'String' && $column.required) and $column.javaField != ''#end">$column.columnName = #{$column.javaField},</if>
+#else
+            $column.columnName = #{$column.javaField},
+#end
 #end
 #end
         </trim>
