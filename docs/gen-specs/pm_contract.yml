@@ -2441,7 +2441,7 @@ implementation:
       - Java 17 / Spring Boot 3.5.8
       - MyBatis（多表关联查询）
       - 多表JOIN查询（pm_contract, pm_customer, sys_dept, sys_user, sys_dict_data）
-      - Spring Boot 文件上传配置：max-file-size: 30MB, max-request-size: 30MB
+      - "Spring Boot 文件上传配置：max-file-size: 30MB, max-request-size: 30MB"
     frontend:
       - Vue 3.5 / TypeScript 5.6
       - Element Plus 2.13
@@ -2489,21 +2489,21 @@ implementation:
 
   excelExportConfig:
     fields:
-      - sort: 0, name: 合同编号, field: contractCode
-      - sort: 1, name: 合同名称, field: contractName
-      - sort: 2, name: 部门名称, field: deptName (关联查询)
-      - sort: 3, name: 客户名称, field: customerName (关联查询)
-      - sort: 4, name: 合同类型, field: contractType, dictType: sys_htlx
-      - sort: 5, name: 合同状态, field: contractStatus, dictType: sys_htzt
-      - sort: 6, name: 合同签订日期, field: contractSignDate, dateFormat: yyyy-MM-dd
-      - sort: 7, name: 合同周期(月), field: contractPeriod
-      - sort: 8, name: 合同金额(含税), field: contractAmount
-      - sort: 9, name: 税率(%), field: taxRate
-      - sort: 10, name: 不含税金额, field: amountNoTax
-      - sort: 11, name: 税金, field: taxAmount
-      - sort: 12, name: 合同确认金额, field: confirmAmount
-      - sort: 13, name: 确认年份, field: confirmYear, dictType: sys_ndgl
-      - sort: 14, name: 免维期(月), field: freeMaintenancePeriod
+      - { sort: 0, name: 合同编号, field: contractCode }
+      - { sort: 1, name: 合同名称, field: contractName }
+      - { sort: 2, name: 部门名称, field: deptName (关联查询) }
+      - { sort: 3, name: 客户名称, field: customerName (关联查询) }
+      - { sort: 4, name: 合同类型, field: contractType, dictType: sys_htlx }
+      - { sort: 5, name: 合同状态, field: contractStatus, dictType: sys_htzt }
+      - { sort: 6, name: 合同签订日期, field: contractSignDate, dateFormat: yyyy-MM-dd }
+      - { sort: 7, name: 合同周期(月), field: contractPeriod }
+      - { sort: 8, name: 合同金额(含税), field: contractAmount }
+      - { sort: 9, name: 税率(%), field: taxRate }
+      - { sort: 10, name: 不含税金额, field: amountNoTax }
+      - { sort: 11, name: 税金, field: taxAmount }
+      - { sort: 12, name: 合同确认金额, field: confirmAmount }
+      - { sort: 13, name: 确认年份, field: confirmYear, dictType: sys_ndgl }
+      - { sort: 14, name: 免维期(月), field: freeMaintenancePeriod }
     excludedFields:
       - customerId: 不导出ID，导出 customerName
       - deptId: 不导出ID，导出 deptName

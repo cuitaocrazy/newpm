@@ -753,7 +753,7 @@ customizations:
         minWidth: 140px
         align: center
         showOverflowTooltip: true
-        source: pm_customer.customer_simple_name (alias: customer_name)
+        source: "pm_customer.customer_simple_name (alias: customer_name)"
         cellMerge: true
         mergeBy: contractId
 

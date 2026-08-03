@@ -470,8 +470,47 @@ ssh k3s001 "zcat /backup/newpm-mysql/newpm-YYYYMMDD.sql.gz | kubectl exec -i mys
 Use `/ruoyi-gen` skill for interactive generation. Key files:
 - **CLI JAR**: `ruoyi-gen-cli/target/ruoyi-gen-cli-3.9.1.jar`
 - **DDL Source**: `pm-sql/init/00_tables_ddl.sql`
-- **Spec Files**: `docs/gen-specs/<table_name>.yml`
+- **业务规格文档**: `docs/gen-specs/<table_name>.yml`
 - **Default Config**: `ruoyi-generator/src/main/resources/generator.yml`
+
+### ⚠️ `docs/gen-specs/*.yml` 不是 CLI 的输入文件
+
+这两者是**两种不同格式**，不能混用（Issue #21）：
+
+| | `docs/gen-specs/<table>.yml` | `ruoyi-gen-cli --config=<file>` |
+|---|---|---|
+| 用途 | 业务规格文档，给人与 AI 阅读 | CLI 的生成配置 |
+| 顶层结构 | `basicInfo` / `columns` / `genInfo`（按代码生成器 UI 的标签页组织） | `global` / `tables`（见 `GenTableConfig.java`） |
+| 直接喂给 CLI | ❌ 报 `Unable to find property 'basicInfo'` | ✅ |
+
+CLI 配置的最小可用示例（已实测跑通）：
+
+```yaml
+global:
+  author: ruoyi
+  packageName: com.ruoyi.project
+  moduleName: project
+tables:
+  pm_payment:                 # key 是表名，需与 --sql 中的 CREATE TABLE 对应
+    className: Payment
+    businessName: payment
+    functionName: 款项管理
+    columns:                  # 只需列出要覆盖默认值的列
+      payment_method_name:
+        isRequired: true      # 必填 → update 语句保留 <if> 守卫
+      actual_quarter:
+        isRequired: false     # 可选且可编辑 → update 语句无条件更新
+      expected_quarter:
+        isInsert: false       # 不在表单上 → 保留守卫（不在请求体里，无条件更新会写成 null）
+      confirm_year:
+        isEdit: false         # 不可编辑 → 保留守卫
+```
+
+`ColumnConfig` 可用字段：`columnComment` / `javaType` / `javaField` / `isInsert` / `isEdit` / `isList` / `isQuery` / `isRequired` / `queryType` / `htmlType` / `dictType`。
+
+`--sql` 需要**单表 DDL**，从 `pm-sql/init/00_tables_ddl.sql` 中截取对应的 `CREATE TABLE ... ;` 即可。
+
+**YAML 语法**：`docs/gen-specs/*.yml` 中未加引号的标量值若含 `: `（冒号+空格）或嵌套双引号，会导致整个文件无法被解析（Issue #21 曾有 3 个文件因此损坏）。写业务描述时用引号包裹；外层引号与内容里的引号要错开（内容含 `"` 就用 `'` 包外层）。
 
 All generated Java code goes to `ruoyi-project` (not `ruoyi-admin`). Deploy: Java → `ruoyi-project/src/main/java/com/ruoyi/<module>/`, XML → `ruoyi-project/src/main/resources/mapper/<module>/`, Vue → `ruoyi-ui/src/views/<module>/`, API → `ruoyi-ui/src/api/<module>/`.
 
