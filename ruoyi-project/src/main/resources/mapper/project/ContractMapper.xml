@@ -270,7 +270,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="deptId != null">dept_id = #{deptId},</if>
             <if test="contractType != null and contractType != ''">contract_type = #{contractType},</if>
             <if test="contractStatus != null">contract_status = #{contractStatus},</if>
-            <if test="contractSignDate != null">contract_sign_date = #{contractSignDate},</if>
+            <!-- 签订日期为合同编辑表单上的可选字段，无条件更新，不加 <if> 守卫。
+                 见 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」：
+                 el-date-picker 清空后 v-model 为 undefined，JSON.stringify 丢 key，
+                 守卫会让「用户主动清空」与「字段未提交」不可区分。
+                 另一调用方 ContractServiceImpl.deleteContractByContractIds 传的是
+                 selectContractByContractId 查回的完整实体，无条件写回等值，不受影响。 -->
+            contract_sign_date = #{contractSignDate},
             <if test="contractPeriod != null">contract_period = #{contractPeriod},</if>
             <if test="contractAmount != null">contract_amount = #{contractAmount},</if>
             <if test="taxRate != null">tax_rate = #{taxRate},</if>

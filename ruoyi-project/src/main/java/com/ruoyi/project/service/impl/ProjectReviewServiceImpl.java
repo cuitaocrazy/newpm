@@ -88,13 +88,13 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
             throw new com.ruoyi.common.exception.ServiceException("只有审核通过的项目才能退回");
         }
 
-        Project project = new Project();
-        project.setProjectId(projectId);
-        project.setApprovalStatus("0");
-        project.setApprovalReason(rollbackReason);
-        project.setApprovalTime(DateUtils.getNowDate());
-        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
-        projectMapper.updateProject(project);
+        // 仅更新审核字段，必须走 updateProjectApprovalFields，不能用通用的 updateProject：
+        // 按 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」，updateProject 已放开
+        // start_date / end_date / production_date / acceptance_date / apply_date 五个日期的守卫，
+        // 拿这里只填了审核字段的裸 Project 去调它，会把这 5 个日期一并写成 NULL。
+        // 与 ProjectApprovalServiceImpl 的做法保持一致。
+        projectMapper.updateProjectApprovalFields(projectId, "0", rollbackReason,
+                DateUtils.getNowDate(), String.valueOf(SecurityUtils.getUserId()));
 
         ProjectApproval approval = new ProjectApproval();
         approval.setProjectId(projectId);
@@ -216,14 +216,13 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
     public int approveProject(Long projectId, String approvalStatus, String approvalReason)
     {
         // 1. 更新 pm_project 表（保存最新审核状态）
-        Project project = new Project();
-        project.setProjectId(projectId);
-        project.setApprovalStatus(approvalStatus);
-        project.setApprovalReason(approvalReason);
-        project.setApproverId(String.valueOf(SecurityUtils.getUserId()));
-        project.setApprovalTime(DateUtils.getNowDate());
-
-        int result = projectMapper.updateProject(project);
+        // 仅更新审核字段，必须走 updateProjectApprovalFields，不能用通用的 updateProject：
+        // 按 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」，updateProject 已放开
+        // start_date / end_date / production_date / acceptance_date / apply_date 五个日期的守卫，
+        // 拿只填了审核字段的裸 Project 去调它，会把这 5 个日期一并写成 NULL。
+        // 与 ProjectApprovalServiceImpl 的做法保持一致。
+        int result = projectMapper.updateProjectApprovalFields(projectId, approvalStatus, approvalReason,
+                DateUtils.getNowDate(), String.valueOf(SecurityUtils.getUserId()));
 
         // 2. 插入 pm_project_approval 表（保存审核历史记录）
         if (result > 0)
