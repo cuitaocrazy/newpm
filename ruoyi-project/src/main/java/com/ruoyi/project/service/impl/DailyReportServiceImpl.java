@@ -221,7 +221,7 @@ public class DailyReportServiceImpl implements IDailyReportService
             // 【015】只删除本次提交「有能力表达」的明细：填报人可填项目的工时 + 全部非项目工时。
             // 范围外的明细（如已结项项目的历史工时）原样保留——填报人在填写页上根本看不到它们，
             // 未出现在提交中不等于要删除。改回 deleteByReportId 会重新引入静默数据丢失（FR-001）。
-            detailMapper.deleteByReportIdInScope(existingReportId, resolveVisibleProjectIds(userId));
+            detailMapper.deleteByReportIdInScope(existingReportId, resolveSubmissionScope(userId, detailList));
         }
         else
         {
@@ -405,6 +405,36 @@ public class DailyReportServiceImpl implements IDailyReportService
         return projectMapper.selectProjectsByUserId(userId).stream()
                 .map(p -> Long.parseLong(p.get("projectId").toString()))
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * 【015】保存路径的「作用范围」= 可填项目 ∪ <b>本次提交里出现的项目</b>
+     *
+     * <p>为什么必须并上提交里的项目：{@link #resolveVisibleProjectIds} 的口径
+     * （{@code selectProjectsByUserId}）带有项目生命周期条件——{@code approval_status='1'}、
+     * {@code project_status='0'}。一个「审核通过时填过日报、之后被退回待审核或暂停」的项目
+     * 会掉出该集合；此时若填报人再次提交它的工时，旧明细因不在范围内而删不掉，新明细又照常插入，
+     * <b>工时会凭空翻倍</b>——比修复前的「丢数据」更危险，因为它虚增收入确认依据。
+     *
+     * <p>语义上也更自洽：填报人这次明确提交了某项目的工时，该项目当然归本次提交管。
+     * 而「已结项项目的历史工时」之所以受保护，是因为它<b>不在提交里</b>（填报人看不到、提交不了），
+     * 这条保护不受本方法影响。
+     *
+     * <p>删除路径不适用本方法——那里没有提交内容，作用范围就是可填项目集合本身。
+     *
+     * <p>e2e 回归实测暴露（2026-08-03）：<code>e2e-team-daily-workload</code> 的核心用例
+     * 因新建项目处于待审核态而出现 8+8+4=20（应为 12）。
+     */
+    private Set<Long> resolveSubmissionScope(Long userId, List<DailyReportDetail> detailList)
+    {
+        Set<Long> scope = resolveVisibleProjectIds(userId);
+        if (detailList != null) {
+            detailList.stream()
+                    .filter(d -> d.getProjectId() != null)
+                    .map(DailyReportDetail::getProjectId)
+                    .forEach(scope::add);
+        }
+        return scope;
     }
 
     /**

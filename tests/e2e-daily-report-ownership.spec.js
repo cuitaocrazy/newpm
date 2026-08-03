@@ -28,10 +28,10 @@ const API = process.env.E2E_API_URL || 'http://localhost:8085';
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || '123456789';
 
 // 造数约定的固定 ID，见 tests/fixtures/015-daily-report-ownership-seed.sql
-const P_ACTIVE = 100;    // 在建 + admin 是成员    → 可见，作用范围内
-const P_CLOSED = 200;    // 已结项 + admin 是成员  → 不可见，作用范围外
-const P_STRANGER = 300;  // 在建，admin 从未参与   → 归属校验须拒绝
-const P_FORMER = 400;    // 在建，admin 已离场     → 归属校验须放行
+const P_ACTIVE = 990100;    // 在建 + admin 是成员    → 可见，作用范围内
+const P_CLOSED = 990200;    // 已结项 + admin 是成员  → 不可见，作用范围外
+const P_STRANGER = 990300;  // 在建，admin 从未参与   → 归属校验须拒绝
+const P_FORMER = 990400;    // 在建，admin 已离场     → 归属校验须放行
 
 let ctx;
 let headers;

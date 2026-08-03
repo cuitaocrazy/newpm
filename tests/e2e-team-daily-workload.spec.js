@@ -249,15 +249,20 @@ test.describe.serial('团队日报工时缺陷修复（Issue #5）', () => {
     const members = (await api.get(`/project/member/${outsiderId}`)).data;
     expect((members || []).some((m) => Number(m.userId) === ADMIN_USER_ID), 'admin 不应是该项目成员').toBe(false);
 
-    // 攻击动作：saveDailyReport 不校验 projectId 归属，故这一步会成功
+    // 攻击动作：往「从未参与过的项目」注入工时
+    // 【015 起】写入侧已加项目归属校验（specs/015-daily-report-ownership-check），
+    // 这一步现在会被直接拒绝——防线从「读取侧过滤」前移到「写入侧拒绝」。
+    // 修复前此处断言的是 toBe(200) 并注明「属既有问题」，那正是 015 修掉的缺口。
     const probeDate = `${yearMonth}-16`;
     const inject = await api.post('/project/dailyReport', {
       reportDate: probeDate,
       detailList: [{ projectId: outsiderId, entryType: 'work', workHours: 0.01, workContent: 'probe' }]
     });
-    expect(inject.code, '注入本身会成功（写入侧无归属校验，属既有问题）').toBe(200);
+    expect(inject.code, '第一道防线：写入侧应拒绝向从未参与的项目记录工时').toBe(500);
+    expect(inject.msg, '拒绝提示须指明被拒项目').toContain('不在您参与的项目范围内');
 
-    // 关键断言：不得因这次注入而获得「离场成员」身份读到该项目
+    // 第二道防线（纵深防御，即使将来写入侧被绕过也须成立）：
+    // 不得因任何注入而获得「离场成员」身份读到该项目
     // 团队日报的离场分支要求「曾是该项目成员」，成员行只能由持项目编辑权者写入，无法自助伪造。
     // 若有人删掉该 EXISTS 约束，此处会失败——那意味着任何账号可越权读取任意项目的
     // 预算 / 合同金额 / 收入确认金额。

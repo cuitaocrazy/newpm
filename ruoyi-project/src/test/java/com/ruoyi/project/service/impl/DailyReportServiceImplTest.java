@@ -583,6 +583,38 @@ class DailyReportServiceImplTest {
         verify(dailyReportMapper).updateTotalWorkHours(eq(existingReportId), eq(new BigDecimal("5")));
     }
 
+    @Test
+    @DisplayName("[TDD] 保存日报：本次提交里出现的项目必须纳入作用范围，否则旧明细删不掉会重复累加")
+    void saveDailyReport_submittedProjectOutsideMyProjects_stillReplacesOldDetails() throws Exception {
+        Long existingReportId = 63L;
+        // 待审核 / 已暂停的项目：approval_status≠'1' 或 project_status≠'0'，
+        // 于是它不出现在 selectProjectsByUserId 的结果里
+        Long pendingProjectId = 70L;
+
+        DailyReport report = buildReport("2026-03-19");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, pendingProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(existingReportId);
+        when(dailyReportMapper.updateDailyReport(any())).thenReturn(1);
+        // 该日已有同一项目的旧明细
+        when(detailMapper.selectByReportId(existingReportId)).thenReturn(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, pendingProjectId, null)));
+
+        // 可填项目列表为空——项目因生命周期状态被 selectProjectsByUserId 过滤掉了
+        lenient().when(projectMapper.selectProjectsByUserId(USER_ID)).thenReturn(Collections.emptyList());
+
+        service.saveDailyReport(report);
+
+        @SuppressWarnings("rawtypes")
+        ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
+        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture());
+        assertTrue(scope.getValue().contains(pendingProjectId),
+                "填报人这次明确提交了该项目的工时，它就归本次提交管——旧明细必须先删。"
+                        + "否则旧的留着、新的又插进来，工时凭空翻倍。e2e 回归实测暴露（2026-08-03）。");
+    }
+
     // ---------- User Story 1b：删除整条日报时不丢失填报人看不见的工时 ----------
 
     @Test
