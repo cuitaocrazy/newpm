@@ -102,8 +102,8 @@
       <el-table-column label="备注" prop="remarks" min-width="120" show-overflow-tooltip />
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button type="primary" link icon="View" @click="handleDetail(row)" v-hasPermi="['project:versionOut:query']">详情</el-button>
-          <el-button type="primary" link icon="Edit" @click="handleEdit(row)" v-hasPermi="['project:versionOut:edit']">编辑</el-button>
+          <row-link-button :to="`/project/versionOut/detail/${row.id}`" icon="View" label="详情" @navigate="handleDetail(row)" v-hasPermi="['project:versionOut:query']" />
+          <row-link-button :to="`/project/versionOut/edit/${row.id}`" icon="Edit" label="编辑" @navigate="handleEdit(row)" v-hasPermi="['project:versionOut:edit']" />
           <el-button type="danger" link icon="Delete" @click="handleDelete(row)" v-hasPermi="['project:versionOut:remove']">删除</el-button>
         </template>
       </el-table-column>

@@ -307,8 +307,8 @@
       <el-table-column label="操作" align="center" width="280" fixed="right" class-name="small-padding fixed-width" v-if="columns.actions.visible">
         <template #default="scope">
           <template v-if="!scope.row.isSummary">
-            <el-button link type="primary" icon="View" @click="handleView(scope.row)" v-hasPermi="['project:contract:query']">详情</el-button>
-            <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:contract:edit']">编辑</el-button>
+            <row-link-button :to="`/htkx/contract/detail/${scope.row.contractId}`" icon="View" label="详情" @navigate="handleView(scope.row)" v-hasPermi="['project:contract:query']" />
+            <row-link-button :to="`/htkx/contract/edit/${scope.row.contractId}`" icon="Edit" label="编辑" @navigate="handleUpdate(scope.row)" v-hasPermi="['project:contract:edit']" />
             <el-button link type="primary" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:contract:attachment']">附件</el-button>
             <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:contract:remove']">删除</el-button>
           </template>

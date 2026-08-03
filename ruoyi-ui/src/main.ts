@@ -60,6 +60,8 @@ import SecondaryRegionSelect from '@/components/SecondaryRegionSelect/index.vue'
 import ProjectSelect from '@/components/ProjectSelect/index.vue'
 // 组织机构人员选择组件
 import OrgUserSelect from '@/components/OrgUserSelect/index.vue'
+// 行内链接按钮组件（右键可新标签打开）
+import RowLinkButton from '@/components/RowLinkButton/index.vue'
 
 const app = createApp(App)
 
@@ -90,6 +92,7 @@ app.component('UserSelect', UserSelect)
 app.component('SecondaryRegionSelect', SecondaryRegionSelect)
 app.component('ProjectSelect', ProjectSelect)
 app.component('OrgUserSelect', OrgUserSelect)
+app.component('RowLinkButton', RowLinkButton)
 
 app.use(router)
 app.use(store)

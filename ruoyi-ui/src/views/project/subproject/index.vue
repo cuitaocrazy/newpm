@@ -276,10 +276,12 @@
         <el-table-column label="操作" width="150" align="center" fixed="right" v-if="columns.actions.visible">
           <template #default="scope">
             <template v-if="!scope.row.isSummaryRow && scope.row.taskId">
-              <el-button link type="primary" icon="View" v-hasPermi="['project:task:query']"
-                @click="handleDetail(scope.row)">详情</el-button>
-              <el-button link type="primary" icon="Edit" v-hasPermi="['project:task:edit']"
-                @click="handleEdit(scope.row)">编辑</el-button>
+              <row-link-button :to="`/task/subproject/detail/${scope.row.taskId}`"
+                icon="View" label="详情" v-hasPermi="['project:task:query']"
+                @navigate="handleDetail(scope.row)" />
+              <row-link-button :to="`/task/subproject/edit/${scope.row.taskId}`"
+                icon="Edit" label="编辑" v-hasPermi="['project:task:edit']"
+                @navigate="handleEdit(scope.row)" />
               <el-button link type="danger" icon="Delete" v-hasPermi="['project:task:remove']"
                 @click="handleDelete(scope.row)">删除</el-button>
             </template>

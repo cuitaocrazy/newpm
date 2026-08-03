@@ -304,8 +304,8 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" fixed="right" width="380" v-if="columns.actions.visible">
         <template #default="scope">
           <template v-if="!scope.row.isSummaryRow">
-            <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:project:query']">详情</el-button>
-            <el-button v-if="scope.row.approvalStatus !== '1'" link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']">编辑</el-button>
+            <row-link-button :to="`/project/list/detail/${scope.row.projectId}`" icon="View" label="详情" @navigate="handleDetail(scope.row)" v-hasPermi="['project:project:query']" />
+            <row-link-button v-if="scope.row.approvalStatus !== '1'" :to="`/project/list/edit/${scope.row.projectId}`" icon="Edit" label="编辑" @navigate="handleUpdate(scope.row)" v-hasPermi="['project:project:edit']" />
 
             <!-- 合同按钮：有合同显示"查看合同"，始终显示"关联合同" -->
             <el-button

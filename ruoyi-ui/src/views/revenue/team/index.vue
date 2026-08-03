@@ -362,13 +362,12 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="120" fixed="right">
         <template #default="scope">
           <template v-if="isDataRow(scope.row)">
-            <el-button
-              link
-              type="primary"
+            <row-link-button
+              :to="`/revenue/team/detail/${scope.row.projectId}`"
               icon="View"
-              @click="handleDetail(scope.row)"
+              @navigate="handleDetail(scope.row)"
               v-hasPermi="['revenue:team:query']"
-            >查看</el-button>
+            >查看</row-link-button>
             <el-button
               link
               type="primary"

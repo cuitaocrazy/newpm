@@ -126,8 +126,8 @@
       <el-table-column label="最后修改日期" prop="updateTime" width="160" align="center" />
       <el-table-column label="操作" width="210" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button type="primary" link icon="View" @click="handleDetail(row)" v-hasPermi="['project:prolistDefect:query']">详情</el-button>
-          <el-button type="primary" link icon="Edit" @click="handleEdit(row)" v-hasPermi="['project:prolistDefect:edit']">编辑</el-button>
+          <row-link-button :to="{ path: '/project/prolistDefect/detail', query: { problemId: row.problemId } }" icon="View" label="详情" @navigate="handleDetail(row)" v-hasPermi="['project:prolistDefect:query']" />
+          <row-link-button :to="{ path: '/project/prolistDefect/edit', query: { problemId: row.problemId } }" icon="Edit" label="编辑" @navigate="handleEdit(row)" v-hasPermi="['project:prolistDefect:edit']" />
           <el-button type="danger" link icon="Delete" @click="handleDelete(row)" v-hasPermi="['project:prolistDefect:remove']">删除</el-button>
         </template>
       </el-table-column>

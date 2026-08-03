@@ -309,8 +309,8 @@
         <template #default="scope">
           <template v-if="!scope.row.isSummary">
             <template v-if="scope.row.paymentId">
-              <el-button link type="primary" icon="View" @click="handleDetail(scope.row)" v-hasPermi="['project:payment:query']">详情</el-button>
-              <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['project:payment:edit']">编辑</el-button>
+              <row-link-button :to="`/htkx/payment/detail/${scope.row.paymentId}`" icon="View" label="详情" @navigate="handleDetail(scope.row)" v-hasPermi="['project:payment:query']" />
+              <row-link-button :to="`/htkx/payment/edit/${scope.row.paymentId}`" icon="Edit" label="编辑" @navigate="handleUpdate(scope.row)" v-hasPermi="['project:payment:edit']" />
               <el-button link type="primary" icon="Paperclip" @click="handleAttachment(scope.row)" v-hasPermi="['project:payment:attachment']">附件</el-button>
               <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['project:payment:remove']">删除</el-button>
             </template>
