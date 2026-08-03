@@ -275,7 +275,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                  见 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」：
                  el-date-picker 清空后 v-model 为 undefined，JSON.stringify 直接丢弃该 key，
                  守卫会把「用户主动清空」误当成「字段未提交」，清空意图被静默丢弃。 -->
-            production_date = #{productionDate},
+            <!-- production_date 必须保留守卫：任务编辑页 subproject/edit.vue 上没有这个字段
+                 （它由所选批次派生、只读展示），PUT 请求体里根本不带 productionDate。
+                 无条件更新会让每一次任务编辑都把计划投产日期写成 NULL。 -->
+            <if test="productionDate != null">production_date = #{productionDate},</if>
             production_version_date = #{productionVersionDate},
             actual_production_date = #{actualProductionDate},
             internal_closure_date = #{internalClosureDate},

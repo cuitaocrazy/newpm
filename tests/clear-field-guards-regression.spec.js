@@ -42,11 +42,9 @@ import { setupApi } from './helpers/api-client.js';
 let api;
 
 // 本套件显式关闭重试（Issue #20）。
-// 每个块都是「造数 → 断言 → 自清理」的 describe.serial，造数唯一性依赖下面的后缀。
-// 该后缀在模块加载时求值一次，而 Playwright 的 retry 在同一 worker 内重跑、不会重新
-// 加载模块 —— 重试时会拿同样的后缀再造一次数，导致 problemNo 撞上 Service 层查重，
-// 用例失败原因变成「问题单编号已存在」，反而掩盖了真实失败。
-// 这类用例失败就该直接暴露，不应重试。
+// 每个块都是「造数 → 断言 → 自清理」的 describe.serial：中途失败时清理用例不会执行，
+// 残留记录会让重试的造数撞上 Service 层查重（如 problemNo），失败原因变成
+// 「问题单编号已存在」，掩盖真实失败。这类用例失败就该直接暴露，不应重试。
 test.describe.configure({ retries: 0 });
 
 /** 造数唯一后缀：时间戳 + 随机量，降低跨进程／跨次运行撞名概率 */
@@ -261,7 +259,6 @@ test.describe.serial('任务管理 · updateTask 清空可选日期', () => {
   const CLEARABLE = {
     internalClosureDate: '2026-03-11',
     functionalTestDate: '2026-04-12',
-    productionDate: '2026-05-13',
     productionVersionDate: '2026-06-14',
     actualProductionDate: '2026-07-15',
     // taskBudget 是普通 el-input（无 clearable 属性），但用户手动删空后
@@ -269,12 +266,22 @@ test.describe.serial('任务管理 · updateTask 清空可选日期', () => {
     // 它是「可清空 ≠ 控件带 clearable」的典型反例。
     taskBudget: '88888.88'
   };
-  /** taskCode/taskName 是必填；startDate/endDate 前端 rules 必填 —— 守卫保留 */
+  /**
+   * taskCode/taskName 是必填；startDate/endDate 前端 rules 必填 —— 守卫保留。
+   *
+   * productionDate 也在这里，原因与其它三个不同，务必看清：
+   * 任务编辑页 subproject/edit.vue 上**根本没有这个字段**（计划投产日期由所选批次派生、
+   * 只读展示），PUT 请求体里不带 productionDate。它一旦被解放守卫，每一次任务编辑
+   * （哪怕只改任务名称）都会把它写成 NULL。所以它必须保留守卫，本块验证守卫兜住了。
+   * 这也是本套件「用详情接口构造 payload」这一手法的盲区：payload 里有没有某个 key
+   * 取决于真实表单，而不是详情接口返回什么。
+   */
   const GUARDED = {
     taskCode: `E2E-CLR-T-${TS}`,
     taskName: `E2E清空守卫_任务_${TS}`,
     startDate: '2026-01-02',
-    endDate: '2026-12-30'
+    endDate: '2026-12-30',
+    productionDate: '2026-05-13'
   };
 
   let taskId = null;
@@ -386,7 +393,7 @@ test.describe.serial('任务管理 · updateTask 清空可选日期', () => {
 // ═════════════════════════════════════════════════════════════
 test.describe.serial('批次版本管理 · updateVersionOut 清空可选字段', () => {
   const CLEARABLE = {
-    outVersion: `E2EOV${TS % 100000}`,
+    outVersion: `E2EOV${TS}`,
     versionStatus: 'E2E01'   // sys_version_status 是空字典，用字面量占位（varchar(20)）
   };
   /** 本次未解放 —— 守卫仍生效，key 缺失时必须保留原值 */

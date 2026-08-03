@@ -221,7 +221,19 @@ public class ProjectReviewServiceImpl implements IProjectReviewService
         // start_date / end_date / production_date / acceptance_date / apply_date 五个日期的守卫，
         // 拿只填了审核字段的裸 Project 去调它，会把这 5 个日期一并写成 NULL。
         // 与 ProjectApprovalServiceImpl 的做法保持一致。
-        int result = projectMapper.updateProjectApprovalFields(projectId, approvalStatus, approvalReason,
+        // 审核通过时若未填意见，保留原有意见：updateProjectApprovalFields 是无条件写入，
+        // 传 null 会把上一次的拒绝理由清空。而 project/index.vue、project/detail.vue、
+        // review/index.vue 三处的「审核意见」都直接读 pm_project.approval_reason，
+        // 并不读 pm_project_approval 历史表 —— 用户会看到意见凭空消失。
+        // （Controller 只在拒绝时强制校验意见非空，通过时允许为空。）
+        String reasonToWrite = approvalReason;
+        if (reasonToWrite == null || reasonToWrite.trim().isEmpty())
+        {
+            Project current = projectMapper.selectProjectByProjectId(projectId);
+            reasonToWrite = current != null ? current.getApprovalReason() : null;
+        }
+
+        int result = projectMapper.updateProjectApprovalFields(projectId, approvalStatus, reasonToWrite,
                 DateUtils.getNowDate(), String.valueOf(SecurityUtils.getUserId()));
 
         // 2. 插入 pm_project_approval 表（保存审核历史记录）
