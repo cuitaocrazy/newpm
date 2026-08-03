@@ -528,6 +528,8 @@ All other PM tables use soft delete. Do not add unique constraint workarounds fo
 
 判断规则：
 
+0. **只看编辑页，不看新增页。** UPDATE 请求只由编辑页发出，字段是否会出现在 PUT 请求体里，取决于**编辑页**的 `form` 对象与提交逻辑。Issue #10 的审计脚本合并统计了 `add.vue` 与 `edit.vue`，把 `productionDate`（add 页有、edit 页只读展示、form 里根本没有）误判为「在表单上」，解放守卫后**每一次任务编辑都会把它写成 NULL**。逐个字段核对的命令：`grep -n '<字段名>' <模块>/edit.vue`，零匹配就必须保留守卫。
+
 1. **口径按前端 `required` 判定，不是控件是否带 `clearable`。** 任何 `el-input` 用户都能手动删空，`el-input-number` 清空后是 `undefined` —— Issue #10 因只扫 `clearable` 控件而漏掉了 `taskBudget`。另注意 `el-date-picker` 与所有自定义 `*-select` 组件（`dict-select` / `user-select` / `project-dept-select` / `secondary-region-select` / `project-select`）的 `clearable` **默认就是 true**，日期字段因此是重灾区。判据是前端 `rules` 里有没有 `required`（含 validator 里写「不能为空」的）。
 
 2. **解放任何字段前，必须逐个排查该 mapper 主 CRUD 语句的全部 Java 调用方。**

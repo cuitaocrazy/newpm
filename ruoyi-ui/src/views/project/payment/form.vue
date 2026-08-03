@@ -552,30 +552,14 @@ function handleSubmit() {
   })
 }
 
-/** 表单上可被用户清空的可选字段（与 PaymentMapper.updatePayment 的无条件更新字段一一对应） */
-const CLEARABLE_FIELDS = [
-  'expectedQuarter',
-  'actualQuarter',
-  'submitAcceptanceDate',
-  'actualPaymentDate',
-  'confirmYear',
-  'remark'
-]
-
 /** 提交表单数据 */
 function submitForm() {
   submitLoading.value = true
 
+  // 清空可选字段无需前端做 undefined→null 归一：@RequestBody 绑定 Java Bean 时
+  // 「payload 中 key 缺失」与「显式传 null」效果完全相同（已实测），
+  // PaymentMapper.updatePayment 对可选字段是无条件更新，清空即可落库。
   const submitData = { ...form }
-
-  // el-select / el-date-picker 点击清空图标时 v-model 会被置为 undefined，
-  // JSON.stringify 会直接丢弃 undefined 的 key，导致后端收不到「清空」这个意图。
-  // 这里统一归一为 null，保证清空能落库（Issue #7）。
-  CLEARABLE_FIELDS.forEach(field => {
-    if (submitData[field] === undefined) {
-      submitData[field] = null
-    }
-  })
 
   const apiCall = isEdit.value ? updatePayment(submitData) : addPayment(submitData)
 

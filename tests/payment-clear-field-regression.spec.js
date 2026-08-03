@@ -54,6 +54,21 @@ function expectCleared(payment, field) {
   ).toBe(true);
 }
 
+/**
+ * 断言字段严格等于期望值。
+ * 不用 toContain —— 子串匹配会让 '1' 匹配上 '10'/'11'、100 匹配上 1001，
+ * 字段被篡改成另一个非空值也照样通过，证不出「原值未被篡改」。
+ * 数值型按 Number 比较，以容忍 100 与 '100.00' 这类 decimal 格式差异。
+ */
+function expectSameValue(actual, expected, message) {
+  const numeric = expected !== '' && expected !== null && !Number.isNaN(Number(expected));
+  if (numeric) {
+    expect(Number(actual), message).toBe(Number(expected));
+  } else {
+    expect(String(actual), message).toBe(String(expected));
+  }
+}
+
 test.describe.serial('付款里程碑清空可空字段（Issue #7）', () => {
 
   test.beforeAll(async () => {
@@ -141,10 +156,7 @@ test.describe.serial('付款里程碑清空可空字段（Issue #7）', () => {
     }
     // 必填字段：守卫兜底，必须保留原值
     for (const [field, value] of Object.entries(GUARDED_FIELDS)) {
-      expect(
-        String(afterRes.data[field]),
-        `必填字段 ${field} 不得被静默清空`
-      ).toContain(String(value));
+      expectSameValue(afterRes.data[field], value, `必填字段 ${field} 不得被静默清空或篡改`);
     }
     console.log('✅ key 缺失场景：可选字段已清空，必填字段保留原值');
   });
@@ -202,7 +214,7 @@ test.describe.serial('付款里程碑清空可空字段（Issue #7）', () => {
     const afterRes = await api.get(`/project/payment/${createdPaymentId}`);
     expect(afterRes.code).toBe(200);
     for (const [field, value] of Object.entries(CLEARABLE_FIELDS)) {
-      expect(String(afterRes.data[field]), `字段 ${field} 应保留提交值`).toContain(String(value));
+      expectSameValue(afterRes.data[field], value, `字段 ${field} 应严格保留提交值`);
     }
     expect(Number(afterRes.data.paymentAmount), '付款金额应更新为20000').toBe(20000);
     console.log('✅ 反向保护：有值字段正常保存，未被误清空');

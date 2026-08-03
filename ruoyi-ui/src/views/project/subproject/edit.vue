@@ -454,13 +454,24 @@ function onBatchChange(batchId) {
   planProductionDateDisplay.value = found ? (found.planProductionDate ? found.planProductionDate.substring(0, 10) : '') : ''
 }
 
+/**
+ * 数值输入框归一：空串 / null / undefined → null；**0 必须原样保留**。
+ * 不能写成 `v ? parseFloat(v) : null` —— 0 是 falsy，会被当成「没填」提交 null，
+ * 而 task_budget 在后端已改为无条件更新，null 会直接把库里的 0 清空。
+ */
+function toNumberOrNull(v) {
+  if (v === null || v === undefined || String(v).trim() === '') return null
+  const n = parseFloat(String(v).replace(/,/g, ''))
+  return Number.isNaN(n) ? null : n
+}
+
 function submitForm() {
   formRef.value.validate(valid => {
     if (!valid) return
     const submitData = {
       ...form.value,
-      taskBudget: form.value.taskBudget ? parseFloat(String(form.value.taskBudget).replace(/,/g, '')) : null,
-      estimatedWorkload: form.value.estimatedWorkload ? parseFloat(form.value.estimatedWorkload) : null
+      taskBudget: toNumberOrNull(form.value.taskBudget),
+      estimatedWorkload: toNumberOrNull(form.value.estimatedWorkload)
     }
     updateTask(submitData).then(() => {
       proxy.$modal.msgSuccess('保存成功')
