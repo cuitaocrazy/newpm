@@ -522,15 +522,31 @@ All other PM tables use soft delete. Do not add unique constraint workarounds fo
 
 ### 全量表单提交的 update 不要加 `<if>` 守卫
 
-`<if test="xxx != null">` 是**部分更新**语义。用在**全量表单提交**的 update 上，会让「用户主动清空」与「字段未提交」不可区分 —— 清空意图被静默丢弃，界面提示保存成功但值不变。`pm_payment` 上此缺陷已复发三次（`expected_quarter` → `actual_payment_date` → `actual_quarter`，Issue #7），每次只修当次报上来的那一个字段。
+`<if test="xxx != null">` 是**部分更新**语义。用在**全量表单提交**的 update 上，会让「用户主动清空」与「字段未提交」不可区分 —— 清空意图被静默丢弃，界面提示保存成功但值不变。此缺陷已复发四次（`pm_payment` 三次：`expected_quarter` → `actual_payment_date` → `actual_quarter`，Issue #7；随后 Issue #10 跨 5 个 mapper 收口 15 个字段），前三次都只修了当次报上来的那一个字段。
+
+**源头已治**：代码生成器模板 `mapper.xml.vm` 现按四维度分流 —— 必填 / `isInsert=0` / `isEdit=0` / 审计列 → 保留守卫，其余可选字段 → 无条件更新。新生成的模块不再带病出生。存量模块仍需按下面的规则逐个排查。
 
 判断规则：
 
-1. 该 update 的调用方是否只有「全量表单提交」（Controller 的 edit）？是 → **可选业务字段一律无条件更新**；必填字段保留守卫作为兜底，因为它们本就不存在清空场景。
-2. 前端 `el-select` / `el-date-picker` 的 clearable 清空后 v-model 为 `undefined`，`JSON.stringify` 会**直接丢弃该 key**，后端收到的是 null 而非空串。提交前须显式归一为 `null`。
-3. 同一个 update 里「一半字段有守卫、一半没有」是缺陷的化石记录 —— 看到不对称就该查。
+1. **口径按前端 `required` 判定，不是控件是否带 `clearable`。** 任何 `el-input` 用户都能手动删空，`el-input-number` 清空后是 `undefined` —— Issue #10 因只扫 `clearable` 控件而漏掉了 `taskBudget`。另注意 `el-date-picker` 与所有自定义 `*-select` 组件（`dict-select` / `user-select` / `project-dept-select` / `secondary-region-select` / `project-select`）的 `clearable` **默认就是 true**，日期字段因此是重灾区。判据是前端 `rules` 里有没有 `required`（含 validator 里写「不能为空」的）。
 
-参考实现：`PaymentMapper.updatePayment` + `payment/form.vue` 的 `CLEARABLE_FIELDS`；回归用例 `tests/payment-clear-field-regression.spec.js`（同时锁定「可选字段能清空」与「必填字段不被误清」）。
+2. **解放任何字段前，必须逐个排查该 mapper 主 CRUD 语句的全部 Java 调用方。**
+
+   ```bash
+   grep -rn '\.updateXxx\s*(' ruoyi-project/src/main/java/
+   ```
+
+   Service 自身的 `updateXxx` 透传是正常的；要找的是「`new` 一个只填几个字段的裸实体」那种部分更新调用。Issue #10 中 `ProjectReviewServiceImpl.approveProject/rollbackProject` 正是这种写法，守卫一去掉就会在**每次项目审核时把该项目的 5 个日期写成 NULL**（已改走专用语句 `updateProjectApprovalFields`）。
+
+   **「该 update 只有一个全量表单调用方」这个前提必须逐个 mapper 验证，不可跨模块复用结论** —— 它对 `PaymentMapper` 成立，对 `ProjectMapper` 不成立。
+
+3. **前端不需要改。** 已实测：`@RequestBody` 绑定 Java Bean 时，「payload 中 key 缺失」与「显式传 null」效果完全相同（字段都是 Java 默认值 null），**后端去掉守卫即充分**。Issue #10 中一度加过 `normalizeClearable` 工具 + 8 个前端文件改动，实测后全部撤销 —— 不要重复这个弯路。
+
+4. 同一个 update 里「一半字段有守卫、一半没有」是缺陷的化石记录 —— 看到不对称就该查。同理，同一个 mapper 文件里有多个主 CRUD 语句时（如 `VersionOutMapper` 的 `updateVersionOut` 与 `updateVersionOutManual`）必须一并处理，只改一个是新的化石。
+
+只更新审核字段这类**专用局部更新语句**（`updateProjectApprovalFields` / `updateActualWorkload` 等）无条件更新是正常设计，不要动它们。
+
+参考实现：Issue #10 的 commit `f8f5956`（5 个 mapper + 生成器模板 + `ProjectReviewServiceImpl`）；回归用例 `tests/clear-field-guards-regression.spec.js`（跨 7 模块，锁定「key 缺失」与「显式 null」两条清空路径 + 必填字段不被误清）与 `tests/payment-clear-field-regression.spec.js`。剩余 36 个未解放字段见 Issue #14。
 
 ### Task Fields Belong to pm_task, Not pm_project
 

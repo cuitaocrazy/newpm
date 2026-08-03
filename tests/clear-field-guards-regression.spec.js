@@ -40,7 +40,17 @@ import { test, expect } from '@playwright/test';
 import { setupApi } from './helpers/api-client.js';
 
 let api;
-const TS = Date.now();
+
+// 本套件显式关闭重试（Issue #20）。
+// 每个块都是「造数 → 断言 → 自清理」的 describe.serial，造数唯一性依赖下面的后缀。
+// 该后缀在模块加载时求值一次，而 Playwright 的 retry 在同一 worker 内重跑、不会重新
+// 加载模块 —— 重试时会拿同样的后缀再造一次数，导致 problemNo 撞上 Service 层查重，
+// 用例失败原因变成「问题单编号已存在」，反而掩盖了真实失败。
+// 这类用例失败就该直接暴露，不应重试。
+test.describe.configure({ retries: 0 });
+
+/** 造数唯一后缀：时间戳 + 随机量，降低跨进程／跨次运行撞名概率 */
+const TS = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
 test.beforeAll(async () => {
   api = await setupApi();
@@ -1007,5 +1017,130 @@ const GUARDED_DEPT = {};   // 运行时填入 deptId
     const res = await api.del(`/project/nobatchProlist/${problemId}`);
     expect(res.code, '删除非批次问题单应成功').toBe(200);
     problemId = null;
+  });
+});
+
+// ═════════════════════════════════════════════════════════════
+// 8. 收入确认 —— updateProject 的第二个 Controller 入口
+//    PUT /project/project/revenue （前端 revenue/company/detail.vue）
+//
+//    该入口与项目编辑表单共用 ProjectMapper.updateProject，而本次已解放
+//    5 个日期字段的守卫。它当前之所以安全，靠的是
+//    GET /project/project/revenue/{id} 返回完整实体（实测 96 字段，
+//    与 GET /project/project/{id} 一致），前端 form.value = response.data
+//    后整体回传，字段齐全。
+//
+//    这个安全性依赖「查询 SQL 返回全字段」这一实现细节，没有任何测试锁定它。
+//    若将来有人优化该查询只 select 需要的列，5 个日期会在每次收入确认时被
+//    静默清空 —— 与本文件所修复的缺陷完全同型。本块锁定该前提。（Issue #19）
+// ═════════════════════════════════════════════════════════════
+test.describe.serial('收入确认 · PUT /project/project/revenue 不得清空项目日期', () => {
+  /** 已解放守卫的 5 个日期 —— 收入确认操作绝不能碰它们 */
+  const DATES = {
+    applyDate: '2026-01-21',
+    startDate: '2026-02-22',
+    endDate: '2026-11-23',
+    acceptanceDate: '2026-12-24',
+    productionDate: '2026-10-25'
+  };
+  const projectName = `E2E收入确认守卫_项目_${TS}`;
+  const projectCode = `E2E-REV-P-${TS}`;
+
+  let projectId = null;
+
+  test.afterAll(async () => {
+    if (projectId) {
+      try {
+        await api.del(`/project/project/${projectId}`);
+        console.log(`🧹 afterAll 清理：已删除项目 ${projectId}`);
+      } catch { /* 可能已清理 */ }
+      projectId = null;
+    }
+  });
+
+  test('前置：创建带完整日期的项目', async () => {
+    const listRes = await api.get('/project/project/list', { pageNum: 1, pageSize: 1 });
+    expect(listRes.code).toBe(200);
+    if (!listRes.rows || listRes.rows.length === 0) {
+      console.log('⏭️ 库中无既有项目可作模板，跳过「收入确认」块');
+      test.skip();
+      return;
+    }
+    const tpl = listRes.rows[0];
+
+    const addRes = await api.post('/project/project', {
+      projectName,
+      projectCode,
+      projectStatus: '1',
+      industry: tpl.industry,
+      region: tpl.region,
+      regionId: tpl.regionId,
+      regionCode: tpl.regionCode,
+      shortName: 'REVGUARD',
+      establishedYear: tpl.establishedYear,
+      projectCategory: tpl.projectCategory,
+      projectDept: tpl.projectDept,
+      projectStage: '0',
+      acceptanceStatus: '0',
+      estimatedWorkload: 10,
+      projectBudget: 100000,
+      projectManagerId: tpl.projectManagerId,
+      projectDescription: 'E2E收入确认守卫回归测试项目',
+      ...DATES
+    });
+    expect(addRes.code, '新增项目应成功').toBe(200);
+
+    const found = await api.get('/project/project/list', { pageNum: 1, pageSize: 10, projectName });
+    expect(found.rows.length, '应能按名称检索到刚创建的项目').toBeGreaterThan(0);
+    projectId = found.rows[0].projectId;
+    console.log(`📌 前置项目已创建，projectId=${projectId}`);
+  });
+
+  test('A. 契约锁定：收入确认详情接口必须返回全部 5 个日期', async () => {
+    if (!projectId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+
+    const rev = await api.get(`/project/project/revenue/${projectId}`);
+    expect(rev.code, '收入确认详情应返回200').toBe(200);
+
+    // 前端 detail.vue 是 form.value = response.data 后整体回传，
+    // 该接口一旦漏返回任何一个日期，回传时就是 null，守卫已去掉 → 直接被清空
+    for (const [f, v] of Object.entries(DATES)) {
+      expectKept(rev.data, f, v);
+    }
+    console.log('✅ 收入确认：详情接口字段完整性契约成立');
+  });
+
+  test('B. 收入确认操作后，5 个日期必须保持原值', async () => {
+    if (!projectId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+
+    const rev = await api.get(`/project/project/revenue/${projectId}`);
+    expect(rev.code).toBe(200);
+
+    // 模拟 revenue/company/detail.vue 的提交：整体回传 + 填入收入确认必填项
+    const putRes = await api.put('/project/project/revenue', {
+      ...rev.data,
+      revenueConfirmStatus: '1',
+      revenueConfirmYear: String(new Date().getFullYear()),
+      confirmAmount: 50000,
+      taxRate: 6
+    });
+    expect(putRes.code, '收入确认应成功').toBe(200);
+
+    const after = await api.get(`/project/project/${projectId}`);
+    expect(after.code).toBe(200);
+    for (const [f, v] of Object.entries(DATES)) {
+      expectKept(after.data, f, v);
+    }
+    // 确认收入确认本身生效了，否则上面的断言可能是「什么都没发生」的假绿
+    expect(String(after.data.revenueConfirmStatus), '收入确认状态应已更新').toBe('1');
+    console.log('✅ 收入确认：5 个日期未被误清空，且确认操作确实生效');
+  });
+
+  test('清理：删除测试项目', async () => {
+    if (!projectId) { test.skip(); return; }
+    const res = await api.del(`/project/project/${projectId}`);
+    expect(res.code, '删除项目应成功').toBe(200);
+    projectId = null;
+    console.log('🧹 测试项目已删除');
   });
 });
