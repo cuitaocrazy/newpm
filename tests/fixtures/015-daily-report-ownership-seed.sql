@@ -45,10 +45,23 @@ DROP PROCEDURE `015_guard`;
 
 -- ---------------------------------------------------------------- 清理 ----
 -- 只删本脚本造的行：ID 在 99xxxx 号段 且 remark 带本脚本的标记（双条件）
-DELETE d FROM pm_daily_report_detail d
-    JOIN pm_daily_report r ON r.report_id = d.report_id
-    WHERE r.report_id BETWEEN 991000 AND 991999 AND r.remark = '015-e2e-fixture';
-DELETE FROM pm_daily_report  WHERE report_id  BETWEEN 991000 AND 991999 AND remark = '015-e2e-fixture';
+--
+-- ⚠️ 明细的清理【不能】JOIN 主表：
+--   ① 用例跑完可能留下「主记录已被删、明细还在」的孤儿明细（e2e 的删除用例本就在验证这种保留逻辑）；
+--   ② 应用侧也清不掉它们——deleteByReportIdInScope 为了做归属校验改成了
+--      INNER JOIN pm_daily_report 的多表 DELETE，主记录不存在就匹配不到任何行；
+--   ③ 991xxx 是显式指定的固定 ID（非自增），下一次造数会重建同号主记录，
+--      孤儿明细按 report_id 自动「挂回」新日报 → 当日工时凭空多一份，断言随机变红且极难定位。
+-- 因此明细清理【不能】加 remark 条件（孤儿明细与 API 新建的明细 remark 都是 NULL）。
+--
+-- ⚠️ 但范围必须严格限定为本脚本显式使用的那 4 个 ID，【不可】写成 991000-991999 号段：
+--    显式插入 991000-991003 会把 pm_daily_report 的 AUTO_INCREMENT 推到 991004，此后在该库上
+--    新建的每一条日报（e2e 保存当天/15 号、或有人手工使用同一开发库）都会落进 991xxx 且
+--    remark 为 NULL。若按号段无差别删明细，这些【真实日报】的明细会被删光、而主记录因 remark
+--    不匹配而留下 → 日历卡显示 8h 点开却是空白，且 pm_project.actual_workload 继续统计
+--    已不存在的明细，直到有人重新保存那天。主记录清理同样用精确 ID，与明细保持一致。
+DELETE FROM pm_daily_report_detail WHERE report_id IN (991000, 991001, 991002, 991003);
+DELETE FROM pm_daily_report        WHERE report_id IN (991000, 991001, 991002, 991003);
 DELETE FROM pm_project_member WHERE project_id BETWEEN 990000 AND 990999 AND remark = '015-e2e-fixture';
 DELETE FROM pm_project        WHERE project_id BETWEEN 990000 AND 990999 AND remark = '015-e2e-fixture';
 
@@ -57,7 +70,10 @@ DELETE FROM pm_project        WHERE project_id BETWEEN 990000 AND 990999 AND rem
 INSERT INTO pm_project (project_id, project_code, project_name, project_stage,
                         approval_status, project_status, del_flag, project_dept,
                         project_manager_id, actual_workload, create_by, create_time, remark)
-VALUES (990100, 'E2E-015-ACTIVE', '015在建项目A', '3', '1', '0', '0', 103, 1, 8.00, 'admin', NOW(), '015-e2e-fixture');
+-- actual_workload 必须与明细汇总自洽：990100 上挂着 991000 的 4h + 991001 的 4h
+-- + 991003（他人日报）的 4h = 12.00。写错会让 quickstart.md 的 SC-008 对账报差异，
+-- 而那条对账的唯一目的就是发现这种不一致，执行者会把造数缺陷误判成产品缺陷。
+VALUES (990100, 'E2E-015-ACTIVE', '015在建项目A', '3', '1', '0', '0', 103, 1, 12.00, 'admin', NOW(), '015-e2e-fixture');
 
 -- 990200 已结项（stage=11）+ admin 仍是成员 → 不出现在「我的项目」→ 作用范围【外】
 -- 结项不解除成员关系，因此 admin 对它仍持有「曾参与」凭据
@@ -107,5 +123,18 @@ INSERT INTO pm_daily_report (report_id, report_date, user_id, dept_id, total_wor
 VALUES (991002, '2026-07-24', 1, 103, 2.00, '0', 'admin', NOW(), '015-e2e-fixture');
 INSERT INTO pm_daily_report_detail (report_id, project_id, entry_type, work_hours, work_content, del_flag, create_by, create_time, remark)
 VALUES (991002, 990200, 'work', 2.00, '整条日报只有不可见工时', '0', 'admin', NOW(), '015-e2e-fixture');
+
+-- 991003 / 2026-07-22：【Issue #13】别人的日报（user_id=2 'ry'，dept 105）
+-- 这条是归属校验的唯一证据：其余 991xxx 全是 admin 自己的，删与不删都是绿的。
+-- 两条明细刻意都落在 admin 的「作用范围内」——
+--   · 990100 是 admin 可填的在建项目
+--   · project_id IS NULL 的假期行对任何调用者都无条件在范围内
+-- 也就是说：仅靠 015 的作用范围裁剪，这两条都会被 admin 删掉；
+-- 只有用户级的 user_id 限定才拦得住（Issue #13）。
+INSERT INTO pm_daily_report (report_id, report_date, user_id, dept_id, total_work_hours, del_flag, create_by, create_time, remark)
+VALUES (991003, '2026-07-22', 2, 105, 4.00, '0', 'ry', NOW(), '015-e2e-fixture');
+INSERT INTO pm_daily_report_detail (report_id, project_id, entry_type, leave_hours, work_hours, work_content, del_flag, create_by, create_time, remark)
+VALUES (991003, 990100, 'work',   NULL, 4.00, '他人的工时（admin 不得删除）', '0', 'ry', NOW(), '015-e2e-fixture'),
+       (991003, NULL,   'annual', 4.00, 4.00, '他人的年假（admin 不得删除）', '0', 'ry', NOW(), '015-e2e-fixture');
 
 SELECT '015 e2e 造数完成（安全闸门已通过）' AS status;

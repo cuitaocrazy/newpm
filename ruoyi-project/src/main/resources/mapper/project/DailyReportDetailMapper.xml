@@ -115,14 +115,35 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
       ⚠️ <if> 空集守卫不可删：填报人无任何可填项目时集合为空，
          若无守卫会生成 "in ()" 语法错误；有守卫则退化为「仅删非项目工时」，语义正确。
+
+      【Issue #13】join 主表限定 r.user_id = #{userId}：只能动自己日报的明细。
+      作用范围不是权限机制——上面 "project_id is null" 是无条件分支，
+      请假/倒休/年假类明细对任何调用者都在范围内，仅靠作用范围任意账号都能清空他人这类明细。
+      MySQL 不允许在 DELETE 的子查询里引用目标表（错误 1093），故用多表 DELETE 写法。
+      副作用（可接受）：主记录不存在的孤儿明细不再被删除——本就不该由删除日报的路径清理。
+    -->
+    <!--
+      ⚠️⚠️ 本语句的并发安全依赖上游：调用方必须已经通过
+      DailyReportMapper.selectReportOwnersForUpdate（带 FOR UPDATE）取得主记录的排他锁。
+
+      原因：下面的 INNER JOIN pm_daily_report 会让本语句对主记录取共享锁（S）。若上游没有
+      先取 X 锁，同一事务随后的 updateTotalWorkHours / deleteDailyReportByIds 就构成
+      S→X 锁升级——两个并发请求各持 S、各等对方释放，必然死锁（本地 MySQL 8 实测 3/3 次
+      ERROR 1213）。而删除接口没有 @RepeatSubmit，填报人重复点击删除是常态。
+
+      有了上游的 FOR UPDATE 之后：同事务已持 X，此处再取 S 不冲突（实测锁模式保持
+      X,REC_NOT_GAP 不降级）；并发请求则在上游 FOR UPDATE 处排队，不会各持 S。
+      **删掉上游的 FOR UPDATE，死锁立刻回来。**
     -->
     <delete id="deleteByReportIdInScope">
-        delete from pm_daily_report_detail
-        where report_id = #{reportId}
+        delete d from pm_daily_report_detail d
+        inner join pm_daily_report r on r.report_id = d.report_id
+        where d.report_id = #{reportId}
+          and r.user_id = #{userId}
           and (
-            project_id is null
+            d.project_id is null
             <if test="visibleProjectIds != null and visibleProjectIds.size() > 0">
-                or project_id in
+                or d.project_id in
                 <foreach item="pid" collection="visibleProjectIds" open="(" separator="," close=")">
                     #{pid}
                 </foreach>

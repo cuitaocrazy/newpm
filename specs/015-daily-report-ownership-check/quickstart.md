@@ -34,76 +34,144 @@ mvn test -pl ruoyi-project -am -Dtest=DailyReportServiceImplTest -Dsurefire.fail
 靠的是「范围外的行压根没被 touch」，而单测把 Mapper 全 mock 掉了，无从验证。
 **实测中 e2e 抓出了 2 个单测完全抓不到的缺陷**（见 §5）。
 
-### 2.1 起隔离环境（不碰本机任何现有数据）
+### 2.0 ⚠️ 先读这段：本套件是破坏性的，打错库会毁真实数据
 
-Docker 与 brew MySQL 两条路都可能是坏的（见 memory `local-e2e-isolated-mysql`）。
-下面这套起一个完全独立的实例，跑完整个删掉：
+本套件会**重写 admin 当日日报、删除日报主记录与明细**，而日报是硬删除、无历史版本，
+误删只能靠 6 小时一次的 OSS 归档备份（需付费解冻）。因此它**只能打在专用造数库上**。
+
+**2026-08-03 真实事故**：执行者设了 `E2E_BASE_URL`（那是另两套 daily-report e2e 的变量），
+本套件认的却是 `E2E_API_URL`，于是静默回落到默认的 `localhost:8085`——开发者自己的 dev 后端，
+背后是从生产同步的真实库。没有任何征兆：登录成功、请求成功，只是断言失败，
+而其中一次「空 `detailList` 保存」已经把一条日报的明细清空、汇总归零。
+
+事后已加两道闸门，但**它们只在你按本文档搭环境时才成立**：
+
+| 闸门 | 位置 | 拦什么 |
+|---|---|---|
+| SIGNAL 闸门 | fixture SQL 开头 | 往真实库**灌造数**（有效项目数 > 20 即中止） |
+| 造数库闸门 | spec 的 `beforeAll` | 拿真实库**跑用例**（admin 名下有非 990xxx 项目即中止） |
+
+两道各自独立、缺一不可，且都已做过活性验证（故意打真实库 → 确认被拒）。
+
+### 2.1 起专用造数库（docker，不碰 dev 库 `ry-vue`）
+
+**2026-08-03 实测通过的路线**。在既有 docker MySQL 里开一个独立库，
+用 **dev 库的纯结构**而不是 `pm-sql/init`——后者与线上有 schema 漂移
+（实测缺 `sys_menu.active_menu`、`province_code`，导致菜单/权限只导进一部分）：
 
 ```bash
-SP=/tmp/pm-e2e            # 任选目录
+SP=/tmp/pm-e2e; mkdir -p $SP
+M="docker exec -i newpm-mysql-1 mysql -uroot -ppassword"
 
-# ---- MySQL（3307）----
-mysqld --initialize-insecure --datadir=$SP/mysql-e2e
-# socket 必须放短路径：路径超过 103 字符会报 "socket file path is too long"
-nohup mysqld --datadir=$SP/mysql-e2e --port=3307 --socket=/tmp/mysql-e2e.sock \
-  --mysqlx=OFF --pid-file=/tmp/mysql-e2e.pid \
-  --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci \
-  --log-error=$SP/mysql-e2e.err &
+# ---- 建库 ----
+$M -e "DROP DATABASE IF EXISTS \`ry_vue_e2e\`;
+       CREATE DATABASE \`ry_vue_e2e\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-mysql --protocol=TCP -h 127.0.0.1 -P 3307 -u root -e \
-  "CREATE DATABASE \`ry-vue\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   ALTER USER 'root'@'localhost' IDENTIFIED BY 'password';"
+# ---- 纯结构（--no-data，不带任何业务数据）----
+docker exec newpm-mysql-1 mysqldump -uroot -ppassword --no-data --skip-add-drop-table \
+  --routines --default-character-set=utf8mb4 ry-vue > $SP/structure.sql
+$M --default-character-set=utf8mb4 ry_vue_e2e < $SP/structure.sql
 
-# 导 schema —— --force 不能省：00_tables_ddl.sql 末尾的增量 ALTER 早被合并进 CREATE TABLE，
-# 重复执行必报 Duplicate column（既有维护滞后，非本特性引入）
-cat pm-sql/init/0{0,1,2}_*.sql | mysql --force --protocol=TCP -h 127.0.0.1 -P 3307 \
-  -u root -ppassword --default-character-set=utf8mb4 ry-vue
+# ---- 只导 sys_* 基准数据 + 日历 + 白名单；业务表全留空 ----
+#      业务表留空 → pm_project 为 0 行 → fixture 的 SIGNAL 闸门才会放行
+docker exec newpm-mysql-1 mysqldump -uroot -ppassword --no-create-info \
+  --default-character-set=utf8mb4 ry-vue \
+  sys_user sys_role sys_menu sys_role_menu sys_dept sys_post sys_user_role sys_user_post \
+  sys_dict_type sys_dict_data sys_config pm_work_calendar pm_daily_report_whitelist \
+  > $SP/sysdata.sql
+$M --default-character-set=utf8mb4 ry_vue_e2e < $SP/sysdata.sql
 
-# ---- Redis（6380，避开本机可能在用的 6379）----
-nohup redis-server --port 6380 --save '' --appendonly no --dir $SP &
-
-# ---- 关验证码（隔离实例跑完即销毁，无需恢复）----
-mysql --protocol=TCP -h 127.0.0.1 -P 3307 -u root -ppassword ry-vue \
-  -e "UPDATE sys_config SET config_value='false' WHERE config_key='sys.account.captchaEnabled';"
+# ---- 关验证码 + 把 admin 移出白名单（白名单用户禁止提交日报）----
+$M ry_vue_e2e -e "
+  UPDATE sys_config SET config_value='false' WHERE config_key='sys.account.captchaEnabled';
+  DELETE FROM pm_daily_report_whitelist WHERE user_id=1;"
 ```
 
-> 全新导入的库里 **admin 密码是 RuoYi 默认的 `admin123`**，不是长期库的 `123456789`；
-> 且 `pm_daily_report_whitelist` 为空，无需处理白名单。
+> 这条路线复用 dev 库的 `sys_user`，因此 **admin 密码与 dev 库相同**
+> （不是 RuoYi 默认的 `admin123`——那只适用于从 `pm-sql/init` 全新导入的库）。
+> 造数库是一次性的，跑完 `DROP DATABASE` 即可，无需恢复任何配置。
+
+> Redis 用 `--spring.data.redis.database=3` 换库索引即可，不必另起实例——
+> 但**不能省**：与主环境共用 db 0 会串字典缓存和验证码。
 
 ### 2.2 造数
 
 ```bash
 cat tests/fixtures/015-daily-report-ownership-seed.sql | \
-  mysql --protocol=TCP -h 127.0.0.1 -P 3307 -u root -ppassword \
-        --default-character-set=utf8mb4 ry-vue
+  docker exec -i newpm-mysql-1 mysql -uroot -ppassword \
+    --default-character-set=utf8mb4 ry_vue_e2e
+# 期望输出：015 e2e 造数完成（安全闸门已通过）
 ```
 
-造出四个项目，覆盖全部四种归属状态：
+造出四个项目，覆盖全部四种归属状态。**ID 走 990xxx 高位号段**——初版用过
+`100/200/300/400`，而那些在真实库里全是真实数据，跑一次会删掉 2 个真实项目、
+22 条成员记录、3 条他人日报。低位 ID + 无差别 DELETE 是数据事故的标准配方：
 
 | ID | 名称 | 阶段 | admin 的关系 | 在「我的项目」中？ | 用途 |
 |---|---|---|---|---|---|
-| 100 | 015在建项目A | 在建 | 现役成员 | ✅ 可见 | 作用范围内 |
-| 200 | 015已结项项目B | **结项** | 现役成员 | ❌ 不可见 | 作用范围外（保护对象） |
-| 300 | 015无关项目C | 在建 | **从未参与** | ❌ | 越权拒绝 |
-| 400 | 015离场项目D | 在建 | **已离场** | ❌ | US4 放行 |
+| 990100 | 015在建项目A | 在建 | 现役成员 | ✅ 可见 | 作用范围内 |
+| 990200 | 015已结项项目B | **结项** | 现役成员 | ❌ 不可见 | 作用范围外（保护对象） |
+| 990300 | 015无关项目C | 在建 | **从未参与** | ❌ | 越权拒绝 |
+| 990400 | 015离场项目D | 在建 | **已离场** | ❌ | US4 放行 |
 
-> fixture 里 `actual_workload` 必须与明细汇总自洽。写错的话，保存触发重算后
-> 「人天不变」的断言就会失败——实测踩过这一下。
+日报 `991000`–`991003`，其中 **`991003` 属于 user_id=2**——它是 Issue #13 归属校验的
+唯一证据：其余 991xxx 全是 admin 自己的，删与不删都是绿的。
+
+> fixture 里 `actual_workload` 必须与明细汇总自洽（990100 = 12.00，含他人日报 991003 的 4h）。
+> 写错的话 §3 的 SC-008 对账会报差异，而那条对账的唯一目的就是发现这种不一致——
+> 执行者会把造数缺陷误判成产品缺陷。实测踩过这一下。
 
 ### 2.3 起后端并跑测试
 
 ```bash
 mvn clean package -Dmaven.test.skip=true
 
-java -jar ruoyi-admin/target/ruoyi-admin.jar \
-  --spring.datasource.druid.master.url="jdbc:mysql://127.0.0.1:3307/ry-vue?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true" \
-  --spring.data.redis.port=6380 &
+# ⚠️ 命令行 --spring.datasource.druid.master.url 在本项目【不生效】：
+#    DruidConfig 的 masterDataSource 走 DruidDataSourceBuilder.create().build()
+#    + 方法级 @ConfigurationProperties，命令行覆盖在这条链上不可靠。
+#    2026-08-03 实测：加了这个参数，后端仍然连的是 application-druid.yml 里的 ry-vue。
+#    必须用 additional-location 覆盖文件。
+cat > $SP/e2e-override.yml <<'YML'
+server:
+  port: 8087            # 与主环境 8085 错开
+spring:
+  datasource:
+    druid:
+      master:
+        url: jdbc:mysql://localhost:3306/ry_vue_e2e?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+        username: root
+        password: password
+  data:
+    redis:
+      database: 3       # 与主环境 db 0 错开，避免串字典缓存/验证码
+YML
 
-E2E_API_URL=http://localhost:8085 E2E_ADMIN_PASSWORD=admin123 \
+java -jar ruoyi-admin/target/ruoyi-admin.jar \
+  --spring.config.additional-location="file:$SP/e2e-override.yml" &
+
+# ⚠️ 变量名是 E2E_API_URL，不是 E2E_BASE_URL（后者属另两套 daily-report e2e）。
+#    设错时本套件静默回落到 localhost:8085 = 你自己的 dev 后端 → 破坏性写入真实库（见 §2.0）。
+E2E_API_URL=http://localhost:8087 E2E_ADMIN_PASSWORD=<dev 库的 admin 密码> \
   npx playwright test e2e-daily-report-ownership.spec.js --reporter=list
 ```
 
-**预期**：`10 passed`
+**预期**：`14 passed`（2026-08-03 实测 3.2s）。若看到
+`[造数库闸门] 拒绝执行`，说明 `E2E_API_URL` 指向的库不对——**不要绕过它**，
+它拦下的正是会毁真实数据的那一次执行。
+
+**跑同一批改动时要一起过的另外三套**（变量约定各不相同，这本身就是坑）：
+
+| 套件 | 变量 | 破坏性？ | 打哪个库 |
+|---|---|---|---|
+| `e2e-daily-report-ownership` | `E2E_API_URL`（直连后端） | **是** | 造数库 |
+| `e2e-team-daily-workload` | `E2E_BASE_URL` + `/dev-api` 代理 | **是**（建项目、存 admin 日报、删项目） | 造数库 |
+| `e2e-daily-report` | `E2E_BASE_URL` + `/dev-api` 代理 | 否（纯只读） | 真实库（需要真实数据） |
+| `e2e-mobile-daily-report` | `E2E_BASE_URL`（走前端） | **是**（存/删 admin 当天日报） | 造数库 |
+
+走 `/dev-api` 前缀的套件需要一个剥前缀的反代或 vite dev server；
+mobile 套件走前端页面，必须起 vite（worktree 的 `vite.config.ts` 里
+`baseUrl` 硬编码 `http://localhost:8080`，所以造数库后端要监听 8080），
+且 mobile 需要造数库里同时有「普通项目」与「带任务的项目」各一个。
 
 > 该 spec **直连后端**、不经前端 dev server，因此不用 `tests/helpers/api-client.js`
 > （后者带 `/dev-api` 前缀、依赖 vite 代理），**也不需要起前端**。
@@ -147,11 +215,39 @@ having abs(r.total_work_hours - detail_sum) > 0.001;
 ## 4. 清理
 
 ```bash
-pkill -f "ruoyi-admin.jar"
-mysqladmin --protocol=TCP -h 127.0.0.1 -P 3307 -u root -ppassword shutdown
-redis-cli -p 6380 shutdown nosave
-rm -rf $SP/mysql-e2e /tmp/mysql-e2e.sock /tmp/mysql-e2e.pid
+# 停掉本次起的临时进程（按端口精确停，不要 pkill 掉主环境的后端）
+for p in 8087 8080; do
+  PID=$(lsof -nP -iTCP:$p -sTCP:LISTEN | awk 'NR==2{print $2}')
+  [ -n "$PID" ] && kill "$PID"
+done
+
+# 造数库是一次性的，直接删；Redis db 3 随库一起弃用，无需清
+docker exec -i newpm-mysql-1 mysql -uroot -ppassword -e "DROP DATABASE IF EXISTS \`ry_vue_e2e\`;"
+
+# 若跑过 mobile 套件（需要 vite）：软链进来的 node_modules 必须删，
+# 否则会以 ?? 混进 git status 被误提交（.gitignore 只匹配目录，软链不匹配）
+rm -f ruoyi-ui/node_modules
+rm -f auto-imports.d.ts        # vite 跑起来时生成的构建产物
 ```
+
+**清理后必做的环境审计**——只确认「造数库删了」不够，还要确认**真实库没被碰**。
+用生产库当基准（只读）：
+
+```sql
+-- 真实库 ry-vue 上执行，全部应为 0（admin 在生产有 0 条日报，是最灵敏的探针）
+SELECT 'admin 日报数 [生产=0]' k, COUNT(*) v FROM pm_daily_report WHERE user_id=1
+UNION ALL SELECT '99xxxx 日报残留', COUNT(*) FROM pm_daily_report WHERE report_id>=990000
+UNION ALL SELECT '99xxxx 明细残留', COUNT(*) FROM pm_daily_report_detail WHERE report_id>=990000
+UNION ALL SELECT '孤儿明细', COUNT(*) FROM pm_daily_report_detail d
+  WHERE NOT EXISTS (SELECT 1 FROM pm_daily_report r WHERE r.report_id=d.report_id)
+UNION ALL SELECT '孤儿任务', COUNT(*) FROM pm_task t
+  WHERE NOT EXISTS (SELECT 1 FROM pm_project p WHERE p.project_id=t.project_id);
+```
+
+排查真实库是否被误写时，**`sys_oper_log` 是最快的路径**：`oper_param` 存着请求体原文，
+按 `oper_time` + `oper_url LIKE '%dailyReport%'` 就能把落地的每一次写入连同 payload 列出来，
+`status=1` 是被拒（无写入）、`status=0` 是真的执行了。同一张表还能找回被覆盖前的原始
+`detailList`，用于还原——2026-08-03 的事故定位与还原全靠它，不必读代码猜。
 
 ---
 
