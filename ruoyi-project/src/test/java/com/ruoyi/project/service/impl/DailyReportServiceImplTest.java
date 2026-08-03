@@ -1302,6 +1302,192 @@ class DailyReportServiceImplTest {
         assertEquals(false, result.get(1).get("hasSubProject"));
     }
 
+    // ========== 【Issue #24】按项目筛选时的数据权限放行闸门 ==========
+    //
+    // 缺陷：DailyReportMapper.xml 曾写成 <if test="projectId == null">${params.dataScope}</if>，
+    // 于是「传了 projectId」等于「部门数据权限整条消失」。修复把豁免判据从用户可控入参 projectId
+    // 换成服务端算出的 params.projectScopeBypass（「调用者曾参与该项目」）。
+    //
+    // ⚠️ 本类 setUp 里有一条类级 lenient 桩，selectEverMemberProjectIds 默认「返回入参里的全部
+    //    project_id」，等价于「该用户是一切项目的成员」。因此**拒绝路径的用例必须在方法内把它重新
+    //    打桩成空表**，否则会假绿。
+
+    private static final String BYPASS_KEY = "projectScopeBypass";
+
+    @Test
+    @DisplayName("[TDD] #24 monthly：成员查询该项目 → 写入服务端放行标记")
+    void selectMonthlyReports_everMember_writesBypassFlag() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY),
+                "调用者曾参与该项目，应写入放行标记以豁免部门数据权限（PM需求.md:755）");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 list：成员查询该项目 → 写入服务端放行标记")
+    void selectDailyReportList_everMember_writesBypassFlag() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectDailyReportList(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectDailyReportList(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY));
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 activityUsers：成员查询该项目 → 写入服务端放行标记（须与月历同口径）")
+    void selectActivityUsers_everMember_writesBypassFlag() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectActivityUsers(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectActivityUsers(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY),
+                "花名册与月历必须同口径，否则活动页表头与内容打架");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 非成员查询该项目 → 必须真去查过成员关系，且不写放行标记")
+    void selectMonthlyReports_notMember_mustQueryMembershipAndDeny() {
+        // 显式覆盖类级默认桩：本用例的前提是「该用户不是该项目的任何形态成员」
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        // 只断 assertNull 会假绿（基线上这个 key 本来就不存在），必须验证真的查过库
+        verify(projectMemberMapper).selectEverMemberProjectIds(eq(USER_ID),
+                argThat(ids -> ids != null && ids.contains(36L)));
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY),
+                "非成员不得豁免部门数据权限（deny by default）");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 请求伪造的放行标记必须被无条件剥掉")
+    void selectMonthlyReports_forgedBypassFlag_isStripped() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+
+        // BaseEntity 有 setParams(Map)，Spring MVC 会把查询串里的 params[xxx] 绑进来。
+        // 已实测：XML 的 OGNL 只判非 null，字符串同样触发豁免 —— 故 remove() 是唯一屏障。
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+        query.getParams().put(BYPASS_KEY, "true");
+
+        service.selectMonthlyReports(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY),
+                "?projectId=36&params[projectScopeBypass]=1 必须无效，否则可自助越权");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 四类项目角色即使 pm_project_member 漏同步也必须放行（闸门不依赖成员表同步状态）")
+    void selectMonthlyReports_projectRoleWithoutMemberRow_writesBypassFlag() {
+        // 前提：成员表没有该 (人,项目) 行。这不是假想 —— syncProjectMembers 会把
+        // 项目经理/市场经理/销售经理/团队负责人四类角色都写进 pm_project_member
+        // (ProjectServiceImpl:556-575)，但历史项目存在漏同步：实测有日报的项目里
+        // 市场经理缺行 30 个、销售经理缺行 27 个（项目经理/团队负责人当前恰好为 0，
+        // 但那是数据巧合，不是结构保证）。
+        // 反例：王辉 user 111 是 project 295/329 的市场经理、成员行 0 条 ——
+        // 只查成员表会让他从 387/26 份日报直接归零、活动页全白。
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+        when(projectMapper.selectProjectRoleProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(295L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(295L);
+
+        service.selectMonthlyReports(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY),
+                "调用者在 pm_project 上担任四类项目角色之一，应放行 —— 同一个人同一个角色的可见范围"
+                        + "不得取决于「该项目行有没有被重新保存过」");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 既非成员也不担任项目角色 → 两处都查过，且不写放行标记")
+    void selectMonthlyReports_neitherMemberNorProjectRole_denies() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+        when(projectMapper.selectProjectRoleProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        // 只断 assertNull 会假绿（基线上这个 key 本来就不存在），必须验证两条凭据都真去查了库
+        verify(projectMemberMapper).selectEverMemberProjectIds(eq(USER_ID),
+                argThat(ids -> ids != null && ids.contains(36L)));
+        verify(projectMapper).selectProjectRoleProjectIds(eq(USER_ID),
+                argThat(ids -> ids != null && ids.contains(36L)));
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY),
+                "非成员且非项目角色不得豁免部门数据权限（deny by default）");
+    }
+
+    @Test
+    @DisplayName("[护栏] #24 成员凭据命中时短路，不再查项目角色（省一次点查）")
+    void selectMonthlyReports_everMember_shortCircuitsProjectRoleLookup() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        verify(projectMapper, never()).selectProjectRoleProjectIds(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[护栏] #24 不传 projectId 时不额外查成员关系，也不写放行标记")
+    void selectMonthlyReports_noProjectId_doesNotQueryMembership() {
+        DailyReport query = new DailyReport();
+        query.setYearMonth("2026-08");
+
+        service.selectMonthlyReports(query);
+
+        verify(projectMemberMapper, never()).selectEverMemberProjectIds(anyLong(), any());
+        verify(projectMapper, never()).selectProjectRoleProjectIds(anyLong(), any());
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY));
+    }
+
     // ========== helper methods ==========
 
     /** 【015】构造一条「任务 → 父项目」映射，供任务归属校验（V3）的 stub 使用 */

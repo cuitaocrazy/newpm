@@ -269,4 +269,25 @@ public interface ProjectMapper
      * @return 每项含 projectId / projectName / projectStage
      */
     List<Map<String, Object>> selectProjectStatesIn(@Param("projectIds") Collection<Long> projectIds);
+
+    /**
+     * 【Issue #24】查询用户在给定项目中担任「四类项目角色」的项目ID
+     * （项目经理 / 团队负责人 / 市场经理 / 销售经理，取自 {@code pm_project} 本身）。
+     *
+     * <p>与 {@code ProjectMemberMapper#selectEverMemberProjectIds} 并列构成
+     * {@code DailyReportServiceImpl#applyProjectScopeBypass} 的授权闸门。之所以不能只查成员表：
+     * {@code ProjectServiceImpl#syncProjectMembers} 确实会把这四类角色写进 {@code pm_project_member}，
+     * 但历史项目存在漏同步 —— 实测有日报的项目里市场经理缺行 30 个、销售经理缺行 27 个
+     * （项目经理与团队负责人当前为 0，是数据巧合而非结构保证）。只查成员表会让「同一个人、同一个角色」
+     * 的可见范围取决于「该项目行有没有被重新保存过」。
+     *
+     * <p>这四个字段只能由持 {@code project:project:edit} 的人写入，填报人无法自助伪造，
+     * 因此仍是 deny-by-default。
+     *
+     * @param userId 调用者用户ID
+     * @param projectIds 待判定的项目ID集合
+     * @return 该用户担任上述任一角色的项目ID
+     */
+    List<Long> selectProjectRoleProjectIds(@Param("userId") Long userId,
+                                           @Param("projectIds") Collection<Long> projectIds);
 }

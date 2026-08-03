@@ -70,8 +70,22 @@ public class DailyReportServiceImpl implements IDailyReportService
     @Autowired
     private com.ruoyi.project.mapper.ProjectMemberMapper projectMemberMapper;
 
+    /** 【Issue #24】按项目筛选时豁免部门数据权限的放行标记；只由服务端计算，永不信任请求入参 */
+    private static final String PROJECT_SCOPE_BYPASS = "projectScopeBypass";
+
     /**
      * 查询工作日报
+     *
+     * <p>⚠️ <b>本方法没有任何授权谓词，是一个已知的可枚举越权（IDOR），但故意不在 #24 里修。</b>
+     * 它的 resultMap 含明细即 {@code work_content} 原文，而 {@code report_id} 稠密可枚举，
+     * 持 {@code project:dailyReport:activity} 的受限账号顺序枚举即可取尽全库日报。
+     *
+     * <p>不在此处修的原因：该缺陷已在分支 {@code fix/daily-report-delete-ownership}
+     * （Issue #13）以<b>更严</b>的方式修好 —— 限定 {@code and r.user_id = #{userId}}，
+     * 即只能读本人的日报。前端无任何页面调用该接口
+     * （{@code src/api/project/dailyReport.js#getDailyReport} 定义了但零引用），
+     * 所以收紧到「仅本人」不破坏任何功能，比本 hotfix 能给的部门级 dataScope 更紧。
+     * 两份修复的 Mapper 签名不同，同时落地必冲突，因此这里保持原样，由 #13 分支负责。
      *
      * @param reportId 日报主键
      * @return 工作日报
@@ -105,6 +119,7 @@ public class DailyReportServiceImpl implements IDailyReportService
     @DataScope(deptAlias = "d", userAlias = "u")
     public List<DailyReport> selectDailyReportList(DailyReport query)
     {
+        applyProjectScopeBypass(query);
         return dailyReportMapper.selectDailyReportList(query);
     }
 
@@ -118,7 +133,106 @@ public class DailyReportServiceImpl implements IDailyReportService
     @DataScope(deptAlias = "d", userAlias = "u")
     public List<DailyReport> selectMonthlyReports(DailyReport query)
     {
+        applyProjectScopeBypass(query);
         return dailyReportMapper.selectMonthlyReports(query);
+    }
+
+    /**
+     * 【Issue #24】判定「按项目筛选」能否豁免部门数据权限。
+     *
+     * <p>PM需求.md:755 授权的是「项目经理能看到参与本项目的非本团队人员日报」，但 7adb75d 的实现是
+     * 「传了 projectId 就整条摘掉 ${params.dataScope}」—— 授权对象被放大成<b>全部 175 个受限账号</b>，且
+     * projectNameSuggestions 无数据权限（全公司项目都能选），UI 点一下即越权。
+     *
+     * <p>账号口径（可复现）：{@code sys_user_role ⋈ sys_role ⋈ sys_role_menu ⋈ sys_menu}
+     * 取 {@code perms='project:dailyReport:activity'}、排除 admin、只算 {@code del_flag='0' and status='0'}
+     * 的账号 → 共 180 个，其中 5 个持 data_scope=1 角色（不受影响），<b>175 个全部角色受限</b>。
+     *
+     * <p><b>放行主体比 :755 宽，这是有意的取舍而非需求背书</b>：:755 字面授权的是「项目经理」，
+     * 而本闸门放行任意「曾参与者」。之所以不收到只认经理：那会把 :755 之外、修复前一直能正常工作的
+     * 普通成员视角一并砍掉，制造新的回归。所以别把「闸门 ⊋ :755」当成需求依据来引用。
+     *
+     * <p>本方法把豁免条件收窄为「调用者曾参与该项目<b>或</b>在该项目上担任四类项目角色」，两条凭据：
+     * <ol>
+     *   <li>{@code pm_project_member} 的「曾参与」永久凭据（沿用 015）；
+     *   <li>{@code pm_project} 上的 项目经理 / 团队负责人 / 市场经理 / 销售经理
+     *       （{@code ProjectMapper#selectProjectRoleProjectIds}）。
+     * </ol>
+     * 两者都只能由持项目编辑权限者写入，填报人不可自助伪造，故仍是 deny-by-default。
+     *
+     * <p><b>为什么必须要第二条凭据</b>：{@code ProjectServiceImpl#syncProjectMembers} 确实把这四类
+     * 角色都写进成员表，但历史项目存在漏同步 —— 实测有日报的项目里市场经理缺行 30 个、销售经理缺行
+     * 27 个（项目经理与团队负责人当前为 0，是数据巧合而非结构保证）。只查成员表会让同一个人、同一个
+     * 角色的可见范围取决于「该项目行有没有被重新保存过」：反例 王辉 user 111 是 project 295/329 的
+     * 市场经理、成员行 0 条，只查成员表他就从 387/26 份日报直接归零、活动页全白。
+     *
+     * <p><b>需求场景的覆盖率（可复现）</b>：以「写过该项目工时」的 (人,项目) 对为口径
+     * （{@code pm_daily_report_detail ⋈ pm_daily_report}，两侧 {@code del_flag='0'}、
+     * {@code project_id is not null}，distinct 后 <b>942</b> 对），本闸门放行 <b>934</b> 对、拒绝 8 对；
+     * 被拒的 8 对<b>全部落在 {@code dd.project_id=93}</b>，而 93 在 {@code pm_project} 里查不到
+     * （已删项目的残留明细，成员行随项目硬删一并消失）。即：闸门对现存项目的覆盖率是 100%，
+     * 但这个结论依赖「排除孤儿 project_id」这个前提 —— 引用时请连前提一起引用。
+     *
+     * <p><b>不要给 selectEverMemberProjectIds 补 is_active/del_flag 过滤</b>：实测会挡掉
+     * 离场成员维护自己历史工时的 (人,项目) 对，与 015 / DailyReportMapper.xml 离场分支口径冲突。
+     *
+     * <p><b>已知取舍（非缺陷，但须知晓）</b>：因此凭据是<b>永久不可撤销</b>的 —— 把人移出项目只是
+     * {@code is_active='0'} 软离场（{@code ProjectMemberMapper.xml} 的 deactivate 语句），本闸门不看该
+     * 标志，实测有 18 个 (人,项目) 对已无在册行仍被放行（其中 7 对从未在该项目写过工时）。
+     * 「离场即回收读权限」需要单独的 Issue 决策，不要在这里顺手加过滤（会打破上一段的 015 口径）。
+     *
+     * <p><b>第一行 remove 不可删</b>：BaseEntity 有 setParams(Map)，Spring MVC 会把查询串里的
+     * params[xxx] 绑进来（前端 addDateRange 传 params[beginTime] 就是这个通道，
+     * ruoyi-ui/src/utils/ruoyi.ts:62；本 mapper 也在读 params.nickName）。已实测：params 里放
+     * 字符串 "1" 同样会触发豁免（OGNL 只判非 null），故不清除就能用
+     * ?projectId=36&amp;params[projectScopeBypass]=1 自助放行，XML 层没有兜底。
+     * 与 DataScopeAspect#clearDataScope 同一思路。
+     *
+     * <p>时序安全：@DataScope 是 @Before 切面，先于方法体执行；clearDataScope 只 put DATA_SCOPE
+     * 一个 key，不会清掉这里写入的值。
+     *
+     * <p><b>放行后恢复的边界是什么（勿照字面理解成「本部门自己人」）</b>：被恢复的
+     * {@code ${params.dataScope}} 打在 {@code d} 上，而 {@code d} 在 selectReportBase/
+     * selectReportWithDetail 里 join 的是 {@code r.dept_id} —— 那是<b>日报行最后一次保存时的部门快照</b>
+     * （{@code saveDailyReport} 用 {@code SecurityUtils.getDeptId()} 写入，且保存走 upsert，调岗后重存
+     * 会被改写），既不是填报人当前部门、也不是稳定历史。实测 1568 份日报 / 35 人的快照部门与当前部门
+     * 不一致，所以拒绝路径上仍能读到当前已在部门范围外的人的日报。这是既有绑定、非本次引入，
+     * 本次修复相对基线是严格收紧；但描述它时不要写成「只能看本部门自己人」。
+     *
+     * <p><b>与 Issue #22 的关系是「交叉」而非「包含」</b>：#22 要做的是按<b>项目归属部门</b>授权，
+     * 与本闸门的「曾参与 / 担任项目角色」是两个不同维度。实测 2208 个闸门授权里有 417 个（18.9%）
+     * 是项目部门维度覆盖不到的 —— 含 :755 点名的场景本身（project 43 归属 220 机动组，项目经理
+     * 梁艳兰在 208 项目六组）。因此 #22 落地时必须实现成
+     * {@code everMember/projectRole OR projectDeptInMyScope}（<b>加法</b>），
+     * <b>绝不可</b>实现成 {@code projectDeptInMyScope}（替换）—— 那会精确撤销本次要保住的需求。
+     */
+    private void applyProjectScopeBypass(DailyReport query)
+    {
+        query.getParams().remove(PROJECT_SCOPE_BYPASS);
+        Long projectId = query.getProjectId();
+        if (projectId == null)
+        {
+            return;
+        }
+        Long userId = SecurityUtils.getUserId();
+        List<Long> projectIds = List.of(projectId);
+
+        // 凭据①：成员表里的「曾参与」（015 永久凭据）
+        boolean authorized = isNotEmpty(projectMemberMapper.selectEverMemberProjectIds(userId, projectIds));
+        if (!authorized)
+        {
+            // 凭据②：pm_project 上的四类项目角色 —— 成员表可能漏同步，见本方法 javadoc
+            authorized = isNotEmpty(projectMapper.selectProjectRoleProjectIds(userId, projectIds));
+        }
+        if (authorized)
+        {
+            query.getParams().put(PROJECT_SCOPE_BYPASS, Boolean.TRUE);
+        }
+    }
+
+    private static boolean isNotEmpty(List<Long> ids)
+    {
+        return ids != null && !ids.isEmpty();
     }
 
     /**
@@ -493,6 +607,7 @@ public class DailyReportServiceImpl implements IDailyReportService
     @DataScope(deptAlias = "d", userAlias = "u")
     public List<Map<String, Object>> selectActivityUsers(DailyReport query)
     {
+        applyProjectScopeBypass(query);
         return dailyReportMapper.selectActivityUsers(query);
     }
 
