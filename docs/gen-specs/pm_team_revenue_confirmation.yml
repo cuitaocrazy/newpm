@@ -1041,7 +1041,7 @@ implementation_summary:
     - "formatAmount 无效值返回 '0.00'（列表），formatAmountDisplay 无效值返回 '-'（弹窗只读 input）"
     - "tableHeight 动态计算，searchHeight=255px（5行查询条件含按钮行）"
     - "弹窗标题使用 dialogTitle computed：有项目名时 '项目【名称】收入确认管理'"
-    - "弹窗新增"计划参与人员|实际参与人员"纯文字展示行和"参与人员工时"折叠面板"
+    - '弹窗新增"计划参与人员|实际参与人员"纯文字展示行和"参与人员工时"折叠面板'
     - "getProjectInfo 接口返回额外字段：contractAmount, participantsNames, participants, actualWorkload"
     - "删除操作：若 row.teamConfirmId 不存在，弹出 msgWarning 提示不执行删除"
     - "详情页左14右10布局，左侧单卡片+6个 section-title 分组（与公司收入确认样式一致）"
