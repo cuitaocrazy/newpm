@@ -391,4 +391,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         LIMIT 20
     </select>
 
+    <!--
+      【015】批量查询任务与其父项目的对应关系，供任务归属校验（V3）使用。
+      pm_task 为硬删除表，无 del_flag 列——任务不存在时查不到，Service 侧按「不匹配」拒绝。
+      入参 taskIds 由 Service 保证非空。
+    -->
+    <select id="selectTaskProjectPairs" resultType="java.util.Map">
+        select task_id    as taskId,
+               project_id as projectId
+        from pm_task
+        where task_id in
+        <foreach item="tid" collection="taskIds" open="(" separator="," close=")">
+            #{tid}
+        </foreach>
+    </select>
+
 </mapper>

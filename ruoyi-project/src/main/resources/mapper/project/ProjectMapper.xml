@@ -1218,4 +1218,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY actualWorkload DESC, u.nick_name
     </select>
 
+    <!--
+      【015】批量查询项目的名称与阶段状态，供日报保存的归属校验使用。
+
+      带 del_flag='0' 过滤是有意的：已删除的项目查不到 → Service 侧 state 为 null
+      → 与「从未参与」同等拒绝。生产存在指向已删除项目的历史工时（24 组 / 216.5 小时），
+      这类记录不再接受新的写入。
+
+      入参 projectIds 由 Service 保证非空。
+    -->
+    <select id="selectProjectStatesIn" resultType="java.util.Map">
+        select project_id   as projectId,
+               project_name as projectName,
+               project_stage as projectStage
+        from pm_project
+        where del_flag = '0'
+          and project_id in
+          <foreach item="pid" collection="projectIds" open="(" separator="," close=")">
+              #{pid}
+          </foreach>
+    </select>
+
 </mapper>

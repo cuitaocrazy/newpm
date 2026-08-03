@@ -1,6 +1,7 @@
 package com.ruoyi.project.mapper;
 
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.apache.ibatis.annotations.Param;
@@ -250,4 +251,22 @@ public interface ProjectMapper
      */
     public List<Map<String, Object>> selectProjectsByCodePrefix(@Param("codePrefix") String codePrefix,
                                                                 @Param("excludeProjectId") Long excludeProjectId);
+
+    /**
+     * 批量查询项目的名称与阶段状态，供日报保存时的归属校验使用
+     *
+     * <p>一次查询同时服务三个判定：
+     * <ul>
+     *   <li>结果中<b>缺失</b>的项目ID → 项目不存在或已删除 → 拒绝（无成员关系）
+     *   <li>{@code projectStage='11'} → 项目已结项 → 拒绝新增或修改其工时（FR-010 / FR-011）
+     *   <li>{@code projectName} → 拒绝提示中呈现给填报人，<b>不暴露内部ID</b>（FR-008）
+     * </ul>
+     *
+     * <p>注意与 {@code selectProjectsByUserId}（可填项目列表）的区别：那个口径混入了
+     * 审批状态与项目启停状态，只可用于界定「作用范围」，<b>不得</b>用作归属校验判据。
+     *
+     * @param projectIds 待查询的项目ID集合
+     * @return 每项含 projectId / projectName / projectStage
+     */
+    List<Map<String, Object>> selectProjectStatesIn(@Param("projectIds") Collection<Long> projectIds);
 }

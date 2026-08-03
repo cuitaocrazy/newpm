@@ -156,4 +156,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY p.update_time DESC
     </select>
 
+    <!--
+      【015】从给定项目集合中筛出该用户「曾以任意身份参与过」的项目。
+
+      ⚠️ 故意不过滤 is_active 与 del_flag —— 这是 User Story 4 成立的关键。
+         成员关系一旦建立即为永久凭据：离场、被移出、调岗的人仍须能维护自己填过的历史工时。
+         若在此加上 is_active='1'，将误拒 126 组历史合法组合（research.md Decision 3 实测取证）。
+
+      该凭据不可由填报人自助获得——写入成员行需要项目编辑权限，故门槛不可伪造。
+      入参 projectIds 由 Service 保证非空（空集时提前 return，不会走到这里）。
+    -->
+    <select id="selectEverMemberProjectIds" resultType="java.lang.Long">
+        select distinct project_id
+        from pm_project_member
+        where user_id = #{userId}
+          and project_id in
+          <foreach item="pid" collection="projectIds" open="(" separator="," close=")">
+              #{pid}
+          </foreach>
+    </select>
+
 </mapper>

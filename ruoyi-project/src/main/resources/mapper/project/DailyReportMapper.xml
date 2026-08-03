@@ -626,4 +626,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ORDER BY d.parent_id, d.order_num
     </select>
 
+    <!--
+      【015】重算并更新日报主记录的当日汇总工时。
+      用于删除日报时：部分明细因不在填报人可见范围内而被保留，主记录随之保留，
+      其 total_work_hours 必须按剩余 work 明细重算，否则会与明细不符（INV-D2 / SC-010）。
+
+      ⚠️ update_time = update_time 不可删：这是系统触发的重算，不是用户主动编辑。
+         保持审计字段原值，避免在「谁在什么时候改了这条日报」上产生误导。
+    -->
+    <update id="updateTotalWorkHours">
+        update pm_daily_report
+        set total_work_hours = #{hours},
+            update_time = update_time
+        where report_id = #{reportId}
+    </update>
+
 </mapper>
