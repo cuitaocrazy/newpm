@@ -66,6 +66,10 @@ public class DailyReportServiceImpl implements IDailyReportService
     @Autowired
     private WorkCalendarMapper workCalendarMapper;
 
+    /** 【015】项目归属校验用：判定填报人是否「曾以任意身份参与过」目标项目 */
+    @Autowired
+    private com.ruoyi.project.mapper.ProjectMemberMapper projectMemberMapper;
+
     /**
      * 查询工作日报
      *
@@ -154,6 +158,14 @@ public class DailyReportServiceImpl implements IDailyReportService
         if (whitelistService.isInWhitelist(userId)) {
             throw new ServiceException("您已被设置为无需填写日报，如有疑问请联系管理员");
         }
+
+        // 【015】校验提交内容的项目归属。
+        // ⚠️ 必须在任何写操作之前完成——否则会出现「校验失败了、但工时已经被删了」，
+        //    那比不校验更糟（spec Edge Cases / INV-1）。
+        //    已用变异测试确认：把本行移到 deleteByReportIdInScope 之后，
+        //    saveDailyReport_neverMemberProject_isRejected 会立刻变红。
+        validateSubmissionOwnership(userId, report.getDetailList());
+
         Long deptId = SecurityUtils.getDeptId();
         String username = SecurityUtils.getUsername();
 
@@ -206,7 +218,10 @@ public class DailyReportServiceImpl implements IDailyReportService
                     .forEach(oldProjectIds::add);
 
             // 删除旧明细，插入新明细
-            detailMapper.deleteByReportId(existingReportId);
+            // 【015】只删除本次提交「有能力表达」的明细：填报人可填项目的工时 + 全部非项目工时。
+            // 范围外的明细（如已结项项目的历史工时）原样保留——填报人在填写页上根本看不到它们，
+            // 未出现在提交中不等于要删除。改回 deleteByReportId 会重新引入静默数据丢失（FR-001）。
+            detailMapper.deleteByReportIdInScope(existingReportId, resolveVisibleProjectIds(userId));
         }
         else
         {
@@ -237,6 +252,18 @@ public class DailyReportServiceImpl implements IDailyReportService
                 }
             }
             detailMapper.batchInsert(detailList);
+        }
+
+        // 【015】重算当日汇总工时。
+        // 上面按「提交内容」算出的 totalWorkHours 不含作用范围外被保留的明细，
+        // 直接写入会让主记录与明细对不上——填写页日历卡上的当日工时会偏小（SC-010）。
+        // 只在更新既有日报时需要：新建日报不存在「既有明细被保留」的情形。
+        // e2e 对账实测暴露（2026-08-03）。
+        if (existingReportId != null) {
+            BigDecimal actualTotal = detailMapper.sumWorkHoursByReportId(existingReportId);
+            if (actualTotal != null && actualTotal.compareTo(totalWorkHours) != 0) {
+                dailyReportMapper.updateTotalWorkHours(existingReportId, actualTotal);
+            }
         }
 
         // 更新受影响项目的实际工作量（两级滚动：先子任务，再主项目）
@@ -280,6 +307,107 @@ public class DailyReportServiceImpl implements IDailyReportService
     }
 
     /**
+     * 【015】校验提交明细的项目归属，任一条不通过即拒绝整次保存
+     *
+     * <p>校验规则（只作用于 {@code entry_type='work'} 且 projectId 非空的记录，
+     * 假期类记录不关联项目、不适用本校验）：
+     * <ul>
+     *   <li><b>V1 曾参与</b>：{@code pm_project_member} 中存在该 (project, user) 行，
+     *       <b>不限</b>在册或已离场——离场者仍可维护自己填过的历史工时（FR-006 / US4）
+     * </ul>
+     *
+     * <p><b>调用位置不可改</b>：必须在所有 delete / insert / 工时重算之前。
+     * 本方法只读不写，抛出时事务内尚无任何变更，故拒绝后数据库状态与请求前完全一致（INV-1）。
+     *
+     * @param userId     填报人用户ID
+     * @param detailList 本次提交的明细
+     * @throws ServiceException 任一条不通过时抛出，消息含被拒项目名称（FR-008）
+     */
+    private void validateSubmissionOwnership(Long userId, List<DailyReportDetail> detailList)
+    {
+        if (detailList == null || detailList.isEmpty()) {
+            return;
+        }
+        Set<Long> projectIds = detailList.stream()
+                .filter(d -> "work".equals(d.getEntryType()) && d.getProjectId() != null)
+                .map(DailyReportDetail::getProjectId)
+                .collect(Collectors.toSet());
+        if (projectIds.isEmpty()) {
+            return;
+        }
+
+        // 批量查询：项目名（用于提示）与阶段状态。生产实测单次提交最多涉及 6 个项目，无 N+1 之虞。
+        java.util.Map<Long, java.util.Map<String, Object>> states = new java.util.HashMap<>();
+        for (java.util.Map<String, Object> row : projectMapper.selectProjectStatesIn(projectIds)) {
+            states.put(Long.parseLong(row.get("projectId").toString()), row);
+        }
+        Set<Long> everMember = new HashSet<>(
+                projectMemberMapper.selectEverMemberProjectIds(userId, projectIds));
+
+        for (Long projectId : projectIds) {
+            java.util.Map<String, Object> state = states.get(projectId);
+            String projectName = (state != null && state.get("projectName") != null)
+                    ? state.get("projectName").toString()
+                    : ("#" + projectId);
+
+            // V1：项目不存在或已被删除 → 无成员关系可言，与「从未参与」同等处理
+            if (state == null || !everMember.contains(projectId)) {
+                throw new ServiceException("项目《" + projectName + "》不在您参与的项目范围内");
+            }
+
+            // V2：项目已结项 → 不再接受新增或修改其工时（FR-010 / FR-011）
+            // 注意本校验只作用于「本次提交的内容」。该日既有的已结项工时不在此列——
+            // 它们由作用范围机制原样保留，不得因此把整次保存拒掉。
+            if ("11".equals(String.valueOf(state.get("projectStage")))) {
+                throw new ServiceException("项目《" + projectName + "》已结项，不能新增或修改其工时");
+            }
+        }
+
+        // V3：任务归属——明细挂的任务必须确实隶属于它自己声明的项目（FR-007）
+        Set<Long> taskIds = detailList.stream()
+                .filter(d -> "work".equals(d.getEntryType()) && d.getSubProjectId() != null)
+                .map(DailyReportDetail::getSubProjectId)
+                .collect(Collectors.toSet());
+        if (!taskIds.isEmpty()) {
+            java.util.Map<Long, Long> taskOwner = new java.util.HashMap<>();
+            for (java.util.Map<String, Object> row : taskMapper.selectTaskProjectPairs(taskIds)) {
+                Object owner = row.get("projectId");
+                taskOwner.put(Long.parseLong(row.get("taskId").toString()),
+                        owner == null ? null : Long.parseLong(owner.toString()));
+            }
+            for (DailyReportDetail d : detailList) {
+                if (!"work".equals(d.getEntryType()) || d.getSubProjectId() == null) {
+                    continue;
+                }
+                Long owner = taskOwner.get(d.getSubProjectId());
+                // 映射缺失（任务不存在）与映射不符，同等视为不匹配
+                if (owner == null || !owner.equals(d.getProjectId())) {
+                    throw new ServiceException("任务与所选项目不匹配，请重新选择");
+                }
+            }
+        }
+    }
+
+    /**
+     * 解析本次操作的「作用范围」——填报人当前可填的项目ID集合
+     *
+     * <p>与 {@link #selectMyProjects()} 使用同一口径（{@code selectProjectsByUserId}），
+     * 但不做 hasSubProject 的附加查询——界定范围只需要项目ID。
+     *
+     * <p>作用范围决定哪些既有明细「归本次提交管」：范围内的按提交内容替换（未提交即删除），
+     * 范围外的原样保留。非项目工时（project_id 为 null）由 SQL 侧无条件纳入范围。
+     *
+     * @param userId 填报人用户ID
+     * @return 可填项目ID集合；无可填项目时返回空集合（此时仅非项目工时归本次提交管）
+     */
+    private Set<Long> resolveVisibleProjectIds(Long userId)
+    {
+        return projectMapper.selectProjectsByUserId(userId).stream()
+                .map(p -> Long.parseLong(p.get("projectId").toString()))
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * 批量删除工作日报
      * 先物理删除明细，再软删除主记录
      *
@@ -307,9 +435,34 @@ public class DailyReportServiceImpl implements IDailyReportService
             }
         }
 
-        // 物理删除明细和主记录
-        detailMapper.deleteByReportIds(reportIds);
-        int rows = dailyReportMapper.deleteDailyReportByIds(reportIds);
+        // 【015】按作用范围删除明细：只删填报人看得见的部分。
+        // 已结项项目的历史工时在界面上根本不显示，不能因为他点了「删除日报」就被无辜清除（FR-013）。
+        //
+        // 主记录的去留必须跟着明细走：明细靠 report_id 归属主记录，而除 selectByReportId 外的查询
+        // 都要经 "pm_daily_report r ... WHERE r.del_flag='0'" 过滤。若主记录被软删而明细仍在，
+        // 这些明细将无法通过任何业务查询到达——等于换一种方式把工时弄丢（FR-014 / INV-D1）。
+        Set<Long> visibleProjectIds = resolveVisibleProjectIds(SecurityUtils.getUserId());
+        List<Long> deletableReportIds = new java.util.ArrayList<>();
+        for (Long reportId : reportIds) {
+            detailMapper.deleteByReportIdInScope(reportId, visibleProjectIds);
+            if (detailMapper.countByReportId(reportId) > 0) {
+                // 有明细被保留 → 主记录一并保留，并按剩余 work 明细重算当日汇总工时（INV-D2）
+                BigDecimal remaining = detailMapper.sumWorkHoursByReportId(reportId);
+                dailyReportMapper.updateTotalWorkHours(reportId,
+                        remaining != null ? remaining : BigDecimal.ZERO);
+            } else {
+                // 无残留 → 走既有的软删除行为
+                deletableReportIds.add(reportId);
+            }
+        }
+        if (!deletableReportIds.isEmpty()) {
+            dailyReportMapper.deleteDailyReportByIds(deletableReportIds.toArray(new Long[0]));
+        }
+        // 返回「本次处理的日报条数」，而不是「删掉了几条主记录」。
+        // 当明细全部因不可见而被保留时，没有主记录可删，但删除操作本身是成功完成的
+        // （可见明细已删、汇总已重算）。若此处返回 0，BaseController.toAjax 会判为「操作失败」，
+        // 填报人看到错误提示后会重复点击——e2e 实测暴露（2026-08-03）。
+        int rows = reportIds.length;
 
         // 重算受影响子任务的工时
         for (Long taskId : affectedSubProjectIds) {

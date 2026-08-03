@@ -1,5 +1,6 @@
 package com.ruoyi.project.mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.apache.ibatis.annotations.Param;
@@ -139,4 +140,19 @@ public interface DailyReportMapper
      * 团队日报 - 项目名称 autocomplete（按部门范围模糊搜索，最多20条）
      */
     List<Map<String, Object>> selectTeamProjectOptions(DailyReport query);
+
+    /**
+     * 重算并更新日报主记录的当日汇总工时
+     *
+     * <p>用于删除日报时：若有明细因不在填报人可见范围内而被保留，主记录必须一并保留，
+     * 其汇总工时须按剩余 work 明细重算，否则会与明细不符（INV-D2 / SC-010）。
+     *
+     * <p><b>实现约束</b>：SQL 必须带 {@code update_time = update_time}，
+     * 不得触碰审计字段（宪法 IV）。
+     *
+     * @param reportId 日报ID
+     * @param hours    重算后的当日汇总工时
+     * @return 结果
+     */
+    int updateTotalWorkHours(@Param("reportId") Long reportId, @Param("hours") BigDecimal hours);
 }

@@ -106,6 +106,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from pm_daily_report_detail where report_id = #{reportId}
     </delete>
 
+    <!--
+      【015】按「作用范围」删除明细：只删填报人本次提交有能力表达的那部分。
+      · project_id is null  → 非项目工时（请假/倒休/年假等），在所有填写入口均始终可见，
+                              未出现在提交中即视为主动删除，故无条件纳入范围（FR-005）
+      · project_id in (...)  → 填报人当前可填项目的工时
+      范围之外的明细（已结项项目的历史工时等）被本语句跳过 → 原样保留（FR-001）
+
+      ⚠️ <if> 空集守卫不可删：填报人无任何可填项目时集合为空，
+         若无守卫会生成 "in ()" 语法错误；有守卫则退化为「仅删非项目工时」，语义正确。
+    -->
+    <delete id="deleteByReportIdInScope">
+        delete from pm_daily_report_detail
+        where report_id = #{reportId}
+          and (
+            project_id is null
+            <if test="visibleProjectIds != null and visibleProjectIds.size() > 0">
+                or project_id in
+                <foreach item="pid" collection="visibleProjectIds" open="(" separator="," close=")">
+                    #{pid}
+                </foreach>
+            </if>
+          )
+    </delete>
+
     <!-- 统计指定项目在所有日报中的总工时(小时) -->
     <select id="sumWorkHoursByProjectId" parameterType="Long" resultType="java.math.BigDecimal">
         select coalesce(sum(work_hours), 0)
@@ -134,5 +158,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <select id="countBySubProjectId" parameterType="Long" resultType="int">
         select count(*) from pm_daily_report_detail where sub_project_id = #{subProjectId}
+    </select>
+
+    <!-- 【015】该日报当前剩余的明细条数，用于删除时判断主记录去留（FR-014） -->
+    <select id="countByReportId" parameterType="Long" resultType="int">
+        select count(*) from pm_daily_report_detail where report_id = #{reportId}
+    </select>
+
+    <!--
+      【015】该日报剩余 work 类型明细的工时之和，用于保留主记录时重算当日汇总（INV-D2）。
+      口径与 saveDailyReport 计算 totalWorkHours 严格一致：只累加 entry_type='work'，
+      假期类（请假/倒休/年假等）不计入当日汇总工时。
+    -->
+    <select id="sumWorkHoursByReportId" parameterType="Long" resultType="java.math.BigDecimal">
+        select coalesce(sum(work_hours), 0)
+        from pm_daily_report_detail
+        where report_id = #{reportId}
+          and entry_type = 'work'
     </select>
 </mapper>
