@@ -594,8 +594,13 @@ const handleSortChange = ({ column, prop, order }) => {
       'actualWorkload': 'actual_workload_total',
       'revenueConfirmAmount': 'revenue_confirm_amount_total',
     }
-    queryParams.value.orderByColumn = columnMap[prop] || prop
-    queryParams.value.isAsc = order === 'ascending' ? 'asc' : 'desc'
+    const dbColumn = columnMap[prop] || prop
+    const dir = order === 'ascending' ? 'asc' : 'desc'
+    // 追加唯一次级排序键，使排序成为全序（Issue #16）：
+    // contract_code / contract_sign_date / contract_amount 均存在大量并列值，
+    // 排序键不唯一时 MySQL 对并列行的顺序不保证，每页 limit 独立排序会导致翻页重复与遗漏
+    queryParams.value.orderByColumn = `${dbColumn} ${dir}, c.contract_id`
+    queryParams.value.isAsc = dir
   }
   handleQuery()
 }
