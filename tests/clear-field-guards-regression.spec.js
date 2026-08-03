@@ -16,15 +16,20 @@
  *   以及有值提交时不得被误清空。
  *
  * 覆盖范围（15 个已解放字段）：
- *   ProjectMapper.updateProject            applyDate/startDate/endDate/acceptanceDate/productionDate
- *   TaskMapper.updateTask                  internalClosureDate/functionalTestDate/productionDate/
- *                                          productionVersionDate/actualProductionDate/taskBudget
- *   VersionOutMapper.updateVersionOut      outVersion/versionStatus
- *   ContractMapper.updateContract          contractSignDate
- *   CustomerMapper.updateCustomer          salesManagerId
+ *   ProjectMapper.updateProject             applyDate/startDate/endDate/acceptanceDate/productionDate
+ *   TaskMapper.updateTask                   internalClosureDate/functionalTestDate/
+ *                                           productionVersionDate/actualProductionDate/taskBudget
+ *   VersionOutMapper.updateVersionOut       outVersion/versionStatus
+ *   VersionOutMapper.updateVersionOutManual outVersion（非批次，Issue #23 补覆盖）
+ *   ContractMapper.updateContract           contractSignDate
+ *   CustomerMapper.updateCustomer           salesManagerId
  *
- * 另有两块验证「守卫兜底有效」（这两处 deptId 是必填字段，守卫保留是正确设计）：
- *   ProlistDefectMapper.updateProlistDefect / NobatchProlistDefectMapper.updateNobatchProlistDefect
+ * 另有三块验证「守卫兜底有效」：
+ *   ProlistDefectMapper / NobatchProlistDefectMapper 的 deptId —— 两处编辑表单的 rules
+ *     都有「项目组不能为空」校验器，属必填字段，守卫保留是正确设计。
+ *   TaskMapper.updateTask 的 productionDate —— 任务编辑页 subproject/edit.vue 上根本没有
+ *     这个字段（由所选批次派生、只读展示），PUT 请求体不带该 key。它一度被误解放守卫，
+ *     导致每次任务编辑都把计划投产日期写成 NULL（commit 03a859b 已修回）。
  *
  * 注：修复只在后端。已实测验证 @RequestBody 绑定 Java Bean 时，
  *    「payload 中 key 缺失」与「显式传 null」效果完全相同，故前端无需做 undefined→null 归一。
@@ -1149,5 +1154,277 @@ test.describe.serial('收入确认 · PUT /project/project/revenue 不得清空�
     expect(res.code, '删除项目应成功').toBe(200);
     projectId = null;
     console.log('🧹 测试项目已删除');
+  });
+});
+
+// ═════════════════════════════════════════════════════════════
+// 9. 非批次版本管理 —— VersionOutMapper.updateVersionOutManual
+//    /project/versionOutManual （PUT 全量表单提交，前端 versionOutManual/edit.vue）
+//
+//    Issue #23：out_version 在 updateVersionOutManual 里已解放守卫
+//    （VersionOutMapper.xml「可选字段无条件更新」那一行），但既有用例零触碰 ——
+//    e2e-version-out-manual-crud.spec.js 的 9 个用例里 outVersion 出现 0 次，
+//    上面第 3 块打的是**批次**的 /project/versionOut，与本语句不是同一条 SQL。
+//
+//    ⚠️ 三处与批次块（第 3 块）的关键差异，照抄批次块会写出假断言：
+//    ① VersionOutManualController.add/edit 都**没有 @Validated**（源码注释在 :66-67），
+//       实体 @NotBlank 全部不生效，真正的必填由 VersionOutServiceImpl.validateManual 决定。
+//       所以 REQUIRED_KEEP 里既有实体没标注的 manualTaskNo/manualTaskName/product，
+//       也**不含** packageMode/versionBrief（那两个是批次专用，非批次的 update 语句
+//       里根本没有这两列，前端也没有控件）。versionStatus 同理，本块不涉及。
+//    ② outVersion 不能靠「在类型 5/6 上清空下拉框」来测：validateManual 规定类型 5/6 时
+//       它是**条件必填**，清空会被 ServiceException 拒掉，请求根本走不到 mapper。
+//       UI 上唯一能让 out_version 落成 NULL 的真实路径是**把版本类型从 5/6 切到 1/2/3/4**
+//       —— edit.vue:216-224 的 onVersionTypeChange() 无条件 `form.outVersion = null`。
+//       本块按这个真实序列造数：建成类型 5（带 outVersion）→ 切类型 1 清空 → 回填 → 再清空。
+//    ③ subVersionCode 虽不在 validateManual 里，但 Service 的 keyChanged 会比较它，
+//       从 payload 删掉会额外触发版本号重算、把断言搅浑，故一律留在 payload 里并断言未被篡改。
+//
+//    已核实 outVersion 确实在编辑表单上且确实会被提交（不是 productionDate 那种「详情有、
+//    表单没有」的假字段）：edit.vue:86-89 有 `<el-select v-model="form.outVersion" clearable>`
+//    （v-if="isUpgrade" 即类型 5/6 时渲染），edit.vue:248 `updateVersionOutManual(form.value)`
+//    整体回传。因此它被解放守卫是正确的，本块锁定其清空语义。
+// ═════════════════════════════════════════════════════════════
+test.describe.serial('非批次版本管理 · updateVersionOutManual 清空升级包初级版本号', () => {
+  /** 已解放守卫、必须能被真正清空的字段 */
+  const CLEARABLE_FIELD = 'outVersion';
+
+  /**
+   * VersionOutServiceImpl.validateManual 的必填清单 —— 从 payload 里删掉任何一个，
+   * 请求都会在 Service 校验层被 ServiceException 拒掉，根本到不了 mapper。
+   * 下面「反向锚点」用例会逐个验证这份清单名副其实（防止照抄批次块写出恒真断言）。
+   */
+  const REQUIRED_KEEP = [
+    'productionYear', 'batchId', 'product', 'sysName', 'versionType',
+    'manualTaskNo', 'manualTaskName', 'isInvolved', 'dbUpdate', 'usbUpdate', 'versionDescr'
+  ];
+  /**
+   * 清空操作前后必须**逐字保持原值**的字段。
+   * versionType 不在其中 —— 它正是本用例刻意切换的字段（5 → 1），单独断言。
+   * subVersionCode 不属 validateManual，但必须保留（见块首 ③），一并断言未被篡改。
+   */
+  const UNCHANGED = [...REQUIRED_KEEP.filter(f => f !== 'versionType'), 'subVersionCode'];
+  /** 本次未解放 —— 守卫仍生效，key 缺失时必须保留原值 */
+  const GUARDED = {
+    remarks: `E2E清空守卫_非批次备注_${TS}`
+  };
+
+  const manualTaskNo = `E2E-CLR-VM-${TS}`;
+  const manualTaskName = `E2E清空守卫_非批次任务_${TS}`;
+  const versionDescr = `E2E清空守卫_非批次说明_${TS}`;
+
+  let versionId = null;
+  let outVersion = null;   // 运行时解析：优先取真实候选，不硬编码
+  let snapshot = null;     // 造数完成时的详情快照，用于 UNCHANGED 严格比对
+
+  test.afterAll(async () => {
+    if (versionId) {
+      try {
+        await api.del(`/project/versionOutManual/${versionId}`);
+        console.log(`🧹 afterAll 清理：已删除非批次版本 ${versionId}`);
+      } catch { /* 可能已清理 */ }
+      versionId = null;
+    }
+  });
+
+  test('前置：创建类型5（升级包）且带 outVersion 的非批次版本', async () => {
+    // 依赖 1：产品 → 子系统（遍历 sys_product 字典找一个真有子系统配置的产品）
+    let product = null;
+    let sysName = null;
+    const dict = await api.get('/system/dict/data/type/sys_product');
+    for (const d of (dict.data || [])) {
+      const res = await api.get('/project/versionOutManual/sysNameByProduct', { product: d.dictValue });
+      if (res.data && res.data.length > 0) {
+        product = d.dictValue;
+        sysName = res.data[0].sysName;
+        break;
+      }
+    }
+    // 依赖 2：投产批次
+    const batchRes = await api.get('/project/productionBatch/list', { pageNum: 1, pageSize: 1 });
+    const batch = batchRes.rows && batchRes.rows.length > 0 ? batchRes.rows[0] : null;
+
+    if (!sysName || !batch) {
+      console.log('⏭️ 无子系统配置(pm_sys_name)或无投产批次(pm_production_batch)，跳过「非批次版本」块');
+      test.skip();
+      return;
+    }
+
+    // 依赖 3：升级包初级版本号。优先用真实候选（类型5 的候选来自基线类型3 的 out_lib_version）；
+    // 无候选时退化为**数值型**字面量 —— VersionNumberGenerator.byOutVersion 兜底会
+    // parseInt 该值当大版本号，非数字一律解析成 0、永远生成 _B00.01，跨次运行必撞
+    // UNIQUE KEY uk_sys_type_outlib，那会让失败原因变成「版本号生成冲突」而非本用例要查的问题。
+    const optRes = await api.get('/project/versionOutManual/outVersionOptions', { sysName, versionType: '5' });
+    outVersion = (optRes.data && optRes.data.length > 0)
+      ? optRes.data[0]
+      : String(Date.now() % 1000000);
+
+    const addRes = await api.post('/project/versionOutManual', {
+      productionYear: batch.productionYear,
+      batchId: batch.batchId,
+      product,
+      subVersionCode: product,       // 与前端 onProductChange 一致：产品即 subVersionCode
+      sysName,
+      versionType: '5',              // 升级包 —— outVersion 唯一能有值的形态
+      outVersion,
+      manualTaskNo,
+      manualTaskName,
+      isInvolved: '1',
+      dbUpdate: '1',
+      usbUpdate: '1',
+      versionDescr,
+      ...GUARDED
+    });
+    expect(addRes.code, `新增非批次版本应成功，实际 msg=${addRes.msg}`).toBe(200);
+
+    // 列表按 manual_task_no 是 like %..% 模糊匹配，必须严格相等反查，不能取 rows[0]
+    const list = await api.get('/project/versionOutManual/list', { pageNum: 1, pageSize: 50, manualTaskNo });
+    expect(list.code).toBe(200);
+    const row = (list.rows || []).find(r => r.manualTaskNo === manualTaskNo);
+    expect(row, '应能按软件中心任务号严格检索到刚创建的非批次版本').toBeTruthy();
+    versionId = row.id;
+
+    const detail = await api.get(`/project/versionOutManual/${versionId}`);
+    expect(detail.code).toBe(200);
+    snapshot = detail.data;
+
+    expectKept(snapshot, CLEARABLE_FIELD, outVersion);
+    expectKept(snapshot, 'versionType', '5');
+    expectKept(snapshot, 'manualInput', '1');
+    for (const [f, v] of Object.entries(GUARDED)) expectKept(snapshot, f, v);
+    // outLibVersion 只断言「已生成」，不对其构成方式作任何假设。
+    // 实测：传入 outVersion='HHAP-COR_V01.0K_B07' 时后端生成的是
+    // 'HHAP-COR_V01.0K_BHHAP-COR_V01.01' —— 后端有自己的推导逻辑，不是简单拼接传入值。
+    // 版本号如何生成不属本块要验证的范围（本块只管 outVersion 能否被清空），
+    // 上面的 expectKept(snapshot, CLEARABLE_FIELD, outVersion) 已确认造数成功。
+    expect(String(snapshot.outLibVersion || ''), '类型5 应已生成出入库版本号').not.toBe('');
+    console.log(`📌 前置非批次版本已创建，id=${versionId}，outVersion=${outVersion}，outLibVersion=${snapshot.outLibVersion}`);
+  });
+
+  test('反向锚点：必填字段缺失 / 类型5 上清空 outVersion，请求必须被拒且记录不变', async () => {
+    if (!versionId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+
+    const detail = await api.get(`/project/versionOutManual/${versionId}`);
+    const base = detail.data;
+
+    // (1) REQUIRED_KEEP 逐个验证名副其实：删掉任意一个，Service 校验层必须拒绝。
+    //     若某个字段删掉仍返回 200，说明这份清单是照抄来的、不是这个接口的真实必填，
+    //     后面 A/B 用例里「必填字段保留在 payload」的前提就是假的。
+    for (const field of REQUIRED_KEEP) {
+      const res = await api.put('/project/versionOutManual', omitKeys(base, [field]));
+      expect(res.code, `缺少必填字段 ${field} 时应被 Service 拒绝，实际 code=${res.code} msg=${res.msg}`)
+        .not.toBe(200);
+    }
+
+    // (2) 条件必填：类型仍是 5 时清空 outVersion（key 缺失 / 显式 null 两种形态）必须被拒。
+    //     这正是「不能在类型 5 上测清空」的根因，也说明 UI 唯一可达的清空路径是切换版本类型。
+    const omitOnType5 = await api.put('/project/versionOutManual', omitKeys(base, [CLEARABLE_FIELD]));
+    expect(omitOnType5.code, `类型5 上缺 outVersion 应被拒，实际 msg=${omitOnType5.msg}`).not.toBe(200);
+    const nullOnType5 = await api.put('/project/versionOutManual', nullKeys(base, [CLEARABLE_FIELD]));
+    expect(nullOnType5.code, `类型5 上 outVersion=null 应被拒，实际 msg=${nullOnType5.msg}`).not.toBe(200);
+
+    // (3) 上面这些请求全部止步于校验层，一个字节都不该落库
+    const after = await api.get(`/project/versionOutManual/${versionId}`);
+    expectKept(after.data, CLEARABLE_FIELD, outVersion);
+    expectKept(after.data, 'versionType', '5');
+    for (const f of UNCHANGED) expectKept(after.data, f, snapshot[f]);
+    for (const [f, v] of Object.entries(GUARDED)) expectKept(after.data, f, v);
+    console.log('✅ 非批次版本：必填清单与条件必填的拒绝路径断言完成，记录未被篡改');
+  });
+
+  test('A. key 缺失（类型 5→1）：outVersion 应被真正清空，必填字段保留', async () => {
+    if (!versionId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+
+    const detail = await api.get(`/project/versionOutManual/${versionId}`);
+
+    // 真实形态复刻：onVersionTypeChange 把类型改成 1（非升级包），
+    // 该控件随之 v-if=false 不再渲染，clearable 后的 undefined 被 JSON.stringify 丢弃 → key 缺失。
+    // 必填字段与 subVersionCode 全部原样留在 payload 里（否则请求会被校验层拒，走不到 mapper）。
+    const submit = omitKeys({ ...detail.data, versionType: '1' }, [CLEARABLE_FIELD, ...Object.keys(GUARDED)]);
+    expect(CLEARABLE_FIELD in submit, 'payload 中不应再有 outVersion 这个 key').toBe(false);
+    for (const f of REQUIRED_KEEP) {
+      expect(submit[f] !== null && submit[f] !== undefined, `必填字段 ${f} 必须留在 payload 里`).toBe(true);
+    }
+
+    const putRes = await api.put('/project/versionOutManual', submit);
+    expect(putRes.code, `修改非批次版本应成功，实际 msg=${putRes.msg}`).toBe(200);
+
+    const after = await api.get(`/project/versionOutManual/${versionId}`);
+    expectCleared(after.data, CLEARABLE_FIELD);
+    expectKept(after.data, 'versionType', '1');
+    // 类型改成 1（SP升级包）后版本号按 base + _SP + 两位序号 重算 —— 佐证类型确实切过去了
+    expect(String(after.data.outLibVersion), '类型1 的出入库版本号应形如 xxx_SP01')
+      .toMatch(/_SP\d+$/);
+    for (const f of UNCHANGED) expectKept(after.data, f, snapshot[f]);
+    for (const [f, v] of Object.entries(GUARDED)) expectKept(after.data, f, v);
+    console.log('✅ 非批次版本：key 缺失场景断言完成');
+  });
+
+  test('B. 显式 null（回填 → 类型 5→1）：outVersion 应被真正清空', async () => {
+    if (!versionId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+
+    // 回填：类型改回 5 并带上 outVersion（类型 5 时它是条件必填，不带会被拒）
+    const before = await api.get(`/project/versionOutManual/${versionId}`);
+    const refill = await api.put('/project/versionOutManual', {
+      ...before.data,
+      versionType: '5',
+      [CLEARABLE_FIELD]: outVersion
+    });
+    expect(refill.code, `回填 outVersion 应成功，实际 msg=${refill.msg}`).toBe(200);
+
+    const refilled = await api.get(`/project/versionOutManual/${versionId}`);
+    expectKept(refilled.data, CLEARABLE_FIELD, outVersion);
+    expectKept(refilled.data, 'versionType', '5');
+
+    // 显式 null 形态：edit.vue:217 的 `form.value.outVersion = null` 就是这个形态
+    const submit = nullKeys({ ...refilled.data, versionType: '1' }, [CLEARABLE_FIELD]);
+    expect(submit[CLEARABLE_FIELD], 'payload 中 outVersion 应显式为 null').toBeNull();
+    for (const f of REQUIRED_KEEP) {
+      expect(submit[f] !== null && submit[f] !== undefined, `必填字段 ${f} 必须留在 payload 里`).toBe(true);
+    }
+
+    const putRes = await api.put('/project/versionOutManual', submit);
+    expect(putRes.code, `修改非批次版本应成功，实际 msg=${putRes.msg}`).toBe(200);
+
+    const after = await api.get(`/project/versionOutManual/${versionId}`);
+    expectCleared(after.data, CLEARABLE_FIELD);
+    expectKept(after.data, 'versionType', '1');
+    expect(String(after.data.outLibVersion), '类型1 的出入库版本号应形如 xxx_SP01')
+      .toMatch(/_SP\d+$/);
+    for (const f of UNCHANGED) expectKept(after.data, f, snapshot[f]);
+    console.log('✅ 非批次版本：显式 null 场景断言完成');
+  });
+
+  test('C. 反向保护：有值提交时 outVersion 不得被误清空', async () => {
+    if (!versionId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+
+    const before = await api.get(`/project/versionOutManual/${versionId}`);
+    const putRes = await api.put('/project/versionOutManual', {
+      ...before.data,
+      versionType: '5',
+      [CLEARABLE_FIELD]: outVersion,
+      ...GUARDED
+    });
+    expect(putRes.code, `修改非批次版本应成功，实际 msg=${putRes.msg}`).toBe(200);
+
+    const after = await api.get(`/project/versionOutManual/${versionId}`);
+    expectKept(after.data, CLEARABLE_FIELD, outVersion);
+    expectKept(after.data, 'versionType', '5');
+    for (const [f, v] of Object.entries(GUARDED)) expectKept(after.data, f, v);
+    for (const f of UNCHANGED) expectKept(after.data, f, snapshot[f]);
+
+    // 再提交一次同样的值（无任何变更），仍不得被清空 —— 防「第二次保存才丢」的形态
+    const again = await api.put('/project/versionOutManual', { ...after.data });
+    expect(again.code, `二次提交应成功，实际 msg=${again.msg}`).toBe(200);
+    const after2 = await api.get(`/project/versionOutManual/${versionId}`);
+    expectKept(after2.data, CLEARABLE_FIELD, outVersion);
+    console.log('✅ 非批次版本：反向保护断言完成');
+  });
+
+  test('清理：删除测试非批次版本', async () => {
+    if (!versionId) { console.log('⏭️ 前置数据缺失，跳过'); test.skip(); return; }
+    const res = await api.del(`/project/versionOutManual/${versionId}`);
+    expect(res.code, '删除非批次版本应成功').toBe(200);
+    versionId = null;
   });
 });
