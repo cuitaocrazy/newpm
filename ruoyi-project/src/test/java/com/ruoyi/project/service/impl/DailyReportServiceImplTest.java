@@ -7,6 +7,8 @@ import com.ruoyi.project.domain.DailyReportDetail;
 import com.ruoyi.project.domain.WorkCalendar;
 import com.ruoyi.project.domain.request.BatchLeaveRequest;
 import com.ruoyi.project.domain.vo.DailySubmissionStat;
+import com.ruoyi.project.domain.vo.TeamDailyReportVO;
+import com.ruoyi.project.domain.vo.TeamMemberDailyVO;
 import com.ruoyi.project.mapper.DailyReportDetailMapper;
 import com.ruoyi.project.mapper.DailyReportMapper;
 import com.ruoyi.project.mapper.ProjectMapper;
@@ -1761,5 +1763,170 @@ class DailyReportServiceImplTest {
         wc.setCalendarDateStr(dateStr);
         wc.setDayType(dayType);
         return wc;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // 018 项目日报（specs/018-project-daily-report）：selectTeamMonthly 聚合层
+    //
+    // 【务必先读】本区块是纯单元测试，dailyReportMapper 是 @Mock ——
+    // 它只验证「给定这样的原始行，Java 层聚合成什么样的 VO 树」，**不执行任何 SQL**。
+    //
+    // SQL 形态（月窗条件化、角色 CASE 反推、三个新增 LEFT JOIN）这里一概测不到，
+    // 由真实 SQL 执行与 Playwright e2e 验证，映射见 bdd/coverage.md。
+    // 别被本区块的绿色骗了：它绿只证明聚合逻辑对，不证明 SQL 会产出这样的原始行。
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * 构造一行 selectTeamMonthlyRaw 的原始返回行。
+     * 默认值取自 project 38（兵团人社全程电子化）的真实数据形态：预算 150 人天、累计 66.750 人天。
+     * 调用方按需 put 覆盖 reportDate / totalWorkHours / isFormer 等字段。
+     */
+    private Map<String, Object> teamRawRow(Long projectId, Long userId) {
+        Map<String, Object> row = new HashMap<>();
+        row.put("projectId", projectId);
+        row.put("projectName", "项目" + projectId);
+        row.put("hasContract", "0");
+        row.put("estimatedWorkload", new BigDecimal("150.00"));
+        row.put("actualPersonDays", new BigDecimal("66.750"));
+        row.put("projectStage", "3");
+        row.put("userId", userId);
+        row.put("nickName", "用户" + userId);
+        row.put("deptName", "研发中心");
+        row.put("isFormer", "0");
+        return row;
+    }
+
+    @Test
+    @DisplayName("[护栏][018] 指定年月时：多天工时既进日历格，也累加进个人总工时")
+    void selectTeamMonthly_withYearMonth_dailyHoursAndTotalPreserved() {
+        Map<String, Object> d1 = teamRawRow(38L, 250L);
+        d1.put("reportDate", "2026-03-02");
+        d1.put("totalWorkHours", new BigDecimal("8"));
+        Map<String, Object> d2 = teamRawRow(38L, 250L);
+        d2.put("reportDate", "2026-03-03");
+        d2.put("totalWorkHours", new BigDecimal("6"));
+        Map<String, Object> d3 = teamRawRow(38L, 250L);
+        d3.put("reportDate", "2026-03-04");
+        d3.put("totalWorkHours", new BigDecimal("4"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Arrays.asList(d1, d2, d3));
+
+        List<TeamDailyReportVO> result = service.selectTeamMonthly(new DailyReport());
+
+        assertEquals(1, result.size(), "三行同项目同成员应聚合为一个项目");
+        TeamMemberDailyVO member = result.get(0).getMembers().get(0);
+        assertEquals(3, member.getDailyHours().size(), "三天应产生三个日历格");
+        assertEquals(0, new BigDecimal("18").compareTo(member.getTotalHours()),
+                "个人总工时应为 8+6+4=18");
+    }
+
+    @Test
+    @DisplayName("[护栏][018] 同一项目的多个成员各自归集，工时不互相串行")
+    void selectTeamMonthly_multipleMembers_aggregatedUnderSameProject() {
+        Map<String, Object> a = teamRawRow(38L, 250L);
+        a.put("reportDate", "2026-03-02");
+        a.put("totalWorkHours", new BigDecimal("8"));
+        Map<String, Object> b = teamRawRow(38L, 251L);
+        b.put("reportDate", "2026-03-02");
+        b.put("totalWorkHours", new BigDecimal("5"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Arrays.asList(a, b));
+
+        List<TeamDailyReportVO> result = service.selectTeamMonthly(new DailyReport());
+
+        assertEquals(1, result.size(), "两行属同一项目");
+        assertEquals(2, result.get(0).getMembers().size(), "应有两个成员行");
+        assertEquals(0, new BigDecimal("8").compareTo(result.get(0).getMembers().get(0).getTotalHours()));
+        assertEquals(0, new BigDecimal("5").compareTo(result.get(0).getMembers().get(1).getTotalHours()));
+    }
+
+    @Test
+    @DisplayName("[TDD][018] 不指定年月时：reportDate 为 null，个人工时仍须累加（FR-009）")
+    void selectTeamMonthly_noYearMonth_totalHoursAccumulatedWithoutDate() {
+        // 未指定年月时 SQL 输出 `NULL AS reportDate`，daily_hrs 退化为 per-(user,project) 全周期 SUM，
+        // 因此每个 (项目,成员) 只有一行、无日期、工时为全周期合计（曲君在 project 38 的 166 小时）。
+        Map<String, Object> row = teamRawRow(38L, 250L);
+        row.put("reportDate", null);
+        row.put("totalWorkHours", new BigDecimal("166"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Collections.singletonList(row));
+
+        List<TeamDailyReportVO> result = service.selectTeamMonthly(new DailyReport());
+
+        TeamMemberDailyVO member = result.get(0).getMembers().get(0);
+        assertEquals(0, new BigDecimal("166").compareTo(member.getTotalHours()),
+                "无年月时个人人天须取自全周期合计；现有 `reportDate != null && totalWorkHours != null` "
+                        + "守卫会让整个分支不执行，把 totalHours 吞成 0");
+        assertTrue(member.getDailyHours().isEmpty(), "无年月时不应产生任何日历格");
+    }
+
+    @Test
+    @DisplayName("[TDD][018] 角色标签透传到成员 VO（FR-011）")
+    void selectTeamMonthly_multiRole_takesHighestPriority() {
+        // 优先级取一在 SQL 的 CASE 中完成（项目经理 > 市场经理 > 销售负责人 > 参与人员），
+        // 聚合层只负责把 SQL 已选定的那一个透传出去。
+        Map<String, Object> row = teamRawRow(55L, 103L);
+        row.put("roleLabel", "项目经理");
+        row.put("reportDate", "2026-03-02");
+        row.put("totalWorkHours", new BigDecimal("8"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Collections.singletonList(row));
+
+        List<TeamDailyReportVO> result = service.selectTeamMonthly(new DailyReport());
+
+        assertEquals("项目经理", result.get(0).getMembers().get(0).getRoleLabel());
+    }
+
+    @Test
+    @DisplayName("[TDD][018] 反推不出角色时 roleLabel 为 null 而非空串（FR-012）")
+    void selectTeamMonthly_noRole_returnsNullLabel() {
+        // 前端据此决定「只显示昵称、不显示空括号」。若这里返回 ""，虽然 v-if 同样为 falsy，
+        // 但日期字段用同一套取值逻辑，"" 会让参与时间拼出「 ~ 」这种残缺串，故统一保持 null 语义。
+        Map<String, Object> row = teamRawRow(38L, 250L);
+        row.put("roleLabel", null);
+        row.put("reportDate", "2026-03-02");
+        row.put("totalWorkHours", new BigDecimal("8"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Collections.singletonList(row));
+
+        List<TeamDailyReportVO> result = service.selectTeamMonthly(new DailyReport());
+
+        assertNull(result.get(0).getMembers().get(0).getRoleLabel(),
+                "str() 对 null 返回空串，新字段不能直接套用它");
+    }
+
+    @Test
+    @DisplayName("[TDD][018] 项目机构分组不得覆盖成员本人部门（FR-014）")
+    void selectTeamMonthly_projectDeptName_doesNotOverwriteMemberDeptName() {
+        // 实测 2188 条在册成员行中 831 条（38%）成员部门 ≠ 项目部门，别名撞名会静默覆盖。
+        Map<String, Object> row = teamRawRow(38L, 250L);
+        row.put("projectDeptName", "深圳组");
+        row.put("deptName", "研发中心");
+        row.put("reportDate", "2026-03-02");
+        row.put("totalWorkHours", new BigDecimal("8"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Collections.singletonList(row));
+
+        List<TeamDailyReportVO> result = service.selectTeamMonthly(new DailyReport());
+
+        assertEquals("深圳组", result.get(0).getProjectDeptName(), "项目层应拿到项目所属部门");
+        assertEquals("研发中心", result.get(0).getMembers().get(0).getDeptName(),
+                "成员层的部门必须仍是成员本人部门，不能被项目部门覆盖");
+    }
+
+    @Test
+    @DisplayName("[TDD][018] 参与时间四个日期字段透传（FR-017）")
+    void selectTeamMonthly_participationSpan_prefersReportDates() {
+        // 主源=日报首末日、兜底源=成员表在册区间，两者都吐给前端，由前端决定展示口径。
+        Map<String, Object> row = teamRawRow(38L, 250L);
+        row.put("firstReportDate", "2026-03-02");
+        row.put("lastReportDate", "2026-04-16");
+        row.put("joinDate", "2026-03-11");
+        row.put("leaveDate", null);
+        row.put("reportDate", null);
+        row.put("totalWorkHours", new BigDecimal("166"));
+        when(dailyReportMapper.selectTeamMonthlyRaw(any())).thenReturn(Collections.singletonList(row));
+
+        TeamMemberDailyVO member = service.selectTeamMonthly(new DailyReport())
+                .get(0).getMembers().get(0);
+
+        assertEquals("2026-03-02", member.getFirstReportDate());
+        assertEquals("2026-04-16", member.getLastReportDate());
+        assertEquals("2026-03-11", member.getJoinDate());
+        assertNull(member.getLeaveDate(), "在册成员的 leave_date 为 NULL，须保持 null 而非空串");
     }
 }
