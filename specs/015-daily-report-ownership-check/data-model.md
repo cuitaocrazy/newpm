@@ -98,7 +98,7 @@ where p.del_flag = '0'
 
 | 编号 | 规则 | 判据 | 违规处理 |
 |---|---|---|---|
-| V1 | 填报人曾参与该项目 | `pm_project_member` 存在 `(project_id, user_id)` 行（不限状态） | 拒绝整次保存，提示「项目《名称》不在您参与的项目范围内」 |
+| V1 | 填报人曾参与该项目 | 二者任一：① `pm_project_member` 存在 `(project_id, user_id)` 行（不限状态）；② `pm_project` 上 `project_manager_id`/`team_leader_id`/`market_manager_id`/`sales_manager_id` = 该用户，或 `FIND_IN_SET(userId, participants)`（`ProjectMapper.selectProjectRoleProjectIds`，与读侧 Issue #24 闸门同源） | 拒绝整次保存，提示「项目《名称》不在您参与的项目范围内」 |
 | V2 | 项目未结项 | `pm_project.project_stage != '11'` | 拒绝整次保存，提示「项目《名称》已结项，不能新增或修改其工时」 |
 | V3 | 任务归属正确 | `sub_project_id` 为空，或 `pm_task.project_id = 明细.project_id` | 拒绝整次保存，提示「任务与所选项目不匹配」 |
 

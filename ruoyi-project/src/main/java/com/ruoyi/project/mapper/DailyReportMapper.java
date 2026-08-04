@@ -16,12 +16,33 @@ import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 public interface DailyReportMapper
 {
     /**
-     * 查询工作日报
+     * 查询工作日报（含明细）
+     *
+     * <p><b>【Issue #13 读侧】必须传 userId，语句带 {@code and r.user_id = #{userId}}。</b>
+     * 唯一调用方是 {@code GET /project/dailyReport/{reportId}}，reportId 全部来自 URL 且是连续自增；
+     * 这个查询既没有 {@code ${params.dataScope}} 也无法挂 {@code @DataScope}（入参不是 BaseEntity），
+     * 所以在补 user_id 之前，任何持 {@code project:dailyReport:activity} 的账号（8 个角色，
+     * 含普通用户角色 role_id=2）都能逐个 ID 拉走全公司日报正文——比 /list、/monthly 的越权范围还大
+     * （那两条<b>有</b>部门级 dataScope，只是 Issue #24 起变成<b>有条件</b>注入：服务端算出
+     * {@code params.projectScopeBypass} 时才摘掉，见 {@code #applyProjectScopeBypass}；
+     * 本语句则连有条件的 dataScope 都没有）。
+     *
+     * <p>限定为「只能读本人的」而非改成部门级 dataScope：前端没有任何页面调用该接口
+     * （{@code src/api/project/dailyReport.js#getDailyReport} 定义了但零引用），
+     * 团队/动态视图走的是带 dataScope 的 /list 与 /monthly。
+     * 将来若确需跨用户查看单条日报，应新增独立接口，授权走 Issue #24 那套<b>服务端计算</b>的
+     * 判据（成员/项目角色）或 {@code @DataScope}，而不是放宽这里。
+     *
+     * <p>单测护栏：{@code DailyReportProjectScopeSqlTest#reportById_mustRestrictToOwner}
+     * （渲染 BoundSql 断言 {@code r.user_id = ?} 在场）。
+     * e2e 护栏：{@code tests/e2e-daily-report-ownership.spec.js} 的读侧用例。
      *
      * @param reportId 日报主键
+     * @param userId   当前登录用户ID；只返回 user_id 匹配的日报，否则为 null
      * @return 工作日报
      */
-    public DailyReport selectDailyReportById(Long reportId);
+    public DailyReport selectDailyReportById(@Param("reportId") Long reportId,
+                                            @Param("userId") Long userId);
 
     /**
      * 根据用户ID和日期查询日报
@@ -68,13 +89,31 @@ public interface DailyReportMapper
     /**
      * 修改工作日报
      *
-     * @param report 工作日报
+     * <p>【Issue #13】语句带 {@code and user_id = #{userId}}，与本 Mapper 里其余三条
+     * pm_daily_report 写语句（{@link #deleteDailyReportByIds}、{@link #updateTotalWorkHours}）保持一致：
+     * <b>这张表上不留任何无归属限定的写原语</b>。
+     *
+     * <p>当前唯一调用方（{@code saveDailyReport}）的 reportId 由
+     * {@link #selectReportIdByUserAndDate} 按 (userId, date) 自行定位，归属本就正确，
+     * 所以这条限定此刻是纯纵深防御。它防的是将来新增「reportId 由客户端传入」的调用点：
+     * 那时若无此条件，攻击者拿受害者的 reportId 配自己的 userId 调用，就会把受害者的日报
+     * <b>改判归属到自己名下</b>——受害者日历上凭空少一天、攻击者名下多一天，
+     * 而 pm_daily_report 是硬删除表、无历史版本，事后无从追溯是谁改的。
+     *
+     * <p>{@code report.userId} 为 null 时条件不成立、更新 0 行（fail-closed），
+     * 不会退化成无限定更新。
+     *
+     * @param report 工作日报；<b>必须已设置 userId</b>
      * @return 结果
      */
     public int updateDailyReport(DailyReport report);
 
     /**
-     * 删除工作日报（软删除）
+     * 删除工作日报（<b>硬删除</b>，不可恢复——pm_daily_report 属硬删除例外表）
+     *
+     * <p><b>⚠️ 无归属限定，当前无任何生产调用方。</b>新增调用点前必须先自行完成归属校验
+     * （只能删本人日报，Issue #13），或改用带 userId 的 {@link #deleteDailyReportByIds}。
+     * 本方法既绕过归属校验，也绕过 015 的作用范围保护，是这两条防线的回归载体。
      *
      * @param reportId 日报主键
      * @return 结果
@@ -82,12 +121,50 @@ public interface DailyReportMapper
     public int deleteDailyReportById(Long reportId);
 
     /**
-     * 批量删除工作日报（软删除）
+     * 【Issue #13】在给定日报ID里挑出「确实存在、但不属于该用户」的那些（归属校验专用的轻量查询）
+     *
+     * <p>删除日报前必须先过这道校验。原因：{@code DELETE /project/dailyReport/{reportIds}} 的
+     * ID 全部来自客户端，而 8 个角色（含普通用户角色 role_id=2）都持有
+     * {@code project:dailyReport:remove} 权限、{@code report_id} 又是连续自增——
+     * 不校验归属就等于把「删除任意人的日报」开放给全部账号，且日报是<b>硬删除</b>不可恢复。
+     *
+     * <p>不存在的 report_id 查不出来：删除要保持幂等——过期页面/重复点击会重发已被删掉的 ID，
+     * 那种情况按 no-op 处理；只有「查得到、但归属他人」才是越权，必须拒绝。
+     *
+     * <p><b>为什么带 FOR UPDATE（务必保留）</b>：本方法之后，同一事务还要对这些主记录做
+     * {@code updateTotalWorkHours}（UPDATE）或 {@code deleteDailyReportByIds}（DELETE），
+     * 两者都需要排他锁。若这里只用普通 SELECT、而明细删除又通过 JOIN 顺带对主记录取共享锁，
+     * 就形成 <b>S → X 锁升级</b>：两个并发事务各持 S、各等对方释放才能升 X，必然死锁
+     * （本地 MySQL 8 实测 3/3 次 ERROR 1213）。删除接口没有 {@code @RepeatSubmit}，
+     * 而填报人重复点击删除是常态，所以这不是理论风险。
+     * 在这里<b>一次性取排他锁</b>，后续操作就不再升级——并发退化为排队等待而非死锁。
+     *
+     * <p><b>为什么返回 owner 而不是「不属于我的 ID」</b>：一次查询同时给出三件事——
+     * 锁定、归属、以及<b>该主记录是否存在</b>。第三点是必需的：只处理查得到主记录的 ID，
+     * 「主记录已不存在但明细还在」的孤儿数据才不会被带进后续的读写段
+     * （否则会读到他人明细，并对无数据权限的项目发起 actual_workload 重算）。
+     *
+     * @param reportIds 待校验的日报ID集合
+     * @return 每项含 reportId 与 userId；不存在的 ID 不出现在结果中
+     */
+    List<Map<String, Object>> selectReportOwnersForUpdate(
+            @Param("reportIds") java.util.Collection<Long> reportIds);
+
+    /**
+     * 批量删除工作日报（<b>硬删除</b>，不可恢复）
+     *
+     * <p>【Issue #13】语句带 {@code and user_id = #{userId}}：日报是硬删除，误删只能靠 6 小时一次的
+     * OSS 归档备份（需付费解冻），所以「只能删自己的」这条限定要落到 SQL 里，
+     * 不能只依赖 Service 层的前置校验——后者一旦被新调用点绕过就没有第二道防线。
+     *
+     * <p>不设管理员例外，理由见 {@code DailyReportDetailMapper#deleteByReportIdInScope}。
      *
      * @param reportIds 需要删除的数据主键集合
+     * @param userId    当前登录用户ID；只有 user_id 匹配的行会被删除
      * @return 结果
      */
-    public int deleteDailyReportByIds(Long[] reportIds);
+    public int deleteDailyReportByIds(@Param("reportIds") Long[] reportIds,
+                                      @Param("userId") Long userId);
 
     /**
      * 查询活动页可见用户列表（按数据权限 + deptId 过滤）
@@ -150,9 +227,17 @@ public interface DailyReportMapper
      * <p><b>实现约束</b>：SQL 必须带 {@code update_time = update_time}，
      * 不得触碰审计字段（宪法 IV）。
      *
+     * <p>【Issue #13】语句带 {@code and user_id = #{userId}}。这条限定容易被忽略却是必需的：
+     * 若只给删除语句补归属，攻击者传入他人 reportId 时删除删不到行、
+     * 但 countByReportId 仍会读到受害者的真实明细数（&gt;0）而走进「保留主记录」分支，
+     * 于是这条 update 就成了残存的跨用户写原语，会强制改写他人日报的汇总工时。
+     *
      * @param reportId 日报ID
      * @param hours    重算后的当日汇总工时
+     * @param userId   当前登录用户ID；只有 user_id 匹配的行会被更新
      * @return 结果
      */
-    int updateTotalWorkHours(@Param("reportId") Long reportId, @Param("hours") BigDecimal hours);
+    int updateTotalWorkHours(@Param("reportId") Long reportId,
+                             @Param("hours") BigDecimal hours,
+                             @Param("userId") Long userId);
 }

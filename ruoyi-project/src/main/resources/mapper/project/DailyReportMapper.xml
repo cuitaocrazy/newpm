@@ -176,7 +176,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                   and dd_pid.project_id = #{projectId}
             )
         </if>
-        <if test="projectId == null">${params.dataScope}</if>
+        <!--
+            【安全约束，勿删】${params.dataScope} 是本查询唯一的授权边界。projectId / projectName
+            只是业务**筛选**条件，不构成授权 —— 绝不可再用 projectId 本身当豁免判据。
+            Issue #24：曾写成 <if test="projectId == null">${params.dataScope}</if>，于是「传了
+            projectId」就等于「数据权限整条消失」，175 个受限账号可枚举 projectId 读到全库
+            96.9% 的日报（含 work_content 原文；实测 dept212 账号查 project 36 得 442 份 / 5 个部门）。
+            唯一允许的豁免判据是 params.projectScopeBypass —— 由
+            DailyReportServiceImpl#applyProjectScopeBypass 在服务端算出（「调用者曾参与该项目，
+            或在该项目上担任四类项目角色」），并在计算前无条件 remove 掉请求可能伪造的同名 key。
+            只判 null 不判值，即 deny-by-default。
+            不要改成 (项目条件 OR ${params.dataScope})：该片段自带前缀 " AND ("，且 data_scope=1
+            /admin 时是空串，两种情况拼进 OR 都是 MySQL 1064（已实测报错）。
+
+            ⚠️ 与 Issue #22 是「交叉」而非「包含」关系，别把 #22 做成替换：
+            #22 要按**项目归属部门**授权，与本闸门的「曾参与 / 担任项目角色」是两个不同维度。
+            实测 2208 个闸门授权里有 417 个（18.9%）是项目部门维度覆盖不到的 —— 含 PM需求.md:755
+            点名的场景本身（project 43 归属 220 机动组，项目经理梁艳兰在 208 项目六组）。
+            所以 #22 必须落成 everMember/projectRole **OR** projectDeptInMyScope（加法），
+            实现成 projectDeptInMyScope（替换）会精确撤销本次要保住的需求。
+        -->
+        <if test="params.projectScopeBypass == null">${params.dataScope}</if>
     </sql>
 
     <!-- 查询日报列表（不含明细） -->
@@ -197,10 +217,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by r.report_date desc, r.user_id
     </select>
 
-    <!-- 根据ID查询日报详情（含明细） -->
-    <select id="selectDailyReportById" parameterType="Long" resultMap="DailyReportWithDetailResult">
+    <!--
+      根据ID查询日报详情（含明细）
+      【Issue #13 读侧】user_id 限定不可删：reportId 全部来自 URL 且连续自增，
+      本查询既无 ${params.dataScope} 也挂不上 @DataScope（入参非 BaseEntity），
+      去掉 user_id 就等于把「按 ID 遍历全公司日报正文」开放给全部持 activity 权限的账号——
+      resultMap DailyReportWithDetailResult 含明细即 work_content 原文，report_id 稠密可枚举，
+      持 project:dailyReport:activity 的受限账号顺序枚举即可取尽全库日报。
+
+      【与 Issue #24 的关系】该 IDOR 曾在 #24 的 hotfix 里以注释登记「本次不修、由 #13 负责」，
+      现已由上面的 and r.user_id = #{userId} 修掉（前端零调用方，收紧无损）。
+      不要再照 #24 的旧注释理解本语句——那段注释已随本次合并删除。
+
+      parameterType 已去掉：方法签名是 (reportId, userId) 双 @Param，MyBatis 走 ParamMap，
+      再写 parameterType="Long" 是与签名不符的错误元信息。
+    -->
+    <select id="selectDailyReportById" resultMap="DailyReportWithDetailResult">
         <include refid="selectReportWithDetail"/>
         where r.report_id = #{reportId}
+          and r.user_id = #{userId}
     </select>
 
     <!-- 根据用户ID和日期查询日报（含明细） -->
@@ -260,7 +295,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
         </trim>
+        <!--
+          【Issue #13】user_id 限定不可删：这是 pm_daily_report 上最后一条写语句的归属守卫。
+          目前唯一调用点（saveDailyReport）的 reportId 由 selectReportIdByUserAndDate(userId, date)
+          自行定位，归属本就正确，此处是纵深防御——防的是将来新增「从客户端取 reportId」的调用点
+          （本次 javadoc 预告的管理端代改接口就是这种形态）：那时若无此条件，攻击者用受害者的
+          reportId + 自己的 userId 调用，会把受害者的日报改判归属到自己名下，
+          它从受害者日历上消失、出现在攻击者名下。
+          userId 为 null 时条件不成立、更新 0 行（fail-closed），不会退化成无限定更新。
+        -->
         where report_id = #{reportId}
+          and user_id = #{userId}
     </update>
 
     <!-- 硬删除日报 -->
@@ -268,13 +313,54 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         DELETE FROM pm_daily_report WHERE report_id = #{reportId}
     </delete>
 
-    <!-- 批量硬删除日报 -->
-    <delete id="deleteDailyReportByIds" parameterType="String">
-        DELETE FROM pm_daily_report WHERE report_id in
-        <foreach item="reportId" collection="array" open="(" separator="," close=")">
+    <!--
+      批量硬删除日报
+      【Issue #13】user_id 限定不可删：删除是硬删除且不可恢复，只能删自己的日报。
+      Service 层已有前置归属校验，这里是第二道防线——新调用点若忘了校验，SQL 仍不会删到他人数据。
+    -->
+    <delete id="deleteDailyReportByIds">
+        DELETE FROM pm_daily_report
+        WHERE user_id = #{userId}
+          AND report_id in
+        <foreach item="reportId" collection="reportIds" open="(" separator="," close=")">
             #{reportId}
         </foreach>
     </delete>
+
+    <!--
+      【Issue #13】归属校验专用。⚠️ 本语句<b>不做</b>归属过滤：它把命中的 report_id 连同其
+      user_id 原样返回（存在的都返回，含本人的），「是不是他人的」由
+      DailyReportServiceImpl#deleteDailyReportByIds 逐行比对 currentUserId 后判定并抛异常。
+      不要以为 SQL 已经筛过 —— Service 那层比较不是冗余的，删掉它归属校验就整体失效。
+      本语句唯一的"筛"是「存在性」：不存在的 report_id 查不出来 → 删除保持幂等
+      （过期页面重发已删ID按 no-op 处理），同时返回的集合也是 Service 后续只处理"存在且属于
+      本人"那批（ownedReportIds）的来源。
+    -->
+    <!--
+      【Issue #13】查出这些日报的归属人，并对主记录加排他锁。
+
+      FOR UPDATE 不可删：本查询之后同一事务还要 UPDATE/DELETE 这些主记录。
+      若这里只读不锁、而明细删除又通过 JOIN 顺带取共享锁，就形成 S→X 锁升级，
+      两个并发请求（填报人重复点击删除）必然死锁——本地 MySQL 8 实测 3/3 次 ERROR 1213。
+      在此一次取排他锁，后续不再升级，并发退化为排队而非死锁。
+
+      查不到的 report_id 不出现在结果里：既保证删除幂等（重复点击/过期页面重发已删 ID），
+      又让「主记录已不存在但明细还在」的孤儿数据不被带进读写段。
+    -->
+    <select id="selectReportOwnersForUpdate" resultType="java.util.Map">
+        select report_id as reportId, user_id as userId
+        from pm_daily_report
+        <choose>
+            <when test="reportIds != null and reportIds.size() > 0">
+                where report_id in
+                <foreach item="reportId" collection="reportIds" open="(" separator="," close=")">
+                    #{reportId}
+                </foreach>
+            </when>
+            <otherwise>where 1 = 0</otherwise>
+        </choose>
+        for update
+    </select>
 
     <!-- 查询活动页用户列表（数据权限 + 部门过滤） -->
     <select id="selectActivityUsers" parameterType="DailyReport" resultType="java.util.Map">
@@ -295,7 +381,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                     )
                 )
             </if>
-            <if test="projectId == null">
+            <!-- 【安全约束，勿删】豁免判据必须与 queryConditions 同口径：由服务端算出的
+                 params.projectScopeBypass 决定，不由 projectId 决定（Issue #24）。两处必须同改，
+                 否则同一次活动页请求里「花名册」与「月历」会一边豁免一边不豁免。
+
+                 ⚠️ 但「同改」只同步了豁免判据，**并不等于两条查询自洽** —— 已知还有两条分叉轴，
+                 都是既有缺陷、非 #24 引入，已登记为后续项，别把它们当成本次修复的回归：
+                   ① dataScope 打在 d 上，而本语句 d = u.dept_id（用户**当前**部门），
+                      queryConditions 那边 d = r.dept_id（日报**保存时的部门快照**）。
+                      实测 1568 份日报 / 35 人两者不一致。
+                   ② 本语句花名册只取 is_active='1' 的在册成员，月历那边是「有明细即算」（含已离场）。
+                 后果是活动页表头算术可能为负：实测 user 282 查 project 66 / 2026-04-15 得
+                 团队人数=15、已填写=22 → 未填写 = -7（基线同场景已是 -6，本次由轴①叠加到 -7）。 -->
+            <if test="params.projectScopeBypass == null">
                 <if test="deptId != null">
                     and (u.dept_id = #{deptId}
                          or u.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
@@ -592,6 +690,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                  【安全约束，勿删】必须同时满足「曾是该项目成员」（pm_project_member 存在任意
                  状态的行）。015 起 saveDailyReport 已在写入侧校验「曾以任意身份参与过该项目」
                  （validateSubmissionOwnership），本 EXISTS 是纵深防御的第二道，不是唯一防线。
+                 注意本 EXISTS <b>比写入侧 V1 更严格</b>——V1 还接受 pm_project 行上的项目角色 /
+                 participants（成员表漏同步的历史项目，见 ProjectMapper.selectProjectRoleProjectIds），
+                 本处只认成员行。两者不同源是有意的：这里是"读财务字段"的门槛，比"能填工时"更高。
                  但它仍不可删：若仅以「有工时」为准入条件，一旦写入侧校验被绕过或回退，任何持
                  填报权限的账号即可给任意 projectId 提交 0.01 小时，自助获得离场成员身份，再经
                  本查询读出该项目的预算/合同金额/确认金额——而 @DataScope 的 d 绑定的是成员本人
@@ -715,12 +816,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
       ⚠️ update_time = update_time 不可删：这是系统触发的重算，不是用户主动编辑。
          保持审计字段原值，避免在「谁在什么时候改了这条日报」上产生误导。
+
+      【Issue #13】user_id 限定不可删：这是删除路径上唯一的「非删除类」写语句。
+      只给删除语句补归属时，传他人 reportId 会走进「保留主记录」分支并在此改写他人汇总工时，
+      跨用户写原语依然存活。
     -->
     <update id="updateTotalWorkHours">
         update pm_daily_report
         set total_work_hours = #{hours},
             update_time = update_time
         where report_id = #{reportId}
+          and user_id = #{userId}
     </update>
 
 </mapper>

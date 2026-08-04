@@ -212,7 +212,7 @@ class DailyReportServiceImplTest {
         verify(dailyReportMapper, never()).insertDailyReport(any());
         // 【015】删除已收窄为「按作用范围」——本例未 stub 可填项目列表，故范围为空集合，
         // 语义上退化为「只清非项目工时」。无差别的 deleteByReportId 不得再被调用。
-        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), any());
+        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), any(), eq(USER_ID));
         verify(detailMapper, never()).deleteByReportId(anyLong());
         assertEquals(existingReportId, report.getReportId());
         assertEquals(USERNAME, report.getUpdateBy());
@@ -516,7 +516,7 @@ class DailyReportServiceImplTest {
         // 删除必须限定在作用范围内：含可见项目、不含不可见项目
         @SuppressWarnings("rawtypes")
         ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
-        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture());
+        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture(), eq(USER_ID));
         assertTrue(scope.getValue().contains(visibleProjectId),
                 "可见项目必须在作用范围内，否则填报人无法清零自己的工时（FR-002）");
         assertFalse(scope.getValue().contains(invisibleProjectId),
@@ -547,7 +547,7 @@ class DailyReportServiceImplTest {
 
         @SuppressWarnings("rawtypes")
         ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
-        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture());
+        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture(), eq(USER_ID));
         assertTrue(scope.getValue().contains(visibleProjectId),
                 "可见项目必须落在删除范围内，否则填报人再也删不掉自己填错的工时（FR-002 / INV-4）");
     }
@@ -582,7 +582,39 @@ class DailyReportServiceImplTest {
 
         // 只按提交内容算会得到 3.00，与明细之和 5.00 不符——日历卡上的当日工时会偏小（SC-010）。
         // e2e 对账实测暴露（2026-08-03）。
-        verify(dailyReportMapper).updateTotalWorkHours(eq(existingReportId), eq(new BigDecimal("5")));
+        verify(dailyReportMapper).updateTotalWorkHours(eq(existingReportId), eq(new BigDecimal("5")), eq(USER_ID));
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：本次提交里出现的项目必须纳入作用范围，否则旧明细删不掉会重复累加")
+    void saveDailyReport_submittedProjectOutsideMyProjects_stillReplacesOldDetails() throws Exception {
+        Long existingReportId = 63L;
+        // 待审核 / 已暂停的项目：approval_status≠'1' 或 project_status≠'0'，
+        // 于是它不出现在 selectProjectsByUserId 的结果里
+        Long pendingProjectId = 70L;
+
+        DailyReport report = buildReport("2026-03-19");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, pendingProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(existingReportId);
+        when(dailyReportMapper.updateDailyReport(any())).thenReturn(1);
+        // 该日已有同一项目的旧明细
+        when(detailMapper.selectByReportId(existingReportId)).thenReturn(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, pendingProjectId, null)));
+
+        // 可填项目列表为空——项目因生命周期状态被 selectProjectsByUserId 过滤掉了
+        lenient().when(projectMapper.selectProjectsByUserId(USER_ID)).thenReturn(Collections.emptyList());
+
+        service.saveDailyReport(report);
+
+        @SuppressWarnings("rawtypes")
+        ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
+        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture(), eq(USER_ID));
+        assertTrue(scope.getValue().contains(pendingProjectId),
+                "填报人这次明确提交了该项目的工时，它就归本次提交管——旧明细必须先删。"
+                        + "否则旧的留着、新的又插进来，工时凭空翻倍。e2e 回归实测暴露（2026-08-03）。");
     }
 
     // ---------- User Story 1b：删除整条日报时不丢失填报人看不见的工时 ----------
@@ -591,6 +623,10 @@ class DailyReportServiceImplTest {
     @DisplayName("[TDD] 删除日报：作用范围外（填报人看不见）的工时不得被连带删除")
     void deleteDailyReport_invisibleHours_arePreserved() throws Exception {
         Long reportId = 70L;
+        // 【Issue #13】归属探针：该主记录存在且归属本人。
+        // 不 stub 的话 ownedReportIds 为空，整条日报会被当成「主记录不存在」而跳过。
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(reportId, USER_ID)));
         Long visibleProjectId = 10L;
         Long invisibleProjectId = 20L;
 
@@ -610,7 +646,7 @@ class DailyReportServiceImplTest {
 
         @SuppressWarnings("rawtypes")
         ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
-        verify(detailMapper).deleteByReportIdInScope(eq(reportId), scope.capture());
+        verify(detailMapper).deleteByReportIdInScope(eq(reportId), scope.capture(), eq(USER_ID));
         assertTrue(scope.getValue().contains(visibleProjectId),
                 "填报人看得见的工时应当被删除——这是他执行删除的本意");
         assertFalse(scope.getValue().contains(invisibleProjectId),
@@ -621,6 +657,10 @@ class DailyReportServiceImplTest {
     @DisplayName("[TDD] 删除日报：仍有工时被保留时，主记录必须保留并重算当日汇总")
     void deleteDailyReport_withRemainingDetails_keepsMasterRecord() throws Exception {
         Long reportId = 71L;
+        // 【Issue #13】归属探针：该主记录存在且归属本人。
+        // 不 stub 的话 ownedReportIds 为空，整条日报会被当成「主记录不存在」而跳过。
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(reportId, USER_ID)));
         Long visibleProjectId = 10L;
         Long invisibleProjectId = 20L;
 
@@ -640,15 +680,21 @@ class DailyReportServiceImplTest {
         service.deleteDailyReportByIds(new Long[]{reportId});
 
         // 主记录不得被软删——否则被保留的明细无主记录可归属，任何业务查询都到不了它（INV-D1 / SC-010）
-        verify(dailyReportMapper, never()).deleteDailyReportByIds(any());
+        // ⚠️ 第二个参数用 any() 而不是 anyLong()：Mockito 的 anyLong() 不匹配 null，
+        //    用它会让「userId 传了 null 的越权删除」从这条护栏底下溜过去（护栏反而更窄）。
+        verify(dailyReportMapper, never()).deleteDailyReportByIds(any(), any());
         // 当日汇总须按剩余 work 明细重算，否则主记录与明细不符（INV-D2）
-        verify(dailyReportMapper).updateTotalWorkHours(eq(reportId), eq(new BigDecimal("2")));
+        verify(dailyReportMapper).updateTotalWorkHours(eq(reportId), eq(new BigDecimal("2")), eq(USER_ID));
     }
 
     @Test
     @DisplayName("[护栏] 删除日报：无任何工时需要保留时，主记录应被正常删除（不引入过度保护）")
     void deleteDailyReport_noRemainingDetails_deletesMasterRecord() throws Exception {
         Long reportId = 72L;
+        // 【Issue #13】归属探针：该主记录存在且归属本人。
+        // 不 stub 的话 ownedReportIds 为空，整条日报会被当成「主记录不存在」而跳过。
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(reportId, USER_ID)));
         Long visibleProjectId = 10L;
 
         when(detailMapper.selectByReportId(reportId)).thenReturn(Collections.singletonList(
@@ -663,14 +709,24 @@ class DailyReportServiceImplTest {
 
         service.deleteDailyReportByIds(new Long[]{reportId});
 
-        verify(dailyReportMapper).deleteDailyReportByIds(any());
-        verify(dailyReportMapper, never()).updateTotalWorkHours(anyLong(), any());
+        // userId 必须断言成 eq(USER_ID)：删除语句带 "and user_id = #{userId}"，
+        // 传错人就是 0 行；而返回值是「处理条数」与影响行数解耦，
+        // 「SQL 一行没删却报成功」不会体现在响应上，只能靠这里钉住（Issue #13）。
+        ArgumentCaptor<Long[]> deletedIds = ArgumentCaptor.forClass(Long[].class);
+        verify(dailyReportMapper).deleteDailyReportByIds(deletedIds.capture(), eq(USER_ID));
+        assertArrayEquals(new Long[]{reportId}, deletedIds.getValue(),
+                "只应删除本次请求里的日报，且 ID 不得在传递过程中被改写");
+        verify(dailyReportMapper, never()).updateTotalWorkHours(any(), any(), any());
     }
 
     @Test
     @DisplayName("[TDD] 删除日报：明细全部被保留、无主记录可删时，仍须返回成功（否则前端误报「操作失败」）")
     void deleteDailyReport_allPreserved_stillReportsSuccess() throws Exception {
         Long reportId = 73L;
+        // 【Issue #13】归属探针：该主记录存在且归属本人。
+        // 不 stub 的话 ownedReportIds 为空，整条日报会被当成「主记录不存在」而跳过。
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(reportId, USER_ID)));
         Long invisibleProjectId = 20L;
 
         // 该日报只有一条不可见工时 → 删完之后什么都没删掉，也没有主记录可删
@@ -685,6 +741,176 @@ class DailyReportServiceImplTest {
         assertTrue(rows > 0,
                 "返回 0 会被 BaseController.toAjax 判为「操作失败」，但数据层面操作其实已成功完成——"
                         + "填报人会看到失败提示并重复点击。e2e 实测暴露（2026-08-03）。");
+    }
+
+    // ---------- Issue #13：删除日报的归属校验（只能删自己的） ----------
+
+    @Test
+    @DisplayName("[TDD] 删除日报：他人的日报必须被拒绝，且在抛错前不得读写任何数据")
+    void deleteDailyReport_othersReport_isRejected() {
+        Long othersReportId = 9001L;
+
+        // 该日报存在，但 user_id 不是当前登录人
+        when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(othersReportId, 999L)));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.deleteDailyReportByIds(new Long[]{othersReportId}),
+                "持 project:dailyReport:remove 的账号有 180+ 个，report_id 连续自增且日报是硬删除——"
+                        + "不校验归属等于开放「删除任意人日报」（Issue #13）");
+        assertTrue(ex.getMessage().contains("本人"),
+                "错误提示要让填报人看得懂是「只能删自己的」，实际为：" + ex.getMessage());
+
+        // 拒绝必须发生在任何读写之前：不得读取他人明细，也不得对他人的项目发起工时重算
+        verify(detailMapper, never()).selectByReportId(anyLong());
+        verify(detailMapper, never()).countByReportId(anyLong());
+        verify(projectMapper, never()).updateActualWorkload(anyLong(), any());
+        verify(taskMapper, never()).updateActualWorkload(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 删除日报：混合传入自己的与他人的日报，整批拒绝、不得部分执行")
+    void deleteDailyReport_mixedBatch_rejectsEntirely() {
+        Long myReportId = 70L;
+        Long othersReportId = 9002L;
+
+        // Spring 会把 @PathVariable Long[] 按逗号拆开，攻击可以混在一次合法自删里
+        when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(othersReportId, 999L)));
+
+        assertThrows(ServiceException.class,
+                () -> service.deleteDailyReportByIds(new Long[]{myReportId, othersReportId}),
+                "DELETE /project/dailyReport/70,9002 这类混合批次必须整批拒绝");
+
+        // 整批拒绝 = 一条明细都不许动（本方法带 @Transactional，但拒绝应在写入前发生）
+        verify(detailMapper, never()).selectByReportId(anyLong());
+        verify(detailMapper, never()).countByReportId(anyLong());
+        verify(projectMapper, never()).updateActualWorkload(anyLong(), any());
+        verify(taskMapper, never()).updateActualWorkload(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 删除日报：删自己的日报行为不变——归属校验通过后 015 的不可见工时保护照旧成立")
+    void deleteDailyReport_ownReport_behaviourUnchanged() {
+        Long reportId = 74L;
+        Long visibleProjectId = 10L;
+        Long invisibleProjectId = 20L;
+
+        // 归属校验通过：该主记录存在且归属本人（emptyList 现在表示「主记录不存在」）
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(reportId, USER_ID)));
+
+        when(detailMapper.selectByReportId(reportId)).thenReturn(Arrays.asList(
+                buildDetail("work", new BigDecimal("4"), null, visibleProjectId, null),
+                buildDetail("work", new BigDecimal("2"), null, invisibleProjectId, null)));
+
+        Map<String, Object> visible = new HashMap<>();
+        visible.put("projectId", visibleProjectId);
+        lenient().when(projectMapper.selectProjectsByUserId(USER_ID))
+                .thenReturn(Collections.singletonList(visible));
+        lenient().when(detailMapper.countByReportId(reportId)).thenReturn(1);
+        lenient().when(detailMapper.sumWorkHoursByReportId(reportId)).thenReturn(new BigDecimal("2"));
+
+        int rows = service.deleteDailyReportByIds(new Long[]{reportId});
+
+        // 015 的四条不变式在加了归属校验之后必须逐条照旧成立
+        @SuppressWarnings("rawtypes")
+        ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
+        verify(detailMapper).deleteByReportIdInScope(eq(reportId), scope.capture(), eq(USER_ID));
+        assertTrue(scope.getValue().contains(visibleProjectId), "看得见的工时该删（FR-013）");
+        assertFalse(scope.getValue().contains(invisibleProjectId), "看不见的工时不许连带删（FR-001/FR-013）");
+        // any() 而非 anyLong()：anyLong() 不匹配 null，会放过 userId=null 的调用（见另一条同名护栏的说明）
+        verify(dailyReportMapper, never()).deleteDailyReportByIds(any(), any());
+        verify(dailyReportMapper).updateTotalWorkHours(eq(reportId), eq(new BigDecimal("2")), eq(USER_ID));
+        assertTrue(rows > 0, "返回值仍是「本次处理条数」，不能退化成「删了几条主记录」（FR-014）");
+    }
+
+    @Test
+    @DisplayName("[护栏] 删除日报：不存在的 reportId 按幂等 no-op 放行，不得当成越权而报错")
+    void deleteDailyReport_unknownReportId_isIdempotentNoOp() {
+        Long goneReportId = 9999L;
+
+        // 归属查询的语义：只返回「确实存在、且属于他人」的 ID。
+        // 已被删掉的 ID 查不出来 → 返回空集 → 必须放行。
+        // 这条不变式完全落在 selectReportIdsNotOwnedBy 的 SQL 上（"where user_id <> ? and report_id in (...)"）：
+        // 若有人把它「加固」成 not exists / left join 之类让「查不到」也算「非本人」，
+        // 那么每一次重复点击删除、每一个过期页面都会变成 500「只能删除本人的日报」。
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.emptyList());
+        lenient().when(detailMapper.selectByReportId(goneReportId)).thenReturn(Collections.emptyList());
+        lenient().when(detailMapper.countByReportId(goneReportId)).thenReturn(0);
+
+        int rows = assertDoesNotThrow(() -> service.deleteDailyReportByIds(new Long[]{goneReportId}),
+                "过期页面/重复点击会重发已删掉的 reportId，对它报错只会让填报人以为删除失败");
+        assertTrue(rows > 0, "幂等 no-op 也要回成功，否则 toAjax 判为「操作失败」");
+
+        // 即便是 no-op，落到 SQL 的仍必须带本人 userId——否则一旦该 ID 后来被别人复用就是越权
+        verify(dailyReportMapper).deleteDailyReportByIds(any(), eq(USER_ID));
+    }
+
+    @Test
+    @DisplayName("[护栏] 删除日报：URL 拆出的 null 元素不得被当成一条日报，全 null 时须返回 0（不能报「成功」）")
+    void deleteDailyReport_nullIds_areNotCountedAsSuccess() {
+        // Spring 把 @PathVariable Long[] 按逗号拆开：路径段为 "," 时得到 Long[]{null, null}（length=2）。
+        // 若直接用 reportIds.length 计数，会返回 2 → toAjax 报「操作成功」，而 SQL 一行都没动
+        // （report_id in (NULL,NULL) 永不匹配）。
+        int rows = service.deleteDailyReportByIds(new Long[]{null, null});
+
+        assertEquals(0, rows, "一条有效 ID 都没有时必须回 0，让 toAjax 判为失败——不能谎报删除成功");
+        // null 元素也不该白跑查询（原实现会为每个 null 各跑 3 条 SQL）
+        verify(dailyReportMapper, never()).selectReportOwnersForUpdate(any());
+        verify(detailMapper, never()).selectByReportId(any());
+        verify(detailMapper, never()).deleteByReportIdInScope(any(), any(), any());
+        verify(detailMapper, never()).countByReportId(any());
+        verify(dailyReportMapper, never()).deleteDailyReportByIds(any(), any());
+        verify(dailyReportMapper, never()).updateTotalWorkHours(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 删除日报：主记录已不存在但明细还在（孤儿数据），不得进入读写段")
+    void deleteDailyReport_orphanDetails_areNotProcessed() {
+        Long orphanReportId = 75L;
+        Long foreignProjectId = 88L;
+
+        // 主记录查不到 —— 孤儿明细的典型形态
+        when(dailyReportMapper.selectReportOwnersForUpdate(any())).thenReturn(Collections.emptyList());
+        // 但明细还在，且挂在调用者无数据权限的项目上
+        lenient().when(detailMapper.selectByReportId(orphanReportId)).thenReturn(
+                Collections.singletonList(
+                        buildDetail("work", new BigDecimal("8"), null, foreignProjectId, null)));
+
+        service.deleteDailyReportByIds(new Long[]{orphanReportId});
+
+        // 归属探针查不到主记录，就无从判断这条数据归谁——必须整条跳过，
+        // 而不是「查不到就当属于我」继续往下走：那会读到他人明细，
+        // 并对调用者无数据权限的项目发起 pm_project.actual_workload 重算（取排他锁）。
+        verify(detailMapper, never()).selectByReportId(anyLong());
+        verify(detailMapper, never()).deleteByReportIdInScope(any(), any(), any());
+        verify(projectMapper, never()).updateActualWorkload(anyLong(), any());
+        verify(taskMapper, never()).updateActualWorkload(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[护栏] 删除日报：重复 ID 只处理一次，返回值与实际处理条数保持恒等")
+    void deleteDailyReport_duplicateIds_areProcessedOnce() {
+        Long reportId = 70L;
+        Long invisibleProjectId = 20L;
+
+        lenient().when(dailyReportMapper.selectReportOwnersForUpdate(any()))
+                .thenReturn(Collections.singletonList(ownerRow(reportId, USER_ID)));
+        when(detailMapper.selectByReportId(reportId)).thenReturn(Collections.singletonList(
+                buildDetail("work", new BigDecimal("2"), null, invisibleProjectId, null)));
+        lenient().when(projectMapper.selectProjectsByUserId(USER_ID)).thenReturn(Collections.emptyList());
+        lenient().when(detailMapper.countByReportId(reportId)).thenReturn(1);
+        lenient().when(detailMapper.sumWorkHoursByReportId(reportId)).thenReturn(new BigDecimal("2"));
+
+        // "DELETE /project/dailyReport/70,70,70"
+        int rows = service.deleteDailyReportByIds(new Long[]{reportId, reportId, reportId});
+
+        assertEquals(1, rows, "返回值是「处理了几条日报」，重复 ID 不该把它放大成 3");
+        verify(detailMapper, times(1)).deleteByReportIdInScope(eq(reportId), any(), eq(USER_ID));
+        verify(dailyReportMapper, times(1))
+                .updateTotalWorkHours(eq(reportId), eq(new BigDecimal("2")), eq(USER_ID));
     }
 
     // ---------- User Story 2：阻止把工时填到无关项目上 ----------
@@ -718,8 +944,131 @@ class DailyReportServiceImplTest {
 
         // 拒绝路径不得触发任何写入（FR-009 / INV-1）
         verify(detailMapper, never()).batchInsert(any());
-        verify(detailMapper, never()).deleteByReportIdInScope(anyLong(), any());
+        verify(detailMapper, never()).deleteByReportIdInScope(any(), any(), any());
         verify(projectMapper, never()).updateActualWorkload(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：担任项目角色但成员表漏行，必须放行——填报页列了它就必须能保存")
+    void saveDailyReport_projectRoleWithoutMemberRow_isAccepted() throws Exception {
+        Long roleProjectId = 295L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, roleProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenReturn(1);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", roleProjectId);
+        state.put("projectName", "我当市场经理的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        // 成员表漏行（历史项目未经 syncProjectMembers 重新保存过）
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+        // 但 pm_project 上确实挂着该用户的项目角色 —— 与读侧闸门（#24）同一条凭据
+        lenient().when(projectMapper.selectProjectRoleProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.singletonList(roleProjectId));
+
+        assertDoesNotThrow(() -> service.saveDailyReport(report),
+                "myProjects（selectProjectsByUserId）会把该项目列在填报页右侧，"
+                        + "写侧却只认 pm_project_member 的话，这个人的整张日报永久保存不了。"
+                        + "读侧（applyProjectScopeBypass）已承认这条凭据，写侧必须同源。");
+
+        verify(detailMapper).batchInsert(any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：仅出现在 participants 里（成员表漏行）也必须放行")
+    void saveDailyReport_participantWithoutMemberRow_isAccepted() throws Exception {
+        Long participantProjectId = 329L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, participantProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenReturn(1);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", participantProjectId);
+        state.put("projectName", "我在参与人员里的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+        // selectProjectRoleProjectIds 覆盖 participants —— 与 selectProjectsByUserId 的 OR 列表同口径
+        lenient().when(projectMapper.selectProjectRoleProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.singletonList(participantProjectId));
+
+        assertDoesNotThrow(() -> service.saveDailyReport(report),
+                "participants 同样出现在 selectProjectsByUserId 的 OR 列表里（ProjectMapper.xml），"
+                        + "填报页会列出它 —— 写侧必须一并承认，否则同一个人同一个项目「看得见、填不了」。");
+
+        verify(detailMapper).batchInsert(any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：既无成员行也无任何项目角色，仍然拒绝（不得因放宽而失守）")
+    void saveDailyReport_neitherMemberNorProjectRole_isStillRejected() throws Exception {
+        Long strangerProjectId = 777L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, strangerProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", strangerProjectId);
+        state.put("projectName", "毫无关系的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+        lenient().when(projectMapper.selectProjectRoleProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.saveDailyReport(report));
+        assertTrue(ex.getMessage().contains("毫无关系的项目"));
+
+        verify(detailMapper, never()).batchInsert(any());
+        verify(projectMapper, never()).updateActualWorkload(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：成员行命中时不得再查项目角色（省一次查询，且证明短路顺序）")
+    void saveDailyReport_memberRowHit_skipsProjectRoleLookup() throws Exception {
+        Long memberProjectId = 10L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, memberProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenReturn(1);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", memberProjectId);
+        state.put("projectName", "我是成员的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.singletonList(memberProjectId));
+
+        service.saveDailyReport(report);
+
+        verify(projectMapper, never()).selectProjectRoleProjectIds(anyLong(), any());
     }
 
     @Test
@@ -805,7 +1154,7 @@ class DailyReportServiceImplTest {
 
         @SuppressWarnings("rawtypes")
         ArgumentCaptor<Collection> scope = ArgumentCaptor.forClass(Collection.class);
-        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture());
+        verify(detailMapper).deleteByReportIdInScope(eq(existingReportId), scope.capture(), eq(USER_ID));
         assertFalse(scope.getValue().contains(closedProjectId),
                 "已结项项目的历史工时必须被保留——US1 与 US3 各管一侧，两条规则不得互相抵消");
     }
@@ -1304,7 +1653,207 @@ class DailyReportServiceImplTest {
         assertEquals(false, result.get(1).get("hasSubProject"));
     }
 
+    // ========== 【Issue #24】按项目筛选时的数据权限放行闸门 ==========
+    //
+    // 缺陷：DailyReportMapper.xml 曾写成 <if test="projectId == null">${params.dataScope}</if>，
+    // 于是「传了 projectId」等于「部门数据权限整条消失」。修复把豁免判据从用户可控入参 projectId
+    // 换成服务端算出的 params.projectScopeBypass（「调用者曾参与该项目」）。
+    //
+    // ⚠️ 本类 setUp 里有一条类级 lenient 桩，selectEverMemberProjectIds 默认「返回入参里的全部
+    //    project_id」，等价于「该用户是一切项目的成员」。因此**拒绝路径的用例必须在方法内把它重新
+    //    打桩成空表**，否则会假绿。
+
+    private static final String BYPASS_KEY = "projectScopeBypass";
+
+    @Test
+    @DisplayName("[TDD] #24 monthly：成员查询该项目 → 写入服务端放行标记")
+    void selectMonthlyReports_everMember_writesBypassFlag() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY),
+                "调用者曾参与该项目，应写入放行标记以豁免部门数据权限（PM需求.md:755）");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 list：成员查询该项目 → 写入服务端放行标记")
+    void selectDailyReportList_everMember_writesBypassFlag() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectDailyReportList(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectDailyReportList(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY));
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 activityUsers：成员查询该项目 → 写入服务端放行标记（须与月历同口径）")
+    void selectActivityUsers_everMember_writesBypassFlag() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectActivityUsers(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectActivityUsers(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY),
+                "花名册与月历必须同口径，否则活动页表头与内容打架");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 非成员查询该项目 → 必须真去查过成员关系，且不写放行标记")
+    void selectMonthlyReports_notMember_mustQueryMembershipAndDeny() {
+        // 显式覆盖类级默认桩：本用例的前提是「该用户不是该项目的任何形态成员」
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        // 只断 assertNull 会假绿（基线上这个 key 本来就不存在），必须验证真的查过库
+        verify(projectMemberMapper).selectEverMemberProjectIds(eq(USER_ID),
+                argThat(ids -> ids != null && ids.contains(36L)));
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY),
+                "非成员不得豁免部门数据权限（deny by default）");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 请求伪造的放行标记必须被无条件剥掉")
+    void selectMonthlyReports_forgedBypassFlag_isStripped() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+
+        // BaseEntity 有 setParams(Map)，Spring MVC 会把查询串里的 params[xxx] 绑进来。
+        // 已实测：XML 的 OGNL 只判非 null，字符串同样触发豁免 —— 故 remove() 是唯一屏障。
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+        query.getParams().put(BYPASS_KEY, "true");
+
+        service.selectMonthlyReports(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY),
+                "?projectId=36&params[projectScopeBypass]=1 必须无效，否则可自助越权");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 四类项目角色即使 pm_project_member 漏同步也必须放行（闸门不依赖成员表同步状态）")
+    void selectMonthlyReports_projectRoleWithoutMemberRow_writesBypassFlag() {
+        // 前提：成员表没有该 (人,项目) 行。这不是假想 —— syncProjectMembers 会把
+        // 项目经理/市场经理/销售经理/团队负责人四类角色都写进 pm_project_member
+        // (ProjectServiceImpl:556-575)，但历史项目存在漏同步：实测有日报的项目里
+        // 市场经理缺行 30 个、销售经理缺行 27 个（项目经理/团队负责人当前恰好为 0，
+        // 但那是数据巧合，不是结构保证）。
+        // 反例：王辉 user 111 是 project 295/329 的市场经理、成员行 0 条 ——
+        // 只查成员表会让他从 387/26 份日报直接归零、活动页全白。
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+        when(projectMapper.selectProjectRoleProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(295L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(295L);
+
+        service.selectMonthlyReports(query);
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertEquals(Boolean.TRUE, captor.getValue().getParams().get(BYPASS_KEY),
+                "调用者在 pm_project 上担任四类项目角色之一，应放行 —— 同一个人同一个角色的可见范围"
+                        + "不得取决于「该项目行有没有被重新保存过」");
+    }
+
+    @Test
+    @DisplayName("[TDD] #24 既非成员也不担任项目角色 → 两处都查过，且不写放行标记")
+    void selectMonthlyReports_neitherMemberNorProjectRole_denies() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+        when(projectMapper.selectProjectRoleProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>());
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        // 只断 assertNull 会假绿（基线上这个 key 本来就不存在），必须验证两条凭据都真去查了库
+        verify(projectMemberMapper).selectEverMemberProjectIds(eq(USER_ID),
+                argThat(ids -> ids != null && ids.contains(36L)));
+        verify(projectMapper).selectProjectRoleProjectIds(eq(USER_ID),
+                argThat(ids -> ids != null && ids.contains(36L)));
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY),
+                "非成员且非项目角色不得豁免部门数据权限（deny by default）");
+    }
+
+    @Test
+    @DisplayName("[护栏] #24 成员凭据命中时短路，不再查项目角色（省一次点查）")
+    void selectMonthlyReports_everMember_shortCircuitsProjectRoleLookup() {
+        when(projectMemberMapper.selectEverMemberProjectIds(anyLong(), any()))
+                .thenReturn(new ArrayList<>(List.of(36L)));
+
+        DailyReport query = new DailyReport();
+        query.setProjectId(36L);
+
+        service.selectMonthlyReports(query);
+
+        verify(projectMapper, never()).selectProjectRoleProjectIds(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[护栏] #24 不传 projectId 时不额外查成员关系，也不写放行标记")
+    void selectMonthlyReports_noProjectId_doesNotQueryMembership() {
+        DailyReport query = new DailyReport();
+        query.setYearMonth("2026-08");
+
+        service.selectMonthlyReports(query);
+
+        verify(projectMemberMapper, never()).selectEverMemberProjectIds(anyLong(), any());
+        verify(projectMapper, never()).selectProjectRoleProjectIds(anyLong(), any());
+
+        ArgumentCaptor<DailyReport> captor = ArgumentCaptor.forClass(DailyReport.class);
+        verify(dailyReportMapper).selectMonthlyReports(captor.capture());
+        assertNull(captor.getValue().getParams().get(BYPASS_KEY));
+    }
+
     // ========== helper methods ==========
+
+    /**
+     * 【Issue #13】构造一行 selectReportOwnersForUpdate 的返回值（reportId → 归属人）。
+     *
+     * <p>注意语义：该查询<b>查不到主记录就不返回该行</b>。所以 emptyList() 表示
+     * 「这些 reportId 的主记录都不存在」（走幂等 no-op），而不是「没有他人的日报」。
+     * 想表达「这条属于我、可以正常删」必须显式返回一行 ownerRow(reportId, USER_ID)。
+     */
+    private Map<String, Object> ownerRow(Long reportId, Long userId) {
+        Map<String, Object> row = new HashMap<>();
+        row.put("reportId", reportId);
+        row.put("userId", userId);
+        return row;
+    }
 
     /** 【015】构造一条「任务 → 父项目」映射，供任务归属校验（V3）的 stub 使用 */
     private Map<String, Object> taskPair(Long taskId, Long projectId) {

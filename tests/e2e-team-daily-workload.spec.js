@@ -274,15 +274,21 @@ test.describe.serial('团队日报工时缺陷修复（Issue #5）', () => {
     }
     console.log('  ✅ 安全回归通过：注入工时未换来越权可见性');
 
-    // 清理探针数据
-    const reports = await api.get('/project/dailyReport/list', { yearMonth, pageNum: 1, pageSize: 50 });
-    const probeReport = (reports.rows || []).find((r) => String(r.reportDate || '').startsWith(probeDate));
-    if (probeReport) await api.del(`/project/dailyReport/${probeReport.reportId}`);
+    // 清理探针数据 —— 只需删测试项目，不要去删日报。
+    //
+    // ⚠️ 【不要】重新加回「按 probeDate 找日报并删掉」那段逻辑：
+    //    上面第一道防线断言 inject.code === 500，也就是注入必然被后端拒绝，
+    //    所以 probeDate（当月 16 日）上从来不会产生探针日报。那段 find() 唯一可能匹配到的，
+    //    就是【测试执行者自己在 16 号的真实日报】——而日报是硬删除、不可恢复。
+    //    在 16 号及之后、针对从生产同步的本地库跑本套件（正是文档记载的工作流），
+    //    就会静默删掉一条真实工时记录。加 userId 自限也拦不住：那条本来就是 admin 自己的。
     await api.del(`/project/project/${outsiderId}`);
   });
 
   test('清理前置：记录待删日报ID', async () => {
-    const list = await api.get('/project/dailyReport/list', { yearMonth, pageNum: 1, pageSize: 50 });
+    // 同上：userId 自限，确保记下来的是 admin 自己的日报（Issue #13）
+    const list = await api.get('/project/dailyReport/list',
+      { yearMonth, userId: ADMIN_USER_ID, pageNum: 1, pageSize: 50 });
     const mine = (list.rows || []).find((r) => String(r.reportDate || '').startsWith(reportDate));
     if (mine) {
       reportId = mine.reportId;

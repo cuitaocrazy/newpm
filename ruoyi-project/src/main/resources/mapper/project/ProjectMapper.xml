@@ -1243,4 +1243,39 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           </foreach>
     </select>
 
+    <!--
+        【Issue #24 / 授权闸门，勿删】用户在给定项目中「以 pm_project 行本身为凭据」的参与关系：
+        四类项目角色 + participants 参与人员名单。
+
+        与 ProjectMemberMapper.selectEverMemberProjectIds 并列构成两处判据：
+          · 读侧 DailyReportServiceImpl#applyProjectScopeBypass（Issue #24）
+          · 写侧 DailyReportServiceImpl#validateSubmissionOwnership 的 V1（015）
+        两侧必须同源 —— 不能只查 pm_project_member，因为历史项目漏同步
+        （实测市场经理缺行 30 个 / 销售经理缺行 27 个），否则同一个人同一个角色的
+        可见/可填范围会取决于「该项目行有没有被重新保存过」。
+
+        ⚠️ 这里的列必须**覆盖** selectProjectsByUserId（myProjects，见本文件上方）的 OR 列表：
+        project_manager_id / market_manager_id / team_leader_id / FIND_IN_SET(participants)。
+        否则「填报页列出来了、保存却被拒」，该填报人当日整张日报永久保存不了
+        （回填后该项目工时 > 0，每次提交都必然撞上 V1）。sales_manager_id 不在 myProjects 的
+        OR 列表里，本查询多覆盖一列 —— 取超集是安全方向，反过来则会造成误拒。
+
+        这些列只能由持 project:project:edit 的人写入，填报人无法自助伪造 —— 与
+        selectEverMemberProjectIds 同等门槛，故作为授权凭据成立。
+    -->
+    <select id="selectProjectRoleProjectIds" resultType="java.lang.Long">
+        select distinct project_id
+        from pm_project
+        where del_flag = '0'
+          and (project_manager_id = #{userId}
+               or team_leader_id = #{userId}
+               or market_manager_id = #{userId}
+               or sales_manager_id = #{userId}
+               or FIND_IN_SET(#{userId}, participants))
+          and project_id in
+          <foreach item="pid" collection="projectIds" open="(" separator="," close=")">
+              #{pid}
+          </foreach>
+    </select>
+
 </mapper>
