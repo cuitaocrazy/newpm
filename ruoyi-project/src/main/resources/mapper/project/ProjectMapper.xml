@@ -1243,4 +1243,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           </foreach>
     </select>
 
+    <!--
+        【Issue #24 / 授权闸门，勿删】用户在给定项目中担任的四类项目角色。
+        与 ProjectMemberMapper.selectEverMemberProjectIds 并列构成
+        DailyReportServiceImpl#applyProjectScopeBypass 的判据 —— 不能只查 pm_project_member，
+        因为历史项目漏同步（实测市场经理缺行 30 个 / 销售经理缺行 27 个），
+        否则同一个人同一个角色的可见范围会取决于「该项目行有没有被重新保存过」。
+        这四列只能由持 project:project:edit 的人写入，填报人无法自助伪造。
+    -->
+    <select id="selectProjectRoleProjectIds" resultType="java.lang.Long">
+        select distinct project_id
+        from pm_project
+        where del_flag = '0'
+          and (project_manager_id = #{userId}
+               or team_leader_id = #{userId}
+               or market_manager_id = #{userId}
+               or sales_manager_id = #{userId})
+          and project_id in
+          <foreach item="pid" collection="projectIds" open="(" separator="," close=")">
+              #{pid}
+          </foreach>
+    </select>
+
 </mapper>

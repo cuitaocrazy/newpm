@@ -176,7 +176,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                   and dd_pid.project_id = #{projectId}
             )
         </if>
-        <if test="projectId == null">${params.dataScope}</if>
+        <!--
+            【安全约束，勿删】${params.dataScope} 是本查询唯一的授权边界。projectId / projectName
+            只是业务**筛选**条件，不构成授权 —— 绝不可再用 projectId 本身当豁免判据。
+            Issue #24：曾写成 <if test="projectId == null">${params.dataScope}</if>，于是「传了
+            projectId」就等于「数据权限整条消失」，175 个受限账号可枚举 projectId 读到全库
+            96.9% 的日报（含 work_content 原文；实测 dept212 账号查 project 36 得 442 份 / 5 个部门）。
+            唯一允许的豁免判据是 params.projectScopeBypass —— 由
+            DailyReportServiceImpl#applyProjectScopeBypass 在服务端算出（「调用者曾参与该项目，
+            或在该项目上担任四类项目角色」），并在计算前无条件 remove 掉请求可能伪造的同名 key。
+            只判 null 不判值，即 deny-by-default。
+            不要改成 (项目条件 OR ${params.dataScope})：该片段自带前缀 " AND ("，且 data_scope=1
+            /admin 时是空串，两种情况拼进 OR 都是 MySQL 1064（已实测报错）。
+
+            ⚠️ 与 Issue #22 是「交叉」而非「包含」关系，别把 #22 做成替换：
+            #22 要按**项目归属部门**授权，与本闸门的「曾参与 / 担任项目角色」是两个不同维度。
+            实测 2208 个闸门授权里有 417 个（18.9%）是项目部门维度覆盖不到的 —— 含 PM需求.md:755
+            点名的场景本身（project 43 归属 220 机动组，项目经理梁艳兰在 208 项目六组）。
+            所以 #22 必须落成 everMember/projectRole **OR** projectDeptInMyScope（加法），
+            实现成 projectDeptInMyScope（替换）会精确撤销本次要保住的需求。
+        -->
+        <if test="params.projectScopeBypass == null">${params.dataScope}</if>
     </sql>
 
     <!-- 查询日报列表（不含明细） -->
@@ -201,7 +221,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
       根据ID查询日报详情（含明细）
       【Issue #13 读侧】user_id 限定不可删：reportId 全部来自 URL 且连续自增，
       本查询既无 ${params.dataScope} 也挂不上 @DataScope（入参非 BaseEntity），
-      去掉 user_id 就等于把「按 ID 遍历全公司日报正文」开放给全部持 activity 权限的账号。
+      去掉 user_id 就等于把「按 ID 遍历全公司日报正文」开放给全部持 activity 权限的账号——
+      resultMap DailyReportWithDetailResult 含明细即 work_content 原文，report_id 稠密可枚举，
+      持 project:dailyReport:activity 的受限账号顺序枚举即可取尽全库日报。
+
+      【与 Issue #24 的关系】该 IDOR 曾在 #24 的 hotfix 里以注释登记「本次不修、由 #13 负责」，
+      现已由上面的 and r.user_id = #{userId} 修掉（前端零调用方，收紧无损）。
+      不要再照 #24 的旧注释理解本语句——那段注释已随本次合并删除。
+
+      parameterType 已去掉：方法签名是 (reportId, userId) 双 @Param，MyBatis 走 ParamMap，
+      再写 parameterType="Long" 是与签名不符的错误元信息。
     -->
     <select id="selectDailyReportById" resultMap="DailyReportWithDetailResult">
         <include refid="selectReportWithDetail"/>
@@ -348,7 +377,19 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                     )
                 )
             </if>
-            <if test="projectId == null">
+            <!-- 【安全约束，勿删】豁免判据必须与 queryConditions 同口径：由服务端算出的
+                 params.projectScopeBypass 决定，不由 projectId 决定（Issue #24）。两处必须同改，
+                 否则同一次活动页请求里「花名册」与「月历」会一边豁免一边不豁免。
+
+                 ⚠️ 但「同改」只同步了豁免判据，**并不等于两条查询自洽** —— 已知还有两条分叉轴，
+                 都是既有缺陷、非 #24 引入，已登记为后续项，别把它们当成本次修复的回归：
+                   ① dataScope 打在 d 上，而本语句 d = u.dept_id（用户**当前**部门），
+                      queryConditions 那边 d = r.dept_id（日报**保存时的部门快照**）。
+                      实测 1568 份日报 / 35 人两者不一致。
+                   ② 本语句花名册只取 is_active='1' 的在册成员，月历那边是「有明细即算」（含已离场）。
+                 后果是活动页表头算术可能为负：实测 user 282 查 project 66 / 2026-04-15 得
+                 团队人数=15、已填写=22 → 未填写 = -7（基线同场景已是 -6，本次由轴①叠加到 -7）。 -->
+            <if test="params.projectScopeBypass == null">
                 <if test="deptId != null">
                     and (u.dept_id = #{deptId}
                          or u.dept_id in (select dept_id from sys_dept where find_in_set(#{deptId}, ancestors) > 0))
