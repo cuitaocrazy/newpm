@@ -3,8 +3,12 @@
 ruoyi-ui/dist/
 
 # Frontend dependencies
-ruoyi-ui/node_modules/
-node_modules/
+# ⚠️ 不要加尾斜杠：带斜杠只匹配「目录」，匹配不到同名软链。
+# 在 git worktree 里为跑前端而 `ln -s` 出来的 node_modules 会以 ?? 混入，
+# 一旦被 `git add -A` 收进去（mode 120000，内容是宿主机绝对路径），
+# Docker 构建的 `COPY ruoyi-ui/ ./` 会因「无法用软链覆盖已存在目录」直接失败，生产发版中断。
+ruoyi-ui/node_modules
+node_modules
 
 # Frontend build output copied to backend
 ruoyi-admin/src/main/resources/static/
