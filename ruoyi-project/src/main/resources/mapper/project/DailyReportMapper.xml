@@ -523,11 +523,43 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             p.revenue_confirm_status AS revenueConfirmStatus,
             p.project_budget AS projectBudget,
             COALESCE(pc.contractAmount, 0) AS contractAmount,
+            <!-- 【018 FR-013/014】项目所属机构分组 = project_dept 指向的部门自身名称。
+                 别名必须区别于下方 deptName（成员本人部门）——实测 38% 两者不同，撞名会静默覆盖。
+                 口径不取 ancestors 末段：对「深圳组」(dept_id=216) 取末段会得到父级
+                 「项目六组（华东地区组）」，且 216 无子部门，该口径永远产不出「深圳组」。 -->
+            pd.dept_name COLLATE utf8mb4_unicode_ci AS projectDeptName,
             u.user_id AS userId,
             u.nick_name COLLATE utf8mb4_unicode_ci AS nickName,
             d.dept_name COLLATE utf8mb4_unicode_ci AS deptName,
             m.isFormer AS isFormer,
-            daily_hrs.report_date AS reportDate,
+            <!-- 【018 FR-011/012】项目内角色，查询期反推（pm_project_member 无角色列，
+                 syncProjectMembers 把 5 类人倒进一个 Set 后身份已被抹平）。
+                 ⚠️ 优先级顺序不可调换：实测 21.8% 的成员行命中 2 个以上角色，根因是
+                 ProjectMemberServiceImpl.java:73-79 在同步成员后把整个成员集合回写
+                 pm_project.participants，使经理们也进了 participants。把经理排在参与人员
+                 之前正是为抵消这个副作用——这不是脏数据，不要去「修」。
+                 ⚠️ team_leader_id 不入链：实测 284 个有效项目 100% 为 NULL，永不命中。
+                 ⚠️ 叫「销售负责人」不叫「销售经理」，依据 DB 注释与 project/edit.vue:285。 -->
+            CASE
+                WHEN p.project_manager_id = u.user_id           THEN '项目经理'
+                WHEN p.market_manager_id  = u.user_id           THEN '市场经理'
+                WHEN p.sales_manager_id   = u.user_id           THEN '销售负责人'
+                WHEN FIND_IN_SET(u.user_id, p.participants) > 0 THEN '参与人员'
+                ELSE NULL
+            END AS roleLabel,
+            <!-- 【018 FR-017】参与时间。主源=本项目日报首末日（与工时同源，有解释力），
+                 兜底源=成员表在册区间。两者都吐给前端，展示口径由前端决定。
+                 ⚠️ 两个 JOIN 均不受 yearMonth 影响——参与时间是全周期属性，不是「本月工时」。 -->
+            span.firstReportDate AS firstReportDate,
+            span.lastReportDate  AS lastReportDate,
+            mb.joinDate          AS joinDate,
+            mb.leaveDate         AS leaveDate,
+            <!-- 未指定年月时 daily_hrs 不含 report_date（见下方该子查询的注释），此处输出 NULL。
+                 Service 层据此只累加 totalHours、不填 dailyHours（018 FR-009）。 -->
+            <choose>
+                <when test="yearMonth != null and yearMonth != ''">daily_hrs.report_date</when>
+                <otherwise>NULL</otherwise>
+            </choose> AS reportDate,
             daily_hrs.projectWorkHours AS totalWorkHours
         FROM pm_project p
         LEFT JOIN (
@@ -545,24 +577,33 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             FROM pm_project_member pm
             WHERE pm.is_active = '1' AND pm.del_flag = '0'
             UNION
-            <!-- 本月填报了工时、但已不在在册名单中的人（离场/被移出）。其工时已计入
-                 pm_project.actual_workload，若整行不显示，则个人人天与实际人天对不上账
-                 且缺口无迹可寻（Issue #5 ③）。仅取本月有工时者，避免给所有项目凭空加行。
+            <!-- 填报过本项目工时、但已不在在册名单中的人（离场/被移出/离职）。其工时已计入
+                 pm_project.actual_workload，若整行不显示，则个人人天与项目累计人天对不上账
+                 且缺口无迹可寻（Issue #5 ③）。
+
+                 【018 变更】取数范围由「本月有工时」放宽为「全周期有工时」（FR-001/FR-004）。
+                 原月窗的用意是「避免给所有项目凭空加行」，但它导致「有累计人天却看不到贡献者」：
+                 2026-07 实测 183 个有累计人天的项目中 67 个（37%）当月无任何在册成员填报，
+                 而右侧「项目累计人天」本就是全周期口径（本查询 :518 取 actual_workload），
+                 两个口径不一致即对不上账。放宽后增量实测仅 11 对 (项目,人)，规模完全可控。
+                 注意：这里不做 &lt;if yearMonth&gt; 条件化——按月查看时同样要显示（Q2 已拍板），
+                 否则同一需求在两种筛选下行为不一致，无法向用户解释。
 
                  【安全约束，勿删】必须同时满足「曾是该项目成员」（pm_project_member 存在任意
-                 状态的行）。原因：saveDailyReport 不校验 detail.projectId 是否属于填报人，
-                 若仅以「有工时」为准入条件，任何持有填报权限的账号都能给任意 projectId 提交
-                 0.01 小时，从而自助获得离场成员身份，再经本查询读出该项目的预算/合同金额/
-                 确认金额——而 @DataScope 的 d 绑定的是成员本人部门（非项目部门），且 deptId
-                 为可选参数，都拦不住这条路径。成员行只能由持项目编辑权限者写入，
-                 故「曾是成员」是不可自助伪造的门槛。 -->
+                 状态的行）。015 起 saveDailyReport 已在写入侧校验「曾以任意身份参与过该项目」
+                 （validateSubmissionOwnership），本 EXISTS 是纵深防御的第二道，不是唯一防线。
+                 但它仍不可删：若仅以「有工时」为准入条件，一旦写入侧校验被绕过或回退，任何持
+                 填报权限的账号即可给任意 projectId 提交 0.01 小时，自助获得离场成员身份，再经
+                 本查询读出该项目的预算/合同金额/确认金额——而 @DataScope 的 d 绑定的是成员本人
+                 部门（非项目部门），且 deptId 为可选参数，都拦不住这条路径。成员行只能由持项目
+                 编辑权限者写入，故「曾是成员」是不可自助伪造的门槛。
+                 实测该约束不会漏人：现存项目范围内「写过 work 日报但成员表无行」的对数为 0。
+                 守护用例：tests/e2e-team-daily-workload.spec.js:227-282。 -->
             SELECT DISTINCT rd.project_id, r.user_id, '1' AS isFormer
             FROM pm_daily_report r
             JOIN pm_daily_report_detail rd ON rd.report_id = r.report_id
                 AND rd.entry_type = 'work' AND rd.del_flag = '0'
             WHERE r.del_flag = '0'
-              AND r.report_date >= STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d')
-              AND r.report_date  &lt; DATE_ADD(STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
               AND EXISTS (
                   SELECT 1 FROM pm_project_member pm3
                   WHERE pm3.project_id = rd.project_id AND pm3.user_id = r.user_id
@@ -575,16 +616,55 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         ) m ON m.project_id = p.project_id
         INNER JOIN sys_user u ON u.user_id = m.user_id
         INNER JOIN sys_dept d ON d.dept_id = u.dept_id
+        <!-- 【018 FR-013】项目所属部门。LEFT JOIN 以容忍 project_dept 为空或指向已删部门
+             （实测 284 个有效项目 0 空值 0 孤儿，但不能假定将来也是）。
+             project_dept 是 varchar 存数字串，与 dept_id(bigint) 比较触发隐式转换，
+             sys_dept 为百行量级小表，可接受。 -->
+        LEFT JOIN sys_dept pd ON pd.dept_id = p.project_dept
+        <!-- 【018 FR-017】主源：该人在本项目的日报首末日 -->
         LEFT JOIN (
-            SELECT r.user_id, r.report_date, rd.project_id,
+            SELECT r.user_id, rd.project_id,
+                   MIN(r.report_date) AS firstReportDate,
+                   MAX(r.report_date) AS lastReportDate
+            FROM pm_daily_report r
+            JOIN pm_daily_report_detail rd ON rd.report_id = r.report_id
+                AND rd.entry_type = 'work' AND rd.del_flag = '0'
+            WHERE r.del_flag = '0'
+            GROUP BY r.user_id, rd.project_id
+        ) span ON span.user_id = m.user_id AND span.project_id = p.project_id
+        <!-- 【018 FR-017】兜底源：成员表在册区间。不限 del_flag/is_active，与上方
+             EXISTS(pm3) 的判据对称，否则离场成员会出现 isFormer=1 但日期全为 NULL。
+             ⚠️ 必须先 GROUP BY 再 JOIN：pm_project_member 历史上缺 (project_id,user_id)
+             唯一约束（见上方在册分支的 DISTINCT 注释），直接 JOIN 会扇出。 -->
+        LEFT JOIN (
+            SELECT project_id, user_id,
+                   MIN(join_date)  AS joinDate,
+                   MAX(leave_date) AS leaveDate
+            FROM pm_project_member
+            GROUP BY project_id, user_id
+        ) mb ON mb.project_id = p.project_id AND mb.user_id = m.user_id
+        <!-- 【018 FR-007/008/009】日历格与个人工时的来源。yearMonth 是否指定决定两种形态：
+             · 指定：按 (user, date, project) 分组 → 日历格 + 当月个人人天（原行为不变）
+             · 未指定：退化为 (user, project) 分组、不含 report_date → 全周期个人人天；
+               主 SELECT 相应输出 NULL AS reportDate，前端 dayColumns 为空数组、不渲染日期列。
+             ⚠️ 不可「只删月窗而保留 report_date 分组」：实测分组数 2853 → 14872（5.2x），
+             且全库 distinct 日期达 181 个，前端会尝试渲染 181 个日期列，与 FR-008 直接矛盾。
+             ⚠️ 也不可「传空值让它自然为空」：STR_TO_DATE(CONCAT(NULL,'-01')) 求值为 NULL，
+             日期比较全为 NULL，子查询返回 0 行——那是静默降级（所有人 0 工时），不是全周期。 -->
+        LEFT JOIN (
+            SELECT r.user_id,
+                   <if test="yearMonth != null and yearMonth != ''">r.report_date,</if>
+                   rd.project_id,
                    SUM(rd.work_hours) AS projectWorkHours
             FROM pm_daily_report r
             JOIN pm_daily_report_detail rd ON rd.report_id = r.report_id
                 AND rd.entry_type = 'work' AND rd.del_flag = '0'
             WHERE r.del_flag = '0'
+            <if test="yearMonth != null and yearMonth != ''">
               AND r.report_date >= STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d')
               AND r.report_date  &lt; DATE_ADD(STR_TO_DATE(CONCAT(#{yearMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
-            GROUP BY r.user_id, r.report_date, rd.project_id
+            </if>
+            GROUP BY r.user_id,<if test="yearMonth != null and yearMonth != ''"> r.report_date,</if> rd.project_id
         ) daily_hrs ON daily_hrs.user_id = m.user_id AND daily_hrs.project_id = p.project_id
         <where>
             p.del_flag = '0'
@@ -606,7 +686,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             </if>
             ${params.dataScope}
         </where>
-        ORDER BY p.project_id, m.isFormer, u.user_id, daily_hrs.report_date
+        <!-- 【018】排序列也必须跟着 daily_hrs 的形态走：未指定年月时该子查询不含 report_date，
+             继续按它排序会报 Unknown column 'daily_hrs.report_date' in 'order clause'。 -->
+        ORDER BY p.project_id, m.isFormer, u.user_id<if test="yearMonth != null and yearMonth != ''">, daily_hrs.report_date</if>
     </select>
 
     <!-- 日报统计报表部门树：仅返回三级及以下，三级节点 parentId 设为 0 作为根节点 -->
