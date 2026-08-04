@@ -146,7 +146,7 @@ spring:
       master:
         url: jdbc:mysql://localhost:3306/ry_vue_e2e?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
         username: root
-        password: password
+        password: <本地 docker MySQL 的 root 口令，见 CLAUDE.md「Database & SQL Management」>
   data:
     redis:
       database: 3       # 与主环境 db 0 错开，避免串字典缓存/验证码
