@@ -71,15 +71,19 @@ public class DailyReportServiceImpl implements IDailyReportService
     private com.ruoyi.project.mapper.ProjectMemberMapper projectMemberMapper;
 
     /**
-     * 查询工作日报
+     * 查询工作日报（只能查本人的）
+     *
+     * <p>【Issue #13 读侧】reportId 来自 URL 且连续自增，故按当前登录人硬限定；
+     * 非本人的日报返回 null（前端会显示为空），不额外抛异常——避免形成比删除路径更细的存在性探测。
+     * 详见 {@link DailyReportMapper#selectDailyReportById}。
      *
      * @param reportId 日报主键
-     * @return 工作日报
+     * @return 工作日报；非本人或不存在时为 null
      */
     @Override
     public DailyReport selectDailyReportById(Long reportId)
     {
-        return dailyReportMapper.selectDailyReportById(reportId);
+        return dailyReportMapper.selectDailyReportById(reportId, SecurityUtils.getUserId());
     }
 
     /**
@@ -221,7 +225,10 @@ public class DailyReportServiceImpl implements IDailyReportService
             // 【015】只删除本次提交「有能力表达」的明细：填报人可填项目的工时 + 全部非项目工时。
             // 范围外的明细（如已结项项目的历史工时）原样保留——填报人在填写页上根本看不到它们，
             // 未出现在提交中不等于要删除。改回 deleteByReportId 会重新引入静默数据丢失（FR-001）。
-            detailMapper.deleteByReportIdInScope(existingReportId, resolveVisibleProjectIds(userId));
+            // userId 同时作为归属限定传入：这条 reportId 本就由 selectReportIdByUserAndDate(userId,...)
+            // 自己定位（保存路径从不接受外部 reportId），传 userId 只是把这份归属显式落到 SQL 上（Issue #13）
+            detailMapper.deleteByReportIdInScope(existingReportId,
+                    resolveSubmissionScope(userId, detailList), userId);
         }
         else
         {
@@ -262,7 +269,7 @@ public class DailyReportServiceImpl implements IDailyReportService
         if (existingReportId != null) {
             BigDecimal actualTotal = detailMapper.sumWorkHoursByReportId(existingReportId);
             if (actualTotal != null && actualTotal.compareTo(totalWorkHours) != 0) {
-                dailyReportMapper.updateTotalWorkHours(existingReportId, actualTotal);
+                dailyReportMapper.updateTotalWorkHours(existingReportId, actualTotal, userId);
             }
         }
 
@@ -313,8 +320,18 @@ public class DailyReportServiceImpl implements IDailyReportService
      * 假期类记录不关联项目、不适用本校验）：
      * <ul>
      *   <li><b>V1 曾参与</b>：{@code pm_project_member} 中存在该 (project, user) 行，
-     *       <b>不限</b>在册或已离场——离场者仍可维护自己填过的历史工时（FR-006 / US4）
+     *       <b>不限</b>在册或已离场——离场者仍可维护自己填过的历史工时（FR-006 / US4）。
+     *       项目不存在或已删除时同样按本条拒绝。
+     *   <li><b>V2 未结项</b>：{@code project_stage != '11'}，已结项项目不再接受新增或修改
+     *       其工时（FR-010 / FR-011）。仅作用于本次提交内容——该日既有的已结项工时
+     *       由作用范围机制保留，不因此被拒。
+     *   <li><b>V3 任务归属</b>：明细的 {@code sub_project_id} 所指任务，其 project_id
+     *       必须等于该明细自己声明的 projectId；映射缺失同等视为不匹配（FR-007）。
      * </ul>
+     *
+     * <p><b>本方法不校验 reportId 归属</b>——保存路径按 (userId, date) 自行定位日报主记录，
+     * 不接受外部传入的 reportId，故无此风险。删除路径的情况不同，见
+     * {@link #deleteDailyReportByIds}（Issue #13）。
      *
      * <p><b>调用位置不可改</b>：必须在所有 delete / insert / 工时重算之前。
      * 本方法只读不写，抛出时事务内尚无任何变更，故拒绝后数据库状态与请求前完全一致（INV-1）。
@@ -408,8 +425,55 @@ public class DailyReportServiceImpl implements IDailyReportService
     }
 
     /**
+     * 【015】保存路径的「作用范围」= 可填项目 ∪ <b>本次提交里出现的项目</b>
+     *
+     * <p>为什么必须并上提交里的项目：{@link #resolveVisibleProjectIds} 的口径
+     * （{@code selectProjectsByUserId}）带有项目生命周期条件——{@code approval_status='1'}、
+     * {@code project_status='0'}。一个「审核通过时填过日报、之后被退回待审核或暂停」的项目
+     * 会掉出该集合；此时若填报人再次提交它的工时，旧明细因不在范围内而删不掉，新明细又照常插入，
+     * <b>工时会凭空翻倍</b>——比修复前的「丢数据」更危险，因为它虚增收入确认依据。
+     *
+     * <p>语义上也更自洽：填报人这次明确提交了某项目的工时，该项目当然归本次提交管。
+     * 而「已结项项目的历史工时」之所以受保护，是因为它<b>不在提交里</b>（填报人看不到、提交不了），
+     * 这条保护不受本方法影响。
+     *
+     * <p>删除路径不适用本方法——那里没有提交内容，作用范围就是可填项目集合本身。
+     *
+     * <p>e2e 回归实测暴露（2026-08-03）：<code>e2e-team-daily-workload</code> 的核心用例
+     * 因新建项目处于待审核态而出现 8+8+4=20（应为 12）。
+     */
+    private Set<Long> resolveSubmissionScope(Long userId, List<DailyReportDetail> detailList)
+    {
+        Set<Long> scope = resolveVisibleProjectIds(userId);
+        if (detailList != null) {
+            detailList.stream()
+                    .filter(d -> d.getProjectId() != null)
+                    .map(DailyReportDetail::getProjectId)
+                    .forEach(scope::add);
+        }
+        return scope;
+    }
+
+    /**
      * 批量删除工作日报
-     * 先物理删除明细，再软删除主记录
+     * 明细与主记录<b>均为硬删除</b>（pm_daily_report / pm_daily_report_detail 是硬删除例外表）
+     *
+     * <p><b>【Issue #13】只能删除本人的日报，不设管理员例外。</b>
+     * reportIds 完全来自 URL（{@code DELETE /project/dailyReport/{reportIds}}，Spring 按逗号拆数组），
+     * 而 {@code project:dailyReport:remove} 授给了 8 个角色（含普通用户角色 role_id=2）、
+     * report_id 又是连续自增，且 pm_daily_report / pm_daily_report_detail 都是<b>硬删除</b>——
+     * 不校验归属就等于把「删掉任意人的日报」开放给全部账号，且误删只能靠 OSS 归档备份（付费解冻）恢复。
+     *
+     * <p>不设管理员例外的依据：前端唯一的删除入口是填报人删自己当天的日报（write.vue），
+     * 系统内不存在任何管理端批量删除日报的界面，「人人管自己」就是该权限的设计意图。
+     * 若将来确有管理端代删需求，应新增独立权限 + 独立接口（并留审计），而不是放宽此处。
+     *
+     * <p>失败模式的取舍：<b>「查不到」按幂等 no-op，「查得到但归属他人」硬拒绝并整批回滚。</b>
+     * 前者是因为过期页面/重复点击会重发已被删掉的 reportId，报错只会让填报人困惑；
+     * 后者用异常而非静默跳过——静默跳过会返回「成功」却什么都没删，比报错更糟。
+     *
+     * <p>入参先规整（剔 null、去重）：URL 拆出的数组可能含 null（如 {@code DELETE /.../,}），
+     * 而返回值是「处理条数」，不规整就会出现「返回成功但一行未动」以及重复 ID 重复重算。
      *
      * @param reportIds 需要删除的日报主键集合
      * @return 结果
@@ -418,10 +482,57 @@ public class DailyReportServiceImpl implements IDailyReportService
     @Transactional
     public int deleteDailyReportByIds(Long[] reportIds)
     {
+        // 入参先规整：剔除 null、去重、保持原顺序。
+        // null 元素来自 URL 本身——Spring 把 @PathVariable Long[] 按逗号拆开，
+        // "DELETE /project/dailyReport/," 会转成 Long[]{null, null}（length=2）；
+        // 不剔除的话它绕过下面的空集守卫，最终 rows = reportIds.length 让 toAjax 报「操作成功」，
+        // 而实际上三条 SQL 都是 0 行（NULL 永不匹配 report_id）——「说删了其实没删」。
+        // 去重则是为了让 rows 与实际处理的日报条数恒等（"70,70,70" 否则会重算 3 遍并返回 3）。
+        Set<Long> targetReportIds = new java.util.LinkedHashSet<>();
+        if (reportIds != null) {
+            for (Long reportId : reportIds) {
+                if (reportId != null) {
+                    targetReportIds.add(reportId);
+                }
+            }
+        }
+        if (targetReportIds.isEmpty()) {
+            return 0;
+        }
+        Long currentUserId = SecurityUtils.getUserId();
+
+        // 【Issue #13】归属校验必须在任何读写之前完成：
+        // 一旦进入下面的收集循环，就会读取他人明细并对他人的项目发起 pm_project 工时重算——
+        // 即使数值上幂等，被拒绝的请求也不该产生任何写入（与保存路径的 INV-1 同构）。
+        //
+        // 该查询带 FOR UPDATE，在此一次性取得主记录的排他锁。若改成普通 SELECT，
+        // 后续的 updateTotalWorkHours / deleteDailyReportByIds 会构成 S→X 锁升级而死锁
+        // （详见 DailyReportMapper#selectReportOwnersForUpdate 的 javadoc）。
+        List<Map<String, Object>> owners =
+                dailyReportMapper.selectReportOwnersForUpdate(targetReportIds);
+        // ownedReportIds = 「主记录确实存在、且归属本人」的那些。
+        // 查不到主记录的 ID 不进这个集合——它们不参与明细读取与工时重算：
+        // 归属探针查不到主记录就无从判断数据归谁，若「查不到就当属于我」继续往下走，
+        // 「主记录已不存在但明细还在」的孤儿数据会被读出来，并触发对调用者无数据权限的
+        // 项目发起 actual_workload 重算（取排他锁）。
+        Set<Long> ownedReportIds = new java.util.LinkedHashSet<>();
+        if (owners != null) {
+            for (Map<String, Object> row : owners) {
+                Object owner = row.get("userId");
+                if (owner != null && !currentUserId.equals(Long.parseLong(owner.toString()))) {
+                    throw new ServiceException("只能删除本人的日报，请勿删除他人日报");
+                }
+                Object rid = row.get("reportId");
+                if (rid != null) {
+                    ownedReportIds.add(Long.parseLong(rid.toString()));
+                }
+            }
+        }
+
         // 删除前收集受影响的项目和子任务ID，用于工时重算
         Set<Long> affectedProjectIds = new java.util.HashSet<>();
         Set<Long> affectedSubProjectIds = new java.util.HashSet<>();
-        for (Long reportId : reportIds) {
+        for (Long reportId : ownedReportIds) {
             List<DailyReportDetail> details = detailMapper.selectByReportId(reportId);
             if (details != null) {
                 for (DailyReportDetail d : details) {
@@ -441,28 +552,39 @@ public class DailyReportServiceImpl implements IDailyReportService
         // 主记录的去留必须跟着明细走：明细靠 report_id 归属主记录，而除 selectByReportId 外的查询
         // 都要经 "pm_daily_report r ... WHERE r.del_flag='0'" 过滤。若主记录被软删而明细仍在，
         // 这些明细将无法通过任何业务查询到达——等于换一种方式把工时弄丢（FR-014 / INV-D1）。
-        Set<Long> visibleProjectIds = resolveVisibleProjectIds(SecurityUtils.getUserId());
+        // 归属校验已通过，故此处的「调用者」必然就是这些日报的所有者，
+        // 拿调用者的可填项目集合去裁剪自己的明细，语义是自洽的（Issue #13 前是拿攻击者的范围裁剪受害者数据）。
+        Set<Long> visibleProjectIds = resolveVisibleProjectIds(currentUserId);
         List<Long> deletableReportIds = new java.util.ArrayList<>();
-        for (Long reportId : reportIds) {
-            detailMapper.deleteByReportIdInScope(reportId, visibleProjectIds);
+        for (Long reportId : ownedReportIds) {
+            detailMapper.deleteByReportIdInScope(reportId, visibleProjectIds, currentUserId);
             if (detailMapper.countByReportId(reportId) > 0) {
                 // 有明细被保留 → 主记录一并保留，并按剩余 work 明细重算当日汇总工时（INV-D2）
                 BigDecimal remaining = detailMapper.sumWorkHoursByReportId(reportId);
                 dailyReportMapper.updateTotalWorkHours(reportId,
-                        remaining != null ? remaining : BigDecimal.ZERO);
+                        remaining != null ? remaining : BigDecimal.ZERO, currentUserId);
             } else {
-                // 无残留 → 走既有的软删除行为
+                // 无残留 → 走既有行为：硬删除主记录（DELETE FROM，不是 del_flag 标记）
+                deletableReportIds.add(reportId);
+            }
+        }
+        // 查不到主记录的 ID 也一并交给主记录删除语句：它带 user_id 限定，查不到就删 0 行，
+        // 语义仍是幂等 no-op；这样做是纵深防御——万一该 report_id 在本事务开始后被他人复用，
+        // SQL 的 user_id 条件仍会挡住，而不是靠「反正查不到」这个瞬时判断。
+        for (Long reportId : targetReportIds) {
+            if (!ownedReportIds.contains(reportId)) {
                 deletableReportIds.add(reportId);
             }
         }
         if (!deletableReportIds.isEmpty()) {
-            dailyReportMapper.deleteDailyReportByIds(deletableReportIds.toArray(new Long[0]));
+            dailyReportMapper.deleteDailyReportByIds(deletableReportIds.toArray(new Long[0]), currentUserId);
         }
         // 返回「本次处理的日报条数」，而不是「删掉了几条主记录」。
         // 当明细全部因不可见而被保留时，没有主记录可删，但删除操作本身是成功完成的
         // （可见明细已删、汇总已重算）。若此处返回 0，BaseController.toAjax 会判为「操作失败」，
         // 填报人看到错误提示后会重复点击——e2e 实测暴露（2026-08-03）。
-        int rows = reportIds.length;
+        // 计数用规整后的集合（剔 null、去重），因此它与实际处理的日报条数恒等。
+        int rows = targetReportIds.size();
 
         // 重算受影响子任务的工时
         for (Long taskId : affectedSubProjectIds) {

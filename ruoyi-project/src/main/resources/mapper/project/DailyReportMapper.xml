@@ -197,10 +197,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         order by r.report_date desc, r.user_id
     </select>
 
-    <!-- 根据ID查询日报详情（含明细） -->
-    <select id="selectDailyReportById" parameterType="Long" resultMap="DailyReportWithDetailResult">
+    <!--
+      根据ID查询日报详情（含明细）
+      【Issue #13 读侧】user_id 限定不可删：reportId 全部来自 URL 且连续自增，
+      本查询既无 ${params.dataScope} 也挂不上 @DataScope（入参非 BaseEntity），
+      去掉 user_id 就等于把「按 ID 遍历全公司日报正文」开放给全部持 activity 权限的账号。
+    -->
+    <select id="selectDailyReportById" resultMap="DailyReportWithDetailResult">
         <include refid="selectReportWithDetail"/>
         where r.report_id = #{reportId}
+          and r.user_id = #{userId}
     </select>
 
     <!-- 根据用户ID和日期查询日报（含明细） -->
@@ -260,7 +266,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
         </trim>
+        <!--
+          【Issue #13】user_id 限定不可删：这是 pm_daily_report 上最后一条写语句的归属守卫。
+          目前唯一调用点（saveDailyReport）的 reportId 由 selectReportIdByUserAndDate(userId, date)
+          自行定位，归属本就正确，此处是纵深防御——防的是将来新增「从客户端取 reportId」的调用点
+          （本次 javadoc 预告的管理端代改接口就是这种形态）：那时若无此条件，攻击者用受害者的
+          reportId + 自己的 userId 调用，会把受害者的日报改判归属到自己名下，
+          它从受害者日历上消失、出现在攻击者名下。
+          userId 为 null 时条件不成立、更新 0 行（fail-closed），不会退化成无限定更新。
+        -->
         where report_id = #{reportId}
+          and user_id = #{userId}
     </update>
 
     <!-- 硬删除日报 -->
@@ -268,13 +284,50 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         DELETE FROM pm_daily_report WHERE report_id = #{reportId}
     </delete>
 
-    <!-- 批量硬删除日报 -->
-    <delete id="deleteDailyReportByIds" parameterType="String">
-        DELETE FROM pm_daily_report WHERE report_id in
-        <foreach item="reportId" collection="array" open="(" separator="," close=")">
+    <!--
+      批量硬删除日报
+      【Issue #13】user_id 限定不可删：删除是硬删除且不可恢复，只能删自己的日报。
+      Service 层已有前置归属校验，这里是第二道防线——新调用点若忘了校验，SQL 仍不会删到他人数据。
+    -->
+    <delete id="deleteDailyReportByIds">
+        DELETE FROM pm_daily_report
+        WHERE user_id = #{userId}
+          AND report_id in
+        <foreach item="reportId" collection="reportIds" open="(" separator="," close=")">
             #{reportId}
         </foreach>
     </delete>
+
+    <!--
+      【Issue #13】归属校验专用：挑出确实存在、但 user_id 不是当前用户的日报ID。
+      不存在的 report_id 查不出来 → 删除保持幂等（过期页面重发已删ID按 no-op 处理），
+      只有「存在且属于他人」才会被返回给 Service 拒绝。
+    -->
+    <!--
+      【Issue #13】查出这些日报的归属人，并对主记录加排他锁。
+
+      FOR UPDATE 不可删：本查询之后同一事务还要 UPDATE/DELETE 这些主记录。
+      若这里只读不锁、而明细删除又通过 JOIN 顺带取共享锁，就形成 S→X 锁升级，
+      两个并发请求（填报人重复点击删除）必然死锁——本地 MySQL 8 实测 3/3 次 ERROR 1213。
+      在此一次取排他锁，后续不再升级，并发退化为排队而非死锁。
+
+      查不到的 report_id 不出现在结果里：既保证删除幂等（重复点击/过期页面重发已删 ID），
+      又让「主记录已不存在但明细还在」的孤儿数据不被带进读写段。
+    -->
+    <select id="selectReportOwnersForUpdate" resultType="java.util.Map">
+        select report_id as reportId, user_id as userId
+        from pm_daily_report
+        <choose>
+            <when test="reportIds != null and reportIds.size() > 0">
+                where report_id in
+                <foreach item="reportId" collection="reportIds" open="(" separator="," close=")">
+                    #{reportId}
+                </foreach>
+            </when>
+            <otherwise>where 1 = 0</otherwise>
+        </choose>
+        for update
+    </select>
 
     <!-- 查询活动页用户列表（数据权限 + 部门过滤） -->
     <select id="selectActivityUsers" parameterType="DailyReport" resultType="java.util.Map">
@@ -633,12 +686,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
       ⚠️ update_time = update_time 不可删：这是系统触发的重算，不是用户主动编辑。
          保持审计字段原值，避免在「谁在什么时候改了这条日报」上产生误导。
+
+      【Issue #13】user_id 限定不可删：这是删除路径上唯一的「非删除类」写语句。
+      只给删除语句补归属时，传他人 reportId 会走进「保留主记录」分支并在此改写他人汇总工时，
+      跨用户写原语依然存活。
     -->
     <update id="updateTotalWorkHours">
         update pm_daily_report
         set total_work_hours = #{hours},
             update_time = update_time
         where report_id = #{reportId}
+          and user_id = #{userId}
     </update>
 
 </mapper>

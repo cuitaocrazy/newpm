@@ -16,10 +16,14 @@ import com.ruoyi.project.domain.vo.TeamDailyReportVO;
 public interface IDailyReportService
 {
     /**
-     * 查询工作日报
+     * 查询工作日报（含明细）
+     *
+     * <p><b>【Issue #13 读侧】只返回当前登录人自己的日报</b>，非本人的一律为 null。
+     * reportId 来自 URL 且连续自增，该查询挂不上 @DataScope；跨用户查看单条日报
+     * 应新增独立接口，不要放宽这里。
      *
      * @param reportId 日报主键
-     * @return 工作日报
+     * @return 工作日报；非本人或不存在时为 null
      */
     public DailyReport selectDailyReportById(Long reportId);
 
