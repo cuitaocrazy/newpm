@@ -15,6 +15,27 @@ interface UserState {
   permissions: string[]
 }
 
+/**
+ * 清除各列表页的搜索状态缓存（键名统一以 _search_state 结尾）。
+ *
+ * 这些快照存在 sessionStorage，生命周期是浏览器标签页——退出登录不会清掉它。
+ * 于是同一标签页里换人登录后，新用户首次打开列表会静默套用上一个会话的筛选条件：
+ * 数据本身有后端 @DataScope 兜底不会越权，但界面上会出现一个自己没设过的筛选值，
+ * 极易被误判成「我的数据不见了」。
+ *
+ * 统一在登出时清理，覆盖全部 8 个采用该范式的列表页（合同 / 付款 / 项目 / 任务 /
+ * 出入库版本 / 手工版本 / 批次问题单 / 非批次问题单），避免逐页维护清理逻辑。
+ */
+function clearSearchStateCache() {
+  try {
+    Object.keys(sessionStorage)
+      .filter(key => key.endsWith('_search_state'))
+      .forEach(key => sessionStorage.removeItem(key))
+  } catch {
+    // sessionStorage 不可用（隐私模式 / 站点数据被禁）时忽略，不能影响登出流程
+  }
+}
+
 const useUserStore = defineStore(
   'user',
   {
@@ -89,6 +110,7 @@ const useUserStore = defineStore(
             this.roles = []
             this.permissions = []
             removeToken()
+            clearSearchStateCache()
             resolve()
           }).catch((error: any) => {
             reject(error)

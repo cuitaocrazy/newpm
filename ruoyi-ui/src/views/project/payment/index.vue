@@ -164,11 +164,13 @@
     </el-row>
 
     <el-table
+      ref="paymentTableRef"
       v-loading="loading"
       :data="tableDataWithSummary"
       border
       stripe
       :span-method="spanMethod"
+      :default-sort="defaultSort"
       @sort-change="handleSortChange"
       style="width: 100%">
       <el-table-column label="序号" width="60" align="center" fixed="left" v-if="columns.index.visible">
@@ -340,7 +342,7 @@ import { listAllCustomer } from "@/api/project/customer"
 import request from '@/utils/request'
 import { handleTree } from '@/utils/ruoyi'
 import { watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, onBeforeRouteLeave } from 'vue-router'
 import { checkPermi } from "@/utils/permission"
 
 const { proxy } = getCurrentInstance()
@@ -377,6 +379,14 @@ const tableDataWithSummary = computed(() => {
   return [summary, ...displayList.value]
 })
 const actualPaymentDateRange = ref([])
+
+const paymentTableRef = ref(null)
+// el-table 的 default-sort 只在挂载后被读取一次（非响应式快照），之后改它不会再影响表头箭头。
+// 因此恢复排序时必须在本页 onMounted 内**同步**赋值：放到任何 await 之后箭头都不会出现。
+// 另：不要改用 tableRef.sort() 恢复——它会触发 sort-change，进而 handleQuery() 把页码打回第 1 页。
+// 已知降级：若被恢复的列已被用户隐藏（列均带 v-if="columns.X.visible"），恢复静默无效，
+// 表现为「数据有序但表头无箭头」，非缺陷。
+const defaultSort = ref({ prop: '', order: '' })
 
 // 列显隐信息
 const columns = ref({
@@ -597,8 +607,12 @@ function handleQuery() {
 function handleSortChange({ prop, order }) {
   if (!order) {
     // 取消排序，回退到后端默认排序
-    queryParams.value.orderByColumn = undefined
-    queryParams.value.isAsc = undefined
+    // 用 null 而非 undefined：JSON.stringify 会丢掉 undefined 的键，
+    // 缓存还原用的 Object.assign 是合并语义，丢了键就重置不掉排序。
+    // （tansParams 对 null 与 undefined 一视同仁都不拼进 query，上行报文不变）
+    queryParams.value.orderByColumn = null
+    queryParams.value.isAsc = null
+    defaultSort.value = { prop: '', order: '' }
   } else {
     // 将驼峰命名转换为下划线命名（后端数据库字段格式）
     const columnMap = {
@@ -611,14 +625,79 @@ function handleSortChange({ prop, order }) {
     // 本查询 pm_contract 与 pm_payment 都有 contract_id 列，必须限定表别名 c
     queryParams.value.orderByColumn = `${dbColumn} ${dir}, c.contract_id`
     queryParams.value.isAsc = dir
+    // orderByColumn 是含次级键的 SQL 片段，el-table 无法从中反推列名，
+    // 故另存一份 Vue 侧的 { prop, order } 专供 default-sort 还原表头箭头
+    defaultSort.value = { prop, order }
   }
   handleQuery()
 }
 
+const SEARCH_STATE_KEY = 'payment_search_state'
+
+function saveSearchState() {
+  // 本页的异步下拉（deptTree / customerOptions）在 setup 顶层无条件重载，故不入缓存；
+  // 若将来任一下拉改为条件加载（如按年度级联），必须把它的选项一并存进来，否则还原后下拉为空。
+  const state = {
+    queryParams: { ...queryParams.value },
+    sort: { ...defaultSort.value },
+    showMoreSearch: showMoreSearch.value,
+    // 必存：getList() 每次都从这个 ref 反向覆写 actualPaymentDateStart/End，
+    // ref 为空就写 null——只还原 queryParams 的话，还原后第一次 getList 会当场抹掉日期条件
+    actualPaymentDateRange: actualPaymentDateRange.value
+  }
+  // 必须 try/catch：本函数挂在 onBeforeRouteLeave 上，setItem 在配额满 / 隐私模式 /
+  // 站点数据被禁时会抛异常，异常从路由守卫冒出去会让 vue-router 取消导航——
+  // 实测表现是详情、编辑、侧边栏菜单全部点不动，用户被困在列表页。
+  // 缓存失败应当退化为「这次不缓存」，绝不能升级为「走不掉」。
+  try {
+    sessionStorage.setItem(SEARCH_STATE_KEY, JSON.stringify(state))
+  } catch {
+    // 忽略：缓存不可用不应影响页面跳转
+  }
+}
+
+function restoreSearchState() {
+  try {
+    const raw = sessionStorage.getItem(SEARCH_STATE_KEY)
+    if (!raw) return false
+    const state = JSON.parse(raw)
+    Object.assign(queryParams.value, state.queryParams)
+    defaultSort.value = state.sort?.prop ? { ...state.sort } : { prop: '', order: '' }
+    // 还原了「更多」区的值就必须一并还原展开态，否则用户看到「结果被筛过、界面上却没有筛选条件」
+    showMoreSearch.value = !!state.showMoreSearch
+    actualPaymentDateRange.value = state.actualPaymentDateRange || []
+    sessionStorage.removeItem(SEARCH_STATE_KEY)
+    return true
+  } catch {
+    // 条目结构不兼容（如跨版本发布后的旧结构残留）时，一并清掉坏条目，
+    // 否则它会一直躺在 sessionStorage 里，之后每次重建都白跑一次解析。
+    try { sessionStorage.removeItem(SEARCH_STATE_KEY) } catch { /* 存储不可用，忽略 */ }
+    return false
+  }
+}
+
+onBeforeRouteLeave(() => {
+  saveSearchState()
+})
+
 /** 重置按钮操作 */
 function resetQuery() {
+  sessionStorage.removeItem(SEARCH_STATE_KEY)
   actualPaymentDateRange.value = []
   proxy.resetForm("queryRef")
+  // 「更多」区是 v-if，若本次是从缓存还原来的，这些 form-item 在还原之后才挂载，
+  // 捕获到的 initialValue 就是还原值，resetFields 清不掉，必须显式置空
+  queryParams.value.confirmYear = null
+  queryParams.value.paymentMethodName = null
+  queryParams.value.hasPenalty = null
+  queryParams.value.actualQuarters = []
+  // orderByColumn / isAsc 不是 el-form 字段，resetForm 碰不到它们
+  queryParams.value.orderByColumn = null
+  queryParams.value.isAsc = null
+  defaultSort.value = { prop: '', order: '' }
+  // 只清 queryParams 不会复位表头箭头——el-table 内部还留着 sorting state。
+  // clearSort 内部是 silent:true，不会触发 sort-change
+  paymentTableRef.value?.clearSort?.()
   handleQuery()
 }
 
@@ -750,7 +829,15 @@ function handleExport() {
 // 初始化
 loadDeptTree()
 loadCustomers()
-getList()
+
+// getList 必须放在 onMounted 且排在 restoreSearchState 之后，三个时序约束的唯一交集：
+// ① 还原要晚于子 form-item 的 onMounted（否则 el-form 把还原值当成 initialValue，「重置」清不干净）
+// ② 还原要早于首次 getList（否则首屏是未筛选/未排序的数据，且不会补发请求）
+// ③ defaultSort 要在本页 onMounted 内同步赋值（table-header 挂载后只读一次）
+onMounted(() => {
+  restoreSearchState()
+  getList()
+})
 
 // 监听路由变化，刷新列表
 watch(() => route.query.t, (newVal) => {
