@@ -130,10 +130,12 @@
     </el-row>
 
     <el-table
+      ref="contractTableRef"
       v-loading="loading"
       :data="tableDataWithSummary"
       :height="tableHeight"
       :span-method="spanMethod"
+      :default-sort="defaultSort"
       @sort-change="handleSortChange"
       border
       stripe
@@ -407,6 +409,7 @@
 </template>
 
 <script setup name="Contract">
+import { onBeforeRouteLeave } from "vue-router"
 import { listContract, getContract, delContract, searchContracts } from "@/api/project/contract"
 import { getDeptTree as fetchDeptTree } from "@/api/project/project"
 import { listAllCustomer } from "@/api/project/customer"
@@ -500,6 +503,13 @@ const showSearch = ref(true)
 const showMoreQuery = ref(false)
 const total = ref(0)
 const tableHeight = ref(600)
+const contractTableRef = ref(null)
+// el-table 的 default-sort 不是响应式属性：table-header 在挂载后的第 2 个 nextTick
+// 解构读一次就不再看（table-header/index.mjs:76-81），之后再改都不会反映到表头箭头上。
+// 因此恢复排序必须在本页 onMounted 里"同步"赋值——放到任何 await 之后箭头都不会出现。
+// 空 prop 是安全的 no-op（store 内部有 if (prop) 守卫）。
+// 已知降级：若被恢复的列已被用户在列显隐里隐藏，恢复会静默失效——数据仍有序、表头无箭头，不是缺陷。
+const defaultSort = ref({ prop: '', order: '' })
 const deptOptions = ref([])
 const customerOptions = ref([])
 const projectOptions = ref([])
@@ -566,12 +576,10 @@ const { queryParams } = toRefs(data)
 function getList() {
   loading.value = true
   listContract(queryParams.value).then(response => {
-    console.log('合同列表响应数据:', response)
     contractList.value = response.rows
     total.value = response.total
     // 获取后端返回的总计数据（从 extra 中获取）
     summaryData.value = (response.extra && response.extra.summary) || {}
-    console.log('总计数据:', summaryData.value)
     loading.value = false
   })
 }
@@ -579,9 +587,12 @@ function getList() {
 // 排序处理
 const handleSortChange = ({ column, prop, order }) => {
   if (!order) {
-    // 取消排序
-    queryParams.value.orderByColumn = undefined
-    queryParams.value.isAsc = undefined
+    // 取消排序。这里必须写 null 而不是 undefined：JSON.stringify 会丢掉值为 undefined 的键，
+    // 而 restoreSearchState 用 Object.assign 合并，丢键就等于"取消排序"这个状态还原不回来。
+    // tansParams(utils/ruoyi.ts) 对 null 与 undefined 一视同仁地不拼进 query string，上行报文不变。
+    queryParams.value.orderByColumn = null
+    queryParams.value.isAsc = null
+    defaultSort.value = { prop: '', order: '' }
   } else {
     // 设置排序字段和排序方式
     // 将驼峰命名转换为下划线命名（后端数据库字段格式）
@@ -601,9 +612,61 @@ const handleSortChange = ({ column, prop, order }) => {
     // 排序键不唯一时 MySQL 对并列行的顺序不保证，每页 limit 独立排序会导致翻页重复与遗漏
     queryParams.value.orderByColumn = `${dbColumn} ${dir}, c.contract_id`
     queryParams.value.isAsc = dir
+    // orderByColumn 是含唯一次级键的 SQL 片段，不可解析回推；el-table 需要的是 Vue 侧的 prop 名，
+    // 所以另存一份给 default-sort 用，两者各管各的，避免任何一方被改写。
+    defaultSort.value = { prop, order }
   }
   handleQuery()
 }
+
+const SEARCH_STATE_KEY = 'contract_search_state'
+
+function saveSearchState() {
+  // 本页两个异步下拉（deptOptions / customerOptions）在 setup 顶层无条件重载，
+  // 组件每次创建都会重新拉取，故不入缓存；若将来任一下拉改成条件加载（如按年份级联），
+  // 必须把它的 options 一并存进来，否则还原后下拉是空的。
+  // （projectOptions 只服务于列表内的 getProjectName() 查表，不是查询条件，与缓存无关。）
+  //
+  // 必须 try/catch：本函数挂在 onBeforeRouteLeave 上，setItem 在配额满 / 隐私模式 /
+  // 站点数据被禁时会抛异常，异常从路由守卫冒出去会让 vue-router 取消导航——
+  // 实测表现是详情、编辑、侧边栏菜单全部点不动，用户被困在列表页。
+  // 缓存失败应当退化为「这次不缓存」，绝不能升级为「走不掉」。
+  try {
+    sessionStorage.setItem(SEARCH_STATE_KEY, JSON.stringify({
+      queryParams: { ...queryParams.value },
+      sort: { ...defaultSort.value },
+      showMoreQuery: showMoreQuery.value
+    }))
+  } catch {
+    // 忽略：缓存不可用不应影响页面跳转
+  }
+}
+
+function restoreSearchState() {
+  try {
+    const raw = sessionStorage.getItem(SEARCH_STATE_KEY)
+    if (!raw) return false
+    const state = JSON.parse(raw)
+    Object.assign(queryParams.value, state.queryParams)
+    defaultSort.value = state.sort?.prop ? { ...state.sort } : { prop: '', order: '' }
+    // 「更多」区是 v-if，展开态不还原的话，恢复出来的 4 个条件在界面上完全看不见，
+    // 用户只会看到"结果被筛过但找不到筛选条件"。
+    showMoreQuery.value = !!state.showMoreQuery
+    sessionStorage.removeItem(SEARCH_STATE_KEY)
+    return true
+  } catch {
+    // 条目结构不兼容（如跨版本发布后的旧结构残留）时，一并清掉坏条目，
+    // 否则它会一直躺在 sessionStorage 里，之后每次重建都白跑一次解析。
+    try { sessionStorage.removeItem(SEARCH_STATE_KEY) } catch { /* 存储不可用，忽略 */ }
+    return false
+  }
+}
+
+// 用块体而非箭头隐式返回：守卫的返回值对 vue-router 有语义（false = 取消导航），
+// 隐式返回会把 saveSearchState 未来可能的返回值意外变成导航开关。
+onBeforeRouteLeave(() => {
+  saveSearchState()
+})
 
 /** 查询部门下拉树结构 */
 function getDeptTree() {
@@ -729,7 +792,20 @@ function fetchContractCodeSuggestions(queryStr, cb) {
 
 /** 重置按钮操作 */
 function resetQuery() {
+  sessionStorage.removeItem(SEARCH_STATE_KEY)
   proxy.resetForm("queryRef")
+  // 「更多」区的 form-item 是 v-if 挂载的：若本次是从缓存恢复来的，这些 form-item 在恢复之后才挂载，
+  // el-form 捕获到的 initialValue 就是恢复值，resetFields 会把它们"重置"回恢复值而不是清空，必须显式置空。
+  queryParams.value.contractCode = null
+  queryParams.value.contractSignDate = null
+  queryParams.value.confirmAmount = null
+  queryParams.value.confirmYear = null
+  // orderByColumn / isAsc 不是 el-form 字段，resetForm 碰不到它们；
+  // 而只清参数不清 el-table 内部的 sorting state，表头箭头也不会复位，两处都要清。
+  queryParams.value.orderByColumn = null
+  queryParams.value.isAsc = null
+  defaultSort.value = { prop: '', order: '' }
+  contractTableRef.value?.clearSort?.()
   handleQuery()
 }
 
@@ -882,8 +958,14 @@ function calcTableHeight() {
 
 // 监听窗口大小变化
 onMounted(() => {
+  // restoreSearchState 必须放在这里的第一行，三个时序约束的唯一交集：
+  // ① 晚于子 form-item 的 onMounted（子先于父），否则「重置」会退回到恢复值而不是清空；
+  // ② 早于首次 getList()，否则首屏拿到的是未排序数据、且不会补发请求；
+  // ③ defaultSort 必须在本页 onMounted 内同步赋值，table-header 才读得到。
+  restoreSearchState()
   calcTableHeight()
   window.addEventListener('resize', calcTableHeight)
+  getList()
 })
 
 onUnmounted(() => {
@@ -910,7 +992,6 @@ watch(() => route.query.t, (newVal) => {
 getDeptTree()
 getCustomerList()
 getProjectList()
-getList()
 </script>
 
 <style scoped lang="scss">
