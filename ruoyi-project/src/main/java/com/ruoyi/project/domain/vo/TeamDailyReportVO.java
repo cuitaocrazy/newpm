@@ -21,7 +21,10 @@ public class TeamDailyReportVO
     /** 预算人天（estimated_workload，单位：人天） */
     private BigDecimal estimatedWorkload;
 
-    /** 实际人天 = ROUND(actual_workload/8, 3) + COALESCE(adjust_workload, 0) */
+    /**
+     * 项目累计人天 = ROUND(actual_workload/8, 3) + COALESCE(adjust_workload, 0)。
+     * <p>全周期口径，<b>不受查询年月影响</b>——即「从项目开始到最新日报日」的累计值（018 FR-010）。
+     */
     private BigDecimal actualPersonDays;
 
     /** 项目阶段（字典 sys_xmjd） */
@@ -41,6 +44,13 @@ public class TeamDailyReportVO
 
     /** 合同金额合计（元，SUM of associated contracts） */
     private BigDecimal contractAmount;
+
+    /**
+     * 项目所属机构分组名称（018 FR-013）= pm_project.project_dept 对应的 sys_dept.dept_name。
+     * <p>⚠️ 这是<b>项目</b>所属部门，不要与 {@link TeamMemberDailyVO#getDeptName()}（<b>成员本人</b>
+     * 所属部门）混淆——实测 38% 的成员行两者不同。
+     */
+    private String projectDeptName;
 
     /** 成员日报列表 */
     private List<TeamMemberDailyVO> members;
@@ -77,6 +87,9 @@ public class TeamDailyReportVO
 
     public BigDecimal getContractAmount() { return contractAmount; }
     public void setContractAmount(BigDecimal contractAmount) { this.contractAmount = contractAmount; }
+
+    public String getProjectDeptName() { return projectDeptName; }
+    public void setProjectDeptName(String projectDeptName) { this.projectDeptName = projectDeptName; }
 
     public List<TeamMemberDailyVO> getMembers() { return members; }
     public void setMembers(List<TeamMemberDailyVO> members) { this.members = members; }

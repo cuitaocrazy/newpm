@@ -767,6 +767,9 @@ public class DailyReportServiceImpl implements IDailyReportService
                 vo.setRevenueConfirmStatus(str(row.get("revenueConfirmStatus")));
                 vo.setProjectBudget(toBigDecimal(row.get("projectBudget")));
                 vo.setContractAmount(toBigDecimal(row.get("contractAmount")));
+                // 【018 FR-013】项目所属机构分组。注意与成员本人部门（下方 deptName）是两个字段，
+                // 实测 38% 的成员行两者不同，别名撞名会静默覆盖。
+                vo.setProjectDeptName(strOrNull(row.get("projectDeptName")));
                 vo.setMembers(new ArrayList<>());
                 return vo;
             });
@@ -779,23 +782,61 @@ public class DailyReportServiceImpl implements IDailyReportService
                 vo.setNickName(str(row.get("nickName")));
                 vo.setDeptName(str(row.get("deptName")));
                 vo.setIsFormer("1".equals(str(row.get("isFormer"))));
+                // 【018 FR-011/012】项目内角色，由 SQL 的 CASE 按优先级选定其一，反推不出时为 null
+                vo.setRoleLabel(strOrNull(row.get("roleLabel")));
+                // 【018 FR-017】参与时间：主源=本项目日报首末日，兜底源=成员表在册区间，
+                // 两者都吐给前端，展示口径由前端决定（便于将来调整而不动 SQL 与 VO）
+                vo.setFirstReportDate(dateStr(row.get("firstReportDate")));
+                vo.setLastReportDate(dateStr(row.get("lastReportDate")));
+                vo.setJoinDate(dateStr(row.get("joinDate")));
+                vo.setLeaveDate(dateStr(row.get("leaveDate")));
                 project.getMembers().add(vo);
                 return vo;
             });
 
-            // 填充日期工时
+            // 填充工时。
+            // 【018 FR-009】「累加总工时」与「填充日历格」必须分开判断，不能合成一个与条件：
+            // 未指定年月时 SQL 输出 `NULL AS reportDate`（daily_hrs 退化为 per-(user,project) 全周期
+            // SUM，见 DailyReportMapper.xml 的 selectTeamMonthlyRaw）。若沿用原来的
+            // `reportDate != null && totalWorkHours != null`，整个分支不执行，totalHours 停在 0
+            // —— 表现为「个人人天全部为 0，而项目累计人天正常」这种静默错值。
             Object reportDate = row.get("reportDate");
             Object totalWorkHours = row.get("totalWorkHours");
-            if (reportDate != null && totalWorkHours != null)
+            if (totalWorkHours != null)
             {
-                String dateStr = reportDate.toString().substring(0, 10); // yyyy-MM-dd
                 BigDecimal hours = toBigDecimal(totalWorkHours);
-                member.getDailyHours().merge(dateStr, hours, BigDecimal::add);
                 member.setTotalHours(member.getTotalHours().add(hours));
+                if (reportDate != null)
+                {
+                    String dateStr = reportDate.toString().substring(0, 10); // yyyy-MM-dd
+                    member.getDailyHours().merge(dateStr, hours, BigDecimal::add);
+                }
             }
         }
 
         return new ArrayList<>(projectMap.values());
+    }
+
+    /**
+     * 【018】字符串列取值，<b>保持 null 语义</b>。
+     * <p>不能复用 {@link #str(Object)} —— 它把 null 转成空串，会让前端把「无角色」渲染成空括号，
+     * 也会让参与时间拼出「 ~ 」这类残缺串。
+     */
+    private String strOrNull(Object val)
+    {
+        return val != null ? val.toString() : null;
+    }
+
+    /**
+     * 【018】日期列统一转 {@code yyyy-MM-dd}，null 保持 null。
+     * <p>JDBC 对 DATE/DATETIME 列的 toString() 形态不一致（后者带时分秒），统一截前 10 位，
+     * 与既有 reportDate 的处理方式保持一致。
+     */
+    private String dateStr(Object val)
+    {
+        if (val == null) return null;
+        String s = val.toString();
+        return s.length() >= 10 ? s.substring(0, 10) : s;
     }
 
     private Long toLong(Object val)
