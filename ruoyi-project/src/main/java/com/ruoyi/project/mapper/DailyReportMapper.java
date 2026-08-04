@@ -22,13 +22,20 @@ public interface DailyReportMapper
      * 唯一调用方是 {@code GET /project/dailyReport/{reportId}}，reportId 全部来自 URL 且是连续自增；
      * 这个查询既没有 {@code ${params.dataScope}} 也无法挂 {@code @DataScope}（入参不是 BaseEntity），
      * 所以在补 user_id 之前，任何持 {@code project:dailyReport:activity} 的账号（8 个角色，
-     * 含普通用户角色 role_id=2）都能逐个 ID 拉走全公司日报正文——比 /list、/monthly
-     * （两者都有部门级 dataScope）的越权范围还大。
+     * 含普通用户角色 role_id=2）都能逐个 ID 拉走全公司日报正文——比 /list、/monthly 的越权范围还大
+     * （那两条<b>有</b>部门级 dataScope，只是 Issue #24 起变成<b>有条件</b>注入：服务端算出
+     * {@code params.projectScopeBypass} 时才摘掉，见 {@code #applyProjectScopeBypass}；
+     * 本语句则连有条件的 dataScope 都没有）。
      *
      * <p>限定为「只能读本人的」而非改成部门级 dataScope：前端没有任何页面调用该接口
      * （{@code src/api/project/dailyReport.js#getDailyReport} 定义了但零引用），
      * 团队/动态视图走的是带 dataScope 的 /list 与 /monthly。
-     * 将来若确需跨用户查看单条日报，应新增独立接口并挂 {@code @DataScope}，而不是放宽这里。
+     * 将来若确需跨用户查看单条日报，应新增独立接口，授权走 Issue #24 那套<b>服务端计算</b>的
+     * 判据（成员/项目角色）或 {@code @DataScope}，而不是放宽这里。
+     *
+     * <p>单测护栏：{@code DailyReportProjectScopeSqlTest#reportById_mustRestrictToOwner}
+     * （渲染 BoundSql 断言 {@code r.user_id = ?} 在场）。
+     * e2e 护栏：{@code tests/e2e-daily-report-ownership.spec.js} 的读侧用例。
      *
      * @param reportId 日报主键
      * @param userId   当前登录用户ID；只返回 user_id 匹配的日报，否则为 null

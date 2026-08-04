@@ -126,9 +126,38 @@ class DailyReportProjectScopeSqlTest
                         + "否则活动页「团队人数/已填写/未填写」会与月历内容打架。渲染出的 SQL:\n" + sql);
     }
 
-    // 注：selectDailyReportById（GET /{reportId}）是同一权限位下更严重的可枚举越权，
-    // 该缺陷已由 Issue #13 修好（限定 and r.user_id = #{userId}，只能读本人；前端零调用方所以收紧无损），
-    // 与本类的 projectScopeBypass 判据是两套机制。相应断言在 DailyReportServiceImplTest，此处不重复。
+    // ==================== Issue #13 读侧越权（另一套机制，同一张 mapper） ====================
+
+    /**
+     * 【Issue #13 / 勿删】{@code selectDailyReportById}（{@code GET /project/dailyReport/{reportId}}）
+     * 是同一权限位下更严重的可枚举越权：report_id 连续自增，resultMap 带明细即 work_content 原文。
+     *
+     * <p>它<b>不走</b>本类其余用例的 {@code projectScopeBypass} 判据，也没有 {@code @DataScope} —— 唯一
+     * 的授权边界就是 SQL 里那一句 {@code and r.user_id = #{userId}}。因此这条断言必须放在纯单测里：
+     * 之前该守卫只被 {@code tests/e2e-daily-report-ownership.spec.js} 的读侧用例守着，而那套 e2e 需要
+     * 活后端 + 隔离造数库，不在 {@code mvn test -pl ruoyi-project -am} 的路径上 —— 把守卫摘掉
+     * 单测照样全绿。
+     */
+    @Test
+    @DisplayName("[护栏][Issue#13] selectDailyReportById 必须带 user_id 归属限定 —— 摘掉即为可枚举 IDOR")
+    void reportById_mustRestrictToOwner()
+    {
+        java.util.Map<String, Object> param = new java.util.HashMap<>();
+        param.put("reportId", 12345L);
+        param.put("userId", 20L);
+
+        String sql = configuration.getMappedStatement(NS + "selectDailyReportById")
+                .getBoundSql(param).getSql();
+
+        assertTrue(sql.replaceAll("\\s+", " ").contains("r.user_id = ?"),
+                "selectDailyReportById 丢了 user_id 归属限定 —— report_id 连续自增，任何持 "
+                        + "project:dailyReport:query 的账号都能逐个 ID 拉走全公司日报正文（Issue #13）。"
+                        + "渲染出的 SQL:\n" + sql);
+
+        assertFalse(sql.contains(MARKER),
+                "该语句不应注入 dataScope —— 它的授权是「只能读本人」，比部门边界更严格；"
+                        + "混进 dataScope 会让人误以为放宽 user_id 限定是安全的。渲染出的 SQL:\n" + sql);
+    }
 
     // ==================== 一开始就绿、修完仍须绿的护栏 ====================
 
@@ -206,10 +235,13 @@ class DailyReportProjectScopeSqlTest
      * 调用方，全部经过该方法（{@code DailyReportServiceImpl:122/136/728}）。
      * <b>新增任何绕过 Service 直接调用这三条 statement 的代码路径，都会直接重开 Issue #24。</b>
      *
-     * <p><b>{@code selectDailyReportById} 不在本类断言范围内</b>：它不带 projectId、不读放行标记，
+     * <p><b>{@code selectDailyReportById} 不受本判据管</b>：它不带 projectId、不读放行标记，
      * 也<b>没有</b> {@code ${params.dataScope}} 与 {@code @DataScope}（入参不是 BaseEntity，挂不上）。
-     * 它的授权靠 Issue #13 在 SQL 里硬限定的 {@code and r.user_id = #{userId}}（只能读本人），
-     * 护栏在 {@code DailyReportServiceImplTest} 的删除/读取归属用例，不在本类。
+     * 它的授权靠 Issue #13 在 SQL 里硬限定的 {@code and r.user_id = #{userId}}（只能读本人）。
+     * 那条守卫的单测护栏是本类的 {@link #reportById_mustRestrictToOwner}
+     * （{@code DailyReportServiceImplTest} 里只有<b>删除</b>路径的归属用例，没有读侧用例）；
+     * 端到端护栏是 {@code tests/e2e-daily-report-ownership.spec.js} 的
+     * 「Issue#13 读侧｜按 ID 直读他人日报拿不到内容」。
      */
     @Test
     @DisplayName("[文档] XML 层只判放行标记是否为 null（不看值、不看 projectId）—— Service 的 remove() 是唯一屏障")

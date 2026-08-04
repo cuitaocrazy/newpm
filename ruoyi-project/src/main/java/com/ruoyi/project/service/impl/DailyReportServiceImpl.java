@@ -152,13 +152,23 @@ public class DailyReportServiceImpl implements IDailyReportService
      * 而本闸门放行任意「曾参与者」。之所以不收到只认经理：那会把 :755 之外、修复前一直能正常工作的
      * 普通成员视角一并砍掉，制造新的回归。所以别把「闸门 ⊋ :755」当成需求依据来引用。
      *
-     * <p>本方法把豁免条件收窄为「调用者曾参与该项目<b>或</b>在该项目上担任四类项目角色」，两条凭据：
+     * <p>本方法把豁免条件收窄为「调用者曾参与该项目<b>或</b>在该项目行上挂着名」，两条凭据：
      * <ol>
      *   <li>{@code pm_project_member} 的「曾参与」永久凭据（沿用 015）；
-     *   <li>{@code pm_project} 上的 项目经理 / 团队负责人 / 市场经理 / 销售经理
+     *   <li>{@code pm_project} 上的 项目经理 / 团队负责人 / 市场经理 / 销售负责人，
+     *       <b>或 {@code participants} 参与人员名单</b>
      *       （{@code ProjectMapper#selectProjectRoleProjectIds}）。
      * </ol>
      * 两者都只能由持项目编辑权限者写入，填报人不可自助伪造，故仍是 deny-by-default。
+     *
+     * <p><b>凭据②含 {@code participants} 是 2026-08-04 集成收尾时补的</b>，与写侧
+     * {@link #validateSubmissionOwnership} 的 V1 共用同一个查询 —— 补的动因在写侧：
+     * {@code selectProjectsByUserId}（填报页项目列表）的 OR 列表含 {@code participants}，
+     * 写侧若不认它，成员表漏同步的历史项目会「列得出、填不了」，该填报人当日整张日报
+     * 永久保存不了。读侧因此顺带放宽：participants 名单里的人本就是项目参与人，
+     * 且 {@code syncProjectMembers} 正常工作时他们已通过凭据①获得同样的读权限
+     * —— 所以这不是放宽授权模型，而是让实现不再取决于「该项目行有没有被重新保存过」。
+     * <b>两侧必须继续同源</b>：分叉就会重新出现「能读、不能写」的自相矛盾。
      *
      * <p><b>为什么必须要第二条凭据</b>：{@code ProjectServiceImpl#syncProjectMembers} 确实把这四类
      * 角色都写进成员表，但历史项目存在漏同步 —— 实测有日报的项目里市场经理缺行 30 个、销售经理缺行
@@ -429,9 +439,19 @@ public class DailyReportServiceImpl implements IDailyReportService
      * <p>校验规则（只作用于 {@code entry_type='work'} 且 projectId 非空的记录，
      * 假期类记录不关联项目、不适用本校验）：
      * <ul>
-     *   <li><b>V1 曾参与</b>：{@code pm_project_member} 中存在该 (project, user) 行，
-     *       <b>不限</b>在册或已离场——离场者仍可维护自己填过的历史工时（FR-006 / US4）。
-     *       项目不存在或已删除时同样按本条拒绝。
+     *   <li><b>V1 曾参与</b>：两条并列凭据，命中任一即通过。项目不存在或已删除时按本条拒绝。
+     *       <ul>
+     *         <li>凭据①{@code pm_project_member} 中存在该 (project, user) 行，<b>不限</b>在册
+     *             或已离场——离场者仍可维护自己填过的历史工时（FR-006 / US4）。
+     *         <li>凭据②{@code pm_project} 行上挂着该用户：四类项目角色之一，或出现在
+     *             {@code participants} 名单里。<b>这条不是可选的加固，是必需的</b>——
+     *             {@code selectProjectsByUserId}（myProjects，填报页右侧项目列表）的 OR 列表
+     *             就含这些列，成员表漏同步的历史项目会「列得出、填不了」；且填写页会把该项目
+     *             当日既有工时回填成 {@code > 0} 一并提交，于是该填报人<b>当日整张日报永久
+     *             保存不了</b>，唯一出路是把该项目工时清零——而清零会真删历史明细。
+     *             与读侧 {@link #applyProjectScopeBypass}（Issue #24）用的是同一个查询，
+     *             两侧口径必须同源，否则出现「能读、不能写」的自相矛盾。
+     *       </ul>
      *   <li><b>V2 未结项</b>：{@code project_stage != '11'}，已结项项目不再接受新增或修改
      *       其工时（FR-010 / FR-011）。仅作用于本次提交内容——该日既有的已结项工时
      *       由作用范围机制保留，不因此被拒。
@@ -468,8 +488,18 @@ public class DailyReportServiceImpl implements IDailyReportService
         for (java.util.Map<String, Object> row : projectMapper.selectProjectStatesIn(projectIds)) {
             states.put(Long.parseLong(row.get("projectId").toString()), row);
         }
-        Set<Long> everMember = new HashSet<>(
+        // V1 凭据①：成员表里的「曾参与」（不限在册）
+        Set<Long> participated = new HashSet<>(
                 projectMemberMapper.selectEverMemberProjectIds(userId, projectIds));
+
+        // V1 凭据②：pm_project 行上的项目角色 / participants 名单。
+        // 只对凭据①未覆盖的项目补查一次——绝大多数提交在这里是空集，不产生额外查询。
+        // 与读侧 applyProjectScopeBypass 使用同一个 mapper 方法，保证读写口径同源。
+        Set<Long> notMember = new HashSet<>(projectIds);
+        notMember.removeAll(participated);
+        if (!notMember.isEmpty()) {
+            participated.addAll(projectMapper.selectProjectRoleProjectIds(userId, notMember));
+        }
 
         for (Long projectId : projectIds) {
             java.util.Map<String, Object> state = states.get(projectId);
@@ -477,8 +507,8 @@ public class DailyReportServiceImpl implements IDailyReportService
                     ? state.get("projectName").toString()
                     : ("#" + projectId);
 
-            // V1：项目不存在或已被删除 → 无成员关系可言，与「从未参与」同等处理
-            if (state == null || !everMember.contains(projectId)) {
+            // V1：项目不存在或已被删除 → 无参与关系可言，与「从未参与」同等处理
+            if (state == null || !participated.contains(projectId)) {
                 throw new ServiceException("项目《" + projectName + "》不在您参与的项目范围内");
             }
 

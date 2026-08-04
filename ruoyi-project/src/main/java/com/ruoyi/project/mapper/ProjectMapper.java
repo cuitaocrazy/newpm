@@ -274,8 +274,18 @@ public interface ProjectMapper
      * 【Issue #24】查询用户在给定项目中担任「四类项目角色」的项目ID
      * （项目经理 / 团队负责人 / 市场经理 / 销售经理，取自 {@code pm_project} 本身）。
      *
-     * <p>与 {@code ProjectMemberMapper#selectEverMemberProjectIds} 并列构成
-     * {@code DailyReportServiceImpl#applyProjectScopeBypass} 的授权闸门。之所以不能只查成员表：
+     * <p>与 {@code ProjectMemberMapper#selectEverMemberProjectIds} 并列构成<b>两处</b>判据：
+     * 读侧 {@code DailyReportServiceImpl#applyProjectScopeBypass}（Issue #24）与
+     * 写侧 {@code DailyReportServiceImpl#validateSubmissionOwnership} 的 V1（015）。
+     * <b>两侧必须同源</b> —— 分叉过一次：写侧只认成员表时，成员表漏同步的历史项目会在填报页
+     * 「列得出、填不了」，该填报人当日整张日报永久保存不了。
+     *
+     * <p>因此本查询的列<b>必须覆盖</b> {@code selectProjectsByUserId}（myProjects）的 OR 列表
+     * ——{@code project_manager_id} / {@code market_manager_id} / {@code team_leader_id} /
+     * {@code FIND_IN_SET(participants)}。{@code sales_manager_id} 不在那个 OR 列表里，
+     * 本查询多覆盖一列：取超集安全，取子集会造成误拒。
+     *
+     * <p>之所以不能只查成员表：
      * {@code ProjectServiceImpl#syncProjectMembers} 确实会把这四类角色写进 {@code pm_project_member}，
      * 但历史项目存在漏同步 —— 实测有日报的项目里市场经理缺行 30 个、销售经理缺行 27 个
      * （项目经理与团队负责人当前为 0，是数据巧合而非结构保证）。只查成员表会让「同一个人、同一个角色」

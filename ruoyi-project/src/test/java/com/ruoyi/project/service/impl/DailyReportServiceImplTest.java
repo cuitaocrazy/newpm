@@ -949,6 +949,129 @@ class DailyReportServiceImplTest {
     }
 
     @Test
+    @DisplayName("[TDD] 保存日报：担任项目角色但成员表漏行，必须放行——填报页列了它就必须能保存")
+    void saveDailyReport_projectRoleWithoutMemberRow_isAccepted() throws Exception {
+        Long roleProjectId = 295L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, roleProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenReturn(1);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", roleProjectId);
+        state.put("projectName", "我当市场经理的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        // 成员表漏行（历史项目未经 syncProjectMembers 重新保存过）
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+        // 但 pm_project 上确实挂着该用户的项目角色 —— 与读侧闸门（#24）同一条凭据
+        lenient().when(projectMapper.selectProjectRoleProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.singletonList(roleProjectId));
+
+        assertDoesNotThrow(() -> service.saveDailyReport(report),
+                "myProjects（selectProjectsByUserId）会把该项目列在填报页右侧，"
+                        + "写侧却只认 pm_project_member 的话，这个人的整张日报永久保存不了。"
+                        + "读侧（applyProjectScopeBypass）已承认这条凭据，写侧必须同源。");
+
+        verify(detailMapper).batchInsert(any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：仅出现在 participants 里（成员表漏行）也必须放行")
+    void saveDailyReport_participantWithoutMemberRow_isAccepted() throws Exception {
+        Long participantProjectId = 329L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, participantProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenReturn(1);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", participantProjectId);
+        state.put("projectName", "我在参与人员里的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+        // selectProjectRoleProjectIds 覆盖 participants —— 与 selectProjectsByUserId 的 OR 列表同口径
+        lenient().when(projectMapper.selectProjectRoleProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.singletonList(participantProjectId));
+
+        assertDoesNotThrow(() -> service.saveDailyReport(report),
+                "participants 同样出现在 selectProjectsByUserId 的 OR 列表里（ProjectMapper.xml），"
+                        + "填报页会列出它 —— 写侧必须一并承认，否则同一个人同一个项目「看得见、填不了」。");
+
+        verify(detailMapper).batchInsert(any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：既无成员行也无任何项目角色，仍然拒绝（不得因放宽而失守）")
+    void saveDailyReport_neitherMemberNorProjectRole_isStillRejected() throws Exception {
+        Long strangerProjectId = 777L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, strangerProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", strangerProjectId);
+        state.put("projectName", "毫无关系的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+        lenient().when(projectMapper.selectProjectRoleProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.emptyList());
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.saveDailyReport(report));
+        assertTrue(ex.getMessage().contains("毫无关系的项目"));
+
+        verify(detailMapper, never()).batchInsert(any());
+        verify(projectMapper, never()).updateActualWorkload(anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("[TDD] 保存日报：成员行命中时不得再查项目角色（省一次查询，且证明短路顺序）")
+    void saveDailyReport_memberRowHit_skipsProjectRoleLookup() throws Exception {
+        Long memberProjectId = 10L;
+
+        DailyReport report = buildReport("2026-03-12");
+        report.setDetailList(Collections.singletonList(
+                buildDetail("work", new BigDecimal("8"), null, memberProjectId, null)));
+
+        when(whitelistService.isInWhitelist(USER_ID)).thenReturn(false);
+        when(dailyReportMapper.selectReportIdByUserAndDate(eq(USER_ID), any())).thenReturn(null);
+        when(dailyReportMapper.insertDailyReport(any())).thenReturn(1);
+
+        Map<String, Object> state = new HashMap<>();
+        state.put("projectId", memberProjectId);
+        state.put("projectName", "我是成员的项目");
+        state.put("projectStage", "3");
+        lenient().when(projectMapper.selectProjectStatesIn(any()))
+                .thenReturn(Collections.singletonList(state));
+        lenient().when(projectMemberMapper.selectEverMemberProjectIds(eq(USER_ID), any()))
+                .thenReturn(Collections.singletonList(memberProjectId));
+
+        service.saveDailyReport(report);
+
+        verify(projectMapper, never()).selectProjectRoleProjectIds(anyLong(), any());
+    }
+
+    @Test
     @DisplayName("[TDD] 保存日报：工时挂在不隶属于该项目的任务上，保存被拒绝")
     void saveDailyReport_taskNotBelongingToProject_isRejected() throws Exception {
         Long projectId = 10L;

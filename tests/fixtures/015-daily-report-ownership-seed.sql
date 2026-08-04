@@ -96,6 +96,18 @@ INSERT INTO pm_project (project_id, project_code, project_name, project_stage,
                         project_manager_id, actual_workload, create_by, create_time, remark)
 VALUES (990400, 'E2E-015-FORMER', '015离场项目D', '3', '1', '0', '0', 103, 2, 0.00, 'admin', NOW(), '015-e2e-fixture');
 
+-- 990500 在建，admin 是【市场经理】但 pm_project_member 里【没有任何行】→ 归属校验须放行
+-- 复刻生产上的真实数据形态：历史项目未经 syncProjectMembers 重新保存过，成员表漏同步
+-- （实测市场经理缺行 30 个 / 销售经理缺行 27 个）。myProjects（selectProjectsByUserId）的
+-- OR 列表含 market_manager_id，所以填报页会把它列出来——写侧若只认成员行，这个人当日
+-- 整张日报永久保存不了。参见 ProjectMapper.selectProjectRoleProjectIds 的注释。
+-- ⚠️ 刻意【不】给它插 pm_project_member 行，这正是本场景的全部要害。
+INSERT INTO pm_project (project_id, project_code, project_name, project_stage,
+                        approval_status, project_status, del_flag, project_dept,
+                        project_manager_id, market_manager_id, actual_workload,
+                        create_by, create_time, remark)
+VALUES (990500, 'E2E-015-ROLEONLY', '015仅角色项目E', '3', '1', '0', '0', 103, 2, 1, 0.00, 'admin', NOW(), '015-e2e-fixture');
+
 -- ------------------------------------------------------------ 成员关系 ----
 INSERT INTO pm_project_member (project_id, user_id, is_active, del_flag, join_date, create_by, create_time, remark)
 VALUES (990100, 1, '1', '0', '2026-01-01', 'admin', NOW(), '015-e2e-fixture'),

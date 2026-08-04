@@ -155,9 +155,17 @@ E2E_API_URL=http://localhost:8087 E2E_ADMIN_PASSWORD=<dev 库的 admin 密码> \
   npx playwright test e2e-daily-report-ownership.spec.js --reporter=list
 ```
 
-**预期**：`14 passed`（2026-08-03 实测 3.2s）。若看到
+**预期**：`16 passed`。若看到
 `[造数库闸门] 拒绝执行`，说明 `E2E_API_URL` 指向的库不对——**不要绕过它**，
 它拦下的正是会毁真实数据的那一次执行。
+
+> 计数变更记录：14 → 16（2026-08-04，集成收尾）。新增的两条是「口径同源」组
+> ——「担任项目角色但成员表无行须放行」与其反向护栏「毫无关系仍须被拒」。
+> 配套造数新增项目 **990500**（`market_manager_id = 1`，**刻意不插 `pm_project_member` 行**）。
+> ⚠️ 这两条用例与 990500 是在**禁用数据库访问**的集成会话里写的，**未经实际执行**；
+> 首次跑要留意是造数问题还是产品问题（对应的单测护栏已绿：
+> `DailyReportServiceImplTest#saveDailyReport_projectRoleWithoutMemberRow_isAccepted`
+> 等 4 条）。
 
 **跑同一批改动时要一起过的另外三套**（变量约定各不相同，这本身就是坑）：
 

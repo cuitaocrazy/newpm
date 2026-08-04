@@ -51,6 +51,7 @@ const P_ACTIVE = 990100;    // 在建 + admin 是成员    → 可见，作用�
 const P_CLOSED = 990200;    // 已结项 + admin 是成员  → 不可见，作用范围外
 const P_STRANGER = 990300;  // 在建，admin 从未参与   → 归属校验须拒绝
 const P_FORMER = 990400;    // 在建，admin 已离场     → 归属校验须放行
+const P_ROLE_ONLY = 990500; // 在建，admin 是市场经理但成员表无行 → 归属校验须放行（读写同源）
 
 let ctx;
 let headers;
@@ -411,6 +412,43 @@ test('US4｜离场成员可维护历史工时，而从未参与者被拒 —— 
     { projectId: P_STRANGER, entryType: 'work', workHours: 5, workContent: '从未参与' },
   ]);
   expect(stranger.code, '「曾参与」与「从未参与」必须区别对待').toBe(500);
+});
+
+// ===========================================================================
+// 读写口径同源：担任项目角色但成员表漏行
+// ---------------------------------------------------------------------------
+// 015 初版的 V1 只认 pm_project_member，而填报页右侧的项目列表
+// （myProjects → selectProjectsByUserId）的 OR 列表还含 project_manager_id /
+// market_manager_id / team_leader_id / FIND_IN_SET(participants)。
+// 成员表漏同步的历史项目于是「列得出、填不了」；更糟的是填写页会把该项目当日既有工时
+// 回填成 > 0 一并提交，于是该填报人当日整张日报永久保存不了。
+// 修法：V1 补上凭据②（ProjectMapper.selectProjectRoleProjectIds），与读侧
+// applyProjectScopeBypass（Issue #24）同源。
+// ===========================================================================
+
+test('口径同源｜担任项目角色但成员表无行，保存必须放行（读侧已放行，写侧不得自相矛盾）', async () => {
+  const res = await saveDay('2026-07-28', [
+    { projectId: P_ROLE_ONLY, entryType: 'work', workHours: 6, workContent: '市场经理填自己项目的工时' },
+  ]);
+  expect(res.code,
+    '990500 上 admin 是 market_manager_id 但 pm_project_member 无行。'
+    + 'myProjects 会列出它 → 写侧必须能保存，否则该账号当日整张日报永久保存不了。'
+    + `实际返回：${res.code} / ${res.msg}`)
+    .toBe(200);
+
+  const detail = await detailOf('2026-07-28', P_ROLE_ONLY);
+  expect(detail, '放行后明细必须真的落库').toBeTruthy();
+  expect(Number(detail.workHours)).toBe(6);
+});
+
+test('口径同源｜护栏：放宽到项目角色后，「毫无关系」仍须被拒（不得顺手放开一片）', async () => {
+  const res = await saveDay('2026-07-29', [
+    { projectId: P_STRANGER, entryType: 'work', workHours: 6, workContent: '既非成员也无任何角色' },
+  ]);
+  expect(res.code,
+    '990300 的 project_manager_id=2、其余角色列与 participants 全为 NULL —— '
+    + '放宽 V1 后它仍必须被拒。若此处变绿，说明凭据②的 OR 列表写宽了。')
+    .toBe(500);
 });
 
 // ===========================================================================
