@@ -63,7 +63,10 @@ test.describe('018 项目日报 UI', () => {
 
     // ProjectDeptSelect 是 el-tree-select 且 filterable 默认 false（组件 index.vue:45-48），
     // 无法输入过滤，只能逐层展开。目标节点在第 5 层（新疆组 ancestors=0,100,101,105,...）。
-    const targetLabel = page.locator('.el-tree-node__label', { hasText: '新疆组' });
+    // 【019】节点选择器修正：Element Plus 2.13 的 el-tree-select 把节点渲染成
+    // `.el-tree .el-select-dropdown__item`，`.el-tree-node__label` 一个都匹配不到，
+    // 该用例因此长期静默 test.skip（日志「可见节点(0)=」即为证据），是假绿。
+    const targetLabel = page.locator('.el-tree .el-select-dropdown__item', { hasText: '新疆组' });
     for (let depth = 0; depth < 6; depth++) {
       if (await targetLabel.count() > 0) break;
       const collapsed = page.locator('.el-tree-node__expand-icon:not(.is-leaf)')
@@ -81,7 +84,7 @@ test.describe('018 项目日报 UI', () => {
       }
     }
     if (await targetLabel.count() === 0) {
-      const allLabels = await page.locator('.el-tree-node__label').allInnerTexts();
+      const allLabels = await page.locator('.el-tree .el-select-dropdown__item').allInnerTexts();
       const dropdownCount = await page.locator('.el-select-dropdown').count();
       console.log(`  ⚠️ 未找到「新疆组」。下拉容器数=${dropdownCount}，`
         + `可见节点(${allLabels.length})=${allLabels.slice(0, 30).join(' / ')}`);
@@ -90,16 +93,22 @@ test.describe('018 项目日报 UI', () => {
     await targetLabel.first().click();
     await page.waitForTimeout(300);
 
-    // 清空年月
-    const monthInput = page.locator('.el-form-item', { hasText: '年月' }).locator('input').first();
-    await monthInput.hover();
-    const clearIcon = page.locator('.el-form-item', { hasText: '年月' }).locator('.el-input__clear').first();
+    // 清空年月。
+    // 【019】原实现找 `.el-input__clear` 且 hover 的是 input：el-date-picker 的清除图标
+    // 实际是 `.el-input__icon.clear-icon`，且要 hover 到 wrapper 才显形，于是恒走 else 分支，
+    // 而 fill('') + Escape 又会被 date-picker 撤销 —— 年月根本没被清掉，
+    // 这条「不填年月」用例实测跑出 31 个日期列，测的是相反的形态。
+    const ymItem = page.locator('.el-form-item', { hasText: '年月' });
+    await ymItem.locator('.el-input__wrapper').first().hover();
+    const clearIcon = ymItem.locator('.el-input__icon.clear-icon, .el-input__clear').first();
     if (await clearIcon.count() > 0) {
-      await clearIcon.click();
+      await clearIcon.click({ force: true });
     } else {
-      await monthInput.fill('');
-      await page.keyboard.press('Escape');
+      await ymItem.locator('input').first().fill('');
+      await page.keyboard.press('Enter');
     }
+    await page.waitForTimeout(300);
+    await expect(ymItem.locator('input').first(), '年月应已清空').toHaveValue('');
 
     await page.getByRole('button', { name: '查询' }).click();
     await page.waitForLoadState('networkidle');
