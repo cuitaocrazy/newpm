@@ -42,7 +42,14 @@ spec:
               memory: "512Mi"
               cpu: "250m"
             limits:
-              memory: "1Gi"
+              # 2026-08-07：由 1Gi 提到 2Gi。1Gi 下实际占用已达 ~75%（753MB），
+              # 突发查询（大结果集排序/临时表）一冲即被 OOMKilled，生产反复重启。
+              # 运维当时是用 kubectl edit 在线改的，仓库未同步 —— 于是 last-applied
+              # 注解仍停留在 1Gi，任何人执行 `kubectl apply -f k8s/` 都会把它改回 1Gi
+              # 并触发重建，故障会在一次与 MySQL 无关的部署操作后突然复现。
+              # 此处同步仓库即拆除该隐患（生产已是 2Gi，无需再 apply，零停机）。
+              # 完整诊断见 docs/plans/2026-08-06-mysql-oom-fix.md
+              memory: "2Gi"
               cpu: "500m"
           volumeMounts:
             - name: mysql-data
