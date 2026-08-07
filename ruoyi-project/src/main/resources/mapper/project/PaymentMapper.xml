@@ -90,6 +90,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="params.actualPaymentDateEnd != null and params.actualPaymentDateEnd != ''">
                 and date_format(p.actual_payment_date,'%Y-%m-%d') &lt;= date_format(#{params.actualPaymentDateEnd},'%Y-%m-%d')
             </if>
+            <if test="params.submitAcceptanceDateStart != null and params.submitAcceptanceDateStart != ''">
+                and date_format(p.submit_acceptance_date,'%Y-%m-%d') &gt;= date_format(#{params.submitAcceptanceDateStart},'%Y-%m-%d')
+            </if>
+            <if test="params.submitAcceptanceDateEnd != null and params.submitAcceptanceDateEnd != ''">
+                and date_format(p.submit_acceptance_date,'%Y-%m-%d') &lt;= date_format(#{params.submitAcceptanceDateEnd},'%Y-%m-%d')
+            </if>
             ${params.dataScope}
         </where>
         order by p.update_time desc

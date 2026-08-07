@@ -128,6 +128,17 @@
             style="width: 240px"
           />
         </el-form-item>
+        <el-form-item label="开票日期" prop="submitAcceptanceDateRange">
+          <el-date-picker
+            v-model="submitAcceptanceDateRange"
+            type="daterange"
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            style="width: 240px"
+          />
+        </el-form-item>
       </template>
 
       <!-- 操作按钮 -->
@@ -379,6 +390,9 @@ const tableDataWithSummary = computed(() => {
   return [summary, ...displayList.value]
 })
 const actualPaymentDateRange = ref([])
+// 「开票日期」对应的物理列是 pm_payment.submit_acceptance_date（历史命名为「提交验收日期」，
+// 业务含义已改为开票日期但列名未改），故参数名沿用 submitAcceptanceDate* 与后端保持一致
+const submitAcceptanceDateRange = ref([])
 
 const paymentTableRef = ref(null)
 // el-table 的 default-sort 只在挂载后被读取一次（非响应式快照），之后改它不会再影响表头箭头。
@@ -430,16 +444,26 @@ const data = reactive({
     deptIds: [],
     actualPaymentDateStart: null,
     actualPaymentDateEnd: null,
+    submitAcceptanceDateStart: null,
+    submitAcceptanceDateEnd: null,
   }
 })
 
 const { queryParams } = toRefs(data)
 
-/** 查询款项管理列表 */
-function getList() {
-  loading.value = true
-
-  // 处理日期范围
+/**
+ * 把两个日期区间 ref 同步进 queryParams。
+ *
+ * 【为什么需要这个函数】两个区间是双副本状态：
+ *   - 真值（唯一权威）是 el-date-picker 绑定的独立 ref —— actualPaymentDateRange /
+ *     submitAcceptanceDateRange，用户在界面上改的只有它们；
+ *   - queryParams 里的 xxxDateStart / xxxDateEnd 只是从 ref 拍下来的【派生快照】，
+ *     没有任何 watch 维护，只有本函数被调用时才会刷新。
+ * 因此凡是要把 queryParams 发出去的出口（getList 发列表/合计、handleExport 发导出），
+ * 都必须先调用本函数；漏调的出口会读到上一次同步时的过期快照 —— 曾经的表现是
+ * 「选了日期不点查询直接点导出，日期条件被静默丢弃，导出全量」。
+ */
+function syncDateRangesToQuery() {
   if (actualPaymentDateRange.value && actualPaymentDateRange.value.length === 2) {
     queryParams.value.actualPaymentDateStart = actualPaymentDateRange.value[0]
     queryParams.value.actualPaymentDateEnd = actualPaymentDateRange.value[1]
@@ -447,6 +471,22 @@ function getList() {
     queryParams.value.actualPaymentDateStart = null
     queryParams.value.actualPaymentDateEnd = null
   }
+
+  if (submitAcceptanceDateRange.value && submitAcceptanceDateRange.value.length === 2) {
+    queryParams.value.submitAcceptanceDateStart = submitAcceptanceDateRange.value[0]
+    queryParams.value.submitAcceptanceDateEnd = submitAcceptanceDateRange.value[1]
+  } else {
+    queryParams.value.submitAcceptanceDateStart = null
+    queryParams.value.submitAcceptanceDateEnd = null
+  }
+}
+
+/** 查询款项管理列表 */
+function getList() {
+  loading.value = true
+
+  // 处理日期范围（真值在独立 ref 上，发请求前必须刷新 queryParams 里的派生快照）
+  syncDateRangesToQuery()
 
   // 查询列表数据
   listPaymentWithContracts(queryParams.value).then(response => {
@@ -643,7 +683,9 @@ function saveSearchState() {
     showMoreSearch: showMoreSearch.value,
     // 必存：getList() 每次都从这个 ref 反向覆写 actualPaymentDateStart/End，
     // ref 为空就写 null——只还原 queryParams 的话，还原后第一次 getList 会当场抹掉日期条件
-    actualPaymentDateRange: actualPaymentDateRange.value
+    actualPaymentDateRange: actualPaymentDateRange.value,
+    // 同上：开票日期也是由 ref 反向覆写 submitAcceptanceDateStart/End，必须一并入缓存
+    submitAcceptanceDateRange: submitAcceptanceDateRange.value
   }
   // 必须 try/catch：本函数挂在 onBeforeRouteLeave 上，setItem 在配额满 / 隐私模式 /
   // 站点数据被禁时会抛异常，异常从路由守卫冒出去会让 vue-router 取消导航——
@@ -666,6 +708,7 @@ function restoreSearchState() {
     // 还原了「更多」区的值就必须一并还原展开态，否则用户看到「结果被筛过、界面上却没有筛选条件」
     showMoreSearch.value = !!state.showMoreSearch
     actualPaymentDateRange.value = state.actualPaymentDateRange || []
+    submitAcceptanceDateRange.value = state.submitAcceptanceDateRange || []
     sessionStorage.removeItem(SEARCH_STATE_KEY)
     return true
   } catch {
@@ -684,6 +727,9 @@ onBeforeRouteLeave(() => {
 function resetQuery() {
   sessionStorage.removeItem(SEARCH_STATE_KEY)
   actualPaymentDateRange.value = []
+  // 日期区间绑的是独立 ref 而非 queryParams 字段，resetForm 碰不到，必须显式清空；
+  // 清空后下一次 getList 会把 submitAcceptanceDateStart/End 一并写回 null
+  submitAcceptanceDateRange.value = []
   proxy.resetForm("queryRef")
   // 「更多」区是 v-if，若本次是从缓存还原来的，这些 form-item 在还原之后才挂载，
   // 捕获到的 initialValue 就是还原值，resetFields 清不掉，必须显式置空
@@ -820,6 +866,11 @@ function handleDelete(row) {
 
 /** 导出按钮操作 */
 function handleExport() {
+  // 导出也是 queryParams 的一个出口：日期区间的真值在独立 ref 上，
+  // queryParams 里的起止字段只是派生快照。不先同步的话，「选了日期→不点查询→直接点导出」
+  // 这条路径上导出的仍是上一次同步时的旧条件（首次进页面即为全量）。
+  syncDateRangesToQuery()
+
   const timestamp = proxy.parseTime(new Date(), '{y}{m}{d}{h}{i}{s}')
   proxy.download('project/payment/export', {
     ...queryParams.value

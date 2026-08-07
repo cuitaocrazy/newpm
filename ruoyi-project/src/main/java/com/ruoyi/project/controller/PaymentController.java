@@ -59,13 +59,22 @@ public class PaymentController extends BaseController
     @GetMapping("/listWithContracts")
     public TableDataInfo listWithContracts(Contract contract,
             @RequestParam(required = false) String actualPaymentDateStart,
-            @RequestParam(required = false) String actualPaymentDateEnd)
+            @RequestParam(required = false) String actualPaymentDateEnd,
+            @RequestParam(required = false) String submitAcceptanceDateStart,
+            @RequestParam(required = false) String submitAcceptanceDateEnd)
     {
         if (actualPaymentDateStart != null) {
             contract.getParams().put("actualPaymentDateStart", actualPaymentDateStart);
         }
         if (actualPaymentDateEnd != null) {
             contract.getParams().put("actualPaymentDateEnd", actualPaymentDateEnd);
+        }
+        // 开票日期（物理列 pm_payment.submit_acceptance_date，历史列名为「提交验收日期」）
+        if (submitAcceptanceDateStart != null) {
+            contract.getParams().put("submitAcceptanceDateStart", submitAcceptanceDateStart);
+        }
+        if (submitAcceptanceDateEnd != null) {
+            contract.getParams().put("submitAcceptanceDateEnd", submitAcceptanceDateEnd);
         }
         startPage();
         List<Contract> list = contractService.selectContractWithPaymentsList(contract);
@@ -79,13 +88,22 @@ public class PaymentController extends BaseController
     @GetMapping("/sumPaymentAmount")
     public AjaxResult sumPaymentAmount(Contract contract,
             @RequestParam(required = false) String actualPaymentDateStart,
-            @RequestParam(required = false) String actualPaymentDateEnd)
+            @RequestParam(required = false) String actualPaymentDateEnd,
+            @RequestParam(required = false) String submitAcceptanceDateStart,
+            @RequestParam(required = false) String submitAcceptanceDateEnd)
     {
         if (actualPaymentDateStart != null) {
             contract.getParams().put("actualPaymentDateStart", actualPaymentDateStart);
         }
         if (actualPaymentDateEnd != null) {
             contract.getParams().put("actualPaymentDateEnd", actualPaymentDateEnd);
+        }
+        // 开票日期（物理列 pm_payment.submit_acceptance_date，历史列名为「提交验收日期」）
+        if (submitAcceptanceDateStart != null) {
+            contract.getParams().put("submitAcceptanceDateStart", submitAcceptanceDateStart);
+        }
+        if (submitAcceptanceDateEnd != null) {
+            contract.getParams().put("submitAcceptanceDateEnd", submitAcceptanceDateEnd);
         }
         return success(contractService.sumPaymentAmount(contract));
     }
@@ -98,13 +116,22 @@ public class PaymentController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, Contract contract,
             @RequestParam(required = false) String actualPaymentDateStart,
-            @RequestParam(required = false) String actualPaymentDateEnd)
+            @RequestParam(required = false) String actualPaymentDateEnd,
+            @RequestParam(required = false) String submitAcceptanceDateStart,
+            @RequestParam(required = false) String submitAcceptanceDateEnd)
     {
         if (actualPaymentDateStart != null) {
             contract.getParams().put("actualPaymentDateStart", actualPaymentDateStart);
         }
         if (actualPaymentDateEnd != null) {
             contract.getParams().put("actualPaymentDateEnd", actualPaymentDateEnd);
+        }
+        // 开票日期（物理列 pm_payment.submit_acceptance_date，历史列名为「提交验收日期」）
+        if (submitAcceptanceDateStart != null) {
+            contract.getParams().put("submitAcceptanceDateStart", submitAcceptanceDateStart);
+        }
+        if (submitAcceptanceDateEnd != null) {
+            contract.getParams().put("submitAcceptanceDateEnd", submitAcceptanceDateEnd);
         }
         // 不分页，全量查询（与列表页数据源一致）
         List<Contract> contractList = contractService.selectContractWithPaymentsList(contract);
