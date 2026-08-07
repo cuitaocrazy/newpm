@@ -124,8 +124,8 @@ private static String normalizeContractCode(String contractCode)
      是合同列表搜索功能的正确实现，输 ABC 会命中 ABC-001。
      MySQL 的 TRIM() 只去空格不去 TAB，三层 REPLACE 不可省；
      用 CHAR(9)/CHAR(13)/CHAR(10) 而非 '\t' 字面量以避免转义歧义。 -->
-<select id="selectContractIdsByNormalizedCode" resultType="java.lang.Long">
-    select c.contract_id
+<select id="countByContractCode" resultType="int">
+    select count(1)
     from pm_contract c
     where c.del_flag = '0'
       and TRIM(REPLACE(REPLACE(REPLACE(c.contract_code, CHAR(9), ''), CHAR(13), ''), CHAR(10), ''))
@@ -139,11 +139,17 @@ private static String normalizeContractCode(String contractCode)
 对应接口方法：
 
 ```java
-List<Long> selectContractIdsByNormalizedCode(@Param("normalizedCode") String normalizedCode,
-                                            @Param("excludeContractId") Long excludeContractId);
+int countByContractCode(@Param("normalizedCode") String normalizedCode,
+                        @Param("excludeContractId") Long excludeContractId);
 ```
 
-> 返回 ID 列表而非 `count`：既能判布尔，也为将来「提示里带上冲突合同名」留余地，不必再改 SQL。
+> **返回 `int` 而非 `List<Long>`（2026-08-06 修订）**：原设计返回 ID 列表是为「提示里带上冲突合同名」留余地，
+> 但 OQ-4 已拍板**提示不带冲突方名称**——判重刻意绕过 `@DataScope`，带出对方合同名等于跨部门泄露。
+> 既然不需要冲突方身份，`count` 就是最小够用的返回，也避免了「查到 ID 后再查名称」的第二次访库。
+> 将来若业务要求带名称，届时按「冲突方在当前用户数据权限范围内才带出」增量实现，那时再改签名。
+>
+> ⚠️ 本方法名已被 `ContractServiceImplTest` 的 27 个红灯用例锁定，实现时**必须逐字一致**，
+> 否则测试编译不过。测试是验收标准，不要反过来改测试迁就实现。
 
 ### 数据库生成列侧
 
@@ -213,7 +219,14 @@ ALTER TABLE pm_contract
 
 **不复用 `contractFilterConditions`**：`ContractMapper.xml:9` 的 `like concat('%',...,'%')` 被 `selectContractList(:126)` 与 `selectContractSummary(:182)` 共用，是合同列表「合同编号」筛选的正确实现（`tests/contract-filter.spec.js:72/93/113` 断言 `toContain(kw)`）。把它改成精确匹配会打红 5 条以上用例并让搜索功能退化。
 
-**判重语句写函数表达式，而不是 `where contract_code_norm = ?`**：后者能走 `uk_contract_code_norm` 索引，但会让**应用代码强依赖 DDL 已经执行**——若代码先上线、`ALTER` 后执行，查询会因 `Unknown column` 全线报错。表只有 337 行，全表扫描的代价可以忽略；换来的是**代码与 DDL 解耦，两者的上线顺序不再是故障点**。
+**判重语句写函数表达式，而不是 `where contract_code_norm = ?`**：后者能走 `uk_contract_code_norm` 索引，但会让**应用代码强依赖 DDL 已经执行**——若代码先上线、`ALTER` 后执行，查询会因 `Unknown column` 全线报错。表只有 337 行，全表扫描的代价可以忽略；换来的是**代码不依赖 DDL 是否已执行——代码可以安全地先上线**。
+
+> ⚠️ **但反过来不成立，解耦只解决了一个方向**（2026-08-07 本地实证，见 §5.4）：
+> DDL 先上而代码未上时，判重完全不存在，重复提交会一路走到 `INSERT` 撞上 `1062`，
+> 用户看到的是裸的 `SQLIntegrityConstraintViolationException` —— 含表名、完整 SQL 与
+> jar 路径的一大坨技术信息，而不是「合同编号已存在：xxx，请使用其他编号」。
+> 实证来自另一个未合并本特性的 worktree（019-outsource-workhour）：它的后端不含判重代码，
+> 但共用同一个已建索引的本地库，新增重复编号时前端直接糊了一屏异常。
 
 > 若将来 `pm_contract` 增长到十万行量级，可把判重语句改为直接命中 `contract_code_norm`（届时索引早已就位，无顺序风险）。现在不做。
 
@@ -393,10 +406,18 @@ cat pm-sql/fix_contract_code_unique_20260806.sql | docker exec -i newpm-mysql-1 
 
 ### 5.4 上线顺序
 
+> ⚠️ **顺序是硬约束，不是偏好：代码必须先上，DDL 后上。**
+> 原方案写的是「DDL 先行，顺序反过来也不会挂」，**这是错的**，已于 2026-08-07 依实证修正。
+>
+> | 顺序 | 中间窗口期发生什么 |
+> |---|---|
+> | **代码先 → DDL 后**（✅ 采用） | 判重立即生效（函数表达式不引用生成列，见 D4），用户看到的是人话提示；此时缺的只是并发兜底那一层，而并发撞车本就是极小概率 |
+> | DDL 先 → 代码后（❌ 禁止） | 判重完全不存在，重复提交一路走到 `INSERT` 撞 `1062`，用户看到含表名、SQL、jar 路径的裸异常 —— 已实证 |
+
 1. **备份先行**（生产变更前手动触发一次 DB 备份：`ssh k3s001 "sudo /usr/local/bin/backup-newpm-db.sh"`）
-2. 跑 5.1 前置检查 → ② 必须 0 行
-3. 执行 5.3 的两条 `ALTER`（DDL 先行，与代码解耦，见 D4 —— 顺序反过来也不会挂，但先做 DDL 更稳）
-4. 合并代码 → push `main` → GitHub Actions 构建 → K3s 滚动重启
+2. **合并代码 → push `main` → GitHub Actions 构建 → K3s 滚动重启，确认新版本已生效**
+3. 跑 5.1 前置检查 → ② 必须 0 行（此时判重已在应用层生效，不会有新的重复产生）
+4. 执行 5.3 的两条 `ALTER`（补上并发兜底与直连写库的最后防线）
 5. 跑 §六 的验收清单
 
 **不需要重启应用来「感知」新列** —— MyBatis 不做 schema 内省，判重语句也不引用生成列（D4）。

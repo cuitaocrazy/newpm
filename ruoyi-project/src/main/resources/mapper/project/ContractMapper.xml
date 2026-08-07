@@ -264,7 +264,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="updateContract" parameterType="Contract">
         update pm_contract
         <trim prefix="SET" suffixOverrides=",">
-            <if test="contractCode != null">contract_code = #{contractCode},</if>
+            <!-- 合同编号为合同编辑表单上的可选字段，无条件更新，不加 <if> 守卫。
+                 见 CLAUDE.md「全量表单提交的 update 不要加 <if> 守卫」：
+                 ContractServiceImpl 会把归一化后为空的编号回写成 null（空串/字面「无」→ NULL），
+                 守卫会让这个 null 永远写不回库 —— 表现为「用户清空编号 → 提示保存成功 → 值不变」，
+                 且操作日志里请求体完全正常，极难定位（specs/020-contract-code-unique/plan.md R-001）。
+                 另一调用方 ContractServiceImpl.deleteContractByContractIds 传的是
+                 selectContractByContractId 查回的完整实体（select 列表含 contract_code），
+                 无条件写回等值，不受影响。 -->
+            contract_code = #{contractCode},
             <if test="contractName != null and contractName != ''">contract_name = #{contractName},</if>
             <if test="customerId != null">customer_id = #{customerId},</if>
             <if test="deptId != null">dept_id = #{deptId},</if>
@@ -473,6 +481,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           </if>
         ORDER BY create_time DESC
         LIMIT 100
+    </select>
+
+    <!-- 合同编号判重专用（specs/020-contract-code-unique）。四条硬性约束，改动前先读 plan.md：
+         1) 精确匹配，禁止复用 contractFilterConditions —— 那里的 contract_code 是 like 模糊匹配，
+            是合同列表搜索功能的正确实现，输 ABC 会命中 ABC-001，用来判重会误报「已存在」；
+         2) 归一化口径必须与 Java 侧 ContractServiceImpl.normalizeContractCode 及
+            pm_contract.contract_code_norm 生成列逐字一致。MySQL 的 TRIM() 只去半角空格、不去 TAB，
+            三层 REPLACE 不可省；写 CHAR(9)/CHAR(13)/CHAR(10) 而非 '\t' 字面量以避免多层转义歧义；
+         3) 只统计在用记录（del_flag = '0'），软删记录不占用编号（删掉再用同号重建是合法业务动作）；
+         4) 刻意不注入数据权限（无 params.dataScope）—— 唯一性是全局属性，
+            按部门收窄会漏判（实测重复的两条分属部门 201 与 103）。
+            本语句只返回计数、不吐任何业务字段，故不构成越权读取。
+         这里写函数表达式而不是直接比对 contract_code_norm 生成列，是为了让应用代码与 DDL 解耦：
+         即使生成列尚未 ALTER 上去，判重也照常工作（表仅数百行，全表扫描代价可忽略）。 -->
+    <select id="countByContractCode" resultType="int">
+        select count(1)
+        from pm_contract c
+        where c.del_flag = '0'
+          and TRIM(REPLACE(REPLACE(REPLACE(c.contract_code, CHAR(9), ''), CHAR(13), ''), CHAR(10), ''))
+              = #{normalizedCode}
+        <if test="excludeContractId != null">
+            and c.contract_id != #{excludeContractId}
+        </if>
     </select>
 
 </mapper>

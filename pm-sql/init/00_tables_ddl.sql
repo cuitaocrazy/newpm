@@ -632,8 +632,21 @@ CREATE TABLE `pm_contract` (
   `reserved_field3` varchar(64) DEFAULT NULL COMMENT '备用域3',
   `reserved_field4` varchar(64) DEFAULT NULL COMMENT '备用域4',
   `reserved_field5` varchar(64) DEFAULT NULL COMMENT '备用域5',
+  `contract_code_norm` varchar(100) GENERATED ALWAYS AS (
+      IF(`del_flag` = '0',
+         NULLIF(NULLIF(
+           TRIM(REPLACE(REPLACE(REPLACE(`contract_code`, CHAR(9), ''), CHAR(13), ''), CHAR(10), ''))
+         , ''), '无'),
+         NULL)
+    ) VIRTUAL COMMENT '合同编号归一化值(仅在用记录;空串/无→NULL),唯一约束用',
   PRIMARY KEY (`contract_id`),
-  UNIQUE KEY `uk_contract_code` (`contract_code`),
+  -- 合同编号唯一约束（Issue #32）。不能用裸 UNIQUE KEY (contract_code)：
+  -- pm_contract 是软删表，del_flag='1' 的记录仍占用唯一约束，生产实测有 5 组
+  -- 「软删 vs 在用」的编号冲突；且裸索引会永久堵死「删除后重录同编号」这个正常操作。
+  -- 故约束建在条件生成列上：软删的、空的、字面「无」的一律落 NULL，
+  -- 而 MySQL 唯一索引不约束 NULL —— 这同时实现了「多条空编号合法共存」。
+  -- 详见 specs/020-contract-code-unique/plan.md D1，迁移脚本 pm-sql/fix_contract_code_unique_20260806.sql
+  UNIQUE KEY `uk_contract_code_norm` (`contract_code_norm`),
   KEY `idx_customer_id` (`customer_id`),
   KEY `idx_contract_status` (`contract_status`),
   KEY `idx_contract_sign_date` (`contract_sign_date`),

@@ -52,3 +52,4 @@ db-backups/
 
 # git worktree（仓库内部，不纳入版本控制）
 .claude/worktrees/
+test-results.json

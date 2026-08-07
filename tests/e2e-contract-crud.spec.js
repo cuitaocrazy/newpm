@@ -110,17 +110,23 @@ test.describe.serial('合同管理 CRUD', () => {
   test('合同编号唯一性检查', async () => {
     console.log('\n▶ 测试：合同编号唯一性检查');
 
-    // 获取一个已有合同编号
-    const listBody = await api.get('/project/contract/list', { pageNum: 1, pageSize: 1 });
+    // 取一条「编号非空」的已有合同（Issue #32）：
+    // 编号为空/空格/字面「无」在新语义下不参与判重、一律返回 true，
+    // 而库里一百多条合同的编号本就是空的 —— 盲取 rows[0] 会随机撞上它们。
+    const listBody = await api.get('/project/contract/list', { pageNum: 1, pageSize: 50 });
     expect(listBody.code).toBe(200);
 
-    if (!listBody.rows || listBody.rows.length === 0) {
-      console.log('  ⏭ 列表为空，跳过唯一性检查测试');
+    const withCode = (listBody.rows || []).find(
+      (r) => r.contractCode && r.contractCode.replace(/[\t\r\n]/g, '').trim() !== '' && r.contractCode.trim() !== '无'
+    );
+
+    if (!withCode) {
+      console.log('  ⏭ 前 50 条中没有编号非空的合同，跳过唯一性检查测试');
       test.skip();
       return;
     }
 
-    const existingCode = listBody.rows[0].contractCode;
+    const existingCode = withCode.contractCode;
     console.log(`  检查已有编号: "${existingCode}"`);
 
     const body = await api.get('/project/contract/checkContractCodeUnique', {

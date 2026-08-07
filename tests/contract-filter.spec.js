@@ -15,7 +15,10 @@
 import { test, expect } from '@playwright/test';
 import { setupApi } from './helpers/api-client.js';
 
-const BASE_URL = 'http://localhost:80';
+// 与仓库主流约定（tests/helpers/api-client.js 及其余 22 处）对齐：
+// 默认仍是 80，但允许 E2E_BASE_URL 覆盖 —— 在 worktree 里跑时主工作区常已占用 80/8080，
+// 硬编码会让本套件无法执行（Issue #32 实测）。行为不变，只是多一个可覆盖的口子。
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:80';
 
 /** UI 登录（与 query-smoke.spec.js 约定一致，依赖验证码关闭） */
 async function login(page, username = 'admin', password = '123456789') {

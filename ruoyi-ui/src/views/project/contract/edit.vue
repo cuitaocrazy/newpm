@@ -287,7 +287,7 @@
 <script setup name="ContractEdit">
 import { ref, reactive, toRefs, watch, getCurrentInstance, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getContract, updateContract, checkContractNameUnique } from '@/api/project/contract'
+import { getContract, updateContract, checkContractNameUnique, checkContractCodeUnique } from '@/api/project/contract'
 import { listProjectByDept, getDeptTree as fetchDeptTree } from '@/api/project/project'
 import { listAllCustomer } from '@/api/project/customer'
 
@@ -315,6 +315,43 @@ async function validateContractName(rule, value, callback) {
     }
   } catch (error) {
     console.error('校验合同名称唯一性失败:', error)
+    callback()
+  }
+}
+
+/**
+ * 合同编号归一化 —— 必须与后端 Java / SQL / 生成列三处口径逐字一致：
+ * 去掉全部 TAB(\t) / CR(\r) / LF(\n)，再剥掉首尾半角空格。
+ * 注意用 /^ +| +$/ 而非 String.trim()：trim() 还会剥掉全角空格等 Unicode 空白，
+ * 与 MySQL TRIM() / Java 侧口径不一致。
+ */
+function normalizeContractCode(v) {
+  return String(v ?? '').replace(/[\t\r\n]/g, '').replace(/^ +| +$/g, '')
+}
+
+/**
+ * 合同编号唯一性校验（合同编号非必填，此处只加 validator，不加 required）
+ * 空值短路必须在 try 之前：归一化后为空串或字面「无」视为未填写，直接放行且不发请求。
+ * contractId 用 route.params 兜底：form.contractId 要等 getContract 回填才有值，
+ * 加载完成前触发 blur 会让本合同把自己判成重复。
+ */
+async function validateContractCode(rule, value, callback) {
+  const normalized = normalizeContractCode(value)
+  if (normalized === '' || normalized === '无') {
+    callback()
+    return
+  }
+  const contractId = form.value.contractId ?? route.params.contractId
+  try {
+    const response = await checkContractCodeUnique(normalized, contractId)
+    if (response.data === true) {
+      callback()
+    } else {
+      callback(new Error(`合同编号已存在：${normalized}，请使用其他编号`))
+    }
+  } catch (error) {
+    // 与合同名称校验保持一致：接口异常时不阻断保存，由服务端硬拦截与唯一索引兜底
+    console.error('校验合同编号唯一性失败:', error)
     callback()
   }
 }
@@ -347,6 +384,10 @@ const data = reactive({
     contractName: [
       { required: true, message: '请输入合同名称', trigger: 'blur' },
       { validator: validateContractName, trigger: 'blur' }
+    ],
+    // 合同编号非必填：只做唯一性校验，不加 required
+    contractCode: [
+      { validator: validateContractCode, trigger: 'blur' }
     ],
     deptId: [
       { required: true, message: '请选择部门', trigger: 'change' }

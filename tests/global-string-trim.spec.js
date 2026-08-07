@@ -14,7 +14,8 @@
 import { test, expect, request as playwrightRequest } from '@playwright/test';
 import { setupApi } from './helpers/api-client.js';
 
-const BASE_URL = 'http://localhost:80';
+// 与仓库主流约定对齐：默认仍是 80，允许 E2E_BASE_URL 覆盖（详见 contract-filter.spec.js 同处注释）
+const BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:80';
 const TS = Date.now();
 
 let api;

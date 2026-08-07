@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import com.ruoyi.project.domain.Contract;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 合同管理Mapper接口
@@ -117,4 +118,26 @@ public interface ContractMapper
      * @return 合同ID，无关联合同时返回null
      */
     public Long selectContractIdByProjectId(Long projectId);
+
+    /**
+     * 合同编号判重专用：按「归一化后的编号」精确统计在用合同数量
+     *
+     * <p>实现见 ContractMapper.xml 同名语句，调用方为
+     * {@code ContractServiceImpl.checkContractCodeUnique} 与
+     * {@code ContractServiceImpl.normalizeAndCheckContractCode}。
+     * 以下是该语句的硬性约束，改动前先读 specs/020-contract-code-unique/plan.md：
+     * <ul>
+     *   <li>精确匹配，禁止复用 contractFilterConditions 里的 like 模糊匹配（那是列表搜索功能）</li>
+     *   <li>SQL 侧归一化必须与 Java 侧逐字一致：MySQL 的 TRIM() 只去空格不去 TAB，
+     *       必须显式 REPLACE 掉 CHAR(9)/CHAR(13)/CHAR(10)</li>
+     *   <li>只统计在用记录（del_flag = '0'），软删记录不占用编号</li>
+     *   <li>不得带 ${params.dataScope} —— 判重必须跳出数据权限，否则跨部门重复检不出来</li>
+     * </ul>
+     *
+     * @param normalizedCode    已归一化的合同编号（调用方保证非空）
+     * @param excludeContractId 需要排除的合同ID（编辑时传自身ID，新增时传 null）
+     * @return 匹配到的在用合同数量，0 表示编号可用
+     */
+    public int countByContractCode(@Param("normalizedCode") String normalizedCode,
+                                   @Param("excludeContractId") Long excludeContractId);
 }
