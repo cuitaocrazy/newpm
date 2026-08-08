@@ -62,16 +62,51 @@ spec:
               subPath: 01-import-sql.sh
             - name: sql-files
               mountPath: /sql-files
+          # ── 探针改造（Issue #34，2026-08-08）────────────────────────────────
+          # 原配置：liveness + readiness 双 exec `mysqladmin ping`，各 10 秒一次
+          #        = 17280 次/天，每次在本 pod 的 memory cgroup 内 fork runc + mysqladmin，
+          #        瞬时占用 4 MB（宿主机 0.8ms 采样 48903 次实测）。
+          # 5/5 次 OOMKilled 的 `invoked oom-killer` 进程都是这条 exec 链（runc:[2:INIT]），
+          # 而不是 mysqld 自己 —— 它是引爆器。跨集群 21 次 memcg OOM 佐证：
+          #   配 exec 探针的 pod → 7/7 由 exec 进程点火；未配的 → 14/14 由自身主进程点火。
+          #
+          # 更糟的是它什么也没检查：`mysqladmin ping` 不带凭证，实测返回
+          #   error: 'Access denied for user root@localhost (using password: NO)'
+          #   exit_code=0        ← 认证失败却算成功，永远绿，缺陷被完全掩盖
+          # 它测到的信息 ≈ tcpSocket（端口通 + 协议层回包），却付了 17280 次 fork 的代价。
+          #
+          # 改造后：exec 17280 → 1440 次/天（↓91.7%），检测能力反而从「假绿」变成真能测出故障。
+          # 参数依据（均为实测）：容器内查询耗时 6~8ms、端到端 <1s → timeout 5s 有 5 倍余量；
+          # exec 单次内存 4MB，与原 mysqladmin 完全相同（主要开销在 runc，与命令无关）。
+
+          # 启动期兜底：InnoDB 恢复慢时不被 liveness 误杀（原配置缺这一层，靠固定 30s 硬扛）
+          startupProbe:
+            tcpSocket:
+              port: 3306
+            periodSeconds: 5
+            failureThreshold: 60          # 最长容忍 5 分钟启动
+
+          # 就绪：改 tcpSocket。对【单实例】StatefulSet 没有副本可分流，
+          # readiness 的信息量本就约等于 tcpSocket；改完零 fork。
+          readinessProbe:
+            tcpSocket:
+              port: 3306
+            periodSeconds: 10
+
+          # 存活：保留 exec 但降频 6 倍，并首次使用【带凭证的真实查询】。
+          # 阴性对照已实测：密码错误 exit=1、SQL 执行失败 exit=1 —— 不会重蹈 ping 的假绿。
+          # 注意必须用 /bin/sh -c：k8s 的 $(VAR) 替换只在 container.command/args 生效，
+          # 在 exec 探针的 command 里【不生效】，直接写 $(MYSQL_ROOT_PASSWORD) 会拿不到密码
+          # → 探针永远失败 → pod 无限重启。
           livenessProbe:
             exec:
-              command: ["mysqladmin", "ping", "-h", "localhost"]
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            exec:
-              command: ["mysqladmin", "ping", "-h", "localhost"]
-            initialDelaySeconds: 15
-            periodSeconds: 10
+              command:
+                - /bin/sh
+                - -c
+                - 'mysql -u root -p"$MYSQL_ROOT_PASSWORD" -e "SELECT 1" >/dev/null 2>&1'
+            periodSeconds: 60
+            timeoutSeconds: 5
+            failureThreshold: 3           # 连续 3 次（3 分钟）才重启，避免抖动误杀
       volumes:
         - name: initdb-wrapper
           configMap:
